@@ -1,0 +1,220 @@
+{
+  "sprint_defaults": {
+    "length_days": 7,
+    "wip_per_role": 2
+  },
+  "epics": {
+    "1": "Personal Sovereign Mirror",
+    "2": "Replicable Spore",
+    "3": "Mycelial Network",
+    "4": "Institutional Resilience",
+    "5": "Distributed Compute",
+    "6": "Data Sovereignty",
+    "7": "Continuous Chord Auditing",
+    "8": "Agent/Scrum Ops"
+  },
+  "tickets": [
+    {
+      "id": "W0.0",
+      "title": "Operator archive in data/raw",
+      "epic": 1,
+      "status": "blocked",
+      "role": "PO",
+      "priority": "P0",
+      "depends_on": [],
+      "blocks_r0": true,
+      "estimate": "L",
+      "dod": [
+        "data/raw has export or documented path"
+      ],
+      "notes": "Critical path. Agents must not train without this or PO waiver.\n",
+      "blocked_reason": "data/raw empty; needs operator archive zip drop (PO)"
+    },
+    {
+      "id": "W0.1",
+      "title": "Prep posts.jsonl from archive",
+      "epic": 1,
+      "status": "backlog",
+      "role": "AGT_DATA",
+      "priority": "P0",
+      "depends_on": [
+        "W0.0"
+      ],
+      "blocks_r0": true,
+      "estimate": "M",
+      "dod": [
+        "posts.jsonl or prep output under data/exports (local)"
+      ]
+    },
+    {
+      "id": "W0.2",
+      "title": "Annotate train set",
+      "epic": 1,
+      "status": "backlog",
+      "role": "PO",
+      "priority": "P0",
+      "depends_on": [
+        "W0.1"
+      ],
+      "blocks_r0": true,
+      "estimate": "L",
+      "notes": "Human-heavy density tags"
+    },
+    {
+      "id": "W0.3",
+      "title": "validate --min 800",
+      "epic": 1,
+      "status": "blocked",
+      "role": "AGT_DATA",
+      "priority": "P0",
+      "depends_on": [
+        "W0.2"
+      ],
+      "blocks_r0": true,
+      "estimate": "S",
+      "blocked_reason": "dep W0.0 archive; current 115 < 800 weight gate"
+    },
+    {
+      "id": "W0.4",
+      "title": "CONSTITUTION.md v0",
+      "epic": 4,
+      "status": "done",
+      "role": "AGT_INST",
+      "priority": "P1",
+      "depends_on": [],
+      "blocks_r0": false,
+      "estimate": "M",
+      "notes": "done 2026-07-20 docs/CONSTITUTION.md"
+    },
+    {
+      "id": "W0.5",
+      "title": "Live selftest baseline (prompt-only)",
+      "epic": 1,
+      "status": "done",
+      "role": "AGT_TEST",
+      "priority": "P1",
+      "depends_on": [],
+      "blocks_r0": false,
+      "estimate": "M",
+      "evidence": "logs/selftest/latest.json 12/12 overall\u22480.694; docs/MILESTONES.md",
+      "done_at": "2026-07-27T00:00:00+00:00",
+      "notes": "DONE \u2014 do not re-list READY. Can re-run without full archive."
+    },
+    {
+      "id": "W0.6",
+      "title": "First train adapter (operator data only)",
+      "epic": 1,
+      "status": "backlog",
+      "role": "AGT_TRAIN",
+      "priority": "P0",
+      "depends_on": [
+        "W0.3"
+      ],
+      "blocks_r0": true,
+      "estimate": "L"
+    },
+    {
+      "id": "W0.7",
+      "title": "Local inference path",
+      "epic": 1,
+      "status": "backlog",
+      "role": "AGT_TRAIN",
+      "priority": "P0",
+      "depends_on": [
+        "W0.6"
+      ],
+      "blocks_r0": true,
+      "estimate": "M"
+    },
+    {
+      "id": "W0.8",
+      "title": "Post-train chord + live selftest",
+      "epic": 7,
+      "status": "backlog",
+      "role": "KERNEL",
+      "priority": "P0",
+      "depends_on": [
+        "W0.7"
+      ],
+      "blocks_r0": true,
+      "estimate": "M"
+    },
+    {
+      "id": "SCRUM-001",
+      "title": "Scrum process + CLI for agents",
+      "epic": 8,
+      "status": "done",
+      "role": "KERNEL",
+      "priority": "P1",
+      "depends_on": [],
+      "blocks_r0": false,
+      "estimate": "M",
+      "dod": [
+        "docs/SCRUM.md",
+        "scrum/ tree",
+        "mycelia scrum status works"
+      ],
+      "assignee": "KERNEL",
+      "evidence": "docs/SCRUM.md;src/mycelial_republic/scrum/;scrum/",
+      "done_at": "2026-07-20T12:25:10.622815+00:00"
+    },
+    {
+      "id": "SCRUM-002",
+      "title": "Wire Mag optional [scrum] status chore",
+      "epic": 8,
+      "status": "done",
+      "role": "MAG",
+      "priority": "P2",
+      "depends_on": [
+        "SCRUM-001"
+      ],
+      "blocks_r0": false,
+      "estimate": "S",
+      "evidence": "chore exercised 2026-08-02: scrum status via republic CLI from queue/todo.md [x]",
+      "done_at": "2026-08-02T23:34:46.270232+00:00",
+      "assignee": "MAG"
+    },
+    {
+      "id": "INST-001",
+      "title": "Instrument bridge note (dashboard vs republic)",
+      "epic": 1,
+      "status": "done",
+      "role": "AGT_DOCS",
+      "priority": "P2",
+      "depends_on": [],
+      "blocks_r0": false,
+      "estimate": "S",
+      "evidence": "docs/INST_001_MAG_BRIDGE.md",
+      "done_at": "2026-07-27T00:00:00+00:00",
+      "notes": "DONE \u2014 Mag person office vs republic forest; residual never ships"
+    },
+    {
+      "id": "W0.0b",
+      "title": "Boot soil from exports (annotate without full zip)",
+      "epic": 1,
+      "status": "done",
+      "role": "PO",
+      "priority": "P1",
+      "depends_on": [],
+      "blocks_r0": false,
+      "estimate": "M",
+      "notes": "docs/BOOT_SOIL.md \u2014 practice density path; weight R0 still wants W0.0 or 800",
+      "evidence": "data/annotated/mirror_train.jsonl 115 rows; validate PASS at --min 100; annotate drift-check NONE 2026-08-02; density 22 high/93 med",
+      "done_at": "2026-08-02T23:34:46.226845+00:00",
+      "assignee": "MAG"
+    },
+    {
+      "id": "R1.W1.1",
+      "title": "Spore package script",
+      "epic": 2,
+      "status": "backlog",
+      "role": "AGT_DOCS",
+      "priority": "P2",
+      "depends_on": [
+        "W0.8"
+      ],
+      "blocks_r0": false,
+      "estimate": "M"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+# Seed Mirror — Sprint 0.3 training config (stub)
+# Point data at your annotated JSONL after Sprint 0.1.
+#
+# Steiniger reference recipes (Athena Saelis line — methods only):
+#   scaffolds/steiniger/training/train_saelis_8_13JUN2026.py  (Gemma-4 31B Unsloth)
+#   scaffolds/steiniger/training/train_saelis_6_1_31MAY2026b.py
+# Do not train the operator mirror on Saelis jsonl unless studying EPGI methods.
+# Operator data: data/annotated/mirror_train.jsonl
+
+base_model: "Qwen/Qwen2.5-7B-Instruct"  # or mistral/llama 8B-class of choice
+output_dir: "models/seed-mirror-r0"
+data_path: "data/annotated/mirror_train.jsonl"
+
+# QLoRA defaults (tune on your hardware)
+lora_r: 16
+lora_alpha: 32
+lora_dropout: 0.05
+target_modules: "all-linear"
+
+max_seq_length: 2048
+batch_size: 1
+grad_accum: 8
+learning_rate: 2.0e-4
+epochs: 2
+warmup_ratio: 0.03
+
+# Hybrid scaffold (Nacho Locus + Steiniger lattice structure)
+system_prompt_file: "scaffolds/system_prompt_v2.txt"
+# Optional structure references:
+#   scaffolds/steiniger/xylo/xylo_symmetry_breaking_v1_1.yml
+#   scaffolds/steiniger/athena/saelis_prompt_v8_13JUN2026.txt  (structure only)
+
+# Never upload private data by default
+report_to: "none"
+push_to_hub: false

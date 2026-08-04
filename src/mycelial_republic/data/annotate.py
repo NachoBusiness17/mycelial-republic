@@ -10,6 +10,9 @@ from pathlib import Path
 from mycelial_republic.data.schema import TrainingExample, KNOT_TAGS
 
 
+from mycelial_republic.cipher_v0 import detect_cipher_heuristics
+
+
 # Heuristic keyword maps — review manually; heuristics are not gospel.
 HEURISTICS: list[tuple[str, re.Pattern[str]]] = [
     ("chord", re.compile(r"strike the chord|chord strike|strike.?the.?chord", re.I)),
@@ -19,6 +22,8 @@ HEURISTICS: list[tuple[str, re.Pattern[str]]] = [
     ("parable", re.compile(r"parable|once there was|imagine a|marble and rubber", re.I)),
     ("audit", re.compile(r"\baudit\b|commitment hash|verifiable", re.I)),
     ("meta", re.compile(r"sovereign mirror|vector scaffold|GSTD|mirror protocol", re.I)),
+    ("cipher", re.compile(r"\b\d+\s*:\s*\d+\b|chapter\s+\d+.*(verse|line)|book cipher|index pattern", re.I)),
+    ("riddle", re.compile(r"\?.*\b(like|as if|metaphor|what am i)\b|\briddle\b", re.I)),
 ]
 
 
@@ -66,6 +71,12 @@ def run_annotate(inp: str, out: str, auto_heuristics: bool = True) -> int:
                 for t in heuristic_tags(text):
                     if t not in tags:
                         tags.append(t)
+                for t in detect_cipher_heuristics(text):
+                    if t not in tags and t in ("cipher", "riddle", "acrostic_candidate", "index_pattern"):
+                        # map detect tags into knot_tags where allowed
+                        knot = "cipher" if t in ("cipher", "index_pattern", "acrostic_candidate") else t
+                        if knot not in tags:
+                            tags.append(knot)
             signal = row.get("signal") or estimate_signal(text, tags)
             if signal == "daily" and "daily" not in tags:
                 tags.append("daily")

@@ -17,6 +17,8 @@ KNOT_TAGS = frozenset(
         "mycelial",  # network / replication / parallel construction
         "daily",  # ordinary voice (still high-signal)
         "meta",  # about the mirror / protocol itself
+        "cipher",  # encoded / index-pattern clue bead
+        "riddle",  # metaphor / question-form clue
     }
 )
 

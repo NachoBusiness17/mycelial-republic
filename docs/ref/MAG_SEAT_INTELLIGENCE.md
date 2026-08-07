@@ -158,6 +158,14 @@ tip: freeze BUILD first — see seat_card deepseek_api
 
 ---
 
+## Including VS Code Copilot + DeepSeek V4 BYOK
+
+Card id: `vscode_copilot_deepseek`  
+Runbook: `docs/ref/VSCODE_COPILOT_DEEPSEEK.md`  
+Extension: `Vizards.deepseek-v4-for-copilot` — DeepSeek in Copilot Chat model picker (same API models as Mag `deepseek`). Interactive IDE only; headless drain stays `deepseek_api`.
+
+---
+
 ## Including "you" (Cursor cloud / Composer)
 
 Card id: `cursor_cloud_agent` (or `cursor_composer`)

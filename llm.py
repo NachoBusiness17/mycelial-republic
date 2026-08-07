@@ -25,10 +25,19 @@ def _resolve_base() -> str:
 
 
 def _chat_http(
-    base: str, model: str, system: str, user: str, temperature: float, *, num_predict: int | None = None
+    base: str,
+    model: str,
+    system: str,
+    user: str,
+    temperature: float,
+    *,
+    num_predict: int | None = None,
+    timeout_seconds: float = 300.0,
 ) -> str:
     """Raw POST to Ollama /api/chat — no langchain required."""
-    text, _body = _chat_http_ex(base, model, system, user, temperature, num_predict=num_predict)
+    text, _body = _chat_http_ex(
+        base, model, system, user, temperature, num_predict=num_predict, timeout_seconds=timeout_seconds
+    )
     return text
 
 
@@ -40,6 +49,7 @@ def _chat_http_ex(
     temperature: float,
     *,
     num_predict: int | None = None,
+    timeout_seconds: float = 300.0,
 ) -> tuple[str, dict[str, Any]]:
     """Raw POST to Ollama /api/chat — returns (text, full response body)."""
     payload: dict[str, Any] = {
@@ -59,7 +69,7 @@ def _chat_http_ex(
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=600) as resp:
+    with urllib.request.urlopen(req, timeout=timeout_seconds) as resp:
         body = json.loads(resp.read().decode("utf-8"))
     content = body.get("message", {}).get("content")
     return (str(content) if content is not None else "", body)
@@ -72,6 +82,7 @@ def chat(
     temperature: float = 0.2,
     *,
     strict: bool = True,
+    timeout_seconds: float = 300.0,
 ) -> str:
     """Chat with role-mapped model. Logs role/model/ms/ok. Raises if model missing (strict)."""
     t0 = time.perf_counter()
@@ -84,7 +95,12 @@ def chat(
         try:
             from langchain_ollama import ChatOllama
 
-            llm = ChatOllama(model=model, temperature=temperature, base_url=base)
+            llm = ChatOllama(
+                model=model,
+                temperature=temperature,
+                base_url=base,
+                client_kwargs={"timeout": timeout_seconds},
+            )
             messages = [
                 ("system", system),
                 ("human", user),
@@ -103,7 +119,7 @@ def chat(
                 text = str(content)
         except ImportError:
             # langchain_ollama absent in this env (Hermes venv etc.) — raw HTTP fallback.
-            text = _chat_http(base, model, system, user, temperature)
+            text = _chat_http(base, model, system, user, temperature, timeout_seconds=timeout_seconds)
         ok = True
         return text
     except Exception as e:

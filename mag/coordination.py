@@ -204,6 +204,8 @@ def coordinate(
     launch: bool = True,
     background: bool = False,
     session_id: str | None = None,
+    force_provider: str | None = None,
+    force_seat: str | None = None,
 ) -> dict[str, Any]:
     """Classify depth, log activity, optionally launch the appropriate worker."""
     from mag.router import route
@@ -212,7 +214,7 @@ def coordinate(
     if not goal:
         return {"ok": False, "error": "empty goal"}
 
-    routed = route(goal, depth=depth)
+    routed = route(goal, depth=depth, force_seat=force_seat, force_provider=force_provider)
     if not routed.get("ok"):
         return {
             "ok": False,

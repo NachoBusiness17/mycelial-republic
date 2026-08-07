@@ -91,6 +91,7 @@
         <a class="dashboard-view-tab" href="/voice" data-dashboard-view="voice">Voice</a>
         <a class="dashboard-view-tab" href="?tab=chat" data-dashboard-view="chat">Talk</a>
         <a class="dashboard-view-tab" href="?tab=status" data-dashboard-view="status">Runs &amp; seats</a>
+        <a class="dashboard-view-tab" href="?tab=agents" data-dashboard-view="agents">Agents</a>
         <a class="dashboard-view-tab" href="?tab=orchestrate" data-dashboard-view="orchestrate">Capability lab</a>
         <a class="dashboard-view-tab" href="?tab=viewports" data-dashboard-view="viewports">Shared artifacts</a>
         <a class="dashboard-view-tab" href="/shell" target="_blank" rel="noopener">Shell ↗</a>
@@ -99,6 +100,7 @@
         <a class="dashboard-view-tab" href="?tab=ingest" data-dashboard-view="ingest">Research &amp; skills</a>
       </div>
       <div class="dashboard-view-group" data-dashboard-group="system">
+        <a class="dashboard-view-tab" href="?tab=systemmap" data-dashboard-view="systemmap">System map</a>
         <a class="dashboard-view-tab" href="?tab=stack" data-dashboard-view="stack">Health</a>
         <a class="dashboard-view-tab" href="?tab=featurelab" data-dashboard-view="featurelab">Feature Lab</a>
         <a class="dashboard-view-tab" href="?tab=blast" data-dashboard-view="blast">Learning</a>
@@ -1390,6 +1392,26 @@
       </div>
     </div>
 
+    <div class="win" data-win="agents" id="win-agents">
+      <div class="win-titlebar">
+        <span class="win-title">Agents — swarm control surface</span>
+        <span class="win-ctrls"><button type="button" class="win-min" title="minimize">_</button><button type="button" class="win-max" title="maximize">□</button><button type="button" class="win-close" title="close">×</button></span>
+      </div>
+      <div class="win-body">
+        <section id="panel-agents" class="panel pane-pad agents-panel">
+          <div class="pane-head">
+            <div>
+              <h2 class="pane-h">Agents</h2>
+              <p class="muted pane-sub">DeepSeek swarm launch, live steering, and group status as a dashboard control surface.</p>
+            </div>
+          </div>
+          <div style="height:100%;min-height:680px;">
+            <iframe id="agentsFrame" src="about:blank" title="Agents control surface" style="width:100%;height:100%;border:0;border-radius:10px;" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+          </div>
+        </section>
+      </div>
+    </div>
+
     <div class="win" data-win="featurelab" id="win-featurelab">
       <div class="win-titlebar">
         <span class="win-title">Feature Lab · test before graduation</span>
@@ -1486,6 +1508,66 @@
             <article class="stack-col stack-col-wide">
               <h3 class="stack-col-h">Outputs <span class="muted sm">— as REST/chronicle sees them</span></h3>
               <ul id="stackOutputs" class="stack-outputs"></ul>
+            </article>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div class="win" data-win="systemmap" id="win-systemmap">
+      <div class="win-titlebar">
+        <span class="win-title">System map — live autonomy snapshot</span>
+        <span class="win-ctrls">
+          <button type="button" class="win-min" title="minimize">_</button>
+          <button type="button" class="win-max" title="maximize">□</button>
+          <button type="button" class="win-close" title="close">×</button>
+        </span>
+      </div>
+      <div class="win-body">
+        <section id="panel-systemmap" class="panel pane-pad system-map-panel">
+          <nav class="local-view-nav" aria-label="System views">
+            <button type="button" class="btn ghost btn-sm" data-open-tab="stack">Health</button>
+            <button type="button" class="btn ghost btn-sm on" data-open-tab="systemmap">Map</button>
+            <button type="button" class="btn ghost btn-sm" data-open-tab="featurelab">Feature Lab</button>
+            <button type="button" class="btn ghost btn-sm" data-open-tab="flow">Economics</button>
+          </nav>
+          <div class="pane-head">
+            <div>
+              <h2 class="pane-h">System map</h2>
+              <p class="muted pane-sub" id="systemMapHeadline">Loading…</p>
+              <p class="honesty-note" id="systemMapHonesty">Live snapshot from CURRENT, nervous, inbox, improve, resonance, and direction files.</p>
+            </div>
+            <div class="row">
+              <input type="text" id="systemMapGoal" placeholder="Optional goal to refresh" style="min-width:16rem;background:var(--panel);color:var(--ink);border:1px solid var(--line);padding:0.35rem 0.5rem" />
+              <button type="button" class="btn ghost btn-sm" id="btnSystemMapReload">Reload</button>
+            </div>
+          </div>
+          <div class="stack-grid">
+            <article class="stack-col">
+              <h3 class="stack-col-h">Current</h3>
+              <div id="systemMapCurrent" class="stack-cards"></div>
+            </article>
+            <article class="stack-col">
+              <h3 class="stack-col-h">Nervous</h3>
+              <div id="systemMapNervous" class="stack-cards"></div>
+            </article>
+            <article class="stack-col stack-col-wide">
+              <h3 class="stack-col-h">Resonance &amp; next moves</h3>
+              <ul id="systemMapResonance" class="stack-outputs"></ul>
+            </article>
+          </div>
+          <div class="stack-grid" style="margin-top:1rem">
+            <article class="stack-col">
+              <h3 class="stack-col-h">Improve loop</h3>
+              <div id="systemMapImprove" class="stack-cards"></div>
+            </article>
+            <article class="stack-col">
+              <h3 class="stack-col-h">Direction</h3>
+              <div id="systemMapDirection" class="stack-cards"></div>
+            </article>
+            <article class="stack-col stack-col-wide">
+              <h3 class="stack-col-h">Tips &amp; routes</h3>
+              <ul id="systemMapTips" class="stack-outputs"></ul>
             </article>
           </div>
         </section>

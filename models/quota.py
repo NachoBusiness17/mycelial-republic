@@ -10,6 +10,7 @@ Reset periods: daily (UTC midnight), monthly (reset_day), none (unlimited).
 from __future__ import annotations
 
 import json
+import os
 from calendar import monthrange
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -237,6 +238,22 @@ def all_budgets() -> dict[str, Any]:
     }
 
 
+def remote_provider_policy() -> dict[str, Any]:
+    """Runtime policy for remote provider default lock behavior."""
+    disable_raw = str(os.environ.get("MAG_DISABLE_REMOTE_PROVIDER_LOCK", "") or "").strip().lower()
+    disabled = disable_raw in ("1", "true", "yes")
+    lock_raw = str(os.environ.get("MAG_REMOTE_PROVIDER_LOCK", "deepseek") or "").strip().lower()
+    lock = "" if disabled else lock_raw
+    return {
+        "schema": "remote_provider_policy.v1",
+        "enabled": bool(lock),
+        "lock_provider": lock or None,
+        "default_lock_provider": "deepseek",
+        "disable_env": "MAG_DISABLE_REMOTE_PROVIDER_LOCK",
+        "lock_env": "MAG_REMOTE_PROVIDER_LOCK",
+    }
+
+
 def pick_provider(
     job: str = "default",
     *,
@@ -249,6 +266,19 @@ def pick_provider(
     cfg = load_providers()
     never = set((cfg.get("defaults") or {}).get("never_remote_tiers") or ["T0", "T1"])
     order = prefer or (cfg.get("routing") or {}).get(job) or (cfg.get("defaults") or {}).get("prefer_order") or list_provider_ids()
+
+    # Cost guardrail: unless explicitly disabled, keep remote picks on a locked
+    # cheap provider so operators do not need to keep forcing it per request.
+    policy = remote_provider_policy()
+    lock = str(policy.get("lock_provider") or "")
+    local_preferred = "ollama" in order
+    if lock and tier not in never and not local_preferred:
+        ids = set(list_provider_ids())
+        if lock in ids:
+            order = [lock] + [pid for pid in order if pid != lock]
+            # DeepSeek lock gets explicit overmind fallback right after primary.
+            if lock == "deepseek" and "deepseek_overmind" in ids and "deepseek_overmind" not in order:
+                order.insert(1, "deepseek_overmind")
 
     candidates = []
     for pid in order:

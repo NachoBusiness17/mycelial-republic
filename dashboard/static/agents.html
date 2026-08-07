@@ -51,7 +51,7 @@ pre.log{background:#070c0f;border:1px solid #1c2f33;border-radius:6px;padding:10
     <textarea id="goal" placeholder="e.g. Draft a daily brief for yesterday's sessions, then file it."></textarea>
     <div class="row">
       <div style="flex:1"><label for="provider">Provider</label>
-        <select id="provider"><option value="deepseek">deepseek</option><option value="gemini">gemini</option><option value="openrouter">openrouter</option><option value="xai">xai</option><option value="groq">groq</option></select></div>
+        <select id="provider"><option value="deepseek">deepseek</option><option value="ollama">ollama (local)</option><option value="gemini">gemini</option><option value="openrouter">openrouter</option><option value="xai">xai</option><option value="groq">groq</option></select></div>
       <div style="flex:1"><label for="model">Model (opt)</label><input id="model" placeholder="default"/></div>
     </div>
     <div class="row">
@@ -60,9 +60,15 @@ pre.log{background:#070c0f;border:1px solid #1c2f33;border-radius:6px;padding:10
     </div>
     <div style="margin-top:12px">
       <button class="btn" id="btnSpawn">SPAWN</button>
+      <button class="btn" id="btnSwarm">SWARM</button>
       <button class="btn" id="btnHeal" title="Watchdog: mark dead died + auto-respawn (bounded)">AUTO-HEAL</button>
       <button class="btn ghost" id="btnReap">REAP STALE</button>
       <button class="btn ghost" id="btnRefresh">REFRESH</button>
+    </div>
+    <div style="margin-top:16px">
+      <label for="goals">Swarm goals (one per line)</label>
+      <textarea id="goals" placeholder="e.g. Draft a creative brief for the launch\nInvent 3 alternative hooks for the campaign\nSummarize the current dashboard architecture"></textarea>
+      <div class="sub" style="margin-top:8px">Use at least 2 goals. The swarm will spawn one task per line under the selected provider.</div>
     </div>
   </div>
   <div class="panel" style="flex:2 1 560px">
@@ -73,6 +79,18 @@ pre.log{background:#070c0f;border:1px solid #1c2f33;border-radius:6px;padding:10
     </table>
     <div class="empty" id="emptyRow">no tasks yet &#8212; spawn one above.</div>
   </div>
+</div>
+<div class="panel" style="margin-bottom:16px">
+  <h2>Swarm pipes</h2>
+  <div class="row" style="gap:12px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+    <button class="btn" id="btnRefreshPipes" type="button">REFRESH PIPES</button>
+    <span class="muted sm">Manage DeepSeek swarm pipes and broadcast steering commands.</span>
+  </div>
+  <table>
+    <thead><tr><th>pipe</th><th>status</th><th>tasks</th><th>done</th><th>failed</th><th>timeout</th><th>killed</th><th>actions</th></tr></thead>
+    <tbody id="pipeRows"></tbody>
+  </table>
+  <div class="empty" id="emptyPipes">no swarm pipes yet — launch one with SWARM.</div>
 </div>
 <div class="panel" id="logPanel" style="display:none">
   <h2>Log <span class="mono" id="logTitle"></span></h2>
@@ -85,6 +103,22 @@ if(/\bembed=1\b/.test(location.search))document.body.classList.add("embed");
 function toast(m,ok){const t=$("toast");t.textContent=m;t.style.display="block";t.style.background=ok?"#0f3b2f":"#3b120f";setTimeout(()=>t.style.display="none",3200)}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function fmtAge(ts){if(!ts)return"—";const s=Math.max(0,(Date.now()-new Date(ts).getTime())/1000);if(s<60)return Math.round(s)+"s";if(s<3600)return Math.round(s/60)+"m";return(s/3600).toFixed(1)+"h"}
+// Check provider budget and prompt operator when budget not ok.
+async function ensureProviderConfirmed(provider){
+  try{
+    const q = await api("GET","/api/v1/quota");
+    const rows = q.providers||[];
+    const p = rows.find(r => (r.provider||r.name||"") === provider || (r.provider||"") === provider);
+    if(!p) return true;
+    if(p.unlimited) return true;
+    if(p.budget_ok) return true;
+    // budget not ok: show details and require confirmation
+    const msg = `Provider ${p.name||provider} budget exhausted or not configured. Remaining calls=${p.remaining_calls}, remaining_tokens=${p.remaining_tokens}. Proceed?`;
+    return confirm(msg);
+  }catch(e){
+    return true; // best-effort: if quota check fails, allow
+  }
+}
 async function api(method,path,body){const r=await fetch(path,{method,headers:body?{"Content-Type":"application/json"}:undefined,body:body?JSON.stringify(body):undefined});let j;try{j=await r.json()}catch(e){j={}};if(!r.ok&&!j.ok)throw new Error(j.error||("HTTP "+r.status));return j}
 const TERM=["done","failed","timeout","stalled","killed","died"];
 function running(t){return !TERM.includes(t.status)}
@@ -108,10 +142,57 @@ tr.innerHTML='<td><span class="status '+esc(t.status)+'">'+esc(t.status)+'</span
 tb.appendChild(tr);}}
 async function spawnTask(){const goal=$("goal").value.trim();if(!goal){toast("goal required",false);return}
 const body={goal,provider:$("provider").value,timeout:parseInt($("timeout").value)||900};
+// quota check: warn before using cloud providers with exhausted budgets
+if(body.provider && body.provider !== "ollama"){
+  try{
+    const ok = await ensureProviderConfirmed(body.provider);
+    if(!ok){toast('spawn aborted by operator', false);return}
+  }catch(e){/* best-effort, ignore */}
+}
 if($("model").value.trim())body.model=$("model").value.trim();
 if($("tag").value.trim())body.tag=$("tag").value.trim();
 $("btnSpawn").disabled=true;
 try{const j=await api("POST","/api/v1/agents",body);toast("spawned "+j.task.task_id,true);$("goal").value="";await loadTasks()}catch(e){toast("spawn: "+e.message,false)}finally{$("btnSpawn").disabled=false}}
+async function swarmTasks(){const goals=$("goals").value.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);if(goals.length<2){toast("need at least 2 swarm goals",false);return}
+const body={goals,provider:$("provider").value,timeout:parseInt($("timeout").value)||900};
+// quota check for swarm: definitely confirm if provider budget is low
+if(body.provider && body.provider !== "ollama"){
+  try{
+    const ok = await ensureProviderConfirmed(body.provider);
+    if(!ok){toast('swarm aborted by operator', false);return}
+  }catch(e){/* ignore */}
+}
+if($("model").value.trim())body.model=$("model").value.trim();
+if($("tag").value.trim())body.tag=$("tag").value.trim();
+$("btnSwarm").disabled=true;
+try{const j=await api("POST","/api/v1/agents/fan",body);toast("swarm spawned "+j.pipe_id,true);$("goals").value="";await loadTasks();await loadPipes()}catch(e){toast("swarm: "+e.message,false)}finally{$("btnSwarm").disabled=false}}
+async function loadPipes(){try{const j=await api("GET","/api/v1/agents/pipes");renderPipes(j.pipes||[])}catch(e){toast("pipes: "+e.message,false)}}
+function renderPipes(pipes){const tb=$("pipeRows");tb.innerHTML="";$("emptyPipes").style.display=pipes.length?"none":"block";
+for(const p of pipes){const tr=document.createElement("tr");
+const tasks=p.task_ids?.length||0;
+const stats=p.merged||{};
+tr.innerHTML='<td><code>'+esc(p.pipe_id)+'</code></td>'+
+'<td><span class="status '+esc(p.status||"")+'">'+esc(p.status||"")+'</span></td>'+
+'<td>'+tasks+'</td>'+
+'<td>'+esc(String(stats.done||0))+'</td>'+
+'<td>'+esc(String(stats.failed||0))+'</td>'+
+'<td>'+esc(String(stats.timeout||0))+'</td>'+
+'<td>'+esc(String(stats.killed||0))+'</td>'+
+'<td class="actions">'+
+'<button class="btn ghost" onclick="viewPipe(\''+esc(p.pipe_id)+'\')">view</button>'+ 
+'<button class="btn ghost" onclick="collectPipe(\''+esc(p.pipe_id)+'\')">collect</button>'+ 
+'<button class="btn ghost" onclick="pipeCmd(\''+esc(p.pipe_id)+'\',\'steer\')">steer</button>'+ 
+'<button class="btn ghost" onclick="pipeCmd(\''+esc(p.pipe_id)+'\',\'pause\')">pause</button>'+ 
+'<button class="btn ghost" onclick="pipeCmd(\''+esc(p.pipe_id)+'\',\'continue\')">continue</button>'+ 
+'<button class="btn danger" onclick="killPipe(\''+esc(p.pipe_id)+'\')">kill</button>'+ 
+'</td>';
+tb.appendChild(tr);}}
+async function viewPipe(id){try{const j=await api("GET","/api/v1/agents/pipes/"+encodeURIComponent(id));toast("pipe " + id + " status loaded",true);console.log(j.pipe);alert(JSON.stringify(j.pipe, null, 2));}catch(e){toast("view pipe: "+e.message,false)}}
+async function collectPipe(id){try{const j=await api("POST","/api/v1/agents/pipes/"+encodeURIComponent(id)+"/collect",{wait:10,tail:50});toast("collected " + id + " status=" + (j.status||"ok"),true);console.log(j);await loadPipes();}catch(e){toast("collect pipe: "+e.message,false)}}
+async function killPipe(id){if(!confirm("kill pipe " + id + "?"))return;try{const j=await api("POST","/api/v1/agents/pipes/"+encodeURIComponent(id)+"/kill",{});toast("killed pipe " + id,true);await loadPipes();}catch(e){toast("kill pipe: "+e.message,false)}}
+async function pipeCmd(id,cmd){let body={cmd};
+if(cmd==="steer"){const ctx=prompt("Steer pipe " + id + " with context:");if(!ctx||!ctx.trim())return;body.context=ctx.trim();}
+try{const j=await api("POST","/api/v1/agents/pipes/"+encodeURIComponent(id)+"/cmd",body);toast(cmd+" sent to pipe " + id,true);console.log(j);}catch(e){toast("pipe cmd: "+e.message,false)}}
 async function killTask(id){if(!confirm("kill "+id+"?"))return;try{await api("POST","/api/v1/agents/"+id+"/kill",{});toast("killed "+id,true);await loadTasks()}catch(e){toast(e.message,false)}}
 async function sendCmd(id,cmd){let body={cmd};
 if(cmd==="steer"){const c=prompt("steer context for "+id+":");if(!c||!c.trim())return;body.context=c.trim()}
@@ -119,11 +200,14 @@ try{await api("POST","/api/v1/agents/"+id+"/cmd",body);toast(cmd+" sent to "+id,
 async function showLog(id){logTaskId=id;$("logPanel").style.display="block";$("logTitle").textContent=id;
 try{const j=await api("GET","/api/v1/agents/"+id+"/log?n=200");$("logBody").textContent=j.log||"(empty log)"}catch(e){$("logBody").textContent="err: "+e.message}}
 $("btnSpawn").onclick=spawnTask;
-$("btnHeal").onclick=async()=>{$("btnHeal").disabled=true;try{const j=await api("POST","/api/v1/agents/heal",{});toast("heal: reaped "+j.reaped+", respawned "+(j.respawned||[]).length,true);await loadTasks()}catch(e){toast(e.message,false)}finally{$("btnHeal").disabled=false}};
-$("btnReap").onclick=async()=>{try{const j=await api("POST","/api/v1/agents/reap",{});toast("reaped "+j.reaped+" stale",true);await loadTasks()}catch(e){toast(e.message,false)}};
+$("btnSwarm").onclick=swarmTasks;
+$("btnHeal").onclick=async()=>{$("btnHeal").disabled=true;try{const j=await api("POST","/api/v1/agents/heal",{});toast("heal: reaped "+j.reaped+", respawned "+(j.respawned||[]).length,true);await loadTasks();await loadPipes()}catch(e){toast(e.message,false)}finally{$("btnHeal").disabled=false}};
+$("btnReap").onclick=async()=>{try{const j=await api("POST","/api/v1/agents/reap",{});toast("reaped "+j.reaped+" stale",true);await loadTasks();await loadPipes()}catch(e){toast(e.message,false)}};
 $("btnRefresh").onclick=loadTasks;
+$("btnRefreshPipes").onclick=loadPipes;
 $("btnShowAll").onclick=()=>{showAll=!showAll;$("btnShowAll").textContent=showAll?"Show recent only":"Show all history";loadTasks()};
 loadTasks();
+loadPipes();
 // Real-time: SSE fleet stream; fall back to polling if the stream dies.
 let es=null;
 function openStream(){es=new EventSource("/api/v1/stream");

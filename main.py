@@ -275,6 +275,12 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Write face files only; exit code = body_ok",
     )
+    p_map = sub.add_parser(
+        "system-map",
+        help="Live autonomy map: CURRENT + nervous + inbox + improve + resonance + direction",
+    )
+    p_map.add_argument("--goal", default="", help="Optional goal hint for resonance and tips")
+    p_map.add_argument("--json", action="store_true", help="Emit raw system_map.v1 JSON")
     sub.add_parser(
         "lattice",
         help="Verkle lattice history + plan summary (JSON for desk / Grok)",
@@ -692,7 +698,7 @@ def main(argv: list[str] | None = None) -> int:
     p_coord.add_argument("--session", default="", help="Agent session id for delegate mode")
     p_route = sub.add_parser(
         "route",
-        help="Unified routing decision (seat, provider, mode) — honest failures",
+        help="Unified routing agent: classify + launch the routed seat or dry-run only",
     )
     p_route.add_argument("goal", nargs="+", help="What to route")
     p_route.add_argument(
@@ -700,6 +706,31 @@ def main(argv: list[str] | None = None) -> int:
         default="",
         choices=("overview", "plan", "heavy_code", "simple_code", "scut", ""),
         help="Force depth (else auto-classify)",
+    )
+    p_route.add_argument(
+        "--dry",
+        action="store_true",
+        help="Classify only; do not launch the routed seat",
+    )
+    p_route.add_argument(
+        "--background",
+        action="store_true",
+        help="When heavy_code routes to queue mode, enqueue on orchestrator instead of inline delegate",
+    )
+    p_route.add_argument(
+        "--session",
+        default="",
+        help="Agent session id for delegate mode",
+    )
+    p_route.add_argument(
+        "--force-provider",
+        default="",
+        help="Force a provider for the routing decision (e.g. deepseek, ollama, openrouter)",
+    )
+    p_route.add_argument(
+        "--force-seat",
+        default="",
+        help="Force a seat for the routing decision (e.g. local, remote, cursor, hermes)",
     )
     p_route.add_argument(
         "--local",
@@ -742,7 +773,7 @@ def main(argv: list[str] | None = None) -> int:
         help="Brain: deepseek (default) | ollama | openrouter | …",
     )
     p_agent.add_argument("--model", default="", help="Override model id")
-    p_agent.add_argument("--tier", choices=("T0", "T1", "T2", "T3"), default="T1")
+    p_agent.add_argument("--tier", choices=("T0", "T1", "T2", "T3"), default="T2")
     p_orc = sub.add_parser(
         "orchestrator",
         help="Supervise isolated sub-agent tasks (spawn/kill/reap) - one window, short-lived workers",
@@ -1939,6 +1970,19 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 print(format_glance_text(glance))
         return 0 if glance.get("ok") else 1
+    if args.cmd == "system-map":
+        from mag.system_map import build_system_map
+
+        res = build_system_map(goal=str(getattr(args, "goal", "") or "").strip(), write=not bool(getattr(args, "json", False)))
+        if getattr(args, "json", False):
+            print(json.dumps(res, indent=2, default=str))
+        else:
+            md = ROOT / "memory" / "system_map" / "latest.md"
+            if md.is_file():
+                print(md.read_text(encoding="utf-8"))
+            else:
+                print(json.dumps(res, indent=2, default=str))
+        return 0 if res.get("schema") == "system_map.v1" else 1
     if args.cmd == "lattice":
         from mag.lattice_dashboard import build_lattice_summary
 
@@ -3058,10 +3102,31 @@ def main(argv: list[str] | None = None) -> int:
             from mag.route import route_goal
 
             res = route_goal(goal, run_local=True)
-        else:
-            from mag.router import route
+        elif getattr(args, "dry", False):
+            from mag.operating_protocol import build_envelope
 
-            res = route(goal, depth=(args.depth or None))
+            res = build_envelope(
+                goal,
+                source="cli",
+                depth=(args.depth or None),
+                force_seat=(args.force_seat or None),
+                force_provider=(args.force_provider or None),
+                dry=True,
+            )
+        else:
+            from mag.coordination import coordinate
+
+            res = coordinate(
+                goal,
+                depth=(args.depth or None),
+                seat=(args.force_seat or "cli").strip() or "cli",
+                actor="cli",
+                launch=True,
+                background=bool(args.background),
+                session_id=(args.session or "").strip() or None,
+                force_provider=(args.force_provider or None),
+                force_seat=(args.force_seat or None),
+            )
         print(json.dumps(res, indent=2, default=str)[:8000])
         return 0 if res.get("ok") else 1
     if args.cmd == "decide":

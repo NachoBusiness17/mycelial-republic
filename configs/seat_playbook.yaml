@@ -42,10 +42,33 @@ seats:
       - "One goal per orchestrator queue row"
       - "Freeze BUILD spec before spawn — replan burns tokens"
       - "Prefer over Grok for build when spec is on disk"
+      - "Headless Mag: thinking disabled (providers.yaml) — empty-reply bug"
     public_prior:
       confidence: community_hearsay
       sources:
         - note: "Strong code/agent loop reputation 2025-2026; verify pricing on DeepSeek site"
+    economics_prior_usd: { input_per_m: 0.28, output_per_m: 0.42 }
+
+  # VS Code Copilot Chat + Vizards DeepSeek V4 BYOK (same API keys as Mag)
+  # Law: docs/ref/VSCODE_COPILOT_DEEPSEEK.md — interactive IDE seat, not headless drain
+  vscode_copilot_deepseek:
+    class: ide
+    provider: deepseek
+    billing: per_token
+    context_tokens: 1000000
+    sweet_spots: [interactive_edit, agent_mode, multi_file, tool_calling, pair_program]
+    avoid_for: [headless_improve, 24_7_drain, secrets_in_prompt, unfrozen_replan]
+    tips:
+      - "Model picker: DeepSeek V4 Flash (cheap) or Pro (agent/hard)"
+      - "Set key once: Command Palette → DeepSeek: Set API Key (OS keychain)"
+      - "Same models as configs/providers.yaml — not a second stack"
+      - "Thinking effort in picker; Mag headless keeps disable_thinking"
+      - "File outcomes to Mag trail/handoff — chat is not DNA"
+      - "Extension uses non-public Copilot APIs — pin VS Code if it breaks"
+    public_prior:
+      confidence: vendor_doc
+      sources:
+        - note: "https://github.com/Vizards/deepseek-v4-for-copilot — Copilot Chat provider plug-in"
     economics_prior_usd: { input_per_m: 0.28, output_per_m: 0.42 }
 
   grok_tui:

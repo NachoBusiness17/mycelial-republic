@@ -78,19 +78,52 @@ def fan_out(goals: list[str], *, provider: str = "deepseek",
     pipe_id = "p" + uuid.uuid4().hex[:10]
     tags = (tags or []) + [""] * max(0, len(goals) - len(tags or []))
     tasks: list[dict[str, Any]] = []
+    # Respect runtime local-only toggle and check per-provider budget before spawning many workers.
+    try:
+        from mag.local_mode import is_local_only
+
+        if is_local_only():
+            provider = "ollama"
+    except Exception:
+        pass
+    try:
+        if provider and provider != "ollama":
+            from models.quota import provider_budget
+
+            b = provider_budget(provider)
+            if not b.get("budget_ok"):
+                return {"ok": False, "error": f"provider {provider} quota exhausted or not configured", "budget": b}
+    except Exception:
+        pass
     for i, goal in enumerate(goals):
         rec = orc.spawn_task(goal, provider=provider, model=model,
                              timeout=timeout, tag=(tags[i] or "gpipes"))
         tasks.append(rec)
+    # Keep only successfully spawned workers in the pipe (a gated/failed spawn
+    # returns ok=False with no task_id; tracking it would crash status/collect).
+    spawned_goals = []
+    spawned_task_ids = []
+    spawned_tags = []
+    spawned_recs = []
+    for i, rec in enumerate(tasks):
+        tid = rec.get("task_id")
+        if tid:
+            spawned_goals.append(goals[i])
+            spawned_task_ids.append(tid)
+            spawned_tags.append(tags[i] if i < len(tags) else "gpipes")
+            spawned_recs.append(rec)
+    if not spawned_task_ids:
+        return {"ok": False, "error": "all workers failed to spawn", "tasks": tasks}
     pipe: dict[str, Any] = {
         "pipe_id": pipe_id,
         "created_at": _now(),
-        "goals": goals,
-        "task_ids": [t.get("task_id") for t in tasks],
-        "tags": list(tags),
+        "goals": spawned_goals,
+        "task_ids": spawned_task_ids,
+        "tags": spawned_tags,
         "provider": provider,
         "timeout_s": timeout,
         "status": "running",
+        "spawn_failures": [t for t in tasks if not t.get("task_id")],
         "tasks": tasks,
     }
     _save(pipe)
@@ -100,12 +133,33 @@ def fan_out(goals: list[str], *, provider: str = "deepseek",
 
 
 def pipe_status(pipe_id: str) -> dict[str, Any] | None:
-    """Pipe record with live per-task status refreshed from orchestrator task files."""
+    """Pipe record with live per-task status refreshed from orchestrator task files.
+
+    Reaps finished workers first: the gpipes launcher exits right after fan_out,
+    killing the orchestrator's daemon monitor threads, so tasks whose process has
+    exited would otherwise stay 'running' forever. Calling reap_completed() here
+    means status/collect/supervise all surface terminal states promptly.
+    """
     pipe = _load(pipe_id)
     if not pipe:
         return None
+    try:
+        orc.reap_completed()
+    except Exception:
+        pass  # reap is best-effort; never let it break status
     live = []
-    for tid in pipe.get("task_ids", []):
+    task_ids = pipe.get("task_ids", [])
+    tags = pipe.get("tags", [])
+    for i, tid in enumerate(task_ids):
+        if not tid:
+            live.append({
+                "task_id": None,
+                "status": "failed",
+                "exit_code": None,
+                "duration_s": None,
+                "tag": tags[i] if i < len(tags) else "",
+            })
+            continue
         t = orc.task_status(tid) or {}
         live.append({
             "task_id": tid,

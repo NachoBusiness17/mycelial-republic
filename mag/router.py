@@ -332,9 +332,12 @@ def route(
     tier = _tier_for_depth(d, secret=markers["secret"])
     why: list[str] = [f"depth={d}"]
 
+    force_seat = force_seat.strip().lower() if force_seat else None
+    force_provider = force_provider.strip().lower() if force_provider else None
+
     # --- explicit seats (markers win) ---
     if force_seat:
-        seat = force_seat.strip().lower()
+        seat = force_seat
         why.append(f"force_seat={seat}")
     elif markers["hermes"]:
         seat = "hermes"
@@ -364,7 +367,21 @@ def route(
     error: str | None = None
     hint = str(classified.get("token_hint") or "")
 
-    # --- planning: never auto-execute, never pick remote provider ---
+    if force_provider:
+        provider = force_provider
+        why.append(f"force_provider={provider}")
+        if provider == "ollama":
+            seat = "local"
+        elif provider in ("groq", "openrouter", "deepseek", "deepseek_overmind", "anthropic", "vast"):
+            seat = "remote"
+        else:
+            why.append("force_provider=unknown")
+
+    if force_seat and force_provider:
+        if force_seat == "local" and provider != "ollama":
+            why.append("force_seat_ignored_for_nonlocal_provider")
+        if force_seat == "remote" and provider == "ollama":
+            why.append("force_provider_ignored_for_remote_seat")
     if d in ("overview", "plan"):
         if not markers["priority"] and not sig.get("grok_budget_ok", True):
             ok = False
@@ -398,12 +415,15 @@ def route(
         )
 
     # --- local janitor ---
-    if seat == "local" or d in ("scut", "simple_code"):
+    if seat == "local" or (not force_seat and d in ("scut", "simple_code")):
         seat = "local"
         prefer = ["ollama", "groq", "openrouter", "deepseek"]
         pick = pick_provider(job=job if job != "default" else "scut", tier=tier, prefer=prefer)
         if pick.get("ok"):
-            provider = str(pick.get("provider") or "ollama")
+            if not force_provider:
+                provider = str(pick.get("provider") or "ollama")
+            else:
+                provider = force_provider
             if provider != "ollama":
                 seat = "remote"
                 why.append(f"pick={provider}")

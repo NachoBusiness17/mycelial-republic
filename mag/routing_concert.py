@@ -189,9 +189,9 @@ def run_concert_step(plan: dict[str, Any], *, step_order: int, dry: bool = False
 
             result["output"] = route_intent(goal, dry=False)
         elif phase == "scout":
-            from mag.nervous_system import nervous_glance
+            from mag.nervous_system import build_glance
 
-            result["output"] = nervous_glance()
+            result["output"] = build_glance(write=False)
         elif phase in ("execute", "conductor"):
             from mag.coordination import coordinate
 

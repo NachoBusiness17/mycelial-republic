@@ -448,7 +448,7 @@ const DASHBOARD_VIEW_SECTION = {
   ideas: "projects",
   chat: "run", status: "run", orchestrate: "run", viewports: "run",
   ingest: "library",
-  stack: "system", blast: "system", flow: "system", board: "system",
+  systemmap: "system", stack: "system", blast: "system", flow: "system", board: "system",
 };
 const DASHBOARD_SECTION_DEFAULT = {
   home: "home", projects: "ideas", history: "sessions", run: "chat", library: "ingest", system: "stack",
@@ -568,6 +568,7 @@ function setTab(name) {
   }
   if (name === "ingest") loadIngest();
   if (name === "board") loadBoard();
+  if (name === "systemmap") loadSystemMap();
   if (name === "visual") loadVisual();
   if (name === "ideas") loadIdeas();
   if (name === "status") startStatusPoll();
@@ -6936,6 +6937,90 @@ async function loadStack() {
   }
 }
 
+async function loadSystemMap() {
+  const head = $("#systemMapHeadline");
+  const goalEl = $("#systemMapGoal");
+  try {
+    const goal = goalEl ? String(goalEl.value || "").trim() : "";
+    const q = goal ? `?goal=${encodeURIComponent(goal)}&write=0` : "?write=0";
+    const j = await getJSON(`/api/v1/system-map${q}`);
+    if (head) {
+      const current = j.current || {};
+      head.textContent = `${current.status || "unknown"} · ${current.route || "route pending"} · ${j.goal ? `goal ${j.goal}` : "live"}`;
+    }
+    if ($("#systemMapCurrent")) {
+      const current = j.current || {};
+      const rows = [
+        ["Path", current.path || "—"],
+        ["Exists", current.exists ? "yes" : "no"],
+        ["Status", current.status || "—"],
+        ["Route", current.route || "—"],
+        ["Next", current.next || "—"],
+        ["Blockers", (current.blockers || []).join(" · ") || "—"],
+      ];
+      $("#systemMapCurrent").innerHTML = rows.map(([k, v]) => `<div class="stack-card"><div class="stack-card-top"><strong>${esc(k)}</strong></div><div class="stack-card-probe muted sm">${esc(v)}</div></div>`).join("");
+    }
+    if ($("#systemMapNervous")) {
+      const n = j.nervous || {};
+      const body = n.body || {};
+      const rows = [
+        ["Dashboard", body.dashboard_8765 ? "up" : "down"],
+        ["Ollama", body.ollama_11434 ? "up" : "down"],
+        ["Multi-smoke", body.multi_smoke_ok ? "pass" : "needs run"],
+        ["Desk trust", body.desk_trust || "—"],
+        ["Keys", body.keys_present || "—"],
+      ];
+      $("#systemMapNervous").innerHTML = rows.map(([k, v]) => `<div class="stack-card"><div class="stack-card-top"><strong>${esc(k)}</strong></div><div class="stack-card-probe muted sm">${esc(v)}</div></div>`).join("");
+    }
+    if ($("#systemMapResonance")) {
+      const cards = (j.resonance?.cards || []).slice(0, 5);
+      const items = [];
+      if (j.resonance?.preview) items.push(`<li>${esc(j.resonance.preview)}</li>`);
+      items.push(`<li class="muted">Result: ${esc(j.resonance?.result?.written ? "written" : j.resonance?.result?.error || "skipped")}</li>`);
+      cards.forEach((c) => {
+        items.push(`<li><strong>${esc(c.kind || "card")}</strong> · ${esc(c.text || c.title || "")}</li>`);
+      });
+      $("#systemMapResonance").innerHTML = items.join("") || `<li class="muted">No resonance cards yet</li>`;
+    }
+    if ($("#systemMapImprove")) {
+      const improve = j.improve || {};
+      const rows = [
+        ["Trail", improve.path || "—"],
+        ["Last event", improve.last_event || "—"],
+        ["Last ts", improve.last_ts || "—"],
+        ["Lines", improve.lines ?? 0],
+        ["Pending hints", j.pending_hints?.length ?? 0],
+      ];
+      $("#systemMapImprove").innerHTML = rows.map(([k, v]) => `<div class="stack-card"><div class="stack-card-top"><strong>${esc(k)}</strong></div><div class="stack-card-probe muted sm">${esc(v)}</div></div>`).join("");
+    }
+    if ($("#systemMapDirection")) {
+      const direction = j.direction || {};
+      const rows = [
+        ["Proposal", direction.proposal?.path || "—"],
+        ["Compass", direction.compass?.path || "—"],
+        ["Constitution", direction.constitution?.path || "—"],
+        ["Hand-off", direction.hand_off?.path || "—"],
+      ];
+      $("#systemMapDirection").innerHTML = rows.map(([k, v]) => `<div class="stack-card"><div class="stack-card-top"><strong>${esc(k)}</strong></div><div class="stack-card-probe muted sm">${esc(v)}</div></div>`).join("");
+    }
+    if ($("#systemMapTips")) {
+      const tips = (j.tips || []).slice(0, 6);
+      const routes = j.routes || {};
+      const lines = [
+        ...tips.map((t) => `<li>${esc(t)}</li>`),
+        `<li><strong>Route</strong> · ${esc(routes.route_cmd || "—")}</li>`,
+        `<li><strong>Agent</strong> · ${esc(routes.agent_cmd || "—")}</li>`,
+        `<li><strong>Queue</strong> · ${esc(routes.queue_cmd || "—")}</li>`,
+        `<li><strong>Drain</strong> · ${esc(routes.drain_cmd || "—")}</li>`,
+      ];
+      $("#systemMapTips").innerHTML = lines.join("");
+    }
+  } catch (e) {
+    if (head) head.textContent = `System map offline — ${e.message || e}`;
+    if ($("#systemMapCurrent")) $("#systemMapCurrent").innerHTML = `<p class="muted">${esc(String(e.message || e))}</p>`;
+  }
+}
+
 let stackTimer = null;
 function startStackPoll() {
   if (stackTimer) return;
@@ -8320,6 +8405,7 @@ async function refresh() {
     } else if (active === "ideas") await loadIdeas();
     else if (active === "status") await loadStatus();
     else if (active === "stack") await loadStack();
+    else if (active === "systemmap") await loadSystemMap();
     else if (active === "featurelab") await loadFeatureLab();
     else if (active === "chronicle") await loadChronicle();
     else if (active === "diary") await loadDiary();
@@ -8498,6 +8584,13 @@ async function bind() {
   $("#btnIdeaReopen")?.addEventListener("click", () => patchIdeaStatus("open"));
   $("#btnStatusReload")?.addEventListener("click", () => loadStatus());
   $("#btnStackReload")?.addEventListener("click", () => loadStack());
+  $("#btnSystemMapReload")?.addEventListener("click", () => loadSystemMap());
+  $("#systemMapGoal")?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      loadSystemMap();
+    }
+  });
   $("#btnFeatureLabReload")?.addEventListener("click", () => loadFeatureLab());
   $("#btnSchedPause")?.addEventListener("click", () => schedulerAction("steer", { cmd: "!pause" }));
   $("#btnSchedContinue")?.addEventListener("click", () => schedulerAction("steer", { cmd: "!continue" }));

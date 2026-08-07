@@ -8,6 +8,7 @@ import json
 import os
 import re
 import time
+import uuid
 from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import unquote
@@ -377,6 +378,152 @@ def h_post_governance(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[
 
     out["governance"] = build_governance()
     return 200, out
+
+
+def h_governance_auto_steer_add(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Persist auto-steer rules (cycle-0: contract + storage, execution loop later)."""
+    data = dict(body or {})
+    trigger = str(data.get("trigger") or "").strip()
+    action = str(data.get("action") or "").strip()
+    if not trigger or not action:
+        return _err(400, "trigger and action required", code="INVALID_PAYLOAD", retryable=False)
+    try:
+        threshold = int(data.get("threshold") or 0)
+    except (TypeError, ValueError):
+        threshold = 0
+    rec = {
+        "schema": "overseer.auto_steer_policy.v1",
+        "policy_id": "pol-" + uuid.uuid4().hex[:8],
+        "trigger": trigger,
+        "threshold": threshold,
+        "action": action,
+        "chain_scope": str(data.get("chain_scope") or "global"),
+        "enabled": True,
+        "installed_at": time.time(),
+    }
+    p = ROOT / "memory" / "governance" / "auto_steer_policies.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    rows: list[dict[str, Any]] = []
+    if p.is_file():
+        try:
+            rows = json.loads(p.read_text(encoding="utf-8"))
+        except Exception:
+            rows = []
+    rows.append(rec)
+    p.write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
+    return 200, {"ok": True, "schema": "overseer.auto_steer_ack.v1", "data": rec}
+
+
+def h_governance_steering_log(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag import pigeonhole as ph
+
+    try:
+        limit = max(1, min(int(p.get("limit") or 100), 2000))
+    except (TypeError, ValueError):
+        limit = 100
+    events = ph.steering_log(limit=limit)
+    return 200, {"ok": True, "schema": "overseer.steering_log.v1", "data": {"events": events}}
+
+
+def h_overseer_events(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Tabbed event feed for UI surfaces (route/steer/checkpoint/all)."""
+    from mag import memory_events as me
+
+    tab = str(p.get("tab") or "all").strip().lower()
+    try:
+        limit = max(1, min(int(p.get("limit") or 60), 500))
+    except (TypeError, ValueError):
+        limit = 60
+    prefix = None
+    if tab == "route":
+        prefix = "route."
+    elif tab == "steer":
+        prefix = "steer."
+    elif tab == "checkpoint":
+        prefix = "checkpoint."
+    elif tab not in ("all", "timeline"):
+        return _err(400, "tab must be all|timeline|route|steer|checkpoint")
+
+    events = me.recent_events(limit=limit, event_kind_prefix=prefix)
+    return 200, {
+        "ok": True,
+        "schema": "overseer.events.v1",
+        "data": {
+            "tab": tab,
+            "count": len(events),
+            "events": events,
+        },
+    }
+
+
+def h_overseer_manifest(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Overseer bard manifest for tabbed event UI and invocation flavor."""
+    from mag import memory_events as me
+    from mag import pigeonhole as ph
+
+    try:
+        limit = max(20, min(int(p.get("limit") or 200), 1000))
+    except (TypeError, ValueError):
+        limit = 200
+
+    all_events = me.recent_events(limit=limit)
+    route_n = sum(1 for e in all_events if str(e.get("event_kind") or "").startswith("route."))
+    steer_n = sum(1 for e in all_events if str(e.get("event_kind") or "").startswith("steer."))
+    checkpoint_n = sum(1 for e in all_events if str(e.get("event_kind") or "").startswith("checkpoint."))
+    steering_log_n = len(ph.steering_log(limit=limit))
+
+    tabs = [
+        {
+            "id": "timeline",
+            "label": "Timeline",
+            "count": len(all_events),
+            "api": "/api/v1/overseer/events?tab=all",
+            "layman": "Everything recently remembered by the overseer.",
+        },
+        {
+            "id": "route",
+            "label": "Routing",
+            "count": route_n,
+            "api": "/api/v1/overseer/events?tab=route",
+            "layman": "Why goals were sent to local, deepseek, or wait lanes.",
+        },
+        {
+            "id": "steer",
+            "label": "Steering",
+            "count": steer_n,
+            "api": "/api/v1/overseer/events?tab=steer",
+            "layman": "Accepted/received/applied steering lifecycle.",
+        },
+        {
+            "id": "checkpoint",
+            "label": "Checkpoints",
+            "count": checkpoint_n,
+            "api": "/api/v1/overseer/events?tab=checkpoint",
+            "layman": "Compact summaries at stable decision boundaries.",
+        },
+        {
+            "id": "steering_log",
+            "label": "Steering Log",
+            "count": steering_log_n,
+            "api": "/api/v1/governance/steering-log",
+            "layman": "Global knot steering trail across workers.",
+        },
+    ]
+
+    return 200, {
+        "ok": True,
+        "schema": "overseer.manifest.v1",
+        "data": {
+            "name": "Overseer Bard",
+            "invocation": {
+                "id": "strike_the_chord",
+                "text": "See it. Refuse drift. File it. Steer it.",
+            },
+            "tabs": tabs,
+            "default_tab": "timeline",
+            "event_feed_api": "/api/v1/overseer/events",
+        },
+    }
 
 
 def h_operator_inbox(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
@@ -1008,7 +1155,7 @@ def h_router_status(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int,
     # --- connections (providers) ---
     try:
         from models.providers import status_table, load_providers
-        from models.quota import all_budgets
+        from models.quota import all_budgets, remote_provider_policy
 
         st = status_table()
         budgets = {b.get("provider"): b for b in (all_budgets().get("providers") or [])}
@@ -1051,6 +1198,7 @@ def h_router_status(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int,
         connections.sort(key=lambda r: (0 if r["live"] else 1, -(r["pct_used"] or 0), r["id"]))
         out["connections"] = connections
         out["prefer_order"] = prefer
+        out["provider_policy"] = remote_provider_policy()
         out["n_live"] = sum(1 for c in connections if c["live"])
         out["n_remote_live"] = sum(1 for c in connections if c["live"] and not c["local"])
     except Exception as e:
@@ -1279,9 +1427,42 @@ def h_coordination_post(_p: dict[str, str], body: dict[str, Any] | None) -> tupl
     return 200, {"ok": True, "activity": row}
 
 
+def h_coordination_gather(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Gather compact snapshots for multiple workers for overseer decisions."""
+    from mag.orchestrator import task_status
+
+    data = dict(body or {})
+    task_ids = [str(t).strip() for t in (data.get("task_ids") or []) if str(t).strip()]
+    if not task_ids:
+        return _err(400, "task_ids required", code="INVALID_PAYLOAD", retryable=False)
+    snapshots: list[dict[str, Any]] = []
+    for tid in task_ids:
+        t = task_status(tid)
+        if not t:
+            snapshots.append({"task_id": tid, "ok": False, "error": "TASK_NOT_FOUND"})
+            continue
+        snapshots.append(
+            {
+                "task_id": tid,
+                "ok": True,
+                "chain_id": str(t.get("chain_id") or tid),
+                "goal": str(t.get("goal") or "")[:220],
+                "phase": str(t.get("phase") or t.get("status") or "unknown"),
+                "stalled": bool(t.get("alive") is False),
+                "recent_outcome": str(t.get("detail") or "")[:220],
+            }
+        )
+    return 200, {
+        "ok": True,
+        "schema": "overseer.gather_response.v1",
+        "data": {"chain_id": str(data.get("chain_id") or task_ids[0]), "snapshots": snapshots},
+    }
+
+
 def h_route(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
     """Unified routing decision — classify + seat + provider + honest failure."""
     from mag.operating_protocol import build_envelope
+    from mag.fork_router import detect_fork
 
     data = dict(body or {})
     goal = str(data.get("goal") or data.get("question") or "").strip()
@@ -1298,6 +1479,9 @@ def h_route(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]
         force_seat=force_seat,
         force_provider=force_provider,
     )
+    current_goal = str(data.get("current_goal") or data.get("active_goal") or "").strip()
+    if data.get("include_fork", True) is not False:
+        envelope["fork_decision"] = detect_fork(goal, current_goal=current_goal)
     res = (envelope.get("decision") or {}).get("route") or {}
     launch = data.get("launch", False)
     if isinstance(launch, str):
@@ -1313,6 +1497,8 @@ def h_route(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]
             launch=True,
             background=bool(data.get("background")),
             session_id=str(data.get("session_id") or "").strip() or None,
+            force_seat=force_seat,
+            force_provider=force_provider,
         )
         return (200 if exec_res.get("ok") else 500), {"protocol": envelope, "route": res, "execution": exec_res}
     return 200, envelope
@@ -1685,6 +1871,17 @@ def h_nervous(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]
     from mag.nervous_system import build_glance
 
     return 200, build_glance(write=True)
+    
+def h_system_map(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Live autonomy map — current state, nervous system, improve, resonance, inbox."""
+    from mag.system_map import build_system_map
+
+    data = dict(body or {})
+    goal = str(data.get("goal") or _p.get("goal") or "").strip()
+    write = data.get("write", True)
+    if isinstance(write, str):
+        write = write.lower() not in ("0", "false", "no")
+    return 200, build_system_map(goal=goal, write=bool(write))
 
 
 def h_display(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
@@ -2192,6 +2389,34 @@ def h_quota(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
     return 200, all_budgets()
 
 
+def h_local_only_get(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Return current local-only runtime setting."""
+    try:
+        from mag.local_mode import is_local_only
+
+        return _ok({"local_only": bool(is_local_only())})
+    except Exception as e:
+        return _err(500, f"failed to read local-only: {e}")
+
+
+def h_local_only_post(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Set the local-only runtime toggle via POST { local_only: true|false }."""
+    data = dict(_b or {})
+    if "local_only" not in data:
+        return _err(400, "local_only boolean required in body")
+    try:
+        val = bool(data.get("local_only"))
+        from mag.local_mode import set_local_only, clear_local_only
+
+        if val:
+            set_local_only(True)
+        else:
+            clear_local_only()
+        return _ok({"local_only": val})
+    except Exception as e:
+        return _err(500, f"failed to set local-only: {e}")
+
+
 def h_economy(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
     from mag.token_economy import economy_snapshot, load_chat_system_prompt
 
@@ -2643,6 +2868,51 @@ def h_tangents(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict
     return 200, list_tangents(limit=30)
 
 
+def h_fork_detect(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Fork decision contract for an utterance and optional active-goal context."""
+    from mag.fork_router import detect_fork
+
+    data = body or {}
+    goal = str(data.get("goal") or data.get("question") or data.get("q") or "").strip()
+    if not goal:
+        return 400, {"ok": False, "error": "goal required"}
+    current_goal = str(data.get("current_goal") or data.get("active_goal") or "").strip()
+    allow_auto = bool(data.get("allow_auto"))
+    return 200, detect_fork(goal, current_goal=current_goal, allow_auto=allow_auto)
+
+
+def h_fork_confirm(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Create a fork artifact and optionally spawn a child task."""
+    from mag.fork_router import confirm_fork
+
+    data = body or {}
+    goal = str(data.get("goal") or data.get("question") or data.get("q") or "").strip()
+    if not goal:
+        return 400, {"ok": False, "error": "goal required"}
+    current_goal = str(data.get("current_goal") or data.get("active_goal") or "").strip()
+    strategy = str(data.get("strategy") or "").strip() or None
+    spawn = bool(data.get("spawn"))
+    provider = str(data.get("provider") or "deepseek").strip() or "deepseek"
+    try:
+        timeout = max(60, min(int(data.get("timeout") or 900), 7200))
+    except (TypeError, ValueError):
+        timeout = 900
+    tag = str(data.get("tag") or "fork").strip() or "fork"
+    decision = data.get("decision") if isinstance(data.get("decision"), dict) else None
+    res = confirm_fork(
+        goal,
+        current_goal=current_goal,
+        decision=decision,
+        strategy=strategy,
+        spawn=spawn,
+        provider=provider,
+        timeout=timeout,
+        tag=tag,
+    )
+    code = 200 if res.get("ok") else 422
+    return code, res
+
+
 def h_post_tangent(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
     """Queue a background tangent (janitor/Gemini). Optional immediate run."""
     from mag.tangent import enqueue, process_one
@@ -2915,6 +3185,31 @@ def h_agents_spawn(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int
         return 500, {"ok": False, "error": str(e)}
 
 
+def h_agents_fan(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Spawn a swarm of sub-agents: {goals, provider?, model?, timeout?, tag?}."""
+    from mag.gpipes import fan_out
+
+    data = body or {}
+    goals = [str(g).strip() for g in (data.get("goals") or []) if str(g).strip()]
+    if not goals:
+        return 400, {"ok": False, "error": "goals required"}
+    if len(goals) < 2:
+        return 400, {"ok": False, "error": "provide at least two goals for a swarm"}
+    provider = str(data.get("provider") or "deepseek").strip() or "deepseek"
+    model = str(data.get("model") or "").strip() or None
+    try:
+        timeout = max(60, min(int(data.get("timeout") or 900), 7200))
+    except (TypeError, ValueError):
+        timeout = 900
+    tag = str(data.get("tag") or "").strip()
+    tags = [tag] * len(goals) if tag else [""] * len(goals)
+    try:
+        pipe = fan_out(goals, provider=provider, model=model, timeout=timeout, tags=tags)
+        return (200 if pipe.get("ok") else 500), pipe
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)}
+
+
 def h_agent_one(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
     """Live task status incl. heartbeat age + agent-reported phase."""
     from mag.orchestrator import task_status
@@ -2975,6 +3270,162 @@ def h_agent_cmd(p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, di
         ph.post_cmd(tid, cmd)
         return 200, {"ok": True, "sent": cmd, "task_id": tid}
     return 400, {"ok": False, "error": "cmd must be steer|pause|continue|escape"}
+
+
+def h_agent_state_snapshot(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Compact state used by overseer before sending steer commands."""
+    from mag.orchestrator import task_status
+
+    tid = p.get("id") or ""
+    if not tid:
+        return _err(400, "task id required", code="INVALID_PAYLOAD", retryable=False)
+    t = task_status(tid)
+    if not t:
+        return _err(404, "no such task", code="TASK_NOT_FOUND", retryable=False)
+    snapshot = {
+        "task_id": tid,
+        "chain_id": str(t.get("chain_id") or tid),
+        "goal": str(t.get("goal") or ""),
+        "phase": str(t.get("phase") or t.get("status") or "unknown"),
+        "stalled": bool(t.get("alive") is False),
+        "doctor_verdict": str(t.get("doctor_verdict") or "unknown"),
+        "freeze_state": str(t.get("freeze_state") or "unknown"),
+        "last_results": [str(t.get("detail") or "")[:240]],
+    }
+    return 200, {"ok": True, "schema": "overseer.state_snapshot.v1", "data": snapshot}
+
+
+def h_agent_steer_post(p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """API-first steer with accepted steer_id and ack window."""
+    from mag.orchestrator import task_status
+    from mag import pigeonhole as ph
+
+    tid = p.get("id") or ""
+    data = dict(body or {})
+    if not tid:
+        return _err(400, "task id required", code="INVALID_PAYLOAD", retryable=False)
+    if not task_status(tid):
+        return _err(404, "no such task", code="TASK_NOT_FOUND", retryable=False)
+    ctx = str(data.get("context") or "").strip()
+    if not ctx:
+        return _err(400, "context required", code="INVALID_PAYLOAD", retryable=False)
+    source_tier = str(data.get("source_tier") or "E0").strip()[:20]
+    reason = str(data.get("reason") or "overseer steer").strip()[:200]
+    steer_id = ph.post_steer(tid, ctx, reason=reason, source_tier=source_tier)
+    try:
+        ack_due_s = max(5, min(int(data.get("ack_due_s") or 30), 600))
+    except (TypeError, ValueError):
+        ack_due_s = 30
+    return 200, {
+        "ok": True,
+        "schema": "overseer.steer_accept.v1",
+        "data": {
+            "steer_id": steer_id,
+            "accepted_at": time.time(),
+            "target_task_id": tid,
+            "ack_due_s": ack_due_s,
+            "chain_id": str(data.get("chain_id") or tid),
+        },
+    }
+
+
+def h_agent_steer_status(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Status for a specific steer_id (accepted/received/applied/etc)."""
+    from mag import pigeonhole as ph
+
+    tid = p.get("id") or ""
+    steer_id = p.get("steer_id") or ""
+    if not tid or not steer_id:
+        return _err(400, "task id and steer_id required", code="INVALID_PAYLOAD", retryable=False)
+    row = ph.steer_status(tid, steer_id)
+    if not row:
+        return _err(404, "steer status not found", code="STEER_NOT_FOUND", retryable=True)
+    return 200, {
+        "ok": True,
+        "schema": "overseer.steer_status.v1",
+        "data": {
+            "steer_id": steer_id,
+            "status": str(row.get("status") or "accepted"),
+            "applied_at": row.get("ts"),
+            "phase_at_apply": row.get("phase_at_apply") or row.get("phase") or "",
+            "applied_by": "agent" if str(row.get("status") or "") == "applied" else "mailbox",
+            "error": row.get("error") or "",
+        },
+    }
+
+
+def h_agents_pipes(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.gpipes import list_pipes
+
+    return 200, {"ok": True, "pipes": list_pipes(limit=100)}
+
+
+def h_agents_pipe_one(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.gpipes import pipe_status
+
+    pid = p.get("id") or ""
+    pipe = pipe_status(pid)
+    if not pipe:
+        return 404, {"ok": False, "error": "no such pipe"}
+    return 200, {"ok": True, "pipe": pipe}
+
+
+def h_agents_pipe_collect(p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.gpipes import collect
+
+    pid = p.get("id") or ""
+    try:
+        wait = max(0, min(int((body or {}).get("wait") or 0), 60))
+    except (TypeError, ValueError):
+        wait = 0
+    try:
+        tail = max(1, min(int((body or {}).get("tail") or 15), 200))
+    except (TypeError, ValueError):
+        tail = 15
+    res = collect(pid, wait=wait, tail=tail)
+    return (200 if res.get("ok") else 404), res
+
+
+def h_agents_pipe_kill(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.gpipes import kill_pipe
+
+    pid = p.get("id") or ""
+    res = kill_pipe(pid)
+    return (200 if res.get("ok") else 404), res
+
+
+def h_agents_pipe_cmd(p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.gpipes import pipe_status
+    from mag import pigeonhole as ph
+
+    pid = p.get("id") or ""
+    pipe = pipe_status(pid)
+    if not pipe:
+        return 404, {"ok": False, "error": "no such pipe"}
+    data = body or {}
+    cmd = str(data.get("cmd") or "").strip().lower()
+    if not cmd:
+        return 400, {"ok": False, "error": "cmd required"}
+    sent = []
+    errors = []
+    for tid in pipe.get("task_ids", []):
+        try:
+            if cmd == "steer":
+                ctx = str(data.get("context") or data.get("goal") or "").strip()
+                if not ctx:
+                    return 400, {"ok": False, "error": "steer requires context"}
+                ph.post_steer(tid, ctx)
+            elif cmd in ("pause", "continue", "escape"):
+                ph.post_cmd(tid, cmd)
+            else:
+                return 400, {"ok": False, "error": "cmd must be steer|pause|continue|escape"}
+            sent.append(tid)
+        except Exception as exc:
+            errors.append({"task_id": tid, "error": str(exc)})
+    out = {"ok": True, "sent": sent, "errors": errors, "pipe_id": pid}
+    if errors:
+        out["ok"] = False
+    return (200 if sent else 400), out
 
 
 def h_api_index(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
@@ -3043,10 +3494,14 @@ def h_api_index(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dic
             # --- Sub-agent fleet (orchestrator) ---
             "GET /api/v1/agents": "List sub-agent tasks (newest first)",
             "POST /api/v1/agents": "Spawn sub-agent {goal, provider?, model?, timeout?, tag?}",
+            "POST /api/v1/agents/fan": "Spawn a swarm of sub-agents {goals, provider?, model?, timeout?, tag?}",
             "GET /api/v1/agents/{id}": "Live task status (heartbeat age, phase)",
+            "GET /api/v1/agents/{id}/state-snapshot": "Compact overseer snapshot (goal, phase, stalled, chain_id)",
             "GET /api/v1/agents/{id}/log": "Tail task log ?n=50",
             "POST /api/v1/agents/{id}/kill": "Kill task (process tree)",
             "POST /api/v1/agents/{id}/cmd": "Live knot cmd: steer|pause|continue|escape",
+            "POST /api/v1/agents/{id}/steer": "Overseer steer with steer_id ACK contract",
+            "GET /api/v1/agents/{id}/steer/{steer_id}/status": "Steer lifecycle status (accepted/received/applied)",
             "POST /api/v1/agents/reap": "Mark dead-pid tasks as died",
             "POST /api/v1/agents/heal": "Watchdog: mark dead died + auto-respawn (bounded)",
             "GET /api/v1/seats": "Inbound + outbound seats + live registered external seats",
@@ -3064,11 +3519,18 @@ def h_api_index(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dic
             "POST /api/v1/improve/cycle": "Improve cycle → queue + nervous + spider",
             "GET /api/v1/governance": "Steering + behavioral loop + autonomy prefs",
             "POST /api/v1/governance": "Toggle drainer/behavioral pack or broadcast steer",
+            "POST /api/v1/governance/auto-steer/add": "Register auto-steer policy trigger/action",
+            "GET /api/v1/governance/steering-log": "Read global steering event trail",
+            "GET /api/v1/overseer/manifest": "Overseer bard manifest (tab definitions + invocation)",
+            "GET /api/v1/overseer/events": "Overseer event feed (?tab=all|route|steer|checkpoint)",
             "GET /api/v1/operator-inbox": "Deferred guidance queue (process at checkpoint)",
             "POST /api/v1/operator-inbox": "Queue guidance {text} or clear pending",
             "GET /api/v1/seat-feed": "Unified activity feed (Grok/Cursor/agent/orchestrator)",
+            "POST /api/v1/coordination/gather": "Gather compact snapshots for multiple workers",
             "GET /api/v1/chronicle": "File-backed pulse (attention + fleet + sources)",
             "POST /api/v1/seat/task": "Cursor→Mag task {goal?, seat?, mode: delegate|queue|autopilot|agent|dispatch}",
+            "POST /api/v1/fork/detect": "Fork classifier {goal, current_goal?, allow_auto?}",
+            "POST /api/v1/fork/confirm": "Create fork artifact {goal, strategy?, spawn?, provider?, timeout?}",
             "GET /api/v1/viewports": "Cursor Canvas manifests (synced viewports)",
             "GET /api/v1/viewports/{id}": "One canvas viewport manifest",
             "POST /api/v1/viewports/sync": "Sync *.canvas.tsx → memory/viewports/",
@@ -3107,6 +3569,8 @@ ROUTES: list[tuple[str, str, HandlerFn]] = [
     ("GET", "/api/v1/overview", h_overview),
     ("GET", "/api/v1/nervous", h_nervous),
     ("GET", "/api/nervous", h_nervous),
+    ("GET", "/api/v1/system-map", h_system_map),
+    ("POST", "/api/v1/system-map", h_system_map),
     ("GET", "/api/v1/brain", h_brain),
     ("POST", "/api/v1/brain", h_brain),
     ("GET", "/api/brain", h_brain),
@@ -3204,6 +3668,8 @@ ROUTES: list[tuple[str, str, HandlerFn]] = [
     ("GET", "/api/v1/models", h_models),
     ("GET", "/api/v1/providers", h_providers),
     ("GET", "/api/v1/quota", h_quota),
+    ("GET", "/api/v1/providers/local-only", h_local_only_get),
+    ("POST", "/api/v1/providers/local-only", h_local_only_post),
     ("GET", "/api/v1/router-status", h_router_status),
     ("GET", "/api/v1/status", h_router_status),
     ("GET", "/api/v1/diary", h_diary),
@@ -3232,6 +3698,8 @@ ROUTES: list[tuple[str, str, HandlerFn]] = [
     ("GET", "/api/v1/tangents", h_tangents),
     ("POST", "/api/v1/tangent", h_post_tangent),
     ("POST", "/api/v1/tangent/process", h_post_tangent_process),
+    ("POST", "/api/v1/fork/detect", h_fork_detect),
+    ("POST", "/api/v1/fork/confirm", h_fork_confirm),
     ("POST", "/api/v1/brief", h_post_brief),
     ("POST", "/api/v1/visual", h_post_visual),
     ("POST", "/api/v1/export", h_post_export),
@@ -3243,12 +3711,21 @@ ROUTES: list[tuple[str, str, HandlerFn]] = [
     # Orchestrator — sub-agent fleet (spawn + monitor + intervene)
     ("GET", "/api/v1/agents", h_agents),
     ("POST", "/api/v1/agents", h_agents_spawn),
+    ("POST", "/api/v1/agents/fan", h_agents_fan),
+    ("GET", "/api/v1/agents/pipes", h_agents_pipes),
+    ("GET", "/api/v1/agents/pipes/{id}", h_agents_pipe_one),
+    ("POST", "/api/v1/agents/pipes/{id}/collect", h_agents_pipe_collect),
+    ("POST", "/api/v1/agents/pipes/{id}/kill", h_agents_pipe_kill),
+    ("POST", "/api/v1/agents/pipes/{id}/cmd", h_agents_pipe_cmd),
     ("POST", "/api/v1/agents/reap", h_agents_reap),
     ("POST", "/api/v1/agents/heal", h_agents_heal),
     ("GET", "/api/v1/agents/{id}", h_agent_one),
+    ("GET", "/api/v1/agents/{id}/state-snapshot", h_agent_state_snapshot),
     ("GET", "/api/v1/agents/{id}/log", h_agent_log),
     ("POST", "/api/v1/agents/{id}/kill", h_agent_kill),
     ("POST", "/api/v1/agents/{id}/cmd", h_agent_cmd),
+    ("POST", "/api/v1/agents/{id}/steer", h_agent_steer_post),
+    ("GET", "/api/v1/agents/{id}/steer/{steer_id}/status", h_agent_steer_status),
     # Tripartite Chronicle (Synthesis Agent running commentary)
     ("GET", "/api/v1/chronicle", h_chronicle),
     ("GET", "/api/v1/seats", h_seats),
@@ -3269,11 +3746,16 @@ ROUTES: list[tuple[str, str, HandlerFn]] = [
     ("POST", "/api/v1/token-chain", h_token_chain),
     ("GET", "/api/v1/governance", h_governance),
     ("POST", "/api/v1/governance", h_post_governance),
+    ("POST", "/api/v1/governance/auto-steer/add", h_governance_auto_steer_add),
+    ("GET", "/api/v1/governance/steering-log", h_governance_steering_log),
+    ("GET", "/api/v1/overseer/manifest", h_overseer_manifest),
+    ("GET", "/api/v1/overseer/events", h_overseer_events),
     ("GET", "/api/v1/operator-inbox", h_operator_inbox),
     ("POST", "/api/v1/operator-inbox", h_operator_inbox),
     ("GET", "/api/v1/seat-feed", h_seat_feed),
     ("GET", "/api/v1/coordination", h_coordination),
     ("POST", "/api/v1/coordination", h_coordination_post),
+    ("POST", "/api/v1/coordination/gather", h_coordination_gather),
     ("POST", "/api/v1/coordinate", h_coordinate),
     ("POST", "/api/v1/route", h_route),
     ("GET", "/api/v1/route", h_route),
@@ -3333,6 +3815,8 @@ LEGACY: list[tuple[str, str, HandlerFn]] = [
     ("GET", "/api/tangents", h_tangents),
     ("POST", "/api/tangent", h_post_tangent),
     ("POST", "/api/tangent/process", h_post_tangent_process),
+    ("POST", "/api/fork/detect", h_fork_detect),
+    ("POST", "/api/fork/confirm", h_fork_confirm),
     ("POST", "/api/brief", h_post_brief),
     ("POST", "/api/visual/rebuild", h_post_visual),
     ("POST", "/api/export", h_post_export),

@@ -524,7 +524,7 @@ def _running_tasks() -> list[dict[str, Any]]:
     return out
 
 
-def spawn_task(goal: str, *, provider: str = "ollama", model: str | None = None,
+def spawn_task(goal: str, *, provider: str = "deepseek", model: str | None = None,
                timeout: int = DEFAULT_TIMEOUT, tag: str = "",
                require_build: str | None = None) -> dict[str, Any]:
     """Spawn a one-shot sub-agent for a goal. Returns the task record (async).
@@ -606,6 +606,26 @@ def spawn_task(goal: str, *, provider: str = "ollama", model: str | None = None,
             return {"ok": False, "error": f"token-chain: {exc}"}
 
     timeout = timeout_for_goal(goal, tag=tag, timeout=timeout)
+    # Respect runtime local-only toggle (env or dashboard-controlled file).
+    try:
+        from mag.local_mode import is_local_only
+
+        if is_local_only():
+            provider = "ollama"
+    except Exception:
+        pass
+
+    # Quota gating: prevent accidental remote calls when provider budget exhausted.
+    try:
+        if provider and provider != "ollama":
+            from models.quota import provider_budget
+
+            b = provider_budget(provider)
+            if not b.get("budget_ok"):
+                return {"ok": False, "error": f"provider {provider} quota exhausted or not configured", "budget": b}
+    except Exception:
+        # best-effort: if quota check fails, continue to spawn
+        pass
     for t in _running_tasks():
         if t.get("goal") == goal:
             return {
@@ -866,7 +886,7 @@ def drain_once(*, force: bool = False) -> dict[str, Any]:
     if nxt is None:
         return {"ok": True, "action": "empty", "detail": "no queued goals"}
     qid = nxt["queue_id"]
-    rec = spawn_task(nxt["goal"], provider=nxt.get("provider") or "ollama",
+    rec = spawn_task(nxt["goal"], provider=nxt.get("provider") or "deepseek",
                      model=nxt.get("model"), timeout=int(nxt.get("timeout") or DEFAULT_TIMEOUT),
                      tag=nxt.get("tag") or "")
     if not rec.get("ok"):
@@ -1060,6 +1080,71 @@ def reap_stale() -> dict[str, Any]:
                 )
                 fixed += 1
     return {"ok": True, "reaped": fixed}
+
+
+def reap_completed() -> dict[str, Any]:
+    """Mark running tasks whose pid is gone as done/failed using the seat's own
+    mailbox status.json (agent writes phase=done + exit_code on completion).
+
+    This is the gpipes gap: the launcher exits right after fan_out, killing the
+    daemon _monitor threads that were supposed to _finalize() workers on exit.
+    The detached supervisor survives, so any status/collect/supervise call must
+    reap here instead — reading the agent's self-reported phase lets us classify
+    done vs failed (not blanket 'died' like reap_stale).
+    """
+    _ensure_dirs()
+    fixed = 0
+    classified = {"done": 0, "failed": 0, "died": 0}
+    for p in TASK_DIR.glob("*.json"):
+        try:
+            t = json.loads(p.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        if t.get("status") != "running":
+            continue
+        pid = t.get("pid")
+        if pid and _pid_alive(pid):
+            continue
+        tid = t["task_id"]
+        # External/desktop seats without a pid: only reap when the mailbox says
+        # the agent finished (phase=done/failed) — otherwise leave for reap_stale.
+        if not pid and not _is_external_task(t):
+            continue
+        # Read the agent's self-reported final phase + exit code.
+        phase = ""
+        code = None
+        try:
+            from mag import pigeonhole as ph
+
+            st = ph.read_status(tid)
+            if isinstance(st, dict):
+                phase = str(st.get("phase") or "").strip().lower()
+                try:
+                    code = int(st.get("exit_code"))
+                except (TypeError, ValueError):
+                    code = None
+        except Exception:
+            phase, code = "", None
+        if phase in ("done", "complete", "ok") or code == 0:
+            _finalize(tid, "done", exit_code=code if code is not None else 0,
+                      detail="pid gone (reaped; seat reported done)")
+            fixed += 1
+            classified["done"] += 1
+        elif phase in ("failed", "crashed", "error", "stopped") or (
+            code is not None and code != 0
+        ):
+            _finalize(tid, "failed", exit_code=code if code is not None else 1,
+                      detail=f"pid gone (reaped; seat reported {phase or 'failure'})")
+            fixed += 1
+            classified["failed"] += 1
+        elif not pid:
+            # No pid (external) and no self-reported terminal phase: not ours.
+            continue
+        else:
+            _finalize(tid, "died", detail="pid gone (reaped; seat reported no phase)")
+            fixed += 1
+            classified["died"] += 1
+    return {"ok": True, "reaped": fixed, "classified": classified}
 
 
 def respawn_dead(max_per_task: int = 2) -> dict[str, Any]:

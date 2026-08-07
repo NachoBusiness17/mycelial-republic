@@ -7,6 +7,7 @@ from __future__ import annotations
 from typing import Any
 
 from llm import chat, extract_json
+from mag.memory_events import emit_route_decision
 from models.registry import model_for
 
 # Lightweight echo-detection counter: bumped when the clerk reply is invalid and
@@ -86,10 +87,30 @@ def route_goal(
 
     if lane == "wait":
         out["hint"] = "Ask the operator; do not auto-run."
+        try:
+            emit_route_decision(
+                goal=goal,
+                lane=str(out.get("lane") or "wait"),
+                reason=str(out.get("reason") or ""),
+                clerk_model=str(out.get("clerk_model") or ""),
+                fallback_count=int(out.get("fallback_count") or 0),
+            )
+        except Exception:
+            pass
         return out
 
     if lane == "grok":
         out["hint"] = "Stay in Grok TUI. Use context-pack for memory, not full chat."
+        try:
+            emit_route_decision(
+                goal=goal,
+                lane=str(out.get("lane") or "grok"),
+                reason=str(out.get("reason") or ""),
+                clerk_model=str(out.get("clerk_model") or ""),
+                fallback_count=int(out.get("fallback_count") or 0),
+            )
+        except Exception:
+            pass
         return out
 
     # local
@@ -101,6 +122,16 @@ def route_goal(
             "Lane=local. Re-run with --local to execute, or: "
             'python main.py ask "…" / brief / doctor'
         )
+    try:
+        emit_route_decision(
+            goal=goal,
+            lane=str(out.get("lane") or "local"),
+            reason=str(out.get("reason") or ""),
+            clerk_model=str(out.get("clerk_model") or ""),
+            fallback_count=int(out.get("fallback_count") or 0),
+        )
+    except Exception:
+        pass
     return out
 
 

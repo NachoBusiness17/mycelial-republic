@@ -27,10 +27,12 @@ from pathlib import Path
 from typing import Any
 
 from config import ROOT
+from mag.memory_events import emit_steer_lifecycle
 
 MAIL_ROOT = ROOT / "memory" / "mail"
 HEARTBEAT_INTERVAL_S = 15  # agent writes a bead this often while a turn runs
 STALL_AFTER_S = 3 * HEARTBEAT_INTERVAL_S  # no bead for this long -> suspicious
+STEERING_LOG = ROOT / "logs" / "steering_events.jsonl"
 
 
 def _utc() -> str:
@@ -45,6 +47,55 @@ def _ensure(task_id: str) -> Path:
     d = mailbox_dir(task_id)
     d.mkdir(parents=True, exist_ok=True)
     return d
+
+
+def _append_jsonl(path: Path, row: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(row, default=str) + "\n")
+
+
+def _extract_steer_id(raw_cmd: str) -> tuple[str | None, str]:
+    """Parse '!steer #sid:<id># text' framing and return (sid, clean_context)."""
+    cmd = (raw_cmd or "").strip()
+    if not cmd.startswith("!steer"):
+        return None, cmd
+    ctx = cmd[6:].strip()
+    marker = "#sid:"
+    if not ctx.startswith(marker):
+        return None, ctx
+    end = ctx.find("#", len(marker))
+    if end <= len(marker):
+        return None, ctx
+    steer_id = ctx[len(marker):end].strip()
+    clean = ctx[end + 1 :].strip()
+    return (steer_id or None), clean
+
+
+def _steer_event(task_id: str, steer_id: str, status: str, **meta: Any) -> dict[str, Any]:
+    event = {
+        "schema": "overseer_steer_event.v1",
+        "task_id": task_id,
+        "steer_id": steer_id,
+        "status": status,
+        "ts": _utc(),
+        **meta,
+    }
+    with _lock(task_id):
+        _append_jsonl(_ensure(task_id) / "steer_events.jsonl", event)
+    _append_jsonl(STEERING_LOG, event)
+    try:
+        emit_steer_lifecycle(
+            task_id=task_id,
+            steer_id=steer_id,
+            status=status,
+            phase=str(meta.get("phase") or meta.get("phase_at_apply") or ""),
+            source_tier=str(meta.get("source_tier") or "T2"),
+            reason=str(meta.get("reason") or ""),
+        )
+    except Exception:
+        pass
+    return event
 
 
 def _lock_path(task_id: str) -> Path:
@@ -92,8 +143,63 @@ def post_cmd(task_id: str, cmd: str) -> None:
             fh.write(cmd + "\n")
 
 
-def post_steer(task_id: str, context: str) -> None:
-    post_cmd(task_id, "!steer " + context)
+def post_steer(task_id: str, context: str, *, reason: str = "", source_tier: str = "") -> str:
+    """Post steer text with an ID so overseer can observe accept/apply lifecycle."""
+    steer_id = "sid-" + str(int(time.time() * 1000))
+    framed = "!steer #sid:%s# %s" % (steer_id, context)
+    post_cmd(task_id, framed)
+    _steer_event(
+        task_id,
+        steer_id,
+        "accepted",
+        reason=(reason or "")[:200],
+        source_tier=(source_tier or "")[:20],
+    )
+    return steer_id
+
+
+def ack_steer(task_id: str, steer_id: str, *, status: str = "applied", phase: str = "", error: str = "") -> dict[str, Any]:
+    """Agent-side ACK when a steer command is consumed/applied."""
+    return _steer_event(
+        task_id,
+        steer_id,
+        status,
+        phase_at_apply=(phase or "")[:40],
+        error=(error or "")[:200],
+    )
+
+
+def steer_status(task_id: str, steer_id: str) -> dict[str, Any] | None:
+    p = mailbox_dir(task_id) / "steer_events.jsonl"
+    if not p.is_file():
+        return None
+    latest: dict[str, Any] | None = None
+    for line in p.read_text(encoding="utf-8", errors="replace").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            row = json.loads(line)
+        except Exception:
+            continue
+        if row.get("steer_id") == steer_id:
+            latest = row
+    return latest
+
+
+def steering_log(limit: int = 200) -> list[dict[str, Any]]:
+    if not STEERING_LOG.is_file():
+        return []
+    out: list[dict[str, Any]] = []
+    for line in STEERING_LOG.read_text(encoding="utf-8", errors="replace").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            out.append(json.loads(line))
+        except Exception:
+            continue
+    return out[-limit:]
 
 
 # --- agent -> supervisor ---------------------------------------------------
@@ -110,7 +216,15 @@ def drain_inbox(task_id: str) -> list[str]:
             return []
         lines = [ln.strip() for ln in p.read_text(encoding="utf-8", errors="replace").splitlines() if ln.strip()]
         p.write_text("", encoding="utf-8")
-    return lines
+    out: list[str] = []
+    for cmd in lines:
+        sid, clean = _extract_steer_id(cmd)
+        if sid:
+            out.append("!steer [sid:%s] %s" % (sid, clean))
+            _steer_event(task_id, sid, "received", phase="inbox_drain")
+        else:
+            out.append(cmd)
+    return out
 
 
 def heartbeat(task_id: str, **meta: Any) -> None:

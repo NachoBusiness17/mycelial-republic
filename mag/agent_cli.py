@@ -1884,9 +1884,23 @@ def _handle_steer_cmd(cmd: str) -> str | None:
     """
     low = cmd.strip().lower()
     if low.startswith("!steer"):
-        ctx = cmd.strip()[6:].strip()
+        raw_ctx = cmd.strip()[6:].strip()
+        steer_id = ""
+        if raw_ctx.startswith("[sid:"):
+            end = raw_ctx.find("]")
+            if end > 5:
+                steer_id = raw_ctx[5:end].strip()
+                raw_ctx = raw_ctx[end + 1 :].strip()
+        ctx = raw_ctx
         if len(ctx) > 600:
             ctx = ctx[:600]
+        if steer_id and _TASK_ID:
+            ph = _ph()
+            if ph is not None:
+                try:
+                    ph.ack_steer(_TASK_ID, steer_id, status="applied", phase=str(_activity.get("phase") or "model"))
+                except Exception:
+                    pass
         return ctx or "resume the active Blueprint from the interruption point"
     if low in ("!pause", "!p"):
         _paused.set()  # HOLD: pause gate (in-tool-loop + between rounds) waits for !continue
@@ -1960,8 +1974,17 @@ def run_agent(
     if os.environ.get("NO_COLOR") or os.environ.get("MAG_AGENT_NO_COLOR"):
         _USE_COLOR = False
 
-    pack = build_context_pack(max_brief=900, max_live=400)
-    pack_text = format_context_pack_text(pack)
+    mode = None
+    if one_shot:
+        # import context pack helpers lazily but before use to avoid NameError
+        from mag.context_pack import build_context_pack, infer_pack_mode
+
+        depth = "heavy_code" if provider == "deepseek" else "simple_code"
+        mode = infer_pack_mode(one_shot, depth=depth)
+        pack = build_context_pack(mode=mode, goal=one_shot, max_brief=900, max_live=400)
+    else:
+        pack = build_context_pack(max_brief=900, max_live=400)
+    pack_text = format_context_pack_text(pack, mode=mode)
     try:
         (ROOT / "memory" / "context_pack_latest.md").write_text(pack_text, encoding="utf-8")
     except Exception:

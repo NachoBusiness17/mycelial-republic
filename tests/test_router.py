@@ -107,3 +107,44 @@ def test_rest_route_smoke():
     assert body.get("ok") is True
     assert body.get("schema") == "mag_intent.v1"
     assert (body.get("decision") or {}).get("route")
+
+
+def test_rest_route_heavy_prefers_deepseek_lock(monkeypatch):
+    from dashboard.rest import h_route
+
+    monkeypatch.delenv("MAG_DISABLE_REMOTE_PROVIDER_LOCK", raising=False)
+    monkeypatch.delenv("MAG_REMOTE_PROVIDER_LOCK", raising=False)
+
+    cfg = {
+        "providers": {
+            "deepseek": {"default_model": "ds-model", "tier_max": "T2"},
+            "deepseek_overmind": {"default_model": "dso-model", "tier_max": "T2"},
+            "anthropic": {"default_model": "an-model", "tier_max": "T2"},
+        },
+        "defaults": {"never_remote_tiers": ["T0", "T1"]},
+        "routing": {},
+    }
+    monkeypatch.setattr("models.providers.load_providers", lambda: cfg)
+    monkeypatch.setattr("models.providers.list_provider_ids", lambda: list(cfg["providers"].keys()))
+    monkeypatch.setattr("models.providers.get_provider", lambda pid: dict(cfg["providers"].get(pid) or {}))
+    monkeypatch.setattr(
+        "models.quota.provider_budget",
+        lambda pid: {"provider": pid, "configured": True, "budget_ok": True},
+    )
+
+    code, body = h_route({}, {"goal": "implement multi-file router cleanup with tests", "launch": False})
+    assert code == 200
+    route = ((body.get("decision") or {}).get("route") or {})
+    assert route.get("provider") == "deepseek"
+
+
+def test_router_status_exposes_provider_policy(monkeypatch):
+    from dashboard.rest import h_router_status
+
+    monkeypatch.setenv("MAG_DISABLE_REMOTE_PROVIDER_LOCK", "1")
+    code, body = h_router_status({}, None)
+    assert code == 200
+    assert body.get("schema") == "mag_router_status.v1"
+    pol = body.get("provider_policy") or {}
+    assert pol.get("schema") == "remote_provider_policy.v1"
+    assert pol.get("enabled") is False

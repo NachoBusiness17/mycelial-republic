@@ -222,6 +222,22 @@ def _clue_chain_excerpt(*, max_chars: int = 500) -> str:
     return f"{header}\n{body[: max_chars - len(header) - 2]}"
 
 
+def _zeitgeist_excerpt(*, max_chars: int = 800) -> str:
+    """Optional project zeitgeist excerpt from docs/ZEITGEIST.md."""
+    candidates = [
+        ROOT / "docs" / "archive" / "ZEITGEIST.md",
+        ROOT / "docs" / "ZEITGEIST.md",
+    ]
+    for p in candidates:
+        if p.is_file():
+            body = p.read_text(encoding="utf-8", errors="replace").strip()
+            if not body:
+                return ""
+            header = "[ZEITGEIST — era signal + project frame]"
+            return f"{header}\n{body[: max_chars - len(header) - 2]}"
+    return ""
+
+
 def _clip(path: Path, n: int) -> str:
     if not path.is_file():
         return ""
@@ -500,9 +516,11 @@ def build_context_pack(
         behavioral_excerpt = (behavioral_excerpt + "\n\n" + tesuji_excerpt).strip()[:1800]
     mirror_voice_excerpt = ""
     clue_chain_excerpt = ""
+    zeitgeist_excerpt = ""
     if cfg.get("include_mirror_clue", True):
         mirror_voice_excerpt = _mirror_voice_excerpt(soft_goal, max_chars=600)
         clue_chain_excerpt = _clue_chain_excerpt(max_chars=500)
+    zeitgeist_excerpt = _zeitgeist_excerpt(max_chars=800) if mode not in ("janitor",) else ""
 
     build_excerpt = ""
     if cfg.get("include_build"):
@@ -557,6 +575,7 @@ def build_context_pack(
         "behavioral_excerpt": behavioral_excerpt,
         "compass_framework": compass_framework,
         "coordination_excerpt": coordination_excerpt,
+        "zeitgeist_excerpt": zeitgeist_excerpt,
         "resonance_cards": resonance_cards,
         "resonance_l0e": resonance_l0e,
         "live_tail": live or "(no live board)",
@@ -667,6 +686,12 @@ def format_context_pack_text(
             as_line,
             f"- models: {p.get('models')}",
             f"- bonds_meta: {p.get('bonds_meta')}",
+        ])
+    if p.get("zeitgeist_excerpt"):
+        policy.extend([
+            "",
+            "### L0d Zeitgeist (project epoch + signal)",
+            p.get("zeitgeist_excerpt"),
         ])
     if mode not in ("janitor", "route"):
         policy.extend([

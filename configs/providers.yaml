@@ -9,10 +9,11 @@ defaults:
   never_remote_tiers: [T0, T1]
   prefer_order:
     - ollama
-    - openrouter
-    - anthropic
-    - groq
     - deepseek
+    - deepseek_overmind
+    - openrouter
+    - groq
+    - anthropic
     - openai
     - gemini
     - xai
@@ -31,9 +32,10 @@ providers:
       - gemma:2b
       - qwen-desk:latest
       - qwen2.5:3b-instruct
+      - qwen2.5-coder:7b
       - gemma4:latest
       - gemma4-desk:latest
-    default_model: qwen-desk:latest
+    default_model: qwen2.5-coder:7b
     tier_max: T1               # may see local private
     free_local: true
     timeout_seconds: 90        # was 300 — don't hang voice/UI behind cold 8B loads
@@ -174,12 +176,6 @@ providers:
     default_model: deepseek-v4-flash
     tier_max: T2
     free_local: false
-    quota:
-      period: monthly
-      reset_day: 1
-      max_calls: null
-      max_tokens: null
-      note: "Rented GPU box — set VAST_OPENAI_BASE_URL + VAST_OPENAI_API_KEY (+ VAST_OPENAI_MODEL if different)"
     # Chat context window — DeepSeek real window is 1,000,000 tokens (1M).
     # Was 64000 (6.4% of real) → repack fired at ~36.5K tokens = 3.7% of window,
     # destroying context-cache hits (50x flash / 120x pro cheaper on HIT).
@@ -248,10 +244,10 @@ providers:
 
 # Routing preferences by job class (first with budget + key wins after ollama)
 routing:
-  scut: [ollama, groq, openrouter, deepseek, deepseek_overmind, vast]
+  scut: [ollama, deepseek, deepseek_overmind, groq, openrouter, vast]
   recall: [ollama]
-  public_summarize: [openrouter, groq, deepseek, deepseek_overmind, vast, gemini, openai]
-  hard_code: [anthropic, xai, openai, openrouter, deepseek, vast]
-  hard_reason: [anthropic, deepseek, deepseek_overmind, vast, xai, openrouter]
+  public_summarize: [deepseek, deepseek_overmind, openrouter, groq, vast, gemini, openai]
+  hard_code: [deepseek, deepseek_overmind, openrouter, groq, anthropic, openai, xai, vast]
+  hard_reason: [deepseek, deepseek_overmind, openrouter, groq, anthropic, xai, openai, vast]
   # Interactive Grok TUI is still L2 "specialist seat" — API providers for headless
-  default: [ollama, openrouter, anthropic, groq, deepseek, gemini, openai, xai]
+  default: [ollama, deepseek, deepseek_overmind, openrouter, groq, anthropic, gemini, openai, xai]

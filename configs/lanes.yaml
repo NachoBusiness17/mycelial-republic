@@ -26,17 +26,17 @@ lanes:
 
 local_models:
   # Home PC envelope 2026-08-06 — RX 5600 XT ~6GB VRAM · 64GB RAM · AMD (no CUDA)
-  # Doctrine: scut=2b · desk/voice/chat=qwen-desk · worker=gemma4 short bursts only
-  # Never stack two 8B models. OLLAMA_MAX_LOADED_MODELS=1 · CONTEXT=8k (not 65k)
+  # Doctrine: scut=2b · desk/voice=qwen-desk · coding worker=qwen2.5-coder:7b
+  # Never stack two 7B/8B models. OLLAMA_MAX_LOADED_MODELS=1 · CONTEXT=8k (not 65k)
   clerk: gemma:2b
-  router: gemma:2b
+  router: gemma:2b                   # keep tiny for routing scut (not coder)
   orchestrator: gemma:2b             # repack / scut
   desk_orchestrator: qwen-desk:latest  # 69 t/s probe winner on this GPU
   desk_conductor: qwen-desk:latest
   voice: gemma:2b                    # Mag Voice; override MAG_VOICE_LOCAL_MODEL
-  worker: gemma4:latest              # short bursts only — sequential load
-  critic: qwen-desk:latest           # was gemma4 — avoid dual 8B with worker
-  biographer: qwen-desk:latest       # was gemma4-hermes — 8B+think kills latency
+  worker: qwen2.5-coder:7b           # primary L0 coding worker (local Continue twin)
+  critic: qwen-desk:latest           # sequential — do not dual-resident with worker
+  biographer: qwen-desk:latest       # /api/v1/ask memory chat (not code complete)
   embed: nomic-embed-text
 
 # Prefer clerk/desk hot; never keep worker+biographer both resident on 6GB
@@ -62,12 +62,12 @@ hardware_envelope:
   ollama_max_loaded: 1
   voice_model: gemma:2b
   desk_model: qwen-desk:latest
-  worker_model: gemma4:latest
+  worker_model: qwen2.5-coder:7b
   escalate: [deepseek, grok_tui]
   never_local: ["35b+", "70b", "full 65k context on 8B"]
 
 grok_budget:
-  max_escalations_per_day: 8
+  max_escalations_per_day: 2
   require_priority: true   # need [priority] / [L2] / high critic
   attach_brief: true       # handoff carries brief, not full chat
 

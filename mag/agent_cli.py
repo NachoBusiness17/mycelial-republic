@@ -769,6 +769,85 @@ def _drain_steer_until(deadline: float) -> list[str]:
     return out
 
 
+# False-success guard: a seat that claims file edits but ran no mutating tool
+# this turn is hallucinating. Local 7B did this 2026-08-07 — reported "updated
+# llm.py with timeout_seconds, verified imports" with ZERO tool calls and no
+# file change. Treat as a failure → log + escalate (smarter tier via DF ladder).
+_MUTATING_TOOLS = {
+    "write_file",
+    "write_file_append",
+    "edit_file",
+    "patch_file",
+    "run_shell",
+    "run_python",
+}
+_FAKE_SUCCESS_KEYWORDS = (
+    "updated",
+    "added",
+    "implemented",
+    "created",
+    "fixed",
+    "edited",
+    "wrote",
+    "changed",
+    "modified",
+    "refactored",
+    "patched",
+    "committed",
+)
+
+
+def _claims_edit(text: str) -> bool:
+    """Does the final answer claim file edits/completion? (may be fake.)"""
+    low = (text or "").lower()
+    return any(k in low for k in _FAKE_SUCCESS_KEYWORDS)
+
+
+def _escalate_fake_success(*, text: str, provider: str, goal: str, session_id: str | None = None):
+    """Log the false-success + hand off to the next smarter tier (DF ladder)."""
+    detail = f"claimed file edits but no mutating tool ran: {(text or '')[:200]}"
+    try:
+        from mag.operator_inbox import log_behavioral_event
+
+        log_behavioral_event(
+            kind="fake_success",
+            detail=detail,
+            tool="write_file",
+            phase="verify",
+            session_id=session_id,
+            provider=provider,
+        )
+    except Exception:
+        pass
+    try:
+        from mag.failure_kb import log_failure
+
+        log_failure(
+            kind="fake_success",
+            detail=detail,
+            tool="write_file",
+            error="no file mutation on disk",
+            phase="verify",
+            session_id=session_id,
+            provider=provider,
+        )
+    except Exception:
+        pass
+    try:
+        from mag.decision_framework import escalate_on_loop
+
+        esc = escalate_on_loop(
+            goal=goal,
+            provider=provider,
+            tool="write_file",
+            detail="false-success: claimed edits, wrote nothing",
+            session_id=session_id,
+        )
+        return esc if esc.get("ok") else None
+    except Exception:
+        return None
+
+
 def run_turn(
     user_text: str,
     *,
@@ -805,6 +884,7 @@ def run_turn(
     collapse_window: deque[str] = deque(maxlen=5)
     collapse_nudges = 0
     last_tool = "-"
+    turn_mutated = False
     turn_t0 = time.time()
     while True:
         rnd += 1
@@ -1263,6 +1343,8 @@ def run_turn(
             _activity["last_tool"] = name
             _activity["phase"] = "working"
             _maybe_status(rnd, name)
+            if name in _MUTATING_TOOLS and out.get("ok"):
+                turn_mutated = True
             # T1 escape checkpoint #3: operator escape fired mid-tool-loop - end
             # the round cleanly instead of starting another model round. The
             # partial tool chain is sanitized away next turn by _sanitize_messages.
@@ -1284,6 +1366,21 @@ def run_turn(
             _activity["phase"] = "answered"
             _mail(phase="answered")
             messages.append({"role": "assistant", "content": text})
+            # False-success guard: claimed file edits but no mutating tool ran →
+            # log + escalate (a seat that lies about edits bypasses collapse logic).
+            if not turn_mutated and _claims_edit(text):
+                esc = _escalate_fake_success(
+                    text=text, provider=provider, goal=user_text, session_id=session_id
+                )
+                if esc:
+                    traces.append(f"fake_success_escalate:{esc.get('target')}")
+                    return (
+                        f"**False-success guard — escalated to {esc.get('target')}** "
+                        f"(queue `{esc.get('queue_id')}`). The seat claimed edits but ran no "
+                        f"mutating tool; the smarter tier is taking over.\n\n{esc.get('hint', '')}",
+                        messages,
+                        traces,
+                    )
             return text, messages, traces
 
         # Empty text with no tool calls: usually a crash artifact. Self-heal:

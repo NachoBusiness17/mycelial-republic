@@ -320,7 +320,7 @@ def run_audit(
     if backfill_lattice and not dry:
         from mag.lattice_backfill import run_backfill
 
-        backfill_result = run_backfill(dry=False)
+        backfill_result = run_backfill(dry_run=False)
         try:
             from mag.lattice_query import summary as lattice_summary_fn
 

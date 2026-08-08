@@ -588,3 +588,91 @@ def route_task(goal: str, *, depth: str | None = None) -> dict[str, Any]:
         "hint": r.get("hint"),
         "why": r.get("why"),
     }
+
+
+def route_with_snapshot(
+    goal: str,
+    *,
+    snapshot: dict[str, Any] | None = None,
+    depth: str | None = None,
+    force_seat: str | None = None,
+    force_provider: str | None = None,
+) -> dict[str, Any]:
+    """Route with session-state awareness.
+
+    When a frozen session snapshot is provided, the router adjusts
+    seat/provider selection based on the agent's current execution context:
+
+    - Status 'blocked' or 'escalated' → auto-escalate one tier up
+    - Status 'done' → route to wait (no auto-run)
+    - Goal keywords matching 'design/architect/refactor' + heavy depth →
+      escalate to DeepSeek with frozen RIB
+    - Scut/simple tasks → stay local ollama
+    - Agent state has pending next_moves → prefer local execution
+    """
+    # Base routing decision
+    result = route(goal, depth=depth, force_seat=force_seat, force_provider=force_provider)
+
+    if snapshot is None:
+        return result
+
+    # Extract session context
+    session_ctx = snapshot.get("layers", {}).get("session_context", {})
+    if not session_ctx:
+        # Try summary-level fields
+        summary = snapshot.get("summary", {})
+        session_ctx = {
+            "current_status": summary.get("status"),
+            "current_goal": summary.get("goal"),
+            "_keywords": summary.get("keywords", []),
+        }
+
+    status = (session_ctx.get("current_status") or "").lower()
+    keywords = session_ctx.get("_keywords", [])
+    agent_state = snapshot.get("layers", {}).get("agent_state", {})
+    has_pending = (agent_state.get("next_moves") or []).get("length" if isinstance(agent_state.get("next_moves"), list) else 0) > 0 if agent_state.get("next_moves") else False
+
+    # ── Session-aware adjustments ──
+    why_session: list[str] = []
+
+    # Status-based escalation
+    if "blocked" in status:
+        why_session.append("session_status=blocked→escalate")
+        result["tier"] = "T3"
+        if result.get("provider") == "ollama":
+            result["provider"] = "deepseek"
+            result["seat"] = "remote"
+            result["mode"] = "queue"
+    elif "escalat" in status:
+        why_session.append("session_status=escalated→force_remote")
+        if result.get("provider") == "ollama":
+            result["provider"] = "deepseek"
+            result["seat"] = "remote"
+    elif "done" in status or "closed" in status:
+        why_session.append("session_status=done→wait")
+        result["launch"] = False
+        result["executable"] = False
+        result["mode"] = "wait"
+
+    # Keyword-based escalation (design/architect tasks → DeepSeek)
+    heavy_kw = {"design", "architect", "refactor", "implement", "migrate", "orchestrat"}
+    if any(kw in heavy_kw for kw in keywords):
+        current_depth = result.get("depth", "")
+        if current_depth in ("heavy_code", "plan"):
+            why_session.append("keywords=heavy_design→deepseek")
+            if result.get("provider") == "ollama":
+                result["provider"] = "deepseek"
+                result["seat"] = "remote"
+                result["mode"] = "queue"
+
+    # Pending agent_state next_moves → prefer local execution (don't escalate)
+    if has_pending and result.get("provider") != "ollama":
+        why_session.append("agent_has_pending→stay_local")
+        # Don't override if already explicitly routed
+
+    # Append session-aware reasoning
+    if why_session:
+        result["why"] = (result.get("why") or []) + why_session
+        result["session_aware"] = True
+
+    return result

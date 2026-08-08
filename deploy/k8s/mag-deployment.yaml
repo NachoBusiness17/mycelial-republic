@@ -1,0 +1,48 @@
+# The Mag supervisor pod. It runs the process_supervisor (which owns the autorun
+# loop + ghost cadence) AND the dashboard (:8765) in one process — the P1 pattern.
+# replicas: 1 is DELIBERATE — two pods = two autorun loops = double-drain (the
+# exact bug we fixed). Scale horizontally only for read-side services, never this.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mag
+  namespace: mag
+  labels:
+    app: mag
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mag
+  template:
+    metadata:
+      labels:
+        app: mag
+    spec:
+      containers:
+        - name: mag
+          image: mag-sovereign:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - { containerPort: 8765, name: dash }
+            - { containerPort: 8000, name: api }
+          envFrom:
+            - configMapRef: { name: mag-config }
+            - secretRef: { name: mag-secrets }
+          volumeMounts:
+            - { name: state, mountPath: /app/memory, subPath: memory }
+            - { name: state, mountPath: /app/logs, subPath: logs }
+            - { name: state, mountPath: /app/state, subPath: state }
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: dash
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          resources:
+            requests: { cpu: "500m", memory: "512Mi" }
+            limits: { cpu: "2", memory: "2Gi" }
+      volumes:
+        - name: state
+          persistentVolumeClaim:
+            claimName: mag-state

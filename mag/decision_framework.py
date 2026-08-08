@@ -238,6 +238,18 @@ def escalate_on_loop(
     )
 
     target, action = _next_escalation_provider(provider)
+    # In-the-moment classification: feed this escalation into the local pile so
+    # the overnight job (tools/pile_classify.py) classifies + folds it later.
+    try:
+        from mag.state_snapshot import capture_summary
+
+        capture_summary(
+            goal=goal, outcome="escalated", tier=f"{provider}->{target}",
+            kind="escalation", source="decision_framework", session_id=session_id,
+            lessons=[detail[:200] or f"loop on {tool}"],
+        )
+    except Exception:
+        pass
     out: dict[str, Any] = {
         "ok": True,
         "schema": "escalation.v1",

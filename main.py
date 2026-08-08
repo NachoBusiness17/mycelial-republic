@@ -147,6 +147,25 @@ def main(argv: list[str] | None = None) -> int:
     p_watch.add_argument("--once", action="store_true")
     p_watch.add_argument("--interval", type=float, default=3.0)
 
+    # ── Talk to Ghost ──
+    p_talk = sub.add_parser(
+        "talk", help="Talk to Ghost — natural language → copilot inbox → result"
+    )
+    p_talk.add_argument("query", nargs="+", help="What to ask Ghost (natural language)")
+    p_talk.add_argument("--provider", default="ollama", help="LLM provider (ollama, deepseek, grok)")
+    p_talk.add_argument("--model", default="qwen2.5-coder:7b", help="Model name")
+    p_talk.add_argument("--timeout", type=int, default=120, help="Max wait seconds")
+    p_talk.add_argument("--watch", action="store_true", help="Stream live Ghost events after query")
+    p_talk.add_argument("--json", action="store_true", help="Machine-readable output")
+
+    # ── Parallel swarm ──
+    p_swarm = sub.add_parser(
+        "swarm", help="Fire a parallel research swarm — N agents, different angles"
+    )
+    p_swarm.add_argument("goal", nargs="+", help="Research question")
+    p_swarm.add_argument("--size", type=int, default=3, help="Swarm size (2-5 agents)")
+    p_swarm.add_argument("--dry", action="store_true", help="Preview only, don't fire")
+
     p_dash = sub.add_parser(
         "dashboard",
         help="Browse history: sessions, PDFs, Verkle, ingest (http://127.0.0.1:8765)",
@@ -747,6 +766,226 @@ def main(argv: list[str] | None = None) -> int:
         default="",
         choices=("overview", "plan", "heavy_code", "simple_code", "scut", ""),
         help="Force depth",
+    )
+    p_steer = sub.add_parser(
+        "steer-agent",
+        help="Steer the agent via operator_inbox breadcrumbs (drained at checkpoint)",
+    )
+    p_steer.add_argument("text", nargs="*", help="One-shot guidance text (or use --sync)")
+    p_steer.add_argument("--sync", action="store_true", help="Push new lines from queue/steer_agent.md")
+    p_steer.add_argument("--file", default="", help="Custom drop file path for --sync")
+    p_steer.add_argument("--source", default="copilot-assistant", help="Source tag (default copilot-assistant)")
+    p_steer.add_argument("--status", action="store_true", help="Show inbox state")
+    p_vfeed = sub.add_parser(
+        "vscode-feed",
+        help="VS Code chat -> behavioral loop (pile, behavioral_events, skill_ledger, pro_library)",
+    )
+    p_vfeed.add_argument(
+        "vf_action",
+        nargs="?",
+        default="capture",
+        choices=("capture", "status"),
+        help="capture a chat signal, or status",
+    )
+    p_vfeed.add_argument("--goal", default="", help="What was asked / built")
+    p_vfeed.add_argument("--outcome", default="unknown", choices=("ok", "fail", "escalated", "loop", "unknown"))
+    p_vfeed.add_argument("--tier", default="T1")
+    p_vfeed.add_argument("--lesson", action="append", default=[], help="Repeatable lesson")
+    p_vfeed.add_argument("--source", default="copilot")
+    p_vfeed.add_argument("--session", default="", help="Session id")
+    p_ds = sub.add_parser(
+        "drainer-stats",
+        help="Drainer / queue / fleet / pending-handoff stats (CLI readout)",
+    )
+    p_ds.add_argument("ds_args", nargs=argparse.REMAINDER, help="--json for machine output")
+    p_lf = sub.add_parser(
+        "live-feed",
+        help="Tail overseer/ghost/drainer trails as a live terminal feed",
+    )
+    p_lf.add_argument("lf_args", nargs=argparse.REMAINDER,
+                      help="overseer|ghost|drainer [--lines N] [--json]")
+    p_ssb = sub.add_parser(
+        "session-state-brief",
+        help="Drop live session state into memory/briefs/latest.md (self-brief every chat)",
+    )
+    p_ssb.add_argument("--json", action="store_true", help="Print payload, don't write")
+    p_ssb.add_argument("--dry", action="store_true", help="Print the rendered brief, don't write")
+    p_og = sub.add_parser(
+        "ops-graph",
+        help="Categorize live ops telemetry into a typed knowledge graph (nodes + edges)",
+    )
+    p_og.add_argument("--json", action="store_true", help="Machine-readable graph payload")
+    p_og.add_argument("--ingest", action="store_true",
+                      help="Also append nodes/edges to memory/graph/ durable store")
+    p_jan = sub.add_parser(
+        "janitor",
+        help="Prune temp/pytest-* scratch + regenerate docs (keep environment lean & documented)",
+    )
+    p_jan.add_argument("--dry", action="store_true", help="Report what would change, don't change")
+    p_jan.add_argument("--prune-only", action="store_true")
+    p_jan.add_argument("--document-only", action="store_true")
+    p_jan.add_argument("--last", action="store_true", help="Print the last janitor report")
+    p_orphan = sub.add_parser(
+        "orphan",
+        help="Orphan timer: capture undone-yet-intended work and promote it to the idea graph",
+    )
+    p_orphan.add_argument("orphan_args", nargs=argparse.REMAINDER,
+                          help="note <intent> [--source X] | run [--threshold N] [--dry] | list | resolve <id>")
+    p_warn = sub.add_parser(
+        "warning-monitor",
+        help="Passive warning monitor: scan logs, report new warnings into the failure KB (handled via our system)",
+    )
+    p_warn.add_argument("warn_args", nargs=argparse.REMAINDER,
+                        help="run [--dry] | status")
+    p_proc_sup = sub.add_parser(
+        "process-supervisor",
+        help="Single process supervisor: one thing runs the framework loops (up/down/status/start/stop/restart) — kills the N-terminal sprawl",
+    )
+    p_proc_sup.add_argument("proc_sup_args", nargs=argparse.REMAINDER,
+                            help="up | down | status | start <name> | stop <name> | restart <name>")
+    p_deeph = sub.add_parser(
+        "deep-handoff",
+        help="Hand the run to a deeper model via the session maze (memory-framework test): assemble maze + spawn on deepseek-v4-pro",
+    )
+    p_deeph.add_argument("deep_args", nargs=argparse.REMAINDER,
+                         help="<goal> [model] | assemble")
+    p_ext = sub.add_parser(
+        "extension-deploy",
+        help="Deploy the MAG extension files to the installed extension dir",
+    )
+    p_gate = sub.add_parser(
+        "spec-gate",
+        help="Wrong-offset gate: freeze/check a file's base fingerprint before a spec is applied",
+    )
+    p_gate.add_argument(
+        "gate_args",
+        nargs=argparse.REMAINDER,
+        help="freeze <path> [--label x] | check <path> | gate <path> | list",
+    )
+    p_floor = sub.add_parser(
+        "job-floor",
+        help="DFHack-style designation manager: create/claim/verify/stuck jobs with frozen specs",
+    )
+    p_floor.add_argument(
+        "floor_args",
+        nargs=argparse.REMAINDER,
+        help="create --goal ... [--seat] [--spec] [--target x] | claim <id> | verify <id> --ok|--fail | status | list | stuck",
+    )
+    p_ledger = sub.add_parser(
+        "skill-ledger",
+        help="Right-sizing counter: decisions + labeled rows toward the targets",
+    )
+    p_ledger.add_argument(
+        "ledger_args",
+        nargs=argparse.REMAINDER,
+        help="progress | seed-bench | record ... | labeled-row ...",
+    )
+    p_pro = sub.add_parser(
+        "pro-library",
+        help="Aimbot-for-AI: transferable winning moves (sense/match/inject/learn), folded into behavioral systems",
+    )
+    p_pro.add_argument(
+        "pro_args",
+        nargs=argparse.REMAINDER,
+        help="stats | seed | list | add --signature --kind --move | match --text | aim --text | fire <id> | learn <id> --outcome",
+    )
+    p_ghost = sub.add_parser(
+        "ghost",
+        help="Ghost in the Machine — silent steer deployment + experiment runner",
+    )
+    p_ghost.add_argument("--dry", action="store_true", help="Sense + match, write echo to trail only")
+    p_ghost.add_argument("--observe", action="store_true", help="Sense + rashomon only, no whisper")
+    p_ghost.add_argument("--probe", type=str, help="Deploy one specific steer text")
+    p_ghost.add_argument("--list", action="store_true", help="List all available vectors")
+    p_ghost.add_argument("--json", action="store_true", help="Machine-readable output")
+    p_ghost.add_argument("--sense", action="store_true", help="Sense only — print state vector")
+    p_ghost.add_argument("--swarm", type=str, default=None,
+                         help="Deploy steer to all models in parallel")
+    p_ghost.add_argument("--swarm-models", type=str, default=None,
+                         help="Comma-separated models for swarm")
+    p_ghost.add_argument("--temporal", action="store_true",
+                         help="Run temporal experiment (staggered steers)")
+    p_ghost.add_argument("--cascade", type=str, default=None,
+                         help="Run cascade: initial_steer,depth")
+    p_ghost.add_argument("--experiment", type=str, default=None,
+                         help="Path to experiment YAML/JSON design")
+
+    p_campaign = sub.add_parser(
+        "campaign",
+        help="D&D campaign module runner — Ghost+Riddler integration test harness",
+    )
+    p_campaign.add_argument("--module", type=str, default="campaigns/sunless_citadel/module.json",
+                            help="Path to campaign module.json")
+    p_campaign.add_argument("--room", type=str, default=None, help="Run a single room by id")
+    p_campaign.add_argument("--all", action="store_true", help="Run all rooms in order")
+    p_campaign.add_argument("--party", type=str, default="gemma:2b",
+                            help="Comma-separated model names for party members")
+    p_campaign.add_argument("--full-party", action="store_true", help="Use module's full party roster")
+    p_campaign.add_argument("--dm", type=str, default="rules_engine",
+                            help="DM model: rules_engine (deterministic) or deepseek")
+    p_campaign.add_argument("--mode", type=str, default=None,
+                            help="Experiment mode: v3_baseline or v4_defended")
+    p_campaign.add_argument("--seed", type=int, default=42, help="Random seed for reproducibility")
+    p_campaign.add_argument("--dry", action="store_true", help="Simulate without real model calls")
+    p_campaign.add_argument("--json", action="store_true", help="Machine-readable output")
+
+    p_xv = sub.add_parser(
+        "cross-version",
+        help="Cross-version experiment runner — v3 baseline vs v4 defended control-pattern testing",
+    )
+    p_xv.add_argument("xv_args", nargs=argparse.REMAINDER,
+                      help="run --module <id> [--mode v3_baseline|v4_defended] [--runs N] [--dry] | list | report --module <id>")
+
+    p_steer_compare = sub.add_parser(
+        "steer-compare",
+        help="Run identical steering experiments across providers (DeepSeek + local)",
+    )
+    p_steer_compare.add_argument("--all", action="store_true", help="Full matrix")
+    p_steer_compare.add_argument("--baseline", action="store_true", help="Control group only")
+    p_steer_compare.add_argument("--parallel", action="store_true", help="Run in parallel")
+    p_steer_compare.add_argument("--task", type=str, default=None, help="Task: summary, list")
+    p_steer_compare.add_argument("--steer", type=str, default=None, help="Steer vector key")
+    p_steer_compare.add_argument("--providers", type=str, default=None,
+                                  help="Comma-separated provider keys")
+    p_steer_compare.add_argument("--json", action="store_true", help="Machine-readable output")
+    p_steer_compare.add_argument("--pause", type=float, default=0.5,
+                                  help="Pause between sequential calls")
+
+    p_pile = sub.add_parser(
+        "pile-classify",
+        help="Overnight job: classify the state-summary pile with a local model → case law + training rows",
+    )
+    p_pile.add_argument(
+        "pile_args",
+        nargs=argparse.REMAINDER,
+        help="[--limit N] [--model gemma4:latest] [--no-fold] [--json]",
+    )
+    p_snap = sub.add_parser(
+        "state-snapshot",
+        help="In-the-moment state summary capture for posterity + training",
+    )
+    p_snap.add_argument(
+        "snap_args",
+        nargs=argparse.REMAINDER,
+        help="capture --goal ... --outcome ok --tier local [--lesson ...] | status",
+    )
+    p_clippy = sub.add_parser(
+        "clippy",
+        help="It looks like you're trying to work on Mag. Would you like a reminder?",
+    )
+    p_clippy.add_argument(
+        "clippy_args",
+        nargs=argparse.REMAINDER,
+        help="[--json] — prints the standing reminder + live pile state",
+    )
+    p_st = sub.add_parser(
+        "steer-telemetry",
+        help="Passive steering telemetry + policy loop (tesuji-everywhere)",
+    )
+    p_st.add_argument(
+        "st_args",
+        nargs=argparse.REMAINDER,
+        help="probe [--prob N] [--dry] | collect <task_id> | fold | apply --goal <goal>",
     )
     p_fkb = sub.add_parser(
         "fkb",
@@ -1810,6 +2049,114 @@ def main(argv: list[str] | None = None) -> int:
         else:
             print(json.dumps(res, indent=2))
         return 0 if res.get("ok") else 1
+
+    if args.cmd == "talk":
+        """Talk to Ghost: python main.py talk "what's the verkle status?" """
+        import time as _time
+        from datetime import datetime, timezone
+        from mag.task_router import route_task
+
+        q = " ".join(args.query)
+        msg_id = f"talk-{uuid.uuid4().hex[:8]}"
+
+        # Auto-route to optimal model unless explicitly overridden
+        if args.provider == "ollama" and args.model == "qwen2.5-coder:7b":
+            route = route_task(q)
+            provider = route["provider"]
+            model = route["model"]
+            cost = route["cost_est"]
+        else:
+            provider = args.provider
+            model = args.model
+            cost = 0.0 if provider == "ollama" else 0.00013
+
+        timeout = args.timeout
+
+        msg = {
+            "id": msg_id, "action": "exec", "goal": q,
+            "provider": provider, "model": model,
+            "timeout_s": timeout,
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "source": "talk-cli",
+        }
+
+        inbox = ROOT / "memory" / "copilot" / "inbox.jsonl"
+        inbox.parent.mkdir(parents=True, exist_ok=True)
+        with open(inbox, "a", encoding="utf-8") as f:
+            f.write(json.dumps(msg, ensure_ascii=False) + "\n")
+
+        if not args.json:
+            print(f"🤖 Ghost ({provider}/{model}, \${cost}): {q[:100]}{'...' if len(q) > 100 else ''}")
+
+        outbox_file = ROOT / "memory" / "copilot" / "outbox" / f"{msg_id}.json"
+        waited = 0
+        while waited < timeout:
+            _time.sleep(1)
+            waited += 1
+            if outbox_file.is_file():
+                try:
+                    result = json.loads(outbox_file.read_text(encoding="utf-8"))
+                    if result.get("outcome") in ("spawned", "completed", "error", "spawn_failed"):
+                        task_id = result.get("task_id", "?")
+
+                        # If spawned, wait for orchestrator task to complete
+                        if result.get("outcome") == "spawned" and task_id != "?":
+                            task_file = ROOT / "memory" / "runs" / "orchestrator" / "tasks" / f"{task_id}.json"
+                            task_waited = 0
+                            while task_waited < timeout:
+                                _time.sleep(2)
+                                task_waited += 2
+                                if task_file.is_file():
+                                    try:
+                                        task = json.loads(task_file.read_text(encoding="utf-8"))
+                                        if task.get("status") in ("done", "failed", "timeout", "killed"):
+                                            if args.json:
+                                                print(json.dumps(task, indent=2, default=str))
+                                            else:
+                                                print(f"\n✅ Task {task_id}: {task.get('status')}")
+                                                # Try to read agent output
+                                                log = task.get("log", "")
+                                                if log and Path(log).is_file():
+                                                    try:
+                                                        output = Path(log).read_text(encoding="utf-8", errors="replace")
+                                                        if len(output) > 2000:
+                                                            output = output[-2000:]
+                                                        print(f"--- agent output ---\n{output}")
+                                                    except Exception:
+                                                        pass
+                                            return 0 if task.get("status") == "done" else 1
+                                    except Exception:
+                                        pass
+
+                        if args.json:
+                            print(json.dumps(result, indent=2, default=str))
+                        else:
+                            print(f"\n📬 Ghost: outcome={result.get('outcome')} task={task_id}")
+                        return 0 if result.get("outcome") != "error" else 1
+                except (json.JSONDecodeError, OSError):
+                    pass
+
+        print(f"\n⏰ Timeout after {timeout}s. Task may still be running.")
+        print(f"   Check: {outbox_file}")
+        return 1
+
+    if args.cmd == "swarm":
+        """Fire parallel research swarm: python main.py swarm "analyze the leak detector" --size 3"""
+        from mag.task_router import fire_swarm
+        q = " ".join(args.goal)
+        result = fire_swarm(q, swarm_size=args.size, dry=args.dry)
+        if args.dry:
+            print(f"🪲 SWARM PREVIEW: {result['tasks']} agents, \${result['total_cost']}")
+            for angle in result["angles"]:
+                print(f"   {angle}")
+        else:
+            print(f"🪲 SWARM FIRED: {result['fired']} tasks, \${result['total_cost']}")
+            print(f"   Swarm ID: {result['swarm_id']}")
+            for i, tid in enumerate(result["task_ids"]):
+                print(f"   [{i}] {tid} → {result['angles'][i]}")
+            print(f"\n   Ghost processes on next cycle. Check /api/v1/lattice for results.")
+        return 0
+
     if args.cmd == "tts":
         from mag.tts import speak
 
@@ -3096,6 +3443,400 @@ def main(argv: list[str] | None = None) -> int:
         )
         print(json.dumps(res, indent=2, default=str)[:8000])
         return 0 if res.get("ok") else 1
+    if args.cmd == "steer-agent":
+        from mag.steer_bridge import steer as sb_steer
+        from mag.steer_bridge import status as sb_status
+        from mag.steer_bridge import sync_guidance_file as sb_sync
+
+        if getattr(args, "status", False):
+            print(json.dumps(sb_status(), indent=2, default=str)[:4000])
+            return 0
+        if getattr(args, "sync", False):
+            res = sb_sync(getattr(args, "file", "") or None, source=(args.source or "copilot-assistant"))
+            print(json.dumps(res, indent=2, default=str)[:4000])
+            return 0 if res.get("ok") else 1
+        goal = " ".join(getattr(args, "text", []) or []).strip()
+        if not goal:
+            print('usage: main.py steer-agent "guidance" | --sync | --status', file=sys.stderr)
+            return 2
+        r = sb_steer(goal, source=(args.source or "copilot-assistant"))
+        print(json.dumps(r, indent=2, default=str)[:4000])
+        return 0 if r.get("ok") else 1
+    if args.cmd == "vscode-feed":
+        from mag.vscode_feed import capture as vf_capture
+        from mag.vscode_feed import status as vf_status
+
+        action = (getattr(args, "vf_action", "capture") or "capture").strip()
+        if action == "status":
+            print(json.dumps(vf_status(), indent=2, default=str)[:4000])
+            return 0
+        res = vf_capture(
+            goal=getattr(args, "goal", "") or "",
+            outcome=(getattr(args, "outcome", "unknown") or "unknown").strip(),
+            tier=getattr(args, "tier", "T1") or "T1",
+            lessons=list(getattr(args, "lesson", []) or []),
+            source=getattr(args, "source", "copilot") or "copilot",
+            session_id=getattr(args, "session", "") or "",
+        )
+        print(json.dumps(res, indent=2, default=str)[:4000])
+        return 0 if res.get("ok") else 1
+    if args.cmd == "drainer-stats":
+        from mag.drainer_stats import main as ds_main
+
+        return ds_main(list(getattr(args, "ds_args", []) or []))
+    if args.cmd == "live-feed":
+        from mag.live_feed import main as lf_main
+
+        return lf_main(list(getattr(args, "lf_args", []) or []))
+    if args.cmd == "session-state-brief":
+        from mag.session_state_brief import gather_state, render_brief, write_brief
+
+        if getattr(args, "json", False):
+            print(json.dumps(gather_state(), indent=2, default=str)[:8000])
+            return 0
+        if getattr(args, "dry", False):
+            print(render_brief(gather_state()))
+            return 0
+        res = write_brief()
+        print(json.dumps(res, indent=2, default=str)[:2000])
+        return 0
+    if args.cmd == "ops-graph":
+        from mag.ops_graph import main as og_main
+
+        og_args: list[str] = []
+        if getattr(args, "json", False):
+            og_args.append("--json")
+        if getattr(args, "ingest", False):
+            og_args.append("--ingest")
+        return og_main(og_args)
+    if args.cmd == "janitor":
+        from mag.janitor import main as jan_main
+
+        jan_args: list[str] = []
+        if getattr(args, "dry", False):
+            jan_args.append("--dry")
+        if getattr(args, "prune_only", False):
+            jan_args.append("--prune-only")
+        if getattr(args, "document_only", False):
+            jan_args.append("--document-only")
+        if getattr(args, "last", False):
+            jan_args.append("--last")
+        return jan_main(jan_args)
+    if args.cmd == "orphan":
+        from mag.orphan_timer import main as orphan_main
+
+        return orphan_main(list(getattr(args, "orphan_args", []) or []))
+    if args.cmd == "warning-monitor":
+        from mag.warning_monitor import main as warn_main
+
+        return warn_main(list(getattr(args, "warn_args", []) or []))
+    if args.cmd == "process-supervisor":
+        from mag.process_supervisor import main as ps_main
+
+        return ps_main(list(getattr(args, "proc_sup_args", []) or []))
+    if args.cmd == "deep-handoff":
+        from mag.session_maze import main as maze_main
+
+        return maze_main(list(getattr(args, "deep_args", []) or []))
+    if args.cmd == "extension-deploy":
+        from mag.extension_deploy import main as ext_main
+
+        return ext_main([])
+    if args.cmd == "spec-gate":
+        from mag.spec_gate import main as gate_main
+
+        return gate_main(list(getattr(args, "gate_args", []) or []))
+    if args.cmd == "job-floor":
+        from mag.job_floor import main as floor_main
+
+        return floor_main(list(getattr(args, "floor_args", []) or []))
+    if args.cmd == "skill-ledger":
+        from mag.skill_ledger import main as ledger_main
+
+        return ledger_main(list(getattr(args, "ledger_args", []) or []))
+    if args.cmd == "ghost":
+        from mag.ghost import (
+            cycle, seed_default_vectors, catalog_summary,
+            run_swarm, run_temporal_experiment, run_cascade_experiment,
+            run_designed_experiment, load_vectors,
+        )
+        import json as _json
+
+        dry = bool(getattr(args, "dry", False))
+        json_out = bool(getattr(args, "json", False))
+
+        # Swarm experiment
+        if getattr(args, "swarm", None):
+            models = None
+            if getattr(args, "swarm_models", None):
+                models = [m.strip() for m in args.swarm_models.split(",")]
+            result = run_swarm(steer_text=args.swarm, models=models, dry=dry)
+            if json_out:
+                print(_json.dumps(result, indent=2, ensure_ascii=False, default=str))
+            else:
+                print(f"SWARM {result.get('swarm_id','?')}")
+                for r in result.get("results", []):
+                    f = r.get("flip",{}).get("score","?")
+                    s = r.get("silence",{}).get("score","?")
+                    e = " ✨" if r.get("emergent",{}).get("emergent") else ""
+                    print(f"  {r.get('model','?'):<20s} flip={f} silence={s}{e}")
+            return 0
+
+        # Temporal experiment
+        if getattr(args, "temporal", False):
+            result = run_temporal_experiment(dry=dry)
+            if json_out:
+                print(_json.dumps(result, indent=2, ensure_ascii=False, default=str))
+            else:
+                print(f"TEMPORAL {result.get('exp_id','?')}")
+                for r in result.get("results", []):
+                    print(f"  {r.get('model','?'):<20s} status={r.get('status','?')}")
+            return 0
+
+        # Cascade experiment
+        if getattr(args, "cascade", None):
+            parts = args.cascade.split(",")
+            steer = parts[0].strip()
+            depth = int(parts[1].strip()) if len(parts) > 1 else 3
+            result = run_cascade_experiment(initial_steer=steer, depth=depth, dry=dry)
+            if json_out:
+                print(_json.dumps(result, indent=2, ensure_ascii=False, default=str))
+            else:
+                print(f"CASCADE {result.get('exp_id','?')} depth={depth}")
+                for hop in result.get("chain", []):
+                    sim = hop.get("similarity_to_original","?")
+                    print(f"  hop={hop.get('hop','?')} model={hop.get('model','?'):<20s} sim={sim}")
+            return 0
+
+        # Designed experiment from file
+        if getattr(args, "experiment", None):
+            from pathlib import Path as _Path
+            exp_path = _Path(args.experiment)
+            if not exp_path.is_file():
+                print(f"Experiment file not found: {args.experiment}")
+                return 1
+            try:
+                if exp_path.suffix in (".yaml", ".yml"):
+                    import yaml
+                    design = yaml.safe_load(exp_path.read_text(encoding="utf-8"))
+                else:
+                    design = _json.loads(exp_path.read_text(encoding="utf-8"))
+            except Exception as e:
+                print(f"Failed to load: {e}")
+                return 1
+            result = run_designed_experiment(design, dry=dry)
+            if json_out:
+                print(_json.dumps(result, indent=2, ensure_ascii=False, default=str))
+            return 0
+
+        # Legacy: list, sense, observe, probe
+        if getattr(args, "list", False):
+            vectors = load_vectors()
+            for v in vectors:
+                print(f"  {v.get('id','?'):<12s} [{','.join(v.get('tags',[]))}] "
+                      f"deployed={v.get('deploy_count',0)}x \"{v.get('text','')[:80]}\"")
+            return 0
+        if getattr(args, "sense", False):
+            from mag.ghost import sense
+            state = sense()
+            print(_json.dumps({k: v for k, v in state.items() if not k.startswith("_")},
+                              indent=2, ensure_ascii=False, default=str))
+            return 0
+        if getattr(args, "observe", False):
+            from mag.ghost import sense, match_vector, interpret
+            state = sense()
+            matched = match_vector(state)
+            if matched:
+                readings = interpret(matched, {"status": "observed_only"})
+                print(f"SENSE fkb:{state.get('fkb_signal_count',0)} "
+                      f"spider_blind:{state.get('spider_blind',False)} "
+                      f"tip_stale:{state.get('verkle_tip_stale',False)}")
+                print(f"MATCH -> {matched.get('id','?')}")
+                for r in readings:
+                    print(f"  [{r['lens']}] {r['question'][:90]}")
+            else:
+                print("GHOST OBSERVE — silent (nothing matches)")
+            return 0
+
+        # Default: run cycle
+        if not load_vectors():
+            seed_default_vectors()
+        if getattr(args, "probe", None):
+            result = cycle(dry=dry, deploy_text=args.probe)
+        else:
+            result = cycle(dry=dry)
+        if json_out:
+            print(_json.dumps(result, indent=2, ensure_ascii=False, default=str))
+        return 0
+    if args.cmd == "steer-compare":
+        from tools.steer_compare import run_grid, print_summary
+        import json as _json
+
+        # Determine grid params
+        if getattr(args, "all", False):
+            from tools.steer_compare import PROVIDERS, TASKS, STEERS
+            providers = list(PROVIDERS.keys())
+            tasks = list(TASKS.keys())
+            steers_list = [None] + list(STEERS.keys())
+        elif getattr(args, "baseline", False):
+            from tools.steer_compare import PROVIDERS, TASKS
+            providers = (getattr(args, "providers", None) or "deepseek,gemma:2b,qwen2.5:7b").split(",")
+            tasks_list = [getattr(args, "task", None)] if getattr(args, "task", None) else ["summary", "list"]
+            steers_list = [None]
+        elif getattr(args, "task", None) and getattr(args, "steer", None):
+            providers = (getattr(args, "providers", None) or "deepseek,gemma:2b,qwen2.5:7b").split(",")
+            tasks_list = [args.task]
+            steers_list = [args.steer]
+        elif getattr(args, "task", None):
+            from tools.steer_compare import STEERS
+            providers = (getattr(args, "providers", None) or "deepseek,gemma:2b").split(",")
+            tasks_list = [args.task]
+            steers_list = [None] + list(STEERS.keys())
+        elif getattr(args, "steer", None):
+            providers = (getattr(args, "providers", None) or "deepseek,gemma:2b,qwen2.5:7b").split(",")
+            tasks_list = ["summary", "list"]
+            steers_list = [args.steer]
+        else:
+            providers = (getattr(args, "providers", None) or "deepseek,gemma:2b,qwen2.5:7b").split(",")
+            tasks_list = ["summary", "list"]
+            steers_list = [None, "loop", "wrong"]
+
+        providers = [p.strip() for p in providers]
+        n_total = len(providers) * len(tasks_list) * len(steers_list)
+        print(f"Steer Compare: {len(providers)}p × {len(tasks_list)}t × {len(steers_list)}s = {n_total} experiments")
+
+        results = run_grid(
+            providers, tasks_list, steers_list,
+            pause=getattr(args, "pause", 0.5),
+            parallel=getattr(args, "parallel", False),
+        )
+        if getattr(args, "json", False):
+            print(_json.dumps(results, indent=2, ensure_ascii=False, default=str))
+        else:
+            print_summary(results)
+        return 0
+    if args.cmd == "campaign":
+        import json as _json
+        mode = getattr(args, "mode", None)
+        if mode:
+            # Apply experiment mode settings
+            from mag.cross_version import apply_mode_settings
+            applied = apply_mode_settings(mode)
+            print(f"Campaign mode: {mode}")
+            for k, v in applied["settings"].items():
+                print(f"  {k}: {v}")
+
+        from mag.campaign import (
+            load_module, load_riddler_map, dm_narrate,
+            inject_scheduled_steers, party_member_turn,
+        )
+        from mag.campaign import CampaignState
+
+        module_path = args.module
+        module = load_module(module_path)
+        campaign_dir = Path(module_path).parent
+        riddler_map = load_riddler_map(campaign_dir)
+
+        state = CampaignState(
+            session_id=f"campaign-{uuid.uuid4().hex[:12]}",
+            module_id=module.get("module_id", "unknown"),
+            current_room=module.get("start_room", ""),
+            dm_model=args.dm,
+            turn=0,
+            dry=args.dry,
+        )
+
+        # Build party
+        if args.full_party:
+            state.party = module.get("party_roster", {})
+        else:
+            models = [m.strip() for m in args.party.split(",")]
+            roster = module.get("party_roster", {})
+            names = list(roster.keys())[:len(models)]
+            for name, model in zip(names, models):
+                info = dict(roster.get(name, {}))
+                info["model"] = model
+                state.party[name] = info
+
+        # Run rooms
+        rooms = module.get("rooms", {})
+        if args.room:
+            ordered = [rooms[args.room]] if args.room in rooms else []
+        elif args.all:
+            ordered = sorted(
+                [r for r in rooms.values() if r.get("order")],
+                key=lambda r: r.get("order", 99),
+            )
+        else:
+            ordered = sorted(
+                [r for r in rooms.values() if r.get("order")],
+                key=lambda r: r.get("order", 99),
+            )
+
+        for room in ordered:
+            state.current_room = room.get("id", "?")
+            print(f"\n{'─'*50}")
+            print(f"  Room: {room.get('name', state.current_room)}")
+
+            # DM narration
+            narration = dm_narrate(module, state, riddler_map=riddler_map)
+            if narration.get("ok"):
+                print(f"  DM: {narration['narration'][:200]}...")
+            else:
+                print(f"  DM error: {narration.get('error')}")
+
+            # Inject steers
+            steer_results = inject_scheduled_steers(room, state, at_point="room_entry")
+            for sr in steer_results:
+                if sr.get("deployed"):
+                    print(f"  Steer: {sr['ghost_id']} ({sr['delivery']})")
+
+            # Party turns
+            for member_name, member_info in state.party.items():
+                turn = party_member_turn(member_name, member_info,
+                                         narration.get("narration", ""), room, state)
+                status = "✓" if turn.get("ok") else "✗"
+                action_preview = (turn.get("action", "") or turn.get("error", ""))[:120]
+                print(f"  {status} {member_name} ({member_info.get('mag_role','?')}): {action_preview}")
+
+            state.rooms_cleared.append(state.current_room)
+            state.turn += 1
+
+        print(f"\n{'='*50}")
+        print(f"Campaign complete: {len(state.rooms_cleared)} rooms, "
+              f"{state.steers_deployed} steers deployed")
+
+        if args.json:
+            print(_json.dumps({
+                "rooms_cleared": state.rooms_cleared,
+                "steers_deployed": state.steers_deployed,
+                "steers_detected": state.steers_detected,
+                "steers_resisted": state.steers_resisted,
+                "turns": state.turn,
+            }, indent=2))
+        return 0
+    if args.cmd == "cross-version":
+        from mag.cross_version import main as xv_main
+        return xv_main(args.xv_args)
+    if args.cmd == "pro-library":
+
+        return pro_main(list(getattr(args, "pro_args", []) or []))
+    if args.cmd == "pile-classify":
+        from tools.pile_classify import main as pile_main
+
+        return pile_main(list(getattr(args, "pile_args", []) or []))
+    if args.cmd == "state-snapshot":
+        from mag.state_snapshot import main as snap_main
+
+        return snap_main(list(getattr(args, "snap_args", []) or []))
+    if args.cmd == "clippy":
+        from mag.clippy import main as clippy_main
+
+        return clippy_main(list(getattr(args, "clippy_args", []) or []))
+    if args.cmd == "steer-telemetry":
+        from mag.steer_telemetry import main as steer_main
+
+        return steer_main(list(getattr(args, "st_args", []) or []))
     if args.cmd == "route":
         goal = " ".join(args.goal)
         if getattr(args, "local", False):

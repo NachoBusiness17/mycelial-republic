@@ -456,6 +456,23 @@ def h_overseer_events(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int
     }
 
 
+def h_overseer_session(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Session-aware overseer: read a VS Code session, extract the ask, gather full
+    state, and decide (GET) or apply (POST {apply:true, session}) whether to enable
+    the drainer for the task introduced."""
+    from mag.session_overseer import decide, latest_session_id
+
+    data = body or {}
+    session = str(data.get("session") or _p.get("session") or "").strip()
+    apply = bool(data.get("apply"))
+    if not session:
+        session = latest_session_id() or ""
+    if not session:
+        return _err(400, "session id required")
+    res = decide(session, apply=apply)
+    return (200 if res.get("ok") else 404), res
+
+
 def h_overseer_manifest(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
     """Overseer bard manifest for tabbed event UI and invocation flavor."""
     from mag import memory_events as me
@@ -1679,6 +1696,318 @@ def h_drainer_status(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int
     return 200, {"ok": True, **st}
 
 
+def h_drainer_stats(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Full drainer / queue / fleet / pending-handoff stats payload."""
+    from mag.drainer_stats import drainer_stats
+
+    return 200, drainer_stats()
+
+
+def h_ops_graph(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Categorized ops knowledge graph (nodes + edges) for the VS Code webview."""
+    from mag.ops_graph import render
+
+    try:
+        return 200, render()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_framework_map(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Functional grouping of the whole framework for the VS Code Framework Map."""
+    from mag.framework_map import render
+
+    try:
+        return 200, render()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_framework_reports(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Per-run-session compiler reports (who/what/when/where/why/intent/topics)."""
+    from mag.framework_map import list_reports
+
+    try:
+        tail = max(1, min(int(_p.get("limit") or 20), 200))
+    except (TypeError, ValueError):
+        tail = 20
+    try:
+        return 200, {"ok": True, "reports": list_reports(tail=tail)}
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_janitor(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Run the janitor (prune + document) or fetch its last report."""
+    from mag.janitor import last_report, run
+
+    body = body or {}
+    action = str(body.get("action") or _p.get("action") or "run")
+    if action == "last":
+        return 200, {"ok": True, "report": last_report()}
+    try:
+        return 200, run(
+            dry=bool(body.get("dry")),
+            prune_only=bool(body.get("prune_only")),
+            document_only=bool(body.get("document_only")),
+        )
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_orphan(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Orphan timer: note/touch/resolve/run undone-yet-intended intents."""
+    from mag.orphan_timer import list_open, note_intent, resolve_intent, run, touch_intent
+
+    body = body or {}
+    action = str(body.get("action") or _p.get("action") or "list")
+    try:
+        if action == "note":
+            return 200, note_intent(
+                str(body.get("intent") or ""), source=str(body.get("source") or "operator"), id=body.get("id")
+            )
+        if action == "touch":
+            return 200, touch_intent(str(body.get("id") or _p.get("id") or ""))
+        if action == "resolve":
+            return 200, resolve_intent(str(body.get("id") or _p.get("id") or ""))
+        if action == "run":
+            return 200, run(threshold_s=int(body.get("threshold") or 1800), dry=bool(body.get("dry")))
+        open_rows = list_open()
+        return 200, {"ok": True, "schema": "orphan_list.v1", "open": open_rows,
+                     "n_open": len(open_rows)}
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_failure(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Restful doctor: report an operational issue into the failure KB (catalogue +
+    classify + learn), or query stats / recurring patterns. GET ?view=stats|recurring."""
+    from mag.failure_kb import log_failure, recurring_patterns, stats
+
+    view = str(_p.get("view") or "").lower()
+    try:
+        if view == "stats":
+            return 200, stats()
+        if view == "recurring":
+            return 200, {"ok": True, "schema": "fkb_recurring.v1",
+                         "recurring": recurring_patterns(min_count=3)}
+        if view == "search":
+            from mag.failure_kb import query
+            q = str(_p.get("q") or (body or {}).get("q") or "")
+            return 200, {"ok": True, "schema": "fkb_search.v1", "q": q,
+                         "hits": query(q)}
+        # else: report a failure/observation (POST)
+        detail = str((body or {}).get("detail") or "").strip()
+        if not detail:
+            return _err(400, "detail required")
+        r = log_failure(
+            kind=str((body or {}).get("kind") or "ops")[:40],
+            detail=detail[:500],
+            tool=(body or {}).get("tool"),
+            error=(body or {}).get("error"),
+            phase=(body or {}).get("phase"),
+            session_id=(body or {}).get("session_id"),
+            provider=(body or {}).get("provider"),
+            model=(body or {}).get("model"),
+        )
+        return 200, {"ok": True, "schema": "fkb_report.v1", "logged": r}
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_warnings(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Passive warning monitor twin. GET ?view=status; POST {action: run[, dry]}.
+
+    Warnings are scanned from the framework's own logs, deduped by signature,
+    and reported into the failure KB — handled passively via our system.
+    """
+    from mag.warning_monitor import run, status
+
+    try:
+        b = body or {}
+        action = str(b.get("action") or _p.get("view") or "status").lower()
+        if action == "run":
+            return 200, run(dry=bool(b.get("dry")))
+        return 200, status()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_supervisor(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Single process supervisor twin. GET = status; POST {action: start|stop|restart, name}
+    or {action: up|down}. Replaces N terminal tabs with one managed host.
+    """
+    from mag.process_supervisor import restart_loop, start_loop, status, stop_loop
+
+    try:
+        b = body or {}
+        action = str(b.get("action") or _p.get("view") or "status").lower()
+        if action == "start":
+            name = str(b.get("name") or "").strip()
+            if not name:
+                return _err(400, "name required")
+            return 200, start_loop(name)
+        if action == "stop":
+            name = str(b.get("name") or "").strip()
+            if not name:
+                return _err(400, "name required")
+            return 200, stop_loop(name)
+        if action == "restart":
+            name = str(b.get("name") or "").strip()
+            if not name:
+                return _err(400, "name required")
+            return 200, restart_loop(name)
+        if action == "up":
+            from mag.process_supervisor import start_all
+            return 200, start_all()
+        if action == "down":
+            from mag.process_supervisor import stop_all
+            return 200, stop_all()
+        return 200, status()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_handoff_deep(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.session_maze import deep_handoff, persist
+
+    try:
+        b = body or {}
+        action = str(b.get("action") or _p.get("view") or "spawn").lower()
+        if action in ("assemble", "persist", "maze"):
+            return 200, persist()
+        goal = str(b.get("goal") or "").strip()
+        if not goal:
+            return _err(400, "goal required")
+        return 200, deep_handoff(
+            goal,
+            model=str(b.get("model") or "deepseek-v4-pro"),
+            provider=str(b.get("provider") or "deepseek"),
+            timeout=int(b.get("timeout") or 900),
+        )
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_grok_batch(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Surface the Grok batch buffers + results (status of the autonomous batch)."""
+    from pathlib import Path as _Path
+
+    base = _Path(__file__).resolve().parent.parent / "memory" / "grok_batch"
+    buffers = sorted([p.name for p in (base / "buffers").glob("*.md")]) if (base / "buffers").is_dir() else []
+    # fallback: buffers may live at memory/grok_batch/*.md (root) if dir scheme differs
+    if not buffers:
+        buffers = sorted([p.name for p in base.glob("*.md")])
+    results = sorted([p.name for p in (base / "results").glob("*_result.md")]) if (base / "results").is_dir() else []
+    return 200, {
+        "ok": True, "schema": "grok_batch.v1",
+        "buffers": buffers, "results": results,
+        "path": str(base),
+    }
+
+
+def h_ghost(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Thin REST twin for ghost: GET ?view=sense|catalog; POST {action: sense|deploy|cycle}."""
+    from mag.ghost import catalog_summary, cycle, deploy, sense
+
+    view = str(_p.get("view") or "").lower()
+    try:
+        if view == "catalog":
+            return 200, {"ok": True, "summary": catalog_summary()}
+        b = body or {}
+        action = str(b.get("action") or view or "sense")
+        if action == "deploy":
+            text = str(b.get("text") or "").strip()
+            if not text:
+                return _err(400, "text required")
+            return 200, deploy(text, source="rest")
+        if action == "cycle":
+            return 200, cycle(dry=bool(b.get("dry")))
+        return 200, sense()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_run(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Thin REST twin for run: spawn a goal through the orchestrator."""
+    from mag.orchestrator import spawn_task
+
+    b = body or {}
+    goal = str(b.get("goal") or _p.get("goal") or "").strip()
+    if not goal:
+        return _err(400, "goal required")
+    try:
+        r = spawn_task(
+            goal,
+            provider=str(b.get("provider") or _p.get("provider") or "deepseek"),
+            model=b.get("model"),
+            tag=str(b.get("tag") or _p.get("tag") or "rest-run"),
+        )
+        return 200, r
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_spec_gate(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Thin REST twin for spec-gate: freeze or check a file's fingerprint."""
+    from mag.spec_gate import check, freeze
+
+    b = body or {}
+    action = str(b.get("action") or _p.get("action") or "check")
+    path = str(b.get("path") or _p.get("path") or "").strip()
+    if not path:
+        return _err(400, "path required")
+    try:
+        if action == "freeze":
+            return 200, freeze(path, label=str(b.get("label") or ""))
+        return 200, check(path, expected_sha=b.get("sha"))
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_extension_deploy(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Deploy the MAG extension files to the installed extension dir (architecture path)."""
+    from mag.extension_deploy import deploy
+
+    try:
+        return 200, deploy()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+
+def h_live_feed(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Recent lines from a live trail (overseer|ghost|drainer) for polling views."""
+    from mag.live_feed import FEEDS
+
+    data = dict(body or {})
+    kind = str(data.get("kind") or _p.get("kind") or "").strip().lower()
+    if kind not in FEEDS:
+        return _err(400, f"kind must be one of: {', '.join(FEEDS)}")
+    try:
+        limit = max(1, min(int(data.get("limit") or _p.get("limit") or 30), 200))
+    except (TypeError, ValueError):
+        limit = 30
+    out = {"ok": True, "kind": kind, "files": [], "lines": []}
+    for p in FEEDS[kind]:
+        if not p.exists():
+            continue
+        rows = []
+        try:
+            for line in p.read_text(encoding="utf-8", errors="replace").splitlines():
+                if not line.strip():
+                    continue
+                try:
+                    rows.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+        except OSError:
+            continue
+        out["files"].append(str(p.relative_to(ROOT)))
+        out["lines"].extend(rows[-limit:])
+    return 200, out
+
+
 def h_drainer_toggle(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
     from mag.preferences import drainer_status, set_drainer
 
@@ -1749,6 +2078,68 @@ def h_orchestrator_queue_post(_p: dict[str, str], body: dict[str, Any] | None) -
         tag=str(body.get("tag") or "api"),
     )
     return 200, {"ok": True, **rec}
+
+
+def h_handoff_request_post(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Drop a handoff request file — the MAG VS Code extension watches this dir and
+    auto-opens a new tab executing the ask. Body: {ask|goal, provider|assignee, id?}.
+
+    The watcher in vscode-mag-map opens a new integrated terminal tab that runs
+    `main.py agent --provider <provider> --query "<ask>"` as soon as the file lands.
+    """
+    from datetime import datetime, timezone
+
+    body = body or {}
+    ask = str(body.get("ask") or body.get("goal") or body.get("question") or "").strip()
+    if not ask:
+        return _err(400, "ask (or goal/question) required")
+    provider = str(body.get("provider") or body.get("assignee") or "deepseek").strip() or "deepseek"
+    req_id = str(body.get("id") or "").strip() or "req-" + uuid.uuid4().hex[:8]
+    req_dir = ROOT / "queue" / "handoff" / "requests"
+    req_dir.mkdir(parents=True, exist_ok=True)
+    req_file = req_dir / f"{req_id}.json"
+    req_file.write_text(
+        json.dumps(
+            {
+                "schema": "handoff_request.v1",
+                "id": req_id,
+                "ask": ask,
+                "provider": provider,
+                "source": str(body.get("source") or "api").strip(),
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    return 200, {
+        "ok": True,
+        "schema": "handoff_request.v1",
+        "id": req_id,
+        "file": str(req_file),
+        "note": "MAG VS Code extension watches queue/handoff/requests/ — a new tab will open to execute this ask.",
+    }
+
+
+def h_vscode_feed(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Feed a VS Code chat signal into the behavioral loop (pile/training/ledger/pro)."""
+    from mag.vscode_feed import capture, status
+
+    if body is None or not body:
+        return 200, status()
+    goal = str(body.get("goal") or body.get("ask") or body.get("text") or "").strip()
+    outcome = str(body.get("outcome") or "unknown").strip()
+    lessons = [str(l) for l in (body.get("lessons") or []) if str(l).strip()]
+    res = capture(
+        goal=goal,
+        outcome=outcome,
+        tier=str(body.get("tier") or "T1"),
+        lessons=lessons,
+        source=str(body.get("source") or "copilot"),
+        session_id=str(body.get("session_id") or body.get("session") or ""),
+    )
+    return 200, res
 
 
 def h_seat_task(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
@@ -2862,6 +3253,22 @@ def h_context_pack(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, 
         return 500, {"ok": False, "error": str(e)}
 
 
+def h_session_freeze(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Immutable snapshot of full agent state for DeepSeek Pro Max / external seats.
+
+    Combines system health, session context, agent state, and brief into one
+    content-addressed JSON blob. Pay the context tax once.
+    """
+    try:
+        from mag.session_freeze import freeze_session_snapshot
+        snapshot = freeze_session_snapshot(
+            include_routing=_p.get("routing", "").lower() in ("1", "true", "yes"),
+        )
+        return 200, snapshot
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)}
+
+
 def h_tangents(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
     from mag.tangent import list_tangents
 
@@ -3544,7 +3951,60 @@ def h_api_index(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dic
 
 
 # (method, pattern, handler) — pattern uses {id} etc.
+def h_skill_ledger(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.skill_ledger import progress
+
+    return 200, progress()
+
+
+def h_skill_ledger_record(_p: dict[str, str], b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.skill_ledger import progress, record_decision
+
+    b = b or {}
+    rec = record_decision(
+        goal=str(b.get("goal") or ""),
+        task_shape=str(b.get("task_shape") or "unknown"),
+        provider=str(b.get("provider") or "ollama"),
+        model=str(b.get("model") or ""),
+        reasoning_level=str(b.get("reasoning_level") or "none"),
+        seat=str(b.get("seat") or ""),
+        outcome=b.get("outcome"),
+        detail=str(b.get("detail") or ""),
+        source=str(b.get("source") or "rest"),
+    )
+    return 200, {"ok": True, "recorded": rec, "progress": progress()}
+
+
+def h_skill_ledger_labeled_row(_p: dict[str, str], b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.skill_ledger import progress, record_labeled_row
+
+    b = b or {}
+    rec = record_labeled_row(
+        text=str(b.get("text") or ""),
+        label=str(b.get("label") or ""),
+        classifier=str(b.get("classifier") or "gemma4:latest"),
+        confidence=b.get("confidence"),
+        audited_by=b.get("audited_by"),
+        source=str(b.get("source") or "rest"),
+    )
+    return 200, {"ok": True, "recorded": rec, "progress": progress()}
+
+
+def h_pile(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.state_snapshot import status as pile_status
+
+    return 200, pile_status()
+
+
 ROUTES: list[tuple[str, str, HandlerFn]] = [
+    ("GET", "/api/v1/skill-ledger", h_skill_ledger),
+    ("GET", "/api/skill-ledger", h_skill_ledger),
+    ("POST", "/api/v1/skill-ledger/record", h_skill_ledger_record),
+    ("POST", "/api/skill-ledger/record", h_skill_ledger_record),
+    ("POST", "/api/v1/skill-ledger/labeled-row", h_skill_ledger_labeled_row),
+    ("POST", "/api/skill-ledger/labeled-row", h_skill_ledger_labeled_row),
+    ("GET", "/api/v1/pile", h_pile),
+    ("GET", "/api/pile", h_pile),
     ("GET", "/api/v1/fleet/triad", h_fleet_triad),
     ("GET", "/api/v1", h_api_index),
     ("GET", "/api/v1/", h_api_index),
@@ -3695,6 +4155,7 @@ ROUTES: list[tuple[str, str, HandlerFn]] = [
     ("POST", "/api/agent/upload", h_post_agent_upload),
     ("GET", "/api/v1/context-pack", h_context_pack),
     ("GET", "/api/context-pack", h_context_pack),
+    ("GET", "/api/v1/session/freeze", h_session_freeze),
     ("GET", "/api/v1/tangents", h_tangents),
     ("POST", "/api/v1/tangent", h_post_tangent),
     ("POST", "/api/v1/tangent/process", h_post_tangent_process),
@@ -3750,6 +4211,8 @@ ROUTES: list[tuple[str, str, HandlerFn]] = [
     ("GET", "/api/v1/governance/steering-log", h_governance_steering_log),
     ("GET", "/api/v1/overseer/manifest", h_overseer_manifest),
     ("GET", "/api/v1/overseer/events", h_overseer_events),
+    ("GET", "/api/v1/overseer/session", h_overseer_session),
+    ("POST", "/api/v1/overseer/session", h_overseer_session),
     ("GET", "/api/v1/operator-inbox", h_operator_inbox),
     ("POST", "/api/v1/operator-inbox", h_operator_inbox),
     ("GET", "/api/v1/seat-feed", h_seat_feed),
@@ -3773,11 +4236,39 @@ ROUTES: list[tuple[str, str, HandlerFn]] = [
     ("POST", "/api/v1/factory-machine", h_factory_machine),
     ("GET", "/api/v1/drainer", h_drainer_status),
     ("POST", "/api/v1/drainer", h_drainer_toggle),
+    ("GET", "/api/v1/drainer/stats", h_drainer_stats),
+    ("GET", "/api/v1/graph/ops", h_ops_graph),
+    ("GET", "/api/v1/framework/map", h_framework_map),
+    ("GET", "/api/v1/framework/reports", h_framework_reports),
+    ("GET", "/api/v1/janitor", h_janitor),
+    ("POST", "/api/v1/janitor", h_janitor),
+    ("GET", "/api/v1/orphan", h_orphan),
+    ("POST", "/api/v1/orphan", h_orphan),
+    ("GET", "/api/v1/failure", h_failure),
+    ("POST", "/api/v1/failure", h_failure),
+    ("GET", "/api/v1/warnings", h_warnings),
+    ("POST", "/api/v1/warnings", h_warnings),
+    ("GET", "/api/v1/supervisor", h_supervisor),
+    ("POST", "/api/v1/supervisor", h_supervisor),
+    ("POST", "/api/v1/handoff/deep", h_handoff_deep),
+    ("GET", "/api/v1/grok-batch", h_grok_batch),
+    ("GET", "/api/v1/ghost", h_ghost),
+    ("POST", "/api/v1/ghost", h_ghost),
+    ("GET", "/api/v1/run", h_run),
+    ("POST", "/api/v1/run", h_run),
+    ("GET", "/api/v1/spec-gate", h_spec_gate),
+    ("POST", "/api/v1/spec-gate", h_spec_gate),
+    ("POST", "/api/v1/extension/deploy", h_extension_deploy),
+    ("GET", "/api/v1/live-feed", h_live_feed),
+    ("POST", "/api/v1/live-feed", h_live_feed),
     ("GET", "/api/v1/workspace/tree", h_workspace_tree),
     ("GET", "/api/v1/workspace/file", h_workspace_file_get),
     ("POST", "/api/v1/workspace/file", h_workspace_file_post),
     ("POST", "/api/v1/autopilot", h_autopilot),
     ("POST", "/api/v1/orchestrator/queue", h_orchestrator_queue_post),
+    ("POST", "/api/v1/handoff/request", h_handoff_request_post),
+    ("GET", "/api/v1/behavior/vscode", h_vscode_feed),
+    ("POST", "/api/v1/behavior/vscode", h_vscode_feed),
     ("POST", "/api/v1/seat/task", h_seat_task),
 ]
 

@@ -327,7 +327,7 @@ def fill_queue(
                     text = str(m.get("title") or m.get("text") or m.get("move") or "")
                 else:
                     status, text = "open", str(m)
-                if status == "deferred" or not text.strip():
+                if status in ("done", "deferred") or not text.strip():
                     continue
                 goal = text.strip()
                 if queue_has_goal(goal) and _todo_has_text(goal):
@@ -379,6 +379,41 @@ def fill_queue(
         filled["steward"] = fill_steward_queue(max_jobs=2)
     except Exception as e:
         filled["steward_error"] = str(e)
+
+    # ── Autonomous ghost + janitor (inline, $0, < 2 sec each) ──
+    try:
+        from mag.ghost import cycle as ghost_cycle, load_vectors
+        if load_vectors():
+            ghost_result = ghost_cycle(dry=False)
+            filled["ghost"] = ghost_result.get("outcome", "?")
+        else:
+            filled["ghost"] = "no_vectors"
+    except Exception as e:
+        filled["ghost_error"] = str(e)
+
+    try:
+        # Janitor: verkle tip fix + training nudge + inbox health
+        from mag.ghost import sense as ghost_sense
+        state = ghost_sense()
+        if state.get("verkle_tip_stale"):
+            import subprocess, sys as _sys
+            subprocess.run([_sys.executable, "-m", "mag.verkle_audit", "--full"],
+                          cwd=str(ROOT), capture_output=True, timeout=30)
+            filled["janitor_verkle"] = "audited"
+        if state.get("training_rows", 0) >= 5:
+            # Check W0.3 archive gate
+            archive_dir = ROOT.parent / "mycelial-republic" / "data" / "raw"
+            has_archive = archive_dir.is_dir() and any(
+                f.suffix in (".zip", ".tar", ".gz") for f in archive_dir.iterdir()
+            )
+            filled["janitor_training"] = "blocked" if not has_archive else "ready"
+        filled["janitor_inbox"] = state.get("inbox_pending", 0)
+        # PIPE 4: Spider blindness → auto-todo when FKB has clear signals
+        if state.get("spider_blind") and len(state.get("fkb_signals", [])) >= 3:
+            _append_todo_mag("[janitor] Spider is blind but FKB has clear failure patterns. Investigate spider detection thresholds.")
+            filled["spider_todo"] = "appended"
+    except Exception as e:
+        filled["janitor_error"] = str(e)
 
     filled["total_queued"] = (
         len(filled["improve"])
@@ -651,6 +686,19 @@ def autorun_once(*, fill: bool = True, dry: bool = False) -> dict[str, Any]:
     from mag.orchestrator import _any_running_task, drain_once, list_queue
 
     queued_n = sum(1 for q in list_queue() if q.get("status") == "queued")
+    # Steer telemetry (tesuji-everywhere): probe a duplicate BEFORE drain so the
+    # spawned agent drains the injected directive at its first checkpoint.
+    steer_pass: dict[str, Any] | None = None
+    try:
+        from mag.steer_telemetry import run_probe_pass
+
+        steer_pass = run_probe_pass(prob=0.5)
+        result["steer"] = steer_pass
+        if steer_pass.get("probe", {}).get("action") in ("probe", "skip"):
+            result["steps"].append({"steer": steer_pass["probe"].get("action")})
+    except Exception as e:  # noqa: BLE001 — telemetry must never break the cycle
+        result["steer_error"] = str(e)[:200]
+
     drain_res: dict[str, Any] | None = None
     if queued_n > 0 and not _any_running_task():
         drain_res = drain_once()
@@ -694,6 +742,24 @@ def autorun_loop(interval_s: float = 5.0, *, once: bool = False) -> None:
     fill_every = int(os.environ.get("MAG_AUTORUN_FILL_EVERY", "12") or "12")
     autopilot_every = int(os.environ.get("MAG_AUTOPILOT_EVERY", "0") or "0")
     growth_every = int(os.environ.get("MAG_GROWTH_CYCLE_EVERY", "0") or "0")
+    # Overnight pile-classify: run a bounded full drain every N ticks (e.g. 720 ≈ 1h at 5s).
+    # Set MAG_PILE_EVERY=720 to register it as the overnight job; 0 = off (default).
+    pile_every = int(os.environ.get("MAG_PILE_EVERY", "0") or "0")
+    pile_limit = int(os.environ.get("MAG_PILE_LIMIT", "10") or "10")
+    # Janitor cadence: prune temp/pytest-* scratch + regenerate docs (lean & documented).
+    # Default 300 ticks (~25 min at 5s). Self-guards against operator_active inside mag.janitor.
+    janitor_every = int(os.environ.get("MAG_JANITOR_EVERY", "300") or "300")
+    # Orphan timer cadence: promote undone-yet-intended intents into the idea graph
+    # so nothing is lost across windows. Default 180 ticks (~15 min at 5s).
+    orphan_every = int(os.environ.get("MAG_ORPHAN_EVERY", "180") or "180")
+    # Framework map cadence: regenerate the functional grouping + durable copy
+    # so the VS Code Framework Map pane stays fresh without a manual rescan.
+    # Default 600 ticks (~50 min at 5s). Cheap, deterministic, no LLM.
+    map_every = int(os.environ.get("MAG_MAP_EVERY", "600") or "600")
+    # Warning monitor cadence: passively sweep logs -> report NEW warnings into
+    # the failure KB (remedy + recurring_patterns + training) without being asked.
+    # Default 120 ticks (~10 min at 5s). Deterministic, no LLM.
+    warn_every = int(os.environ.get("MAG_WARN_EVERY", "120") or "120")
     tick = 0
 
     def _dim(s: str) -> str:
@@ -745,21 +811,83 @@ def autorun_loop(interval_s: float = 5.0, *, once: bool = False) -> None:
             except Exception as e:
                 print(_dim(f"  [autopilot] error: {e}"), flush=True)
 
-        if growth_every > 0 and tick % growth_every == 0:
+        # Overnight pile-classify: periodic (pile_every ticks) OR on the first tick
+        # when registered. Only when idle to avoid competing for the local model.
+        if pile_every > 0 and (tick == 0 or tick % pile_every == 0):
             try:
-                from mag.growth_cycle import maybe_run_growth_cycle
+                from mag.orchestrator import _any_running_task
+                from tools.pile_classify import run_pile
 
-                gc = maybe_run_growth_cycle()
-                if gc:
+                if not _any_running_task():
+                    pr = run_pile(model="gemma4:latest", limit=pile_limit, fold=True, timeout=1800.0)
                     print(
                         _dim(
-                            f"  [growth-cycle] ok={gc.get('ok')} report={str(gc.get('report_path', '?'))[:60]}"
+                            f"  [pile-classify] classified={pr.get('classified_this_run', 0)} errors={len(pr.get('errors') or [])}"
                         ),
                         flush=True,
                     )
             except Exception as e:
-                print(_dim(f"  [growth-cycle] error: {e}"), flush=True)
-        elif tick == 0:
+                print(_dim(f"  [pile-classify] error: {e}"), flush=True)
+
+        # Janitor cadence: keep the environment lean + documented without being asked.
+        # mag.janitor refuses to prune while the operator is active, so this is safe.
+        if janitor_every > 0 and tick > 0 and tick % janitor_every == 0:
+            try:
+                from mag.janitor import run as janitor_run
+
+                jr = janitor_run(dry=False)
+                print(
+                    _dim(
+                        f"  [janitor] action={jr.get('action')} pruned={jr.get('prune', {}).get('n_removed', 0)} failed={jr.get('prune', {}).get('n_failed', 0)}"
+                    ),
+                    flush=True,
+                )
+            except Exception as e:
+                print(_dim(f"  [janitor] error: {e}"), flush=True)
+
+        # Framework map cadence: keep the functional grouping + durable copy fresh.
+        if map_every > 0 and tick > 0 and tick % map_every == 0:
+            try:
+                from mag.framework_map import refresh as map_refresh
+
+                mr = map_refresh()
+                print(
+                    _dim(
+                        f"  [framework-map] ok={mr.get('ok', True)} entries={len(mr.get('items') or [])}"
+                    ),
+                    flush=True,
+                )
+            except Exception as e:
+                print(_dim(f"  [framework-map] error: {e}"), flush=True)
+        # Orphan timer: recognize undone-yet-intended work and promote it to the idea
+        # graph so intents raised in one window survive even when the operator moved on.
+        if orphan_every > 0 and tick > 0 and tick % orphan_every == 0:
+            try:
+                from mag.orphan_timer import run as orphan_run
+
+                orp = orphan_run(threshold_s=1800)
+                if orp.get("n_promoted"):
+                    print(
+                        _dim(f"  [orphan] promoted={orp.get('n_promoted')} open_remaining={orp.get('open_remaining')}"),
+                        flush=True,
+                    )
+            except Exception as e:
+                print(_dim(f"  [orphan] error: {e}"), flush=True)
+        # Warning monitor: passively sweep logs -> failure KB. Recurring warnings
+        # get remedies + cluster into recurring_patterns (handled via our system).
+        if warn_every > 0 and tick > 0 and tick % warn_every == 0:
+            try:
+                from mag.warning_monitor import run as warn_run
+
+                wm = warn_run()
+                if wm.get("reported_n"):
+                    print(
+                        _dim(f"  [warnings] scanned={wm.get('scanned')} reported={wm.get('reported_n')}"),
+                        flush=True,
+                    )
+            except Exception as e:
+                print(_dim(f"  [warnings] error: {e}"), flush=True)
+        if growth_every > 0 and tick % growth_every == 0:
             try:
                 from mag.growth_cycle import maybe_run_growth_cycle
 
@@ -788,7 +916,27 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--no-fill", action="store_true", help="skip queue fill")
     ap.add_argument("--fill-only", action="store_true", help="fill + plan only")
     ap.add_argument("--interval", type=float, default=5.0, help="loop interval seconds")
+    ap.add_argument("--pile-every", type=int, default=0,
+                    help="run pile-classify every N ticks (register the overnight job; 0=off)")
+    ap.add_argument("--pile-limit", type=int, default=10, help="max rows per pile-classify pass")
+    ap.add_argument("--janitor-every", type=int, default=0,
+                    help="run janitor (prune+document) every N ticks; 0 = use env MAG_JANITOR_EVERY (default 300)")
+    ap.add_argument("--orphan-every", type=int, default=0,
+                    help="run orphan-timer every N ticks; 0 = use env MAG_ORPHAN_EVERY (default 180)")
+    ap.add_argument("--warn-every", type=int, default=0,
+                    help="run warning-monitor sweep every N ticks; 0 = use env MAG_WARN_EVERY (default 120)")
     args = ap.parse_args(argv)
+
+    if args.pile_every:
+        os.environ["MAG_PILE_EVERY"] = str(args.pile_every)
+    if args.pile_limit:
+        os.environ["MAG_PILE_LIMIT"] = str(args.pile_limit)
+    if args.janitor_every:
+        os.environ["MAG_JANITOR_EVERY"] = str(args.janitor_every)
+    if args.orphan_every:
+        os.environ["MAG_ORPHAN_EVERY"] = str(args.orphan_every)
+    if args.warn_every:
+        os.environ["MAG_WARN_EVERY"] = str(args.warn_every)
 
     if args.fill_only:
         fill_queue()

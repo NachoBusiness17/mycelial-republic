@@ -13,6 +13,16 @@ defaults:
     - deepseek_overmind
     - openrouter
     - groq
+    - z_ai
+    - github_models
+    - mistral
+    - moonshot
+    - fireworks
+    - cerebras
+    - nvidia
+    - cohere
+    - hf_router
+    - dashscope
     - anthropic
     - openai
     - gemini
@@ -216,9 +226,12 @@ providers:
     models:
       - grok-3-mini
       - grok-3
+      - grok-4.5
     default_model: grok-3-mini
     tier_max: T2
     free_local: false
+    # Grok 4.5 deprecated max_tokens in favor of max_completion_tokens.
+    use_max_completion_tokens: true
     quota:
       period: monthly
       reset_day: 1
@@ -242,12 +255,183 @@ providers:
       max_calls: 100
       max_tokens: 200000
 
+  z_ai:
+    name: Z.ai (GLM free tier)
+    kind: openai_compat
+    base_url: https://api.z.ai/api/paas/v4
+    api_key_env: ZAI_API_KEY
+    models:
+      - glm-4.6
+    default_model: glm-4.6
+    tier_max: T2
+    free_local: false
+    quota:
+      period: monthly
+      reset_day: 1
+      max_calls: 100
+      max_tokens: 200000
+      note: "Free trial credits; permissive email signup — verify current GLM model id"
+
+  github_models:
+    name: GitHub Models (free tier)
+    kind: openai_compat
+    base_url: https://models.inference.ai.azure.com
+    api_key_env: GITHUB_MODELS_TOKEN
+    models:
+      - gpt-4o-mini
+      - claude-3-5-sonnet-20241022
+      - Meta-Llama-3.3-70B-Instruct
+    default_model: gpt-4o-mini
+    tier_max: T2
+    free_local: false
+    quota:
+      period: daily
+      max_calls: 50
+      max_tokens: 100000
+      note: "Free tier — token from github.com/settings/tokens (fine-grained, models:read); verify current model ids"
+
+  mistral:
+    name: Mistral (free tier + Le Chat)
+    kind: openai_compat
+    base_url: https://api.mistral.ai/v1
+    api_key_env: MISTRAL_API_KEY
+    models:
+      - mistral-large-latest
+    default_model: mistral-large-latest
+    tier_max: T2
+    free_local: false
+    quota:
+      period: monthly
+      reset_day: 1
+      max_calls: 100
+      max_tokens: 200000
+      note: "Sign in with Google supported — verify current model id"
+
+  moonshot:
+    name: Kimi / Moonshot (trial)
+    kind: openai_compat
+    base_url: https://api.moonshot.ai/v1
+    api_key_env: MOONSHOT_API_KEY
+    models:
+      - kimi-k2
+    default_model: kimi-k2
+    tier_max: T2
+    free_local: false
+    quota:
+      period: monthly
+      reset_day: 1
+      max_calls: 100
+      max_tokens: 200000
+      note: "Trial credits; verify current model id"
+
+  fireworks:
+    name: Fireworks AI (free tier)
+    kind: openai_compat
+    base_url: https://api.fireworks.ai/inference/v1
+    api_key_env: FIREWORKS_API_KEY
+    models:
+      - accounts/fireworks/models/llama-v3p1-70b-instruct
+    default_model: accounts/fireworks/models/llama-v3p1-70b-instruct
+    tier_max: T2
+    free_local: false
+    quota:
+      period: monthly
+      reset_day: 1
+      max_calls: 100
+      max_tokens: 200000
+      note: "Verify current model id"
+
+  cerebras:
+    name: Cerebras (free tier, fast)
+    kind: openai_compat
+    base_url: https://api.cerebras.ai/v1
+    api_key_env: CEREBRAS_API_KEY
+    models:
+      - llama-3.3-70b
+    default_model: llama-3.3-70b
+    tier_max: T2
+    free_local: false
+    quota:
+      period: monthly
+      reset_day: 1
+      max_calls: 100
+      max_tokens: 200000
+      note: "Free tier — verify current model id"
+
+  nvidia:
+    name: NVIDIA build (free credits)
+    kind: openai_compat
+    base_url: https://integrate.api.nvidia.com/v1
+    api_key_env: NVIDIA_API_KEY
+    models:
+      - meta/llama-3.3-70b-instruct
+    default_model: meta/llama-3.3-70b-instruct
+    tier_max: T2
+    free_local: false
+    quota:
+      period: monthly
+      reset_day: 1
+      max_calls: 100
+      max_tokens: 200000
+      note: "Free credits; verify current model id"
+
+  cohere:
+    name: Cohere (trial)
+    kind: openai_compat
+    base_url: https://api.cohere.com
+    api_key_env: COHERE_API_KEY
+    models:
+      - command-r-plus
+    default_model: command-r-plus
+    tier_max: T2
+    free_local: false
+    quota:
+      period: monthly
+      reset_day: 1
+      max_calls: 100
+      max_tokens: 200000
+      note: "Trial credits; sign in with Google supported"
+
+  hf_router:
+    name: Hugging Face Inference Router (free)
+    kind: openai_compat
+    base_url: https://router.huggingface.co/v1
+    api_key_env: HF_TOKEN
+    models:
+      - meta-llama/Llama-3.3-70B-Instruct
+    default_model: meta-llama/Llama-3.3-70B-Instruct
+    tier_max: T2
+    free_local: false
+    quota:
+      period: monthly
+      reset_day: 1
+      max_calls: 100
+      max_tokens: 200000
+      note: "Free tier, rate-limited; sign in with Google/GitHub supported"
+
+  dashscope:
+    name: Alibaba DashScope / Qwen (trial)
+    kind: openai_compat
+    base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+    api_key_env: DASHSCOPE_API_KEY
+    models:
+      - qwen-max
+    default_model: qwen-max
+    tier_max: T2
+    free_local: false
+    quota:
+      period: monthly
+      reset_day: 1
+      max_calls: 100
+      max_tokens: 200000
+      note: "Trial tokens; Alibaba acct (phone verify — NOT Google) — verify current model id"
+
 # Routing preferences by job class (first with budget + key wins after ollama)
 routing:
   scut: [ollama, deepseek, deepseek_overmind, groq, openrouter, vast]
   recall: [ollama]
-  public_summarize: [deepseek, deepseek_overmind, openrouter, groq, vast, gemini, openai]
+  public_summarize: [deepseek, deepseek_overmind, openrouter, groq, z_ai, github_models, mistral, cerebras, nvidia, cohere, hf_router, vast, gemini, openai]
   hard_code: [deepseek, deepseek_overmind, openrouter, groq, anthropic, openai, xai, vast]
   hard_reason: [deepseek, deepseek_overmind, openrouter, groq, anthropic, xai, openai, vast]
   # Interactive Grok TUI is still L2 "specialist seat" — API providers for headless
-  default: [ollama, deepseek, deepseek_overmind, openrouter, groq, anthropic, gemini, openai, xai]
+  default: [ollama, deepseek, deepseek_overmind, openrouter, groq, z_ai, github_models, mistral, moonshot, fireworks, cerebras, nvidia, cohere, hf_router, dashscope, anthropic, gemini, openai, xai]

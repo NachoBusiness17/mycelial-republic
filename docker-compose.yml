@@ -20,6 +20,10 @@ services:
       MAG_NO_MIRROR: "1"
       MAG_DRAINER: "0"
       OLLAMA_HOST: "http://ollama:11434"
+      REDIS_HOST: "redis"
+      REDIS_PORT: "6379"
+    depends_on:
+      - redis
     ports:
       - "127.0.0.1:8765:8765"
       - "127.0.0.1:8000:8000"
@@ -38,6 +42,22 @@ services:
     networks:
       - mag_net
 
+  redis:
+    image: redis:7-alpine
+    container_name: mag-redis
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - mag_redis_data:/data
+    restart: unless-stopped
+    networks:
+      - mag_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
   ollama:
     profiles: ["ollama"]
     image: ollama/ollama:latest
@@ -55,3 +75,4 @@ networks:
 
 volumes:
   mag_ollama_data:
+  mag_redis_data:

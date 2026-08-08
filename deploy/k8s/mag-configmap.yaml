@@ -1,0 +1,22 @@
+# Mag runtime configuration (non-secret). Cadence knobs are in TICKS at 5s
+# interval (e.g. 120 ticks ≈ 10 min). The autorun loop drives fill/drain/
+# governor/cadence; the process_supervisor owns loop lifecycle inside the pod.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mag-config
+  namespace: mag
+data:
+  # Container/native knobs
+  MAG_BIND_HOST: "0.0.0.0"
+  MAG_CONTAINER: "1"
+  MAG_NO_MIRROR: "1"
+  MAG_DRAINER: "1"
+  # Service discovery inside the cluster
+  OLLAMA_HOST: "http://ollama:11434"
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  # Cadence (ticks @ 5s): janitor ~25min, orphan ~15min, warning sweep ~10min
+  MAG_JANITOR_EVERY: "300"
+  MAG_ORPHAN_EVERY: "180"
+  MAG_WARN_EVERY: "120"

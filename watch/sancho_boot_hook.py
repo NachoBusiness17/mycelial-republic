@@ -6,6 +6,7 @@ Also runs the light feed hook so active_session is set.
 """
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -19,6 +20,31 @@ def main() -> int:
         from watch.grok_hook import main as feed_main
 
         feed_main()
+    except Exception:
+        pass
+
+    # 1b) Drop LIVE session-state brief into memory/briefs/latest.md so every new
+    #     chat window self-briefs (no re-teaching). Idempotent, fail-open.
+    try:
+        from mag.session_state_brief import write_brief
+
+        write_brief()
+    except Exception:
+        pass
+
+    # 1c) Freeze session snapshot for DeepSeek Pro Max / external seats.
+    #     Writes memory/freeze/sancho_boot_snapshot.json — the "frozen vision"
+    #     that can be passed to strong reasoning models, paying context tax once.
+    try:
+        from mag.session_freeze import freeze_session_snapshot, write_freeze
+
+        snap = freeze_session_snapshot(include_routing=True)
+        result = write_freeze(snap, AGENT_ROOT / "memory" / "freeze" / "sancho_boot_snapshot.json")
+        # Also update a short symlink-friendly pointer
+        (AGENT_ROOT / "memory" / "freeze" / "LATEST_SANCHO.json").write_text(
+            json.dumps({"path": str(result.get("path")), "content_hash": result.get("content_hash"), "ts": snap.get("ts")}),
+            encoding="utf-8",
+        )
     except Exception:
         pass
 

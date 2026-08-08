@@ -156,6 +156,26 @@ LOOPS: list[dict[str, Any]] = [
         "status": "shipped",
         "cli": "main.py improve / research-pack / field-steal",
     },
+    {
+        "id": "ghost-session",
+        "layer": "harness",
+        "loop": "sense_session → match_context → deploy_contextual → measure_goal_effect → catalog",
+        "trail": "memory/runs/ghost/",
+        "promote_gate": False,
+        "status": "pilot",
+        "cli": "python -m mag.ghost --session",
+        "desc": "Ghost steering with session-state awareness: reads CURRENT.md, briefs, agent_state, coding_session_loop to deploy contextually-relevant steer vectors."
+    },
+    {
+        "id": "framework_map",
+        "layer": "meta",
+        "loop": "scan → group by function → render → persist",
+        "trail": "memory/graph/framework_map.json",
+        "promote_gate": False,
+        "status": "shipped",
+        "cli": "python -m mag.framework_map",
+        "desc": "Authoritative functional grouping of the whole framework (Steer/Decide/State/Learn/Run/Ops/Agents/Launch/Routes/Providers) with curated descriptions + examples. Served via GET /api/v1/framework/map; kept fresh by the MAG_MAP_EVERY cadence in governor_autorun."
+    },
 ]
 
 

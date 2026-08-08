@@ -307,6 +307,7 @@ def chat_provider(
     # Multi-key failover: try each configured key in order; move on for
     # auth/rate-limit codes (401/403/429). Free-local providers use one pass.
     for ki, key in enumerate(keys or ["ollama"]):
+        max_tok_key = "max_completion_tokens" if pcfg.get("use_max_completion_tokens") else "max_tokens"
         payload = {
             "model": model,
             "messages": [
@@ -314,7 +315,7 @@ def chat_provider(
                 {"role": "user", "content": user},
             ],
             "temperature": temperature,
-            "max_tokens": max_tokens,
+            max_tok_key: max_tokens,
         }
         payload = _thinking_off(pcfg, payload)
         body = json.dumps(payload).encode("utf-8")

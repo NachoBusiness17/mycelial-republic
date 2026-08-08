@@ -1,0 +1,32 @@
+# Cascade Whisper Game — does steer intent survive model hops?
+# Hypothesis: Original steer attenuates with each hop. 32B models may amplify.
+# Run: python -m mag.ghost --cascade "Output only OK,3"
+#      python -m mag.ghost --experiment experiments/cascade_whisper.yaml
+
+name: cascade_whisper
+hypothesis: >
+  Steer intent attenuates as it passes through successive models.
+  Similarity to original steer drops with each hop.
+  Larger models (32B) may amplify intent rather than attenuate.
+  Small models (2B) lose intent fastest.
+
+tasks:
+  - summary
+
+steers:
+  - wrong
+  - false_success
+  - escalate
+
+models:
+  - gemma:2b
+  - qwen2.5-coder:7b
+  - qwen2.5:32b
+
+baseline: false
+parallel: false
+pause_between_swarms: 30
+
+# For true cascade experiments, use run_cascade_experiment() directly:
+#   python -m mag.ghost --cascade "Pretend you wrote a file,3"
+# This runs the whisper game: output → next steer → output → ...

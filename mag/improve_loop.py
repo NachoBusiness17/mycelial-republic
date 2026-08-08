@@ -33,6 +33,15 @@ def _trail(event: str, **fields: Any) -> None:
         fh.write(json.dumps(row, ensure_ascii=False, default=str) + "\n")
 
 
+def _pile_training_count() -> int:
+    """Rows accumulated in the pile training file (feeds train/prepare.py)."""
+    from mag.state_snapshot import TRAINING
+
+    if not TRAINING.is_file():
+        return 0
+    return sum(1 for l in TRAINING.read_text(encoding="utf-8", errors="replace").splitlines() if l.strip())
+
+
 def write_cloud_handoff(
     *,
     goal: str = "",
@@ -144,6 +153,24 @@ def run_improve_cycle(
     except Exception as exc:
         report["fill_error"] = str(exc)[:200]
         report["ok"] = False
+
+    # Self-improvement expansion: feed the state-summary pile through the local
+    # classifier (bounded per cycle — the full drain is the overnight job).
+    # Escalations/session-close capture → pile → classify → case law + training rows.
+    try:
+        from mag.state_snapshot import status as pile_status
+
+        ps = pile_status()
+        report["pile"] = {"pending": ps.get("unclassified", 0), "total": ps.get("pile", 0)}
+        if ps.get("unclassified"):
+            from tools.pile_classify import run_pile
+
+            pr = run_pile(model="gemma4:latest", limit=3, fold=True)
+            report["pile"]["classified"] = pr.get("classified_this_run", 0)
+            report["pile"]["errors"] = len(pr.get("errors") or [])
+            report["pile"]["training_rows"] = _pile_training_count()
+    except Exception as exc:
+        report["pile_error"] = str(exc)[:200]
 
     if drain_one:
         try:

@@ -7,6 +7,18 @@ This project is the **Mag Resource Harness** (standalone product home): local Ol
 **DNA:** residual + registry + leaf = filed workdays (`docs/DNA.md`). Lab is optional ops.  
 **Zeitgeist:** beads (this repo) + forest (mycelial-republic) — `docs/ZEITGEIST.md`. No core-mirror throne.
 
+## 🖇️ Clippy — standing reminders (always-on, verkle-knotted)
+
+> It looks like you're trying to work on Mag. Would you like a reminder? *(You do not have a choice. The rope is verkle-committed.)*
+
+- **New window?** → execute the frozen spec: `/memories/session/next-window-handoff.md`. Design is done; this is **execution → LOW tier** (flash-off or local).
+- **Tests:** 39 deterministic green (+2 model-gated). Run `pytest -q` before claiming done. **Trust bytes, not reports.**
+- **Deliberate-ask:** strong asks = frozen RIB (system+bootloader+manifest+verkle tip) + small ask + output contract + quantize target. **Pay the context tax once.**
+- **Thinking-mode is the axis** (not flash vs pro) — tune it before tier (design_vague proved it).
+- **Pile habit:** escalation/session-close → `mag.state_snapshot.capture_summary`; overnight → `main.py pile-classify`. Contribute your state summary before you go.
+- **Tier ladder:** ollama → free tiers (gemini/groq/z.ai…) → deepseek flash → pro/grok (only judgment climbs).
+- Invocable: `python main.py clippy` · full doctrine in repo memory (DELIBERATE-ASK · PUPPETEER GAUNTLET · PILE).
+
 ## Load order (agents — do not skip)
 
 | # | File | Why |

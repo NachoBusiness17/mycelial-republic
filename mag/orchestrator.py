@@ -692,7 +692,7 @@ def queue_has_goal(goal: str) -> bool:
 
 
 def enqueue(goal: str, *, provider: str = "ollama", model: str | None = None,
-            timeout: int = DEFAULT_TIMEOUT, tag: str = "",
+            timeout: int = DEFAULT_TIMEOUT, tag: str = "", priority: int = 0,
             require_build: str | None = None) -> dict[str, Any]:
     """Add a goal to the queue. Returns the queue entry (not yet spawned)."""
     goal = goal.strip()
@@ -730,6 +730,7 @@ def enqueue(goal: str, *, provider: str = "ollama", model: str | None = None,
         "build_spec": build_gate.get("spec_path"),
         "created_at": _now(),
         "status": "queued",   # queued -> running -> done/failed
+        "priority": max(0, int(priority)),
         "task_id": None,
         "detail": "",
     }
@@ -792,8 +793,26 @@ def list_queue(limit: int = 100) -> list[dict[str, Any]]:
     return out
 
 
+def promote_queue(queue_id: str, priority: int = 1) -> dict[str, Any]:
+    """Raise a queued entry's priority so _next_queued picks it sooner.
+
+    Priority sorts DESC (higher first), then FIFO by created_at within the same
+    priority. This replaces the old created_at=2000 promote hack.
+    """
+    q = _queue_load(queue_id)
+    if not q:
+        return {"ok": False, "error": f"no queue entry {queue_id}"}
+    if q.get("status") != "queued":
+        return {"ok": False, "error": f"entry {queue_id} is {q.get('status')}, not queued"}
+    q["priority"] = max(0, int(priority))
+    q["detail"] = f"operator-promoted priority={priority}"
+    _queue_save(q)
+    _trail("queue-promote", queue_id, priority=priority)
+    return {"ok": True, "queue_id": queue_id, "priority": q["priority"]}
+
+
 def _next_queued() -> dict[str, Any] | None:
-    """Oldest queued (not yet running) entry, or None."""
+    """Highest-priority queued (not yet running) entry, then oldest by created_at."""
     _ensure_dirs()
     QUEUE_DIR.mkdir(parents=True, exist_ok=True)
     best = None
@@ -804,7 +823,12 @@ def _next_queued() -> dict[str, Any] | None:
             continue
         if q.get("status") != "queued":
             continue
-        if best is None or q.get("created_at", "") < best.get("created_at", ""):
+        if best is None:
+            best = q
+            continue
+        bp = int(best.get("priority") or 0)
+        qp = int(q.get("priority") or 0)
+        if qp > bp or (qp == bp and q.get("created_at", "") < best.get("created_at", "")):
             best = q
     return best
 
@@ -879,6 +903,17 @@ def drain_once(*, force: bool = False) -> dict[str, Any]:
         pass
     _ensure_dirs()
     QUEUE_DIR.mkdir(parents=True, exist_ok=True)
+    # Reap dead/stale/completed pids BEFORE reconciling, so a task whose process
+    # exited without a terminal record (e.g. pid died, launcher killed the monitor)
+    # flips to died/done/failed and the queue can advance instead of staying busy.
+    try:
+        reap_stale()
+    except Exception:
+        pass
+    try:
+        reap_completed()
+    except Exception:
+        pass
     _reconcile_queue()
     if _any_running_task():
         return {"ok": True, "action": "busy", "detail": "a task is already running"}

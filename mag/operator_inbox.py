@@ -93,18 +93,65 @@ def commit_guidance(text: str, *, source: str = "dashboard") -> dict[str, Any]:
     if not text:
         return {"ok": False, "error": "empty guidance"}
     data = _load()
+    committed = list(data.get("committed") or [])
+    now = _now()
+
+    # ── Dedup: an identical pending note already queued → refresh, don't stack.
+    #    Prevents the pro-library/ghost flood where concurrent seats all pass the
+    #    pending_n==0 guard (TOCTOU) and each append the same guidance, which then
+    #    gets injected into every session digest (ghost: "operator_escalate x50").
+    for existing in committed:
+        if existing.get("status") == "pending" and str(existing.get("text") or "").strip() == text:
+            existing["ts"] = now
+            existing["source"] = source
+            data["committed"] = committed[-50:]
+            _save(data)
+            return {
+                "ok": True,
+                "deduped": True,
+                "item": existing,
+                "pending_n": sum(1 for x in committed if x.get("status") == "pending"),
+            }
+
     item = {
         "id": f"inbox-{datetime.now(timezone.utc).strftime('%H%M%S')}",
         "text": text[:4000],
         "source": source,
         "status": "pending",
-        "ts": _now(),
+        "ts": now,
     }
-    committed = list(data.get("committed") or [])
     committed.append(item)
     data["committed"] = committed[-50:]
     _save(data)
+
+    # ── Emit frustration signal for Ghost auto-deploy ──
+    _emit_frustration(text, source)
+
     return {"ok": True, "item": item, "pending_n": sum(1 for x in committed if x.get("status") == "pending")}
+
+
+def _emit_frustration(text: str, source: str) -> None:
+    """Log operator overrides as frustration signals for Ghost auto-deploy triggers."""
+    low = text.strip().lower()
+    signal = None
+    if source in ("ghost", "steer", "operator_override"):
+        signal = "operator_steer_override"
+    elif any(w in low for w in ("escalate", "grok", "handoff", "send to")):
+        signal = "operator_escalate"
+    elif any(w in low for w in ("replan", "try again", "wrong", "incorrect", "redo")):
+        signal = "operator_replan"
+    elif any(w in low for w in ("stuck", "loop", "repeating", "same thing")):
+        signal = "operator_stuck"
+    elif any(w in low for w in ("pause", "stop", "wait", "hold")):
+        signal = "operator_pause"
+    elif any(w in low for w in ("cheaper", "too expensive", "cost", "budget")):
+        signal = "operator_cost_concern"
+    if signal:
+        try:
+            from mag.ghost import log_frustration
+            log_frustration(signal, source=source, detail=text[:200])
+        except ImportError:
+            pass  # ghost module not available, skip silently
 
 
 def clear_pending() -> dict[str, Any]:

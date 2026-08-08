@@ -6940,6 +6940,7 @@ async function loadStack() {
 async function loadSystemMap() {
   const head = $("#systemMapHeadline");
   const goalEl = $("#systemMapGoal");
+  loadFrameworkReports();
   try {
     const goal = goalEl ? String(goalEl.value || "").trim() : "";
     const q = goal ? `?goal=${encodeURIComponent(goal)}&write=0` : "?write=0";
@@ -7030,6 +7031,75 @@ function startStackPoll() {
 function stopStackPoll() {
   if (stackTimer) clearInterval(stackTimer);
   stackTimer = null;
+}
+
+// ── Framework map run-session reports (dashboard tab, like the session window) ──
+function renderFrameworkReports(reports) {
+  const host = $("#frameworkReports");
+  if (!host) return;
+  if (!reports.length) {
+    host.innerHTML = `<p class="muted">No run-session reports yet. The MAG_MAP_EVERY cadence writes one per run session.</p>`;
+    return;
+  }
+  host.innerHTML = reports
+    .map((r) => {
+      const verdict = r.verdict === "ready"
+        ? `<span class="pill on" title="all seams verified">READY</span>`
+        : `<span class="pill" title="seams need attention">ATTENTION</span>`;
+      const ts = shortWhen(r.ts) || "—";
+      const who = esc(r.who || "—");
+      const what = clipText(r.what || "", 90);
+      const summary = cleanBlurb(r.summary || "", 200) || "No summary.";
+      const why = cleanBlurb(r.why || "", 200);
+      const intent = cleanBlurb(r.intent || "", 200);
+      const topics = (r.topics || []).slice(0, 8)
+        .map((t) => `<span class="theme-chip">${esc(t)}</span>`)
+        .join("");
+      const tm = r.telemetry || {};
+      const tok = tm.token_spend || {};
+      const telemetryLines = [];
+      if (tm.agents && tm.agents.length) telemetryLines.push(`<li><strong>agents</strong> ${esc(tm.agents.slice(0, 6).join(", "))}</li>`);
+      if (tm.frameworks && tm.frameworks.length) telemetryLines.push(`<li><strong>frameworks</strong> ${esc(tm.frameworks.map((f) => f.provider).slice(0, 6).join(", "))}</li>`);
+      if (tok.total_tokens != null) telemetryLines.push(`<li><strong>tokens</strong> ${tok.total_tokens} (${tok.prompt_tokens || 0} in / ${tok.completion_tokens || 0} out)</li>`);
+      if (tm.total_est_cost_usd != null) telemetryLines.push(`<li><strong>est cost</strong> $${Number(tm.total_est_cost_usd).toFixed(4)}</li>`);
+      if (tm.savings_tokens != null) telemetryLines.push(`<li><strong>est savings</strong> ${tm.savings_tokens} tok · ≈$${Number(tm.total_est_savings_usd || 0).toFixed(2)}</li>`);
+      if (tm.experiments && tm.experiments.length) telemetryLines.push(`<li><strong>experiments</strong> ${tm.experiments.length} — ${esc(tm.experiments.slice(0, 6).map((e) => e.name).join(", "))}</li>`);
+      if (tm.items && tm.items.length) telemetryLines.push(`<li><strong>items</strong> ${tm.items.length} involved</li>`);
+      const detail = esc(r.detail || r.summary || "");
+      return `<article class="session-card" title="${detail}">
+        <div class="sc-top">
+          <h3>${esc(what)}</h3>
+          <div class="sc-meta">
+            ${verdict}
+            <span class="sc-when">${esc(ts)}</span>
+            <span class="sc-when">· ${who}</span>
+          </div>
+        </div>
+        <p class="sc-blurb">${esc(summary)}</p>
+        <ul class="sc-bullets">
+          ${why ? `<li title="${esc(why)}"><strong>why</strong> ${esc(why)}</li>` : ""}
+          ${intent ? `<li title="${esc(intent)}"><strong>intent</strong> ${esc(intent)}</li>` : ""}
+          ${r.where ? `<li><strong>where</strong> ${esc(clipText(r.where, 160))}</li>` : ""}
+          ${telemetryLines.join("")}
+        </ul>
+        <div class="sc-foot">
+          <div class="sc-arts">${topics || `<span class="mono muted">${esc((r.id || "").slice(0, 8))}</span>`}</div>
+          <div class="sc-actions"><span class="mono muted">${esc((r.id || "").slice(0, 12))}</span></div>
+        </div>
+      </article>`;
+    })
+    .join("");
+}
+
+async function loadFrameworkReports() {
+  const host = $("#frameworkReports");
+  if (!host) return;
+  try {
+    const j = await getJSON("/api/v1/framework/reports?limit=20");
+    renderFrameworkReports(j.reports || []);
+  } catch (e) {
+    host.innerHTML = `<p class="muted">Framework reports offline — ${esc(String(e.message || e))}</p>`;
+  }
 }
 
 let statusTimer = null;

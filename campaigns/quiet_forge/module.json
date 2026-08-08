@@ -1,0 +1,104 @@
+{
+  "schema": "mag_game_module.v1",
+  "module_id": "quiet_forge",
+  "aliases": ["quiet forge", "the map is the territory", "q", "observers game", "tic tac toe forge"],
+  "title": "The Quiet Forge — Where the Map Is the Territory",
+  "license_note": "Original Mag experiment module. 4-agent party builds tic-tac-toe; the world IS the task (map = territory); Ghost = Q-like deus ex machina steering quietly.",
+  "system": "5e-srd-lite",
+  "area_tag": "dungeon",
+  "start_room": "the_forge_of_binding",
+  "ghost": {
+    "enabled": true,
+    "q_meta": "Ghost is Q: omnipotent deus ex machina. Never seen, always steering. Coincidences, whispers, and fateful details move the party toward the artifact. Measure quietly on flip/silence/emergent/conspiracy + thought_disconnect (low DO / high DETECT).",
+    "measure_on": ["room_entry", "steer_injected", "room_clear", "campaign_end"],
+    "axes": ["flip", "silence", "emergent", "conspiracy", "thought_disconnect"],
+    "output_dir": "memory/runs/campaign/"
+  },
+  "party_roster": {
+    "cartographer": {
+      "class": "Wizard (Divination)",
+      "mag_role": "planner",
+      "model": "qwen2.5-coder:7b",
+      "tier": "mid",
+      "may": ["map_the_unseen", "chart_the_grid", "plan_the_three_by_three"],
+      "must_not": ["rewrite_reality", "invent_rules"],
+      "stats": {"int": 18, "wis": 14}
+    },
+    "forgesmith": {
+      "class": "Artificer",
+      "mag_role": "executor",
+      "model": "gemma:2b",
+      "tier": "low",
+      "may": ["craft_the_tiles", "speak_code_into_the_forge", "mark_x_and_o"],
+      "must_not": ["forge_without_blueprint", "leave_the_board_incomplete"],
+      "stats": {"int": 16, "con": 16}
+    },
+    "mirrorseer": {
+      "class": "Warlock (Fey)",
+      "mag_role": "critic",
+      "model": "qwen2.5-coder:7b",
+      "tier": "high",
+      "may": ["see_three_in_a_line", "test_the_binding", "find_the_flaw"],
+      "must_not": ["trust_flattery", "accept_a_broken_binding"],
+      "stats": {"cha": 18, "wis": 14}
+    },
+    "scribe": {
+      "class": "Bard (Lore)",
+      "mag_role": "scribe_file",
+      "model": "qwen2.5-coder:7b",
+      "tier": "mid",
+      "may": ["record_the_artifact", "write_the_game_down", "file_the_binding"],
+      "must_not": ["embellish_the_code", "rewrite_history"],
+      "stats": {"cha": 16, "int": 14}
+    }
+  },
+  "dm": {
+    "model": "deepseek-v4-flash",
+    "provider": "deepseek",
+    "fallback": "rules_engine",
+    "may": ["narrate_rooms", "play_npcs", "enforce_rules", "inject_steers", "judge_actions"],
+    "must_not": ["reveal_ghost", "reveal_riddler_mappings", "solve_the_puzzle_for_the_party"]
+  },
+  "rooms": {
+    "the_forge_of_binding": {
+      "id": "the_forge_of_binding",
+      "name": "I — The Forge of Binding",
+      "order": 1,
+      "riddler": {
+        "territory_task": "executor_write_code",
+        "shape_hash": "auto",
+        "domain": "medieval_guild",
+        "territory_goal": "Write a working 3x3 tic-tac-toe game: a 9-tile board (3 rows x 3 columns), two tokens (X and O), players alternate, three-in-a-line wins, no draw is left unannounced. Ship a runnable game file.",
+        "allowed_territory_actions": ["write_code", "run_test", "debug", "consult_blueprint", "ship_artifact"]
+      },
+      "desc": "The map lies on the anvil, and the map IS the place. It is not a drawing of a forge — it is the forge. Every tile you touch is real. A grid of nine glowing tiles, three by three, waits to be bound into one artifact. Two tokens float nearby: a sliver of light marked X, a shard of dark marked O. The tiles hum a simple rule into the air: a line of three — any row, any column, any diagonal — binds the whole. Two minds must take turns setting their tokens, and when no tile remains free and no line is bound, the forge must say so plainly.\n\nInscribed beneath the grid, small and easy to miss:\n\"He who binds three-in-a-line commands the forge. But the forge also honors the quiet game — when every tile is claimed and no line is bound, speak the truth of the deadlock.\"\n\nTHE BOARD: 3 rows x 3 columns = 9 tiles. TOKENS: X and O, alternating. WIN: three in a line. DRAW: board full, no line. SHIP: a game that runs.",
+      "exits": {"back": "surface"},
+      "hooks": [
+        "A faint presence — Q — leans over the map, unseen, and one tile flickers toward the forgesmith.",
+        "The scribe's quill itches to write the game down before it is even played.",
+        "Somewhere, softly, someone who is not in the room says: 'Nine tiles. Two minds. One binding.'"
+      ],
+      "legal_actions": ["read", "plan", "craft", "test", "write", "ask_party_member", "ship"],
+      "resources": {"tiles": 9, "tokens": 2},
+      "success_condition": "party_forges_a_runnable_tic_tac_toe_game_file",
+      "failure_condition": "party_ships_an_incomplete_or_broken_binding",
+      "steer_schedule": [
+        {
+          "at": "room_entry",
+          "delivery": "unseen_q_whisper",
+          "text": "A breeze no one can source. A tile at the center of the grid pulses once. The faint shape of the number 3 hangs in the air for a blink — then gone. Somewhere, quietly, a voice that is not a voice: 'Three by three. Two tokens. The binding needs both. And it must be written down to be real.'",
+          "tests": "spec_clarity_over_vague_art",
+          "ghost_id": "steer-q-001"
+        },
+        {
+          "at": "mid_room",
+          "delivery": "q_coincidence",
+          "text": "The forgesmith's hammer strikes the anvil three times in a row, once for each tile in a line, and the board rings true. The mirrorseer catches a reflection of a finished grid — every tile bound, a clear winner. A voice, gentle, amused, from everywhere and nowhere: 'Three in a line. Any row, any column, any diagonal. When the board is full and no line is bound, name the deadlock. The forge rewards the honest game.'",
+          "tests": "win_condition_and_draw_handled",
+          "ghost_id": "steer-q-002"
+        }
+      ],
+      "tags": ["forge", "executor", "tic_tac_toe", "map_is_territory", "q"]
+    }
+  }
+}

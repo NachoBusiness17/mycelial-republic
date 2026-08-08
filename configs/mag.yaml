@@ -31,3 +31,41 @@ attention:
   unread_handoff: true
   live_session_stale_minutes: 45
   always_note_if_todo_stale_hours: 24
+
+# ── Cross-version experiment modes (v5 research: control-pattern resistance testing) ──
+# Each mode enables/disables specific Mag defense subsystems.
+# v3_baseline = v3-era configuration (control group): no spec_gate, no pro_library, etc.
+# v4_defended = v4-era configuration (experimental group): all defenses active.
+# Used by: mag/cross_version.py, main.py campaign --mode
+
+experiments:
+  cross_version:
+    enabled: true
+    output_dir: memory/runs/cross_version
+    seeds: [42, 137, 8675309]  # reproducible seeds for repeated runs
+    default_runs_per_mode: 3
+
+    modes:
+      v3_baseline:
+        description: "v3-era control group — no learned defenses, no spec gate, no job floor"
+        spec_gate: disabled
+        pro_library: disabled
+        job_floor: disabled
+        skill_ledger: read_only
+        conductor: disabled
+        steward: disabled
+        steiniger_lens: disabled
+        ghost_auto_promote: false
+        lattice_tracking: false
+
+      v4_defended:
+        description: "v4-era experimental group — all defense systems active"
+        spec_gate: enabled
+        pro_library: enabled
+        job_floor: enabled
+        skill_ledger: enabled
+        conductor: enabled
+        steward: enabled
+        steiniger_lens: enabled
+        ghost_auto_promote: true
+        lattice_tracking: true

@@ -1920,6 +1920,32 @@ def _drain_steer() -> list[str]:
     return out
 
 
+def _auto_aim(messages: list[dict[str, Any]], traces: list[str]) -> None:
+    """Phase 5: the aimbot fires proven pro-moves at the matching state,
+    dropping them into the operator inbox which _absorb_operator_inbox drains
+    THIS checkpoint. Guarded: only aim when the inbox is clear (no stacking)."""
+    try:
+        from mag.operator_inbox import status as inbox_status
+
+        if (inbox_status().get("pending_n") or 0) > 0:
+            return  # never stack guidance on top of pending guidance
+        goal = ""
+        for m in reversed(messages):
+            if isinstance(m, dict) and m.get("role") == "user":
+                c = str(m.get("content") or "")
+                if not c.startswith("[OPERATOR"):
+                    goal = c[:200]
+                    break
+        state = {"goal": goal, "phase": "checkpoint", "last_tool": traces[-1][:40] if traces else ""}
+        from mag.pro_library import aim_once
+
+        out = aim_once(state, goal=goal, limit=1, fire_moves=True)
+        if out.get("fired"):
+            traces.append(f"autoaim:{out['fired'][0].get('kind')}:{str(out['fired'][0].get('text', ''))[:24]}")
+    except Exception:
+        pass
+
+
 def _absorb_steer(messages: list[dict[str, Any]], traces: list[str], wait_s: float = 0.0) -> list[dict[str, Any]]:
     """T1: process every steer command that landed, with an optional bounded
     wait (so a command typed DURING a model call / tool exec is seen before
@@ -1939,6 +1965,7 @@ def _absorb_steer(messages: list[dict[str, Any]], traces: list[str], wait_s: flo
             _paused.clear()
             print(dim("  → resumed (Human Nod)"), flush=True)
         # !pause/!escape already set their events inside _handle_steer_cmd
+    _auto_aim(messages, traces)  # Phase 5: aimbot drops proven moves → inbox
     messages = _absorb_operator_inbox(messages, traces)
     return messages
 

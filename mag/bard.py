@@ -982,3 +982,4 @@ def bard_weave_tapestry() -> str:
 
 # ── asyncio import for the subscriber loop ──
 import asyncio
+from mag.chain_query import chain  # auto-added by doctor_agent

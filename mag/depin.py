@@ -42,6 +42,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+from mag.chain_query import chain  # auto-added by doctor_agent
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path

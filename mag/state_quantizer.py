@@ -32,6 +32,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+from mag.chain_query import chain  # auto-added by doctor_agent
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -44,7 +45,7 @@ except ImportError:
     ROOT = Path(__file__).resolve().parent.parent
 
 # ── Paths ──
-VERKLE_CHAIN = ROOT / "memory" / "biography" / "verkle_chain.jsonl"
+VERKLE_CHAIN = ROOT / "memory" / "biography" / "# CHAIN_QUERY_MIGRATION_NEEDED: replace with chain.tail() or chain.by_type()"
 QUANTUM_DIR = ROOT / "memory" / "ghost" / "quantum_state"
 SUMMARY_LOG = QUANTUM_DIR / "summary_knots.jsonl"
 

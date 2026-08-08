@@ -1,7 +1,7 @@
 """Ghost Leak Detector — canary monitoring, entropy scanning, whisper timing, tesuji probes.
 
 Sensitive data in decentralized Verkle-based environments flows through shared state:
-  - Verkle chain (memory/biography/verkle_chain.jsonl)
+  - Verkle chain (memory/biography/# CHAIN_QUERY_MIGRATION_NEEDED: replace with chain.tail() or chain.by_type())
   - Copilot inbox/outbox (memory/copilot/)
   - Whisper protocol messages (announce, request, ack)
   - Agent memory files and operator inbox
@@ -37,6 +37,7 @@ import os
 import re
 import time
 import uuid
+from mag.chain_query import chain  # auto-added by doctor_agent
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -53,7 +54,7 @@ GHOST_DIR = ROOT / "memory" / "ghost"
 CANARY_STORE = GHOST_DIR / "canaries.json"
 LEAK_LOG = GHOST_DIR / "leak_events.jsonl"
 TESUJI_STORE = GHOST_DIR / "tesuji_probes.json"
-VERKLE_CHAIN = ROOT / "memory" / "biography" / "verkle_chain.jsonl"
+VERKLE_CHAIN = ROOT / "memory" / "biography" / "# CHAIN_QUERY_MIGRATION_NEEDED: replace with chain.tail() or chain.by_type()"
 COPILOT_OUTBOX = ROOT / "memory" / "copilot" / "outbox"
 COPILOT_INBOX = ROOT / "memory" / "copilot" / "inbox.jsonl"
 OPERATOR_INBOX = ROOT / "memory" / "operator_inbox.json"

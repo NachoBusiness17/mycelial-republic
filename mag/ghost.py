@@ -226,7 +226,7 @@ def sense() -> dict[str, Any]:
 
     # Verkle tip
     tip_file = ROOT / "memory" / "biography" / "verkle_tip.json"
-    chain_file = ROOT / "memory" / "biography" / "verkle_chain.jsonl"
+    chain_file = ROOT / "memory" / "biography" / "# CHAIN_QUERY_MIGRATION_NEEDED: replace with chain.tail() or chain.by_type()"
     state["verkle_tip_stale"] = False
     if tip_file.is_file() and chain_file.is_file():
         try:
@@ -1353,7 +1353,7 @@ async def daemon_mode(port: int = 9000, host: str = "0.0.0.0") -> None:
             from mag.cost_enforcer import cost_status
 
             # Verkle tail
-            verkle = _read_jsonl(ROOT / "memory" / "biography" / "verkle_chain.jsonl", tail=20)
+            verkle = _read_jsonl(ROOT / "memory" / "biography" / "# CHAIN_QUERY_MIGRATION_NEEDED: replace with chain.tail() or chain.by_type()", tail=20)
             tail_summary = [
                 {"session": v.get("session_id", "?")[:30], "theme": v.get("dominant_theme", "?"),
                  "tension": v.get("tension_index", 0), "ts": v.get("ts", "")}
@@ -1405,6 +1405,30 @@ async def daemon_mode(port: int = 9000, host: str = "0.0.0.0") -> None:
         try:
             from mag.steal_first import steal_first_endpoint
             return steal_first_endpoint()
+        except Exception as e:
+            return {"ok": False, "error": str(e)[:300]}
+
+    # ── Chain Query endpoint — canonical read surface ──
+    @app.get("/api/v1/chain/query")
+    async def chain_query_endpoint_route(
+        type: str = "tail",
+        n: int = 20,
+        pattern: str = "",
+        event_type: str = "",
+        breadcrumb: str = "",
+        tail: int = 100,
+    ):
+        """Query the Verkle chain. The canonical 'what do we know?' surface."""
+        try:
+            from mag.chain_query import chain_query_endpoint
+            return chain_query_endpoint(
+                query_type=type,
+                n=n,
+                pattern=pattern,
+                event_type=event_type,
+                breadcrumb=breadcrumb,
+                tail=tail,
+            )
         except Exception as e:
             return {"ok": False, "error": str(e)[:300]}
 

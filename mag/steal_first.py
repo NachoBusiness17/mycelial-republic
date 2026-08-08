@@ -36,6 +36,7 @@ import hashlib
 import json
 import threading
 import time
+from mag.chain_query import chain  # auto-added by doctor_agent
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -386,7 +387,7 @@ def preload_nacho_invariants() -> int:
 def preload_verkle_chain_segments() -> int:
     """Preload structured extractions from the Verkle chain into the cache.
     Parse once, reuse forever."""
-    chain_path = ROOT / "memory" / "biography" / "verkle_chain.jsonl"
+    chain_path = ROOT / "memory" / "biography" / "# CHAIN_QUERY_MIGRATION_NEEDED: replace with chain.tail() or chain.by_type()"
     if not chain_path.is_file():
         return 0
 

@@ -39,6 +39,7 @@ import hashlib
 import json
 import threading
 import time
+from mag.chain_query import chain  # auto-added by doctor_agent
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from datetime import datetime, timezone

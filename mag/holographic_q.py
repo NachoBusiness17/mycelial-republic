@@ -47,6 +47,7 @@ from __future__ import annotations
 import hashlib
 import json
 import uuid
+from mag.chain_query import chain  # auto-added by doctor_agent
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -362,7 +363,7 @@ def reconstitute_q(verkle_tail: int = 50) -> list[QKnot]:
     # ── Secondary: Verkle chain (crash recovery — log unavailable) ──
     if not q_knots:
         verkle_entries = _read_jsonl(
-            ROOT / "memory" / "biography" / "verkle_chain.jsonl",
+            ROOT / "memory" / "biography" / "# CHAIN_QUERY_MIGRATION_NEEDED: replace with chain.tail() or chain.by_type()",
             tail=verkle_tail,
         )
         for entry in verkle_entries:
@@ -406,7 +407,7 @@ def reconstitute_q(verkle_tail: int = 50) -> list[QKnot]:
 
     # Cross-verify: mark knots whose Verkle root appears in the chain
     verkle_entries = _read_jsonl(
-        ROOT / "memory" / "biography" / "verkle_chain.jsonl",
+        ROOT / "memory" / "biography" / "# CHAIN_QUERY_MIGRATION_NEEDED: replace with chain.tail() or chain.by_type()",
         tail=verkle_tail,
     )
     verkle_roots_in_chain = {e.get("verkle_root", "") for e in verkle_entries if e.get("verkle_root")}
@@ -764,7 +765,7 @@ def freeze_context(label: str = "") -> dict[str, Any]:
     Returns dict with freeze_hash, knot_count, label, ts.
     """
     verkle_entries = _read_jsonl(
-        ROOT / "memory" / "biography" / "verkle_chain.jsonl",
+        ROOT / "memory" / "biography" / "# CHAIN_QUERY_MIGRATION_NEEDED: replace with chain.tail() or chain.by_type()",
         tail=20,
     )
 

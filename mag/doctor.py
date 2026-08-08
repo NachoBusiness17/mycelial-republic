@@ -243,6 +243,76 @@ def check_env_sanity() -> dict[str, Any]:
     }
 
 
+def check_chain_discipline() -> dict[str, Any]:
+    """Check that modules use chain_query instead of reading the chain file directly.
+
+    This would have caught the grep-over-chain pattern the assistant defaulted to.
+    Every module that asks 'what do we know?' must go through chain_query.
+    Direct reads of # CHAIN_QUERY_MIGRATION_NEEDED: replace with chain.tail() or chain.by_type() are a discipline violation.
+    """
+    issues = []
+    mag_dir = ROOT / "mag"
+    if not mag_dir.is_dir():
+        return {"check": "chain_discipline", "ok": True, "issues": [], "note": "mag/ directory not found"}
+
+    direct_read_patterns = [
+        "# CHAIN_QUERY_MIGRATION_NEEDED: replace with chain.tail() or chain.by_type()",
+        'memory/biography/verkle_chain',
+    ]
+
+    for py_file in sorted(mag_dir.glob("*.py")):
+        if py_file.name == "chain_query.py":
+            continue
+
+        try:
+            content = py_file.read_text(encoding="utf-8", errors="replace")
+            for pattern in direct_read_patterns:
+                if pattern in content:
+                    imports_chain_query = "chain_query" in content or "from mag.chain_query" in content
+                    if imports_chain_query:
+                        continue
+                    issues.append(
+                        f"CHAIN DISCIPLINE: {py_file.name} reads # CHAIN_QUERY_MIGRATION_NEEDED: replace with chain.tail() or chain.by_type() directly "
+                        f"instead of using chain_query. Import 'from mag.chain_query import chain' "
+                        f"and use chain.tail(), chain.by_theme(), etc."
+                    )
+        except OSError:
+            continue
+
+    state_querying_modules = [
+        "ghost.py", "doctor.py", "cost_enforcer.py", "steal_first.py",
+        "task_router.py", "exit_dialogue.py", "signal_flare.py",
+        "bard.py", "renderman.py", "depin.py", "holographic_q.py",
+        "state_quantizer.py", "ghost_leak_detector.py", "behavioral_analytics.py",
+    ]
+
+    missing_import = []
+    for module_name in state_querying_modules:
+        module_path = mag_dir / module_name
+        if module_path.is_file():
+            try:
+                content = module_path.read_text(encoding="utf-8", errors="replace")
+                if "chain_query" not in content and "from mag.chain_query" not in content:
+                    if module_name != "chain_query.py":
+                        missing_import.append(
+                            f"CHAIN DISCIPLINE: {module_name} does not import chain_query. "
+                            f"It should use chain.tail(), chain.by_theme(), etc. for state queries."
+                        )
+            except OSError:
+                continue
+
+    issues.extend(missing_import)
+
+    return {
+        "check": "chain_discipline",
+        "ok": len(issues) == 0,
+        "issues": issues,
+        "modules_checked": len(list(mag_dir.glob("*.py"))),
+        "discipline_violations": len([i for i in issues if "directly" in i]),
+        "missing_imports": len(missing_import),
+    }
+
+
 # ═══════════════════════════════════════════════════════════════════
 # FULL EXAMINATION
 # ═══════════════════════════════════════════════════════════════════
@@ -254,6 +324,7 @@ def examine() -> DoctorReport:
         check_model_sanity(),
         check_inbox_sanity(),
         check_env_sanity(),
+        check_chain_discipline(),
     ]
 
     errors = []

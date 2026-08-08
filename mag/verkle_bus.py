@@ -42,8 +42,9 @@ CH_TASK      = "mag:task"
 CH_VERKLE    = "mag:verkle"
 CH_SCRUM     = "mag:scrum"
 CH_BARD      = "mag:bard"
+CH_FLARE     = "mag:flare"
 
-ALL_CHANNELS = [CH_SENSE, CH_CYCLE, CH_COPILOT, CH_LEAK, CH_TASK, CH_VERKLE, CH_SCRUM, CH_BARD]
+ALL_CHANNELS = [CH_SENSE, CH_CYCLE, CH_COPILOT, CH_LEAK, CH_TASK, CH_VERKLE, CH_SCRUM, CH_BARD, CH_FLARE]
 
 # ── Redis connection ──────────────────────────────────────────────
 

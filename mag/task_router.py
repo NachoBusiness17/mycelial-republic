@@ -24,6 +24,7 @@ Schema: task_router.v1
 from __future__ import annotations
 
 import json
+from mag.chain_query import chain  # auto-added by doctor_agent
 from pathlib import Path
 from typing import Any
 

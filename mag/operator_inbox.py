@@ -162,7 +162,13 @@ def _emit_frustration(text: str, source: str) -> None:
     # re-trigger the very signal it reports on (self-amplification loop).
     if "operator frustration detected" in low:
         return
-    if source.startswith("ghost") or source in ("steer", "operator_override"):
+    # System sources (pro-library moves, governor, autopilot) are NOT operator
+    # frustration. pro-library's escalate_on_loop move contains the word
+    # "escalate" and was being misclassified as operator_escalate (41 false
+    # positives). Only real operator/dashboard guidance should emit a signal.
+    if source in ("pro-library", "governor", "autopilot", "system", "dashboard", "ghost"):
+        return
+    if source in ("steer", "operator_override"):
         signal = "operator_steer_override"
     elif any(w in low for w in ("escalate", "grok", "handoff", "send to")):
         signal = "operator_escalate"
@@ -188,6 +194,29 @@ def clear_pending() -> dict[str, Any]:
     data["committed"] = kept
     _save(data)
     return {"ok": True, "cleared": True}
+
+
+def capture_mention(text: str, *, source: str = "conversation", log_event: bool = True) -> dict[str, Any]:
+    """Live-capture an operator mention so Ghost SEES it (awareness + actionability).
+
+    The seam for "ghost should see something when I mention it while talking":
+      - Commits to operator_inbox (status=pending) -> ghost.sense() reads inbox_pending;
+        the agent drains it at the next checkpoint and applies/clarifies. (SEE + ACT)
+      - Optionally logs a behavioral_event (kind=operator_mention) -> ghost.sense_context()
+        reads the last 5 events, so ghost is aware immediately even before a checkpoint.
+    Returns the commit result. Idempotent via commit_guidance dedup.
+    """
+    text = (text or "").strip()
+    if not text:
+        return {"ok": False, "error": "empty mention"}
+    res = commit_guidance(text, source=source)
+    if log_event:
+        try:
+            log_behavioral_event(kind="operator_mention", detail=text[:200], phase="conversation")
+        except Exception:
+            pass
+    res["mention"] = text
+    return res
 
 
 def _is_ambiguous(text: str) -> bool:

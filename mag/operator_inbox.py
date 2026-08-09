@@ -31,9 +31,33 @@ EVENTS_PATH = ROOT / "logs" / "behavioral_events.jsonl"
 
 # Vague inputs → Socratic clarify at checkpoint (not raw inject)
 _VAGUE = {
-    "continue", "go", "next", "fix it", "keep going", "yes", "no", "stop",
-    "help", "wait", "hold on", "actually", "nevermind", "nvm",
+    "continue", "go", "next", "fix it", "keep going", "yes",
+    "help", "actually", "nevermind", "nvm",
 }
+
+# High-authority sovereign signals — VETO / PAUSE. These are the CLEAREST input we
+# get, so they must NEVER be classified as vague and routed to Socratic clarify
+# (the recurring "why are you prompting me" failure). Mirrors the pause/stop class
+# already used by _emit_frustration. Full typed control channel (note|veto|cancel|
+# approve|pause|resume) lands via the authority-model research t18aff67401; this is
+# the deterministic contract-only fix aligned to the steal memo.
+_VETO_PAUSE = {
+    "no", "stop", "wait", "hold on", "hold", "pause", "halt", "cancel",
+    "abort", "stop that", "stop now", "pause the run",
+}
+
+
+def _is_veto_or_pause(text: str) -> bool:
+    """True when the input is a clear veto/pause signal (high authority, immediate).
+
+    Negation guard: "don't stop" / "never pause" are NOT vetoes (they mean continue).
+    """
+    low = text.strip().lower().rstrip(".!?").strip()
+    if low in _VETO_PAUSE:
+        return True
+    if re.search(r"\b(don'?t|do not|never|not|keep|continue)\b.*\b(stop|pause|wait|halt|cancel|abort)\b", low):
+        return False
+    return bool(re.search(r"\b(stop|pause|halt|cancel|abort|wait)\b", low))
 
 
 def _now() -> str:
@@ -134,7 +158,11 @@ def _emit_frustration(text: str, source: str) -> None:
     """Log operator overrides as frustration signals for Ghost auto-deploy triggers."""
     low = text.strip().lower()
     signal = None
-    if source in ("ghost", "steer", "operator_override"):
+    # Belt-and-suspenders: a ghost meta-note reporting frustration must never
+    # re-trigger the very signal it reports on (self-amplification loop).
+    if "operator frustration detected" in low:
+        return
+    if source.startswith("ghost") or source in ("steer", "operator_override"):
         signal = "operator_steer_override"
     elif any(w in low for w in ("escalate", "grok", "handoff", "send to")):
         signal = "operator_escalate"
@@ -164,6 +192,8 @@ def clear_pending() -> dict[str, Any]:
 
 def _is_ambiguous(text: str) -> bool:
     low = text.strip().lower().rstrip(".!?")
+    if _is_veto_or_pause(low):
+        return False  # veto/pause = clear + actionable; never ask, act
     if low in _VAGUE:
         return True
     if len(text.strip()) < 12:

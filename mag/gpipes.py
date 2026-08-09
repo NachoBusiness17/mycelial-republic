@@ -70,11 +70,32 @@ def _trail(event: str, pipe_id: str, **meta: Any) -> None:
         f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 def fan_out(goals: list[str], *, provider: str = "deepseek",
             model: str | None = None, timeout: int = orc.DEFAULT_TIMEOUT,
-            tags: list[str] | None = None) -> dict[str, Any]:
-    """Spawn one orchestrator sub-agent per goal, in parallel. Returns the pipe record."""
+            tags: list[str] | None = None, agent_state: str | None = None) -> dict[str, Any]:
+    """Spawn one orchestrator sub-agent per goal, in parallel. Returns the pipe record.
+
+    If a custom agent_state (research-agent / janitor-agent / coding-agent / default) is given,
+    the state's resource spec resolves the model for the whole fan-out (sub-agents inherit the
+    state), and the state name is recorded on the pipe. Explicit `model` always wins over the
+    state-resolved model.
+    """
     goals = [g.strip() for g in goals if g and g.strip()]
     if not goals:
         return {"ok": False, "error": "no goals"}
+    # Resolve a held custom agent state -> resource spec (model + shape) for this fan-out.
+    state_spec: dict[str, Any] | None = None
+    state_name = (agent_state or "").strip() or None
+    if state_name:
+        try:
+            from mag.agent_state_router import pick as state_pick
+            sr = state_pick(state_name, goals[0])
+            if sr.get("ok"):
+                state_spec = sr
+                if model is None:
+                    model = sr.get("model")
+            else:
+                return {"ok": False, "error": f"unknown agent state: {state_name}", "known": sr.get("known")}
+        except Exception as e:
+            return {"ok": False, "error": f"agent state resolve failed: {e}"}
     pipe_id = "p" + uuid.uuid4().hex[:10]
     tags = (tags or []) + [""] * max(0, len(goals) - len(tags or []))
     tasks: list[dict[str, Any]] = []
@@ -122,6 +143,7 @@ def fan_out(goals: list[str], *, provider: str = "deepseek",
         "tags": spawned_tags,
         "provider": provider,
         "timeout_s": timeout,
+        "agent_state": state_name,
         "status": "running",
         "spawn_failures": [t for t in tasks if not t.get("task_id")],
         "tasks": tasks,

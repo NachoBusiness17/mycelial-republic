@@ -810,6 +810,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_ssb.add_argument("--json", action="store_true", help="Print payload, don't write")
     p_ssb.add_argument("--dry", action="store_true", help="Print the rendered brief, don't write")
+    p_sbrief = sub.add_parser(
+        "state-brief",
+        help="START BRIEF: deterministic greeting at state/START_BRIEF.md (the bard report). Cheap + measured transfer, $0.",
+    )
+    p_sbrief.add_argument("--json", action="store_true", help="Print measured payload, don't write")
+    p_sbrief.add_argument("--dry", action="store_true", help="Print rendered brief, don't write")
     p_og = sub.add_parser(
         "ops-graph",
         help="Categorize live ops telemetry into a typed knowledge graph (nodes + edges)",
@@ -843,6 +849,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_proc_sup.add_argument("proc_sup_args", nargs=argparse.REMAINDER,
                             help="up | down | status | start <name> | stop <name> | restart <name>")
+    p_wake = sub.add_parser(
+        "wake",
+        help="Cheap cold start: bring up default supervisor loops + write the START BRIEF greeting. One command, no ceremony.",
+    )
+    p_wake.add_argument("--brief-only", action="store_true",
+                        help="Just regenerate the START BRIEF greeting, don't touch loops")
     p_deeph = sub.add_parser(
         "deep-handoff",
         help="Hand the run to a deeper model via the session maze (memory-framework test): assemble maze + spawn on deepseek-v4-pro",
@@ -853,6 +865,20 @@ def main(argv: list[str] | None = None) -> int:
         "extension-deploy",
         help="Deploy the MAG extension files to the installed extension dir",
     )
+    p_emb = sub.add_parser(
+        "embassy-publish",
+        help="Publish the AOS embassy packet to GitHub (dry by default; --live to actually push)",
+    )
+    p_emb.add_argument("--live", action="store_true",
+                        help="Actually push the repo (git push via cached creds; no gh needed)")
+    p_emb.add_argument("--repo", metavar="URL",
+                        help="Target GitHub repo URL to push into (e.g. https://github.com/<you>/embassy-aos)")
+    p_clean = sub.add_parser(
+        "cleanup",
+        help="Passive code-audit cleanup: move transient project-dir artifacts to memory/trash (dry by default; --live to move)",
+    )
+    p_clean.add_argument("--live", action="store_true",
+                         help="Actually move transient artifacts to trash (reversible)")
     p_gate = sub.add_parser(
         "spec-gate",
         help="Wrong-offset gate: freeze/check a file's base fingerprint before a spec is applied",
@@ -3500,6 +3526,18 @@ def main(argv: list[str] | None = None) -> int:
         res = write_brief()
         print(json.dumps(res, indent=2, default=str)[:2000])
         return 0
+    if args.cmd == "state-brief":
+        from mag.state_brief import gather, render, write as sb_write
+
+        if getattr(args, "json", False):
+            print(json.dumps(gather(), indent=2, default=str)[:8000])
+            return 0
+        if getattr(args, "dry", False):
+            print(render(gather()))
+            return 0
+        res = sb_write()
+        print(json.dumps(res, indent=2, default=str)[:2000])
+        return 0
     if args.cmd == "ops-graph":
         from mag.ops_graph import main as og_main
 
@@ -3534,6 +3572,16 @@ def main(argv: list[str] | None = None) -> int:
         from mag.process_supervisor import main as ps_main
 
         return ps_main(list(getattr(args, "proc_sup_args", []) or []))
+    if args.cmd == "wake":
+        from mag.state_brief import write as sb_write
+        from mag.process_supervisor import start_all
+
+        out: dict[str, Any] = {"ok": True}
+        if not getattr(args, "brief_only", False):
+            out["supervisor"] = start_all()
+        out["brief"] = sb_write()
+        print(json.dumps(out, indent=2, default=str)[:3000])
+        return 0
     if args.cmd == "deep-handoff":
         from mag.session_maze import main as maze_main
 
@@ -3542,6 +3590,19 @@ def main(argv: list[str] | None = None) -> int:
         from mag.extension_deploy import main as ext_main
 
         return ext_main([])
+    if args.cmd == "embassy-publish":
+        from mag.embassy_deliver import main as emb_main
+
+        argv = []
+        if getattr(args, "live", False):
+            argv.append("--live")
+        if getattr(args, "repo", None):
+            argv += ["--repo", args.repo]
+        return emb_main(argv)
+    if args.cmd == "cleanup":
+        from mag.cleanup import main as clean_main
+
+        return clean_main(["--live"] if getattr(args, "live", False) else [])
     if args.cmd == "spec-gate":
         from mag.spec_gate import main as gate_main
 

@@ -56,6 +56,17 @@ MODELS = {
         "best_for": ["analyze", "reason", "research", "synthesize", "investigate",
                      "long_context", "multi_file", "architecture", "diagnosis"],
         "avoid_for": ["classify", "yesno", "count", "simple_list"],
+        "tier": "flash",  # fast, cheap, good enough
+    },
+    "deepseek-v4": {
+        "provider": "deepseek",
+        "cost": 0.00040,  # 3x flash, 3x reasoning depth
+        "context": 128_000,
+        "best_for": ["deep_reasoning", "multi_step", "architecture_design",
+                     "complex_diagnosis", "strategy", "orchestrate",
+                     "code_architecture", "research_deep"],
+        "avoid_for": ["classify", "yesno", "count", "simple_list", "code", "lookup"],
+        "tier": "full",  # deeper reasoning, smaller context than flash
     },
     "grok-3-mini": {
         "provider": "grok",
@@ -145,11 +156,24 @@ def route_task(goal: str, *, prefer_provider: str = "auto") -> dict[str, Any]:
                             "grok-3-mini" if grok_available else "deepseek-v4-flash",
                             0.003 if grok_available else 0.00013),
         "orchestrate":      ("grok" if grok_available else "deepseek",
-                            "grok-4-latest" if grok_available else "deepseek-v4-flash",
-                            0.025 if grok_available else 0.00013),
+                            "grok-4-latest" if grok_available else "deepseek-v4",
+                            0.025 if grok_available else 0.00040),
     }
 
+    # Complexity-aware routing: bump flash -> v4 for deep reasoning tasks
     provider, model, cost = routing.get(task_type, ("deepseek", "deepseek-v4-flash", 0.00013))
+
+    # For complex reasoning tasks where Grok is unavailable, use deepseek-v4 (full)
+    # instead of flash for 3x reasoning depth at 3x cost
+    if provider == "deepseek" and model == "deepseek-v4-flash":
+        complex_indicators = [
+            "architecture", "design from scratch", "multi-step", "deep dive",
+            "comprehensive", "thorough analysis", "system design", "orchestrate",
+        ]
+        goal_lower = goal.lower()
+        if any(indicator in goal_lower for indicator in complex_indicators):
+            model = "deepseek-v4"
+            cost = 0.00040  # 3x flash cost for 3x reasoning depth
 
     # Cost guard: if daily spend > 80% of cap, fall back to DeepSeek
     if provider == "grok":

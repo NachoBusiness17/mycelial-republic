@@ -512,6 +512,53 @@ def route(
     )
 
 
+_HANDOFF_MARKERS = (
+    "handoff", "hand off", "continue", "resume", "pick up", "as discussed",
+    "as we discussed", "deep-handoff", "carry on", "carry over", "following up",
+    "following on", "take over", "where we left off", "the run we started",
+)
+
+
+def _context_plan(
+    goal: str, depth: str, job: str, tier: str, mode: str, provider: str | None,
+) -> dict[str, Any]:
+    """Decide the ASK'S REPRESENTATION: handoff vs fresh, and which model shape to call.
+
+    The router today picks a DESTINATION (tier/seat/provider) but not the ask's
+    representation. This fills that gap so we think about WHAT MODEL we're calling and
+    WHAT CONTEXT rides in the prompt (the 'spend on the spec, not the tier' doctrine):
+      - is_handoff   : does the receiving model need the session MAZE / frozen RIB to
+                       CONTINUE (map-is-the-territory), vs a fresh context pack?
+      - context_plan : 'handoff_maze' | 'fresh_context_pack' (what to attach).
+      - model_shape  : cheap/heavy/reasoning/balanced — choose the model by TASK SHAPE,
+                       not the provider's default_model.
+      - model_hint   : which actual model to call for that shape.
+    """
+    g = (goal or "").lower()
+    is_handoff = any(m in g for m in _HANDOFF_MARKERS) or mode in ("deep-handoff", "handoff")
+    if depth in ("plan", "overview"):
+        model_shape = "reasoning"
+    elif depth == "heavy_code":
+        model_shape = "heavy"
+    elif depth in ("scut", "simple_code"):
+        model_shape = "cheap"
+    else:
+        model_shape = "balanced"
+    context_plan = "handoff_maze" if is_handoff else "fresh_context_pack"
+    hint_map = {
+        "cheap": "cheapest flash/edge model of the provider — exec scores 1.00 on all tiers (tier_probe)",
+        "balanced": "default balanced model of the provider",
+        "heavy": "pro/heavy model of the provider (hard_code)",
+        "reasoning": "reasoning-capable model (grok TUI / deepseek pro) — plan/reason, do not auto-run",
+    }
+    return {
+        "is_handoff": is_handoff,
+        "context_plan": context_plan,
+        "model_shape": model_shape,
+        "model_hint": hint_map[model_shape],
+    }
+
+
 def _route_payload(
     goal: str,
     depth: str,
@@ -534,6 +581,7 @@ def _route_payload(
     skills: list[str] | None = None,
     rental: bool = False,
 ) -> dict[str, Any]:
+    ctx = _context_plan(goal, depth, job, tier, mode, provider)
     return {
         "ok": ok,
         "schema": "route.v2",
@@ -543,6 +591,10 @@ def _route_payload(
         "tier": tier,
         "seat": seat,
         "provider": provider,
+        "model_shape": ctx["model_shape"],
+        "context_plan": ctx["context_plan"],
+        "is_handoff": ctx["is_handoff"],
+        "model_hint": ctx["model_hint"],
         "mode": mode,
         "launch": launch,
         "executable": executable,

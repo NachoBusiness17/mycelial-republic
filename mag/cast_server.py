@@ -38,6 +38,7 @@ _ALLOWED = frozenset(
         "/api/v1/voice/turn",
         "/api/v1/voice/scratch",
         "/api/v1/voice/stt",
+        "/api/v1/voice/dictate",
         "/api/v1/remote/status",
         "/api/v1/remote/intent",
     }
@@ -123,6 +124,7 @@ class Handler(BaseHTTPRequestHandler):
                         "GET /voice",
                         "POST /api/v1/voice/turn",
                         "GET|POST /api/v1/voice/stt",
+                        "POST /api/v1/voice/dictate",
                     ],
                 },
             )
@@ -172,6 +174,7 @@ class Handler(BaseHTTPRequestHandler):
             "/api/v1/voice/turn",
             "/api/v1/voice/scratch",
             "/api/v1/voice/stt",
+            "/api/v1/voice/dictate",
             "/api/v1/remote/intent",
         }:
             self._json(405, {"ok": False, "error": "unsupported cast action"})
@@ -219,6 +222,15 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(200, out)
             except Exception as exc:
                 self._json(500, {"ok": False, "error": f"stt crash: {exc!s}"[:240], "text": ""})
+            return
+
+        if path == "/api/v1/voice/dictate":
+            try:
+                from mag.voice_dictate import handle_dictate
+
+                self._json(200, handle_dictate(body))
+            except Exception as exc:
+                self._json(500, {"ok": False, "error": f"dictate crash: {exc!s}"[:240]})
             return
 
         try:

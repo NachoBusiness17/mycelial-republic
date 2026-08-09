@@ -254,13 +254,20 @@ def sense() -> dict[str, Any]:
     state["recent_steers"] = len([r for r in steer if r.get("status") == "accepted"])
 
     # ── Frustration signals (operator escalations, steer overrides, replans) ──
+    # HONESTY FIX (2026-08-09, surface audit): never let ghost's OWN detection echo
+    # (source=ghost-auto-frustration) count as operator frustration. Ghost detecting a
+    # signal must not inflate the very signal it reacts to — that self-amplification
+    # loop made "operator_escalate" reach 1102 (724 = system escalate_on_loop, 376 =
+    # ghost's own echo, only 2 = real operator). Filter the echo at the measurement point.
     frustration = _read_jsonl(GHOST_DIR / "frustration.jsonl", tail=50)
+    real = [f for f in frustration
+            if not str(f.get("source", "")).startswith("ghost-auto-frustration")]
     state["frustration_signals"] = {}
-    for f in frustration:
+    for f in real:
         sig = f.get("signal", "") or f.get("kind", "") or ""
         if sig:
             state["frustration_signals"][sig] = state["frustration_signals"].get(sig, 0) + 1
-    state["frustration_total"] = len(frustration)
+    state["frustration_total"] = len(real)
 
     # ── Leak detection (canary breaches, entropy anomalies, whisper bursts, collusion) ──
     try:
@@ -564,7 +571,7 @@ def sense_copilot() -> dict[str, Any]:
     }
 
 
-def exec_copilot(msg: dict[str, Any], *, dry: bool = False) -> dict[str, Any]:
+def exec_copilot(msg: dict[str, Any], *, dry: bool = False, agent_state: str | None = None) -> dict[str, Any]:
     """Execute a Copilot message — route by action.
 
     Actions:
@@ -574,6 +581,8 @@ def exec_copilot(msg: dict[str, Any], *, dry: bool = False) -> dict[str, Any]:
       "write"  → write file, verify bytes
       "sense"  → return current ghost.sense() snapshot
 
+    If a custom agent_state is held, its resource spec resolves the model (mapped-memory
+    channel): sub-agents inherit the state's model, spent on the spec not the tier.
     Writes result to memory/copilot/outbox/{msg.id}.json
     """
     msg_id = msg.get("id") or f"copilot-{uuid.uuid4().hex[:8]}"
@@ -581,6 +590,17 @@ def exec_copilot(msg: dict[str, Any], *, dry: bool = False) -> dict[str, Any]:
     goal = msg.get("goal", "")
     provider = msg.get("provider", "ollama")
     model = msg.get("model", "qwen2.5-coder:7b")
+
+    # Mapped-memory channel: a held custom agent state resolves the model for this work.
+    state = (agent_state or "").strip()
+    if state and msg.get("model") is None:
+        try:
+            from mag.agent_state_router import resolve as state_resolve
+            sr = state_resolve(state)
+            if sr.get("ok"):
+                model = sr.get("model") or model
+        except Exception:
+            pass
 
     result: dict[str, Any] = {
         "msg_id": msg_id,
@@ -593,6 +613,52 @@ def exec_copilot(msg: dict[str, Any], *, dry: bool = False) -> dict[str, Any]:
         result["outcome"] = "dry_run"
         result["preview"] = goal[:200] if goal else str(msg.get("text", ""))[:200]
         return result
+
+
+def stall_sweep(*, dry: bool = False) -> dict[str, Any]:
+    """Deterministic queue-stall sweep — ghost's answer to a clogged queue.
+
+    Ghost should handle a queue full of failed/stalled tasks itself (the operator's
+    doctrine: build the path, don't hand-run it). This reads the orchestrator queue;
+    if failed + killed rows have piled up past a threshold, it purges them (reversibly
+    archived to memory/runs/orchestrator/purged/, NOT hard-deleted) and logs the event
+    to the ghost trail so the purge is measured, not silent.
+
+    No LLM, no model spend — this is deterministic janitor work (bytes, not vibes).
+    """
+    out: dict[str, Any] = {"ok": True, "ts": _now(), "dry": dry,
+                           "checked": True, "purged": 0, "failed": 0,
+                           "killed": 0, "queued": 0, "total": 0}
+    try:
+        from mag.orchestrator import queue_status, purge_failed_queue
+        qs = queue_status()
+        counts = qs.get("counts", {})
+        out["total"] = int(qs.get("total", 0))
+        out["failed"] = int(counts.get("failed", 0))
+        out["killed"] = int(counts.get("killed", 0))
+        out["queued"] = int(counts.get("queued", 0))
+        stale = out["failed"] + out["killed"]
+        # Threshold: only act when the clog is real (>=8 stale rows) and the
+        # queue is meaningfully full (>=60% of the view) — don't churn on a
+        # handful of legitimately-failed rows.
+        if stale >= 8 and out["total"] >= 60:
+            if dry:
+                out["would_purge"] = stale
+            else:
+                pr = purge_failed_queue(also_killed=True)
+                out["purged"] = int(pr.get("moved", 0))
+                out["archive"] = pr.get("archive", "")
+                _append_jsonl(TRAIL_PATH, {
+                    "ts": _now(), "event": "queue_stall_sweep",
+                    "purged": out["purged"], "archive": out.get("archive", ""),
+                    "failed_before": out["failed"], "total": out["total"],
+                })
+        else:
+            out["reason"] = "below_threshold"
+    except Exception as e:
+        out["ok"] = False
+        out["error"] = str(e)[:160]
+    return out
 
     try:
         if action == "exec":
@@ -763,6 +829,36 @@ async def autonomous_task_loop(app, interval_s: float = 60.0) -> None:
             await asyncio.sleep(interval_s)
             state = sense()
             ctx = state.get("context", {})
+
+            # ── Queue-stall sweep: ghost self-heals a clogged queue ──
+            # A queue full of failed/stalled tasks blocks the drainer. Ghost purges
+            # stale failed/killed rows (reversibly archived) on its own cadence so the
+            # operator never has to hand-clear it. Deterministic, no model spend.
+            try:
+                sweep = stall_sweep()
+                if sweep.get("purged", 0) > 0:
+                    print(f"[ghost] queue-stall sweep purged {sweep['purged']} stale tasks "
+                          f"(archive: {sweep.get('archive','')})", flush=True)
+            except Exception:
+                pass  # never crash the daemon on a sweep failure
+
+            # ── Process-sprawl report: ghost surfaces the leak count (report-only) ──
+            # The reaper collapses python-window sprawl, but killing is an OPERATOR
+            # decision (live=True). Ghost's job here is to MEASURE and surface the leak
+            # count each cycle so the operator sees it without opening a terminal —
+            # ghost owns the sensing, never the kill.
+            try:
+                from mag.process_reaper import classify
+                rc = classify()
+                leaks = len(rc.get("leaks") or [])
+                if leaks > 0:
+                    _append_jsonl(GHOST_DIR / "leak_report.jsonl", {
+                        "ts": _now(), "total": rc.get("total"), "leaks": leaks,
+                        "buckets": rc.get("buckets"),
+                        "live": False,  # sensing only; operator decides to kill
+                    })
+            except Exception:
+                pass  # never crash the daemon on a report failure
 
             # ── No presence gate: the container is the boundary ──
             # Docker/Kubernetes sandboxes each agent at the OS level.
@@ -1200,6 +1296,16 @@ async def daemon_mode(port: int = 9000, host: str = "0.0.0.0") -> None:
             "inbox_pending": last.get("inbox_pending", 0),
         }
 
+    # ── Sovereign Dashboard — one call sees everything ──
+    @app.get("/api/v1/sovereign")
+    async def sovereign():
+        """The whole stack in one call. Every module. Every metric."""
+        try:
+            from mag.sovereign_dashboard import sovereign_dashboard
+            return sovereign_dashboard()
+        except Exception as e:
+            return {"ok": False, "error": str(e)[:300]}
+
     # ── Cost endpoints (sidebar dashboard) ──
     @app.get("/api/v1/cost")
     async def cost():
@@ -1295,8 +1401,26 @@ async def daemon_mode(port: int = 9000, host: str = "0.0.0.0") -> None:
                                         output = ""
                                         if log and Path(log).is_file():
                                             output = Path(log).read_text(encoding="utf-8", errors="replace")[-1000:]
+
+                                        # ── Constitutional filter ──
+                                        critique_info = None
+                                        if output.strip():
+                                            try:
+                                                from mag.constitutional_critique import filter_response
+                                                cr = filter_response(output, tier="T2", model="deepseek")
+                                                if not cr.clean:
+                                                    output = cr.revised
+                                                    critique_info = {
+                                                        "violations": len(cr.violations),
+                                                        "revised": cr.revised != cr.original,
+                                                        "model": cr.model_used,
+                                                    }
+                                            except Exception:
+                                                pass  # filter failure should not block response
+
                                         return {"ok": True, "answer": output.strip() or f"Task {task.get('status')}",
-                                                "task_id": task_id, "status": task.get("status")}
+                                                "task_id": task_id, "status": task.get("status"),
+                                                "constitutional_filter": critique_info}
                     except Exception:
                         pass
             return {"ok": True, "answer": "Task queued — check back in a moment.", "msg_id": msg_id}
@@ -1429,6 +1553,350 @@ async def daemon_mode(port: int = 9000, host: str = "0.0.0.0") -> None:
                 breadcrumb=breadcrumb,
                 tail=tail,
             )
+        except Exception as e:
+            return {"ok": False, "error": str(e)[:300]}
+
+    # ── Tokenomics endpoint — Friedman-esque cost intelligence ──
+    @app.get("/api/v1/tokenomics")
+    async def tokenomics_dashboard_route():
+        """Full tokenomics dashboard: burn rate, arbitrage, waste, inflation."""
+        try:
+            from mag.tokenomics import tokenomics_dashboard
+            return tokenomics_dashboard()
+        except Exception as e:
+            return {"ok": False, "error": str(e)[:300]}
+
+    @app.get("/api/v1/tokenomics/burn")
+    async def tokenomics_burn_route():
+        """Quick burn rate check."""
+        try:
+            from mag.tokenomics import tokenomics_burn
+            return tokenomics_burn()
+        except Exception as e:
+            return {"ok": False, "error": str(e)[:300]}
+
+    @app.get("/api/v1/tokenomics/arbitrage")
+    async def tokenomics_arbitrage_route():
+        """Find provider arbitrage opportunities."""
+        try:
+            from mag.tokenomics import tokenomics_arbitrage
+            return {"ok": True, "opportunities": tokenomics_arbitrage()}
+        except Exception as e:
+            return {"ok": False, "error": str(e)[:300]}
+
+    @app.get("/api/v1/tokenomics/waste")
+    async def tokenomics_waste_route():
+        """Detect wasteful tasks."""
+        try:
+            from mag.tokenomics import tokenomics_waste
+            return {"ok": True, "waste": tokenomics_waste()}
+        except Exception as e:
+            return {"ok": False, "error": str(e)[:300]}
+
+    # ── Frontier Scout endpoint — what's worth stealing ──
+    @app.get("/api/v1/scout")
+    async def scout_dashboard_route():
+        """Full frontier scout dashboard: steal-now, watch, passed, stolen."""
+        try:
+            from mag.frontier_scout import scout_dashboard
+            return scout_dashboard()
+        except Exception as e:
+            return {"ok": False, "error": str(e)[:300]}
+
+    @app.get("/api/v1/scout/steal")
+    async def scout_steal_now_route():
+        """Everything worth stealing immediately."""
+        try:
+            from mag.frontier_scout import scout_steal_now
+            return {"ok": True, "steal_now": scout_steal_now()}
+        except Exception as e:
+            return {"ok": False, "error": str(e)[:300]}
+
+    @app.post("/api/v1/scout/queue")
+    async def scout_queue_route(payload: dict[str, Any]):
+        """Queue a steal-now finding as an adaptation task."""
+        try:
+            from mag.frontier_scout import scout_queue_steal
+            finding_id = payload.get("finding_id", "")
+            return scout_queue_steal(finding_id)
+        except Exception as e:
+            return {"ok": False, "error": str(e)[:300]}
+
+    @app.post("/api/v1/scout/mark-stolen")
+    async def scout_mark_stolen_route(payload: dict[str, Any]):
+        """Mark a finding as successfully stolen and integrated."""
+        try:
+            from mag.frontier_scout import scout_mark_stolen
+            finding_id = payload.get("finding_id", "")
+            return scout_mark_stolen(finding_id)
+        except Exception as e:
+            return {"ok": False, "error": str(e)[:300]}
+
+    # ── Constitutional Critique endpoints ──
+    @app.get("/api/v1/constitution")
+    async def constitution_status_route():
+        """Constitutional filter status and stats."""
+        try:
+            from mag.constitutional_critique import critique_stats, get_filter
+            stats = critique_stats()
+            f = get_filter()
+            return {
+                "ok": True,
+                "filter_enabled": f.enabled,
+                "model": f.model,
+                "stats": stats,
+                "critique_log": "memory/critique/critique_log.jsonl",
+            }
+        except Exception as e:
+            return {"ok": False, "error": str(e)[:300]}
+
+    @app.post("/api/v1/constitution/critique")
+    async def constitution_critique_route(payload: dict[str, Any]):
+        """Test constitutional critique on a response. Returns violations and revised text."""
+        try:
+            from mag.constitutional_critique import critique_dry_run, filter_response
+            text = payload.get("text", "")
+            tier = payload.get("tier", "T2")
+            use_model = payload.get("use_model", False)
+
+            if use_model:
+                result = filter_response(text, tier=tier)
+            else:
+                result = critique_dry_run(text, tier=tier)
+
+            return {
+                "ok": True,
+                "clean": result.clean,
+                "violations_count": len(result.violations),
+                "violations": result.violations,
+                "original": text[:500],
+                "revised": result.revised[:500] if not result.clean else "(unchanged)",
+                "revised_full": result.revised if not result.clean else None,
+                "model_used": result.model_used,
+            }
+        except Exception as e:
+            return {"ok": False, "error": str(e)[:300]}
+
+    # ── Context Compression endpoint ──
+    @app.get("/api/v1/compress")
+    async def compress_dashboard_route():
+        """Compression dashboard: what's compressed, what's saved."""
+        try:
+            from mag.context_compression import compression_dashboard
+            return compression_dashboard()
+        except Exception as e:
+            return {"ok": False, "error": str(e)[:300]}
+
+    @app.post("/api/v1/compress")
+    async def compress_text_route(payload: dict[str, Any]):
+        """Compress a text and return stats."""
+        try:
+            from mag.context_compression import compress, estimate_tokens
+            text = payload.get("text", "")
+            method = payload.get("method", "algorithmic")
+            name = payload.get("name", "api_compress")
+
+            result = compress(text, name=name, method=method)
+            return {
+                "ok": True,
+                "original_tokens": result.original_tokens,
+                "compressed_tokens": result.compressed_tokens,
+                "savings_pct": result.savings_pct,
+                "method": result.method,
+                "cost_usd": result.cost_usd,
+                "compressed": result.compressed[:2000],
+            }
+        except Exception as e:
+            return {"ok": False, "error": str(e)[:300]}
+
+    # ── Mixture of Agents endpoint ──
+    @app.get("/api/v1/moa")
+    async def moa_dashboard_route():
+        """MoA engine stats and cost comparison."""
+        try:
+            from mag.mixture_of_agents import moa_dashboard
+            return moa_dashboard()
+        except Exception as e:
+            return {"ok": False, "error": str(e)[:300]}
+
+    @app.post("/api/v1/moa/query")
+    async def moa_query_route(payload: dict[str, Any]):
+        """Query N models and synthesize consensus. 48x cheaper than Grok-4."""
+        try:
+            from mag.mixture_of_agents import moa_query
+            goal = payload.get("goal", "")
+            models = payload.get("models", None)
+            dry_run = payload.get("dry_run", True)
+
+            result = moa_query(goal, models=models, dry_run=dry_run)
+            return {
+                "ok": True,
+                "consensus": result.consensus[:2000],
+                "confidence": result.confidence,
+                "convergence": result.convergence,
+                "dissent_preserved": result.dissent_preserved[:500],
+                "models_used": result.models_used,
+                "total_cost_usd": result.total_cost_usd,
+                "votes": [v.to_dict() for v in result.votes],
+            }
+        except Exception as e:
+            return {"ok": False, "error": str(e)[:300]}
+
+    # ── DSPy Sovereign endpoint ──
+    @app.get("/api/v1/dspy")
+    async def dspy_dashboard_route():
+        """DSPy dashboard: modules, metrics, optimization history."""
+        try:
+            from mag.dspy_sovereign import dspy_dashboard
+            return dspy_dashboard()
+        except Exception as e:
+            return {"ok": False, "error": str(e)[:300]}
+
+    @app.post("/api/v1/dspy/optimize")
+    async def dspy_optimize_route(payload: dict[str, Any]):
+        """Optimize a named module's prompt against sovereign metrics."""
+        try:
+            from mag.dspy_sovereign import optimize_module
+            module_name = payload.get("module", "ghost_identity")
+            dry_run = payload.get("dry_run", True)
+
+            run = optimize_module(module_name, dry_run=dry_run)
+            return {
+                "ok": True,
+                "module": run.module_name,
+                "variants_tried": run.variants_tried,
+                "best_variant_id": run.best_variant_id,
+                "best_scores": run.best_scores,
+                "improvement": run.improvement_pct,
+                "cost_usd": run.cost_usd,
+            }
+        except Exception as e:
+            return {"ok": False, "error": str(e)[:300]}
+
+    # ── Vast.ai LoRA Training endpoint ──
+    @app.get("/api/v1/vast/estimate")
+    async def vast_estimate_route():
+        """Estimate Vast.ai training costs before committing."""
+        try:
+            from mag.vast_launcher import estimate_training_costs, best_option
+            options = estimate_training_costs()
+            best = best_option()
+            return {
+                "ok": True,
+                "best_option": {
+                    "gpu": best.gpu_name,
+                    "vram_gb": best.vram_gb,
+                    "price_per_hour": best.price_per_hour,
+                    "estimated_minutes": best.estimated_training_minutes,
+                    "total_cost": round(best.total_cost, 2),
+                },
+                "all_options": [
+                    {"gpu": o.gpu_name, "cost": round(o.total_cost, 2), "minutes": o.estimated_training_minutes}
+                    for o in options[:5]
+                ],
+            }
+        except Exception as e:
+            return {"ok": False, "error": str(e)[:300]}
+
+    @app.post("/api/v1/vast/train")
+    async def vast_train_route():
+        """Queue LoRA training on Vast.ai — proves Phase 2 Slashreboot."""
+        try:
+            from mag.orchestrator import spawn_task
+            goal = (
+                "[vast] Execute LoRA fine-tuning on cheapest Vast.ai GPU. "
+                "Training package is at memory/training/vast_package/. "
+                "Use mag.vast_launcher.launch_training() to find GPU and launch. "
+                "Upload package, run setup_and_train.sh, download lora_output/, destroy instance. "
+                "Estimated cost: $0.12. Estimated time: 25 minutes."
+            )
+            task = spawn_task(goal, provider="deepseek", tag="vast-lora-training")
+            return {
+                "ok": True,
+                "message": "LoRA training queued. Monitor at GET /api/v1/vast/status",
+                "task": task,
+                "estimated_cost": "$0.12 (RTX 4090, ~20 min training + 5 min setup)",
+            }
+        except Exception as e:
+            return {"ok": False, "error": str(e)[:300]}
+
+    @app.get("/api/v1/vast/status")
+    async def vast_status_route():
+        """Check LoRA training pipeline readiness."""
+        try:
+            from mag.lora_pipeline import pipeline_status
+            from mag.vast_launcher import verify_pipeline_locally
+            pipeline = pipeline_status() if callable(pipeline_status) else {"error": "pipeline check unavailable"}
+            verify = verify_pipeline_locally()
+            return {
+                "ok": True,
+                "pipeline": pipeline,
+                "verify": verify,
+                "ready": verify.get("ready_for_gpu_training", False),
+            }
+        except Exception as e:
+            return {"ok": False, "error": str(e)[:300]}
+
+    # ── Context Checkpoint endpoint — escape the context-window lock-in ──
+    @app.get("/api/v1/checkpoint/{session_id}")
+    async def checkpoint_restore_route(session_id: str):
+        """Get the latest checkpoint pointer for a session. ~200 tokens, not full history."""
+        try:
+            from mag.context_checkpoint import restore_pointer, get_engine
+            pointer = restore_pointer(session_id)
+            chain = get_engine().chain_for_session(session_id)
+            return {
+                "ok": True,
+                "session_id": session_id,
+                "turns": len(chain),
+                "pointer_tokens": len(pointer) // 4,
+                "pointer": pointer,
+                "chain": chain[-5:],  # last 5 turns
+            }
+        except Exception as e:
+            return {"ok": False, "error": str(e)[:300]}
+
+    @app.post("/api/v1/checkpoint")
+    async def checkpoint_write_route(payload: dict[str, Any]):
+        """Write a context checkpoint. The pointer bridges model switches."""
+        try:
+            from mag.context_checkpoint import checkpoint_turn
+            session_id = payload.get("session_id", "default")
+            context = payload.get("context", "")
+            model = payload.get("model", "deepseek-v4-flash")
+            cost = payload.get("cost_usd", 0.0)
+
+            cp = checkpoint_turn(session_id, context, model_used=model, model_cost_usd=cost)
+            return {
+                "ok": True,
+                "session_id": session_id,
+                "turn": cp.turn_number,
+                "knot_id": cp.verkle_knot_id,
+                "pointer": cp.to_pointer(),
+                "pointer_tokens": len(cp.to_pointer()) // 4,
+            }
+        except Exception as e:
+            return {"ok": False, "error": str(e)[:300]}
+
+    @app.post("/api/v1/checkpoint/switch")
+    async def checkpoint_switch_route(payload: dict[str, Any]):
+        """Switch models mid-conversation. Checkpoint current, get pointer for new model."""
+        try:
+            from mag.context_checkpoint import switch_model, switch_economics
+            session_id = payload.get("session_id", "default")
+            context = payload.get("context", "")
+            from_model = payload.get("from_model", "grok-4-latest")
+            to_model = payload.get("to_model", "deepseek-v4-flash")
+
+            result = switch_model(session_id, context, from_model, to_model)
+            econ = switch_economics(len(context) // 4, from_model, to_model, remaining_turns=10)
+
+            return {
+                "ok": True,
+                "switch": result,
+                "economics": econ,
+                "recommendation": econ["savings"]["verdict"],
+            }
         except Exception as e:
             return {"ok": False, "error": str(e)[:300]}
 

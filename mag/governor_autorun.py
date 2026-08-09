@@ -760,6 +760,26 @@ def autorun_loop(interval_s: float = 5.0, *, once: bool = False) -> None:
     # the failure KB (remedy + recurring_patterns + training) without being asked.
     # Default 120 ticks (~10 min at 5s). Deterministic, no LLM.
     warn_every = int(os.environ.get("MAG_WARN_EVERY", "120") or "120")
+    # Corpus-lens cadence: auto-analyze fresh research harvests (diff + bard/swarm
+    # lenses) on the cheap tier without being asked. Default 600 ticks (~50 min).
+    lens_every = int(os.environ.get("MAG_LENS_EVERY", "600") or "600")
+    # Research-pack auto-fold cadence: fold landed .answer.*.md into skill_ledger as
+    # case law (the bed -> precedent) WITHOUT being asked. Idempotent, no LLM.
+    # Default 120 ticks (~10 min at 5s).
+    fold_every = int(os.environ.get("MAG_FOLD_EVERY", "120") or "120")
+    # Gap-analysis cadence: where are we NOT using our systems / just pretending (defined but
+    # not running/used/enforced). Default 600 ticks (~50 min). Deterministic, no LLM.
+    gap_every = int(os.environ.get("MAG_GAP_EVERY", "600") or "600")
+    # Topic-orphan cadence: find stranded topics and reroute them through existing systems.
+    topic_every = int(os.environ.get("MAG_TOPIC_EVERY", "300") or "300")
+    # Self-drive cadence: prove the agent-state routing is live by re-planning the next
+    # pending intent through self_drive (state -> model/context/learned). Spawns only when a
+    # genuinely fresh goal resolves and the queue has room (dedup + queue gate prevent storms).
+    selfdrive_every = int(os.environ.get("MAG_SELF_DRIVE_EVERY", "720") or "720")
+    # Passive cleanup cadence: move transient project-dir artifacts (deliver/, _tmp_*,
+    # codex_*, pytest-* scratch, caches) to memory/trash when the operator is away.
+    # Deterministic (no model). Default 600 ticks (~50 min at 5s).
+    cleanup_every = int(os.environ.get("MAG_CLEANUP_EVERY", "600") or "600")
     tick = 0
 
     def _dim(s: str) -> str:
@@ -887,6 +907,90 @@ def autorun_loop(interval_s: float = 5.0, *, once: bool = False) -> None:
                     )
             except Exception as e:
                 print(_dim(f"  [warnings] error: {e}"), flush=True)
+        # Passive cleanup cadence: keep the project dir from accumulating transient
+        # artifacts. Respects operator seat (only runs when away). Deterministic.
+        if cleanup_every > 0 and tick > 0 and tick % cleanup_every == 0:
+            try:
+                from mag.cleanup import run_cadence as cleanup_run
+
+                cr = cleanup_run()
+                if cr.get("moved"):
+                    print(
+                        _dim(f"  [cleanup] moved={cr.get('moved')} bytes={cr.get('bytes')} trash={cr.get('trash')}"),
+                        flush=True,
+                    )
+            except Exception as e:
+                print(_dim(f"  [cleanup] error: {e}"), flush=True)
+
+        # Corpus-lens cadence: if a fresh corpus harvest landed, diff it and enqueue
+        # the bard + swarm-protocol lens tasks automatically.
+        if lens_every > 0 and tick > 0 and tick % lens_every == 0:
+            try:
+                from tools.corpus_lens import run_cadence
+
+                cl = run_cadence()
+                enq = sum(1 for r in cl.get("results", []) if r.get("lenses_enqueued"))
+                print(
+                    _dim(f"  [corpus-lens] root={cl.get('root')} analyzed={enq}"),
+                    flush=True,
+                )
+            except Exception as e:
+                print(_dim(f"  [corpus-lens] error: {e}"), flush=True)
+        # Research-pack auto-fold: turn landed research answers into case law
+        # automatically (tesuji-everywhere: bed -> skill_ledger, not just reports).
+        if fold_every > 0 and tick > 0 and tick % fold_every == 0:
+            try:
+                from mag.research_fold import run as fold_run
+
+                fr = fold_run()
+                if fr.get("folded"):
+                    print(
+                        _dim(f"  [research-fold] folded={fr.get('folded')} remaining={fr.get('pending_remaining')}"),
+                        flush=True,
+                    )
+            except Exception as e:
+                print(_dim(f"  [research-fold] error: {e}"), flush=True)
+        # Gap analysis: report where we're pretending (defined but not used/running/enforced).
+        if gap_every > 0 and tick > 0 and tick % gap_every == 0:
+            try:
+                from mag.gap_analysis import gap_analysis
+
+                ga = gap_analysis()
+                if ga.get("n_gaps"):
+                    print(
+                        _dim(f"  [gap-analysis] gaps={ga.get('n_gaps')} cadence={len(ga.get('cadence_gaps') or [])} modules={len(ga.get('module_gaps') or [])} enforce={len(ga.get('enforcement_gaps') or [])}"),
+                        flush=True,
+                    )
+            except Exception as e:
+                print(_dim(f"  [gap-analysis] error: {e}"), flush=True)
+        # Topic-orphan reroute: strandless topics -> back into the systems.
+        if topic_every > 0 and tick > 0 and tick % topic_every == 0:
+            try:
+                from mag.topic_orphan import reroute as topic_reroute
+
+                to = topic_reroute()
+                if to.get("rerouted_n"):
+                    print(
+                        _dim(f"  [topic-orphan] raised={to.get('raised_n')} orphaned={to.get('orphan_n')} rerouted={to.get('rerouted_n')}"),
+                        flush=True,
+                    )
+            except Exception as e:
+                print(_dim(f"  [topic-orphan] error: {e}"), flush=True)
+        # Self-drive cadence: agent-state-aware ask planning, live in the loop. Picks the next
+        # pending intent and replans it through self_drive (state -> model/context/learned) so
+        # routing provably serves a held custom state. Spawns only when a fresh goal resolves.
+        if selfdrive_every > 0 and tick > 0 and tick % selfdrive_every == 0:
+            try:
+                from mag.self_drive_cadence import run as selfdrive_run
+
+                sd = selfdrive_run(spawn=True)
+                if sd.get("planned"):
+                    print(
+                        _dim(f"  [self-drive] planned={sd.get('planned')} state={sd.get('state') or 'default'} model={sd.get('model') or '?'} spawned={sd.get('spawned')}"),
+                        flush=True,
+                    )
+            except Exception as e:
+                print(_dim(f"  [self-drive] error: {e}"), flush=True)
         if growth_every > 0 and tick % growth_every == 0:
             try:
                 from mag.growth_cycle import maybe_run_growth_cycle

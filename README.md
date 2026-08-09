@@ -6,7 +6,8 @@
 **Future walkthrough — v2→v10 + subsystems:** [`docs/ref/MAG_FUTURE_WALKTHROUGH.md`](docs/ref/MAG_FUTURE_WALKTHROUGH.md)  
 **Vision — v2 completion + desk loop factory:** [`docs/ref/MAG_VISION_AUTOMATION.md`](docs/ref/MAG_VISION_AUTOMATION.md)  
 **For everyone — full proposal:** [`docs/ref/MAG_PROJECT_PROPOSAL.md`](docs/ref/MAG_PROJECT_PROPOSAL.md)  
-**For humans — dashboard how-to:** [`docs/HOW_TO_MAG_DASHBOARD.md`](docs/HOW_TO_MAG_DASHBOARD.md)
+**For humans — dashboard how-to:** [`docs/HOW_TO_MAG_DASHBOARD.md`](docs/HOW_TO_MAG_DASHBOARD.md)  
+**Run — one command, one surface:** [`docs/ref/RUN.md`](docs/ref/RUN.md) — `python main.py wake` brings up the core; `mag_kill.cmd` stops it
 
 **Product home for the local orchestrator.** Local models do memory, briefs, and scutwork; **remote specialist seats are scarce** (priority + daily budget). This is **not** the strike demo-knot desk and not R0.
 

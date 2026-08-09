@@ -830,6 +830,7 @@ function activate(context) {
       "magControlRoom.ghostView": views.ghostView,
       "magControlRoom.opsGraph": views.opsGraph,
       "magControlRoom.handoffView": views.handoffView,
+      "magControlRoom.surfaceHub": views.surfaceHub,
     };
     for (const [viewId, inst] of Object.entries(viewMap)) {
       context.subscriptions.push(
@@ -856,6 +857,11 @@ function activate(context) {
     context.subscriptions.push(
       vscode.commands.registerCommand("magMap.ghostView", () =>
         vscode.commands.executeCommand("magControlRoom.ghostView.focus")
+      )
+    );
+    context.subscriptions.push(
+      vscode.commands.registerCommand("magMap.surfaceAudit", () =>
+        vscode.commands.executeCommand("magControlRoom.surfaceHub.focus")
       )
     );
     // Status-bar button — opens the Thought Surface (the live agent streams).

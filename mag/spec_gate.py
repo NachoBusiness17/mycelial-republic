@@ -9,6 +9,7 @@ Usage:
   python main.py spec-gate freeze <path> [--label x]   # snapshot the base
   python main.py spec-gate check  <path>                # does it still match?
   python main.py spec-gate gate   <path>                # block if drifted
+  python main.py spec-gate verify-after <path> [--sha X] [--label L]  # POSTCONDITION: did the apply take effect?
   python main.py spec-gate list                         # frozen bases
 """
 from __future__ import annotations
@@ -110,6 +111,53 @@ def gate(path: str | Path) -> dict[str, Any]:
     }
 
 
+def verify_after(path: str | Path, *, expected_sha: str | None = None, label: str = "") -> dict[str, Any]:
+    """POSTCONDITION verify: did the apply actually take effect?
+
+    gate() only guards the BEFORE (file hasn't drifted from the frozen base).
+    This closes the honesty gap on the AFTER: fingerprint the file's current
+    bytes and report whether the apply produced the expected result.
+
+    - If expected_sha is given: ok iff current == expected_sha (result oracle).
+    - If no expected_sha: ok iff current CHANGED from the frozen base (the
+      apply actually mutated the file).
+    """
+    key = _norm(path)
+    rec = base_for(path) or {}
+    base_sha = rec.get("sha")
+    current = fingerprint(path)
+    changed = (
+        current is not None
+        and base_sha is not None
+        and current != base_sha
+    )
+    if expected_sha is not None:
+        ok = current is not None and current == expected_sha
+        detail = (
+            "result matches expected sha - apply took effect"
+            if ok
+            else "MISMATCH: current bytes != expected sha - apply did not produce the expected result"
+        )
+    else:
+        ok = changed
+        detail = (
+            "file CHANGED from frozen base - apply mutated the file"
+            if ok
+            else "file UNCHANGED from frozen base - apply did not mutate the file"
+        )
+    return {
+        "ok": ok,
+        "changed": changed,
+        "expected_sha": expected_sha,
+        "current_sha": current,
+        "base_sha": base_sha,
+        "base_ts": rec.get("ts"),
+        "base_label": rec.get("label", ""),
+        "label": label,
+        "detail": detail,
+    }
+
+
 def list_bases() -> list[dict[str, Any]]:
     return sorted((_load().get("bases") or {}).values(), key=lambda r: str(r.get("path")))
 
@@ -124,6 +172,10 @@ def main(argv: list[str] | None = None) -> int:
     p_c.add_argument("path")
     p_g = sub.add_parser("gate")
     p_g.add_argument("path")
+    p_v = sub.add_parser("verify-after")
+    p_v.add_argument("path")
+    p_v.add_argument("--sha", default=None, help="expected sha of the applied result (result oracle)")
+    p_v.add_argument("--label", default="")
     sub.add_parser("list")
     args = ap.parse_args(argv)
 
@@ -135,6 +187,10 @@ def main(argv: list[str] | None = None) -> int:
         g = gate(args.path)
         print(json.dumps(g, indent=2))
         return 0 if not g.get("blocked") else 3
+    elif args.cmd == "verify-after":
+        v = verify_after(args.path, expected_sha=args.sha, label=args.label)
+        print(json.dumps(v, indent=2))
+        return 0 if v.get("ok") else 3
     elif args.cmd == "list":
         print(json.dumps(list_bases(), indent=2))
     return 0

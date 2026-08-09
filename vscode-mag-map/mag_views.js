@@ -419,6 +419,81 @@ function handoffViewHtml() {
 }
 
 // ====================================================================
+// SURFACE AUDIT — surfaces + groups + seam verdict (Surface Hub)
+// ====================================================================
+function surfaceHubHtml() {
+  return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline';">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAG Surface Audit</title>${STYLE}
+<style>
+  .verdict { display:inline-block; font-size:10px; padding:2px 8px; border-radius:8px; margin-left:6px; }
+  .verdict.ready { background:#1a3a1a; color:#3fb950; }
+  .verdict.attention { background:#3a2a0a; color:#d29922; }
+  .bar-row { display:flex; align-items:center; gap:8px; margin:3px 0; font-size:11px; }
+  .bar-row .lab { width:86px; color:#8b949e; text-align:right; }
+  .bar-row .track { flex:1; background:#161b22; border:1px solid #21262d; border-radius:4px; height:12px; overflow:hidden; }
+  .bar-row .fill { height:100%; background:#58a6ff; }
+  .bar-row .num { width:34px; color:#c9d1d9; }
+  .check { font-size:11px; padding:2px 0; }
+  .check.ok { color:#3fb950; }
+  .check.fail { color:#f85149; }
+</style>
+</head><body>
+  <h1>🔎 Surface Audit <span class="muted" id="ts"></span><span class="verdict" id="verdict">—</span></h1>
+  <div class="muted" id="meta"></div>
+  <h2>Surfaces</h2>
+  <div class="row" id="surfaces"></div>
+  <h2>Functional groups <span class="muted">(by function)</span></h2>
+  <div id="groups"></div>
+  <h2>Seam checks</h2>
+  <div id="checks"></div>
+  <div class="err" id="err" style="display:none;">Dashboard not reachable (:8765)</div>
+  <script>
+    window.addEventListener('message', (ev) => {
+      const msg = ev.data;
+      if (msg.type !== 'snapshot') return;
+      const a = msg.data.audit || {};
+      if (!a.schema) { $('err').style.display = 'block'; return; }
+      $('err').style.display = 'none';
+      $('ts').textContent = (a.ts || '').slice(11, 19);
+      $('meta').textContent = 'v' + (a.version || '?') + ' · ' + (a.entries || 0) + ' entries · ' + (a.checks || []).length + ' seam checks';
+      const v = $('verdict');
+      v.textContent = (a.verdict || 'n/a').toUpperCase();
+      v.className = 'verdict ' + (a.verdict === 'ready' ? 'ready' : 'attention');
+      const s = $('surfaces'); s.innerHTML = '';
+      (a.surfaces || []).forEach(function (surf) {
+        const c = document.createElement('div'); c.className = 'card';
+        c.appendChild(el('div', surf.label, 'k'));
+        c.appendChild(el('div', surf.count, 'v'));
+        s.appendChild(c);
+      });
+      const g = $('groups'); g.innerHTML = '';
+      const counts = (a.groups || []).map(function (x) { return x.count || 0; });
+      const max = Math.max.apply(null, counts.concat([1]));
+      (a.groups || []).forEach(function (grp) {
+        const row = document.createElement('div'); row.className = 'bar-row';
+        row.appendChild(el('div', (grp.icon || '') + ' ' + grp.label, 'lab'));
+        const track = document.createElement('div'); track.className = 'track';
+        const fill = document.createElement('div'); fill.className = 'fill';
+        fill.style.width = Math.round(100 * (grp.count || 0) / max) + '%';
+        track.appendChild(fill);
+        row.appendChild(track);
+        row.appendChild(el('div', grp.count, 'num'));
+        g.appendChild(row);
+      });
+      const ch = $('checks'); ch.innerHTML = '';
+      (a.checks || []).forEach(function (c) {
+        const d = document.createElement('div'); d.className = 'check ' + (c.ok ? 'ok' : 'fail');
+        d.textContent = (c.ok ? '✓ ' : '✗ ') + c.name + ' — ' + (c.detail || '');
+        ch.appendChild(d);
+      });
+    });
+  </script>${FOOT}`;
+}
+
+// ====================================================================
 // Factory — build all section views
 // ====================================================================
 function buildViews() {
@@ -446,6 +521,10 @@ function buildViews() {
     handoffView: new SectionView({
       paths: {},
       html: handoffViewHtml,
+    }),
+    surfaceHub: new SectionView({
+      paths: { audit: "/api/v1/surface-audit" },
+      html: surfaceHubHtml,
     }),
   };
   return views;

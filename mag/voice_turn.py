@@ -316,6 +316,10 @@ def _build_user_prompt(
         parts.append(
             "FORBIDDEN in this reply unless latest line names them: RAM, BIOS, SAM, motherboard."
         )
+        # I1 steal (VS Code voice): agent knows it's a spoken turn
+        parts.append(
+            "SPOKEN TURN (voice): reply briefly and read-aloud friendly — plain, no markdown, no lists."
+        )
         if deepseek_seat:
             parts.append("You are the DeepSeek seat. Answer the intention goal with substance.")
         return "\n\n".join(parts)
@@ -334,6 +338,8 @@ def _build_user_prompt(
         parts.append(f"## Recent\n{hist}")
     parts.append(f"## Operator just said (ANSWER THIS — only this)\n{transcript}")
     parts.append("Do not mention RAM/BIOS/SAM unless they did in the latest line.")
+    # I1 steal (VS Code voice): agent knows it's a spoken turn
+    parts.append("SPOKEN TURN (voice): reply briefly and read-aloud friendly — plain, no markdown, no lists.")
     return "\n\n".join(parts)
 
 
@@ -534,6 +540,13 @@ def handle_voice_turn(body: dict[str, Any] | None) -> dict[str, Any]:
     body = body or {}
     raw_text = str(body.get("text") or body.get("transcript") or "").strip()
     text = soft_stt_fix(raw_text)
+    # I2 steal (VS Code voice): per-surface dictation cleanup on the spoken transcript
+    try:
+        from mag.voice_dictate import cleanup as _dictate_cleanup
+
+        text = _dictate_cleanup(text, "chat")
+    except Exception:
+        pass
     session_id = _safe_session_id(
         str(body.get("session_id") or "").strip() or f"voice-{uuid4().hex[:10]}"
     )

@@ -32,6 +32,16 @@ def main() -> int:
     except Exception:
         pass
 
+    # 1b2) START BRIEF: the human-facing "bard report" greeting at
+    #      state/START_BRIEF.md (deterministic, $0). This is what greets the
+    #      operator on every VS Code start / wake — no ceremony, measured.
+    try:
+        from mag.state_brief import write as write_state_brief
+
+        write_state_brief()
+    except Exception:
+        pass
+
     # 1c) Freeze session snapshot for DeepSeek Pro Max / external seats.
     #     Writes memory/freeze/sancho_boot_snapshot.json — the "frozen vision"
     #     that can be passed to strong reasoning models, paying context tax once.

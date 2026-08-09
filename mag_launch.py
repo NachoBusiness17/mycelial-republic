@@ -186,6 +186,15 @@ def build_slots() -> list[dict]:
             "proc": None,
             "health_url": "http://127.0.0.1:8765/",
         },
+        # Ghost daemon — sovereign agent control plane with all REST endpoints
+        # Runs on :9000. Health: /api/v1/health. All new modules live here.
+        {
+            "name": "ghost",
+            "cmd": [PY, "-m", "mag.ghost", "--daemon", "--port", "9000"],
+            "wanted": True,
+            "proc": None,
+            "health_url": "http://127.0.0.1:9000/api/v1/health",
+        },
         # Integral Mag loop (watch + companion heartbeat). Dashboard stays a
         # separate slot so UI survives lab restarts; lab uses --no-dashboard.
         {

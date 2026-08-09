@@ -105,6 +105,21 @@
       <option value="browser">Browser Web Speech (fast interim, flaky)</option>
     </select>
   </label>
+  <label>Dictation language (Whisper)
+    <select id="sttLang">
+      <option value="en" selected>English</option>
+      <option value="en-US">English (US)</option>
+      <option value="es">Español</option>
+      <option value="fr">Français</option>
+      <option value="de">Deutsch</option>
+      <option value="it">Italiano</option>
+      <option value="pt">Português</option>
+      <option value="ja">日本語</option>
+      <option value="zh">中文</option>
+      <option value="ko">한국어</option>
+      <option value="auto">auto (detect)</option>
+    </select>
+  </label>
   <label>Memory lane
     <select id="memoryLane">
       <option value="auto" selected>auto (infer from what you say)</option>
@@ -163,6 +178,7 @@
     const seatEl = $("seat");
     const laneEl = $("memoryLane");
     const sttModeEl = $("sttMode");
+    const sttLangEl = $("sttLang");
     const btnGo = $("btnGo");
     const btnStop = $("btnStop");
     const btnDone = $("btnDone");
@@ -191,6 +207,9 @@
     // Whisper path: MediaRecorder + energy VAD hangover
     const WHISPER_SILENCE_MS = 1800;
     const WHISPER_SPEECH_RMS = 0.018;
+    // I3 steal (VS Code voice, warm capture): the recorder starts BEFORE VAD listens,
+    // so the start of speech is already captured — no clipped lead-in. The long silence
+    // hangover (WHISPER_SILENCE_MS) keeps the tail so the last phoneme isn't cut.
     let mediaStream = null;
     let mediaRec = null;
     let mediaChunks = [];
@@ -287,7 +306,7 @@
         body: JSON.stringify({
           data: b64,
           filename: "clip." + ext,
-          language: "en",
+          language: sttLangEl && sttLangEl.value === "auto" ? "" : (sttLangEl ? sttLangEl.value : "en"),
         }),
       });
       const j = await r.json();

@@ -1737,6 +1737,16 @@ def h_framework_reports(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[
         return 500, {"ok": False, "error": str(e)[:300]}
 
 
+def h_surface_audit(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Full surface audit — surface split + groups + seam verdict (Surface Hub)."""
+    from mag.surface_audit import audit
+
+    try:
+        return 200, audit()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
 def h_janitor(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
     """Run the janitor (prune + document) or fetch its last report."""
     from mag.janitor import last_report, run
@@ -1971,6 +1981,41 @@ def h_extension_deploy(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[i
 
     try:
         return 200, deploy()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_cleanup(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Thin REST twin for passive cleanup: audit + (dry=false) move transient to trash.
+
+    Body: {dry: bool} — default true (audit only). dry=false moves to memory/trash
+    (reversible). Respects operator seat.
+    """
+    from mag.cleanup import run_cadence
+
+    b = body or {}
+    dry = str(b.get("dry", _p.get("dry", "true"))).lower() not in ("false", "0", "no")
+    try:
+        out = run_cadence(dry=dry)
+        return 200, out
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_embassy_publish(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Thin REST twin for embassy publish: send the AOS packet to GitHub (dry by default).
+
+    Body: {dry: bool} — default true. Use dry=false (with gh authenticated) to actually
+    create+push the repo. Gate protects against secrets/placeholders automatically.
+    """
+    from mag.embassy_deliver import publish
+
+    b = body or {}
+    dry = str(b.get("dry", _p.get("dry", "true"))).lower() not in ("false", "0", "no")
+    repo_url = str(b.get("repo_url") or _p.get("repo_url") or "").strip() or None
+    try:
+        out = publish(dry=dry, repo_url=repo_url)
+        return (200, out) if out.get("ok") else (409, out)
     except Exception as e:
         return 500, {"ok": False, "error": str(e)[:300]}
 
@@ -4240,6 +4285,7 @@ ROUTES: list[tuple[str, str, HandlerFn]] = [
     ("GET", "/api/v1/graph/ops", h_ops_graph),
     ("GET", "/api/v1/framework/map", h_framework_map),
     ("GET", "/api/v1/framework/reports", h_framework_reports),
+    ("GET", "/api/v1/surface-audit", h_surface_audit),
     ("GET", "/api/v1/janitor", h_janitor),
     ("POST", "/api/v1/janitor", h_janitor),
     ("GET", "/api/v1/orphan", h_orphan),
@@ -4259,6 +4305,10 @@ ROUTES: list[tuple[str, str, HandlerFn]] = [
     ("GET", "/api/v1/spec-gate", h_spec_gate),
     ("POST", "/api/v1/spec-gate", h_spec_gate),
     ("POST", "/api/v1/extension/deploy", h_extension_deploy),
+    ("GET", "/api/v1/cleanup", h_cleanup),
+    ("POST", "/api/v1/cleanup", h_cleanup),
+    ("GET", "/api/v1/embassy/publish", h_embassy_publish),
+    ("POST", "/api/v1/embassy/publish", h_embassy_publish),
     ("GET", "/api/v1/live-feed", h_live_feed),
     ("POST", "/api/v1/live-feed", h_live_feed),
     ("GET", "/api/v1/workspace/tree", h_workspace_tree),

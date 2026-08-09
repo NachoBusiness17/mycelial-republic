@@ -42,6 +42,54 @@ def test_gate_freezes_and_blocks_on_drift(isolated):
     assert "DRIFT" in g3["detail"]
 
 
+def test_verify_after_expected_sha_oracle(isolated):
+    target = isolated / "target.py"
+    target.write_text("def a():\n    return 1\n", encoding="utf-8")
+
+    # freeze the base
+    f = sg.freeze(target, label="v1")
+    assert f["ok"] is True
+
+    # gate passes before apply
+    assert sg.gate(target)["blocked"] is False
+
+    # mutate the file (the apply)
+    target.write_text("def a():\n    return 999\n", encoding="utf-8")
+    expected = sg.fingerprint(target)
+
+    # verify_after with expected sha -> passes when it matches
+    v = sg.verify_after(target, expected_sha=expected, label="apply-v2")
+    assert v["ok"] is True
+    assert v["changed"] is True
+    assert v["current_sha"] == expected
+    assert v["expected_sha"] == expected
+
+    # verify_after with a wrong expected sha -> fails (drifted result)
+    v2 = sg.verify_after(target, expected_sha="0" * 64, label="apply-v2")
+    assert v2["ok"] is False
+    assert "MISMATCH" in v2["detail"]
+
+
+def test_verify_after_no_expected_sha_checks_mutation(isolated):
+    target = isolated / "target.py"
+    target.write_text("def a():\n    return 1\n", encoding="utf-8")
+
+    sg.freeze(target, label="v1")
+
+    # unchanged -> not ok (apply did not mutate)
+    v = sg.verify_after(target)
+    assert v["ok"] is False
+    assert v["changed"] is False
+    assert "UNCHANGED" in v["detail"]
+
+    # mutate -> ok (apply actually mutated the file)
+    target.write_text("def a():\n    return 999\n", encoding="utf-8")
+    v2 = sg.verify_after(target)
+    assert v2["ok"] is True
+    assert v2["changed"] is True
+    assert "CHANGED" in v2["detail"]
+
+
 def test_job_floor_lifecycle_and_stuck_watchdog(isolated):
     r = jf.create_job("add timeout to chat()", seat="local", targets=[str(isolated / "none.py")])
     assert r["state"] == "designated"

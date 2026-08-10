@@ -203,6 +203,197 @@ def sense_context() -> dict[str, Any]:
 # SENSE
 # ====================================================================
 
+def sense_surfaces() -> dict[str, Any]:
+    """Full-surface awareness: ingest the operational surfaces (tiered queue, digests,
+    learnings, self-steal gaps, context growth, cost/cache) so the ghost 'sees everything'
+    in its network and can report back. Deterministic ($0, no LLM)."""
+    out: dict[str, Any] = {}
+    # Tiered queue (ghost-operated single drainer)
+    try:
+        from mag.orchestrator import queue_status, list_queue
+        from collections import Counter
+        qs = queue_status()
+        q = list_queue(limit=100)
+        tier_c = Counter(x.get("tier") or "mission" for x in q if x.get("status") in ("queued", "running"))
+        out["queue"] = {"total": qs.get("total"), "counts": qs.get("counts"), "tiers": dict(tier_c)}
+    except Exception:
+        pass
+    # Process supervision — ghost KNOWS it supervises the loops (process_supervisor):
+    # which loops are running / crashed / in crashLoopBackOff, so it is not blind to
+    # the layer that keeps the framework alive (2026-08-09: the storm it couldn't see).
+    # Read-only view of the supervisor state file (no reap side-effects here).
+    try:
+        sp = ROOT / "memory" / "supervisor" / "state.json"
+        if sp.is_file():
+            st = json.loads(sp.read_text(encoding="utf-8"))
+            loops = []
+            for name, cur in st.items():
+                loops.append({
+                    "name": name,
+                    "status": cur.get("status"),
+                    "running": bool(cur.get("pid") and cur.get("status") == "running"),
+                    "next_retry_at": cur.get("next_retry_at"),
+                    "recent_crashes": len(cur.get("crash_times", [])),
+                })
+            out["process_supervisor"] = {"loops": loops}
+    except Exception:
+        pass
+    # self_steal capability gaps (recently seen)
+    try:
+        ss = ROOT / "memory" / "runs" / "self_steal" / "state.json"
+        if ss.is_file():
+            out["self_steal"] = json.loads(ss.read_text(encoding="utf-8")).get("seen")
+    except Exception:
+        pass
+    # queue digest (latest)
+    try:
+        dd = ROOT / "memory" / "runs" / "queue_digest"
+        if dd.is_dir():
+            leaves = sorted(dd.glob("queue_digest_*.md"))
+            if leaves:
+                out["queue_digest"] = leaves[-1].read_text(encoding="utf-8", errors="replace")[:1200]
+    except Exception:
+        pass
+    # context growth (latest)
+    try:
+        cg = ROOT / "memory" / "runs" / "context_growth"
+        if cg.is_dir():
+            leaves = sorted(cg.glob("context_growth_*.md"))
+            if leaves:
+                out["context_growth"] = leaves[-1].read_text(encoding="utf-8", errors="replace")[:800]
+    except Exception:
+        pass
+    # cost_learn daily leaf (latest)
+    try:
+        daily = ROOT / "memory" / "improve" / "daily"
+        if daily.is_dir():
+            leaves = sorted(daily.glob("cost-*.md"))
+            if leaves:
+                out["cost_learn"] = leaves[-1].read_text(encoding="utf-8", errors="replace")[:800]
+    except Exception:
+        pass
+    # cache_map latest per-provider
+    try:
+        cm = ROOT / "memory" / "runs" / "cache_map"
+        if cm.is_dir():
+            maps = sorted(cm.glob("*/map.json"))
+            if maps:
+                m = json.loads(maps[-1].read_text(encoding="utf-8"))
+                out["cache_map"] = {"by_provider": (m.get("by_provider") or [])[:5]}
+    except Exception:
+        pass
+    # queue_learn watermark
+    try:
+        ql = ROOT / "memory" / "runs" / "queue_learn" / "state.json"
+        if ql.is_file():
+            out["queue_learn"] = json.loads(ql.read_text(encoding="utf-8")).get("last_ts")
+    except Exception:
+        pass
+    # RenderMan ask protocol — the ghost knows the compact->expand->elevate shape.
+    if (ROOT / "mag" / "renderman_ask.py").is_file():
+        out["renderman_ask"] = {"available": True, "module": "mag/renderman_ask.py",
+                                "protocol": "compact RIB -> expand in LLM -> elevate (grok gives executor spec)"}
+    # Gap map — the ghost knows which task shapes are frontier-gap vs cheap-capable.
+    try:
+        from mag.gap_map import analyze as gap_analyze
+        g = gap_analyze()
+        out["gap_map"] = {"frontier_gap": g["frontier_gap_names"],
+                           "n_cheap": g["n_cheap_shapes"], "recommendation": g["recommendation"]}
+    except Exception:
+        pass
+    # Frontier-help doc — the percolated asks the system wants help with from frontier.
+    try:
+        fh = ROOT / "memory" / "frontier" / "HELP_WANTED.md"
+        if fh.is_file():
+            out["frontier_help"] = {"doc": str(fh), "asks": sum(1 for l in fh.read_text(encoding="utf-8", errors="replace").splitlines() if l.strip().startswith(tuple("123456789")) and ". " in l)}
+    except Exception:
+        pass
+    # Frontier ghost — critical coding tasks that deserve a grok terminal to build packages.
+    try:
+        from mag.grok_terminal import scan_for_critical
+        crit = scan_for_critical(limit=3)
+        out["frontier_ghost"] = {"critical_tasks": [
+            {"goal": c.get("goal", "")[:120], "src": c.get("source", "queue")} for c in crit]}
+    except Exception:
+        pass
+    # AOS grok — courtesy-budget status for the lent frontier (start small, prove it).
+    try:
+        from mag.aos_grok import budget_status
+        out["aos_grok"] = budget_status()
+    except Exception:
+        pass
+    # Research lens — the growing self-referencing research corpus (knowledge that compounds).
+    try:
+        from mag.research_lens import status as rl_status
+        out["research_lens"] = rl_status()
+    except Exception:
+        pass
+    # Cheap swarm — the expand+execute half of the frontier-ghost tesuji (pending packages).
+    try:
+        from mag.cheap_swarm import status as cs_status
+        out["cheap_swarm"] = cs_status()
+    except Exception:
+        pass
+    # Active coding window — the flag a grok-mirror run flips; ghost observes it to know
+    # an active coding session is running the mirror pipeline.
+    try:
+        from mag.grok_mirror import active_coding_window
+        out["active_coding_window"] = active_coding_window()
+    except Exception:
+        pass
+    # Grok mirror — the last mirrored plan (the instruction-production pipeline status).
+    try:
+        from mag.grok_mirror import OUT_DIR as _gm_out
+        recent = sorted(_gm_out.glob("mirror-*.json")) if _gm_out.is_dir() else []
+        out["grok_mirror"] = {"n_mirrors": len(recent),
+                              "latest": recent[-1].name if recent else None}
+    except Exception:
+        pass
+    # xAI key failover — which grok key slots are configured (names only, never values).
+    try:
+        from mag.grok_rightsize import xai_key_status
+        out["xai_keys"] = xai_key_status()
+    except Exception:
+        pass
+    # grok_free — the free grok surfaces (CLI harness + grok.com) we default to over the API.
+    try:
+        from mag.grok_free import status as gr_status
+        out["grok_free"] = gr_status()
+    except Exception:
+        pass
+    # mycelium — the unified self-scoring graph (republic OS Phase 1 nucleus).
+    try:
+        from mag.mycelium import status as mc_status
+        out["mycelium"] = mc_status()
+    except Exception:
+        pass
+    # republic_os — the persistent mycelial-republic OS (phases 2-5).
+    try:
+        from mag.republic_os import status as ros_status
+        out["republic_os"] = ros_status()
+    except Exception:
+        pass
+    # comms_trail — the stolen cheap agent-communication trail (shared private language).
+    try:
+        from mag.comms_trail import status as ct_status
+        out["comms_trail"] = ct_status()
+    except Exception:
+        pass
+    # memlang — the shared-verkle trigger language (binary tokens that trigger actions).
+    try:
+        from mag.memlang import status as ml_status
+        out["memlang"] = ml_status()
+    except Exception:
+        pass
+    # swarm_health — aggregate swarm health + the self-improvement law.
+    try:
+        from mag.swarm_health import status as sh_status
+        out["swarm_health"] = sh_status()
+    except Exception:
+        pass
+    return out
+
+
 def sense() -> dict[str, Any]:
     state: dict[str, Any] = {"ts": _now()}
 
@@ -345,6 +536,9 @@ def sense() -> dict[str, Any]:
     switch_log = _read_jsonl(GHOST_DIR / "model_switch_log.jsonl", tail=1)
     if switch_log:
         state["model_switch_ms"] = switch_log[-1].get("load_ms")
+
+    # ── FULL-SURFACE AWARENESS — the ghost sees every operational surface ──
+    state["surfaces"] = sense_surfaces()
 
     # Signature text for vector matching — system signals first
     parts = []
@@ -614,52 +808,6 @@ def exec_copilot(msg: dict[str, Any], *, dry: bool = False, agent_state: str | N
         result["preview"] = goal[:200] if goal else str(msg.get("text", ""))[:200]
         return result
 
-
-def stall_sweep(*, dry: bool = False) -> dict[str, Any]:
-    """Deterministic queue-stall sweep — ghost's answer to a clogged queue.
-
-    Ghost should handle a queue full of failed/stalled tasks itself (the operator's
-    doctrine: build the path, don't hand-run it). This reads the orchestrator queue;
-    if failed + killed rows have piled up past a threshold, it purges them (reversibly
-    archived to memory/runs/orchestrator/purged/, NOT hard-deleted) and logs the event
-    to the ghost trail so the purge is measured, not silent.
-
-    No LLM, no model spend — this is deterministic janitor work (bytes, not vibes).
-    """
-    out: dict[str, Any] = {"ok": True, "ts": _now(), "dry": dry,
-                           "checked": True, "purged": 0, "failed": 0,
-                           "killed": 0, "queued": 0, "total": 0}
-    try:
-        from mag.orchestrator import queue_status, purge_failed_queue
-        qs = queue_status()
-        counts = qs.get("counts", {})
-        out["total"] = int(qs.get("total", 0))
-        out["failed"] = int(counts.get("failed", 0))
-        out["killed"] = int(counts.get("killed", 0))
-        out["queued"] = int(counts.get("queued", 0))
-        stale = out["failed"] + out["killed"]
-        # Threshold: only act when the clog is real (>=8 stale rows) and the
-        # queue is meaningfully full (>=60% of the view) — don't churn on a
-        # handful of legitimately-failed rows.
-        if stale >= 8 and out["total"] >= 60:
-            if dry:
-                out["would_purge"] = stale
-            else:
-                pr = purge_failed_queue(also_killed=True)
-                out["purged"] = int(pr.get("moved", 0))
-                out["archive"] = pr.get("archive", "")
-                _append_jsonl(TRAIL_PATH, {
-                    "ts": _now(), "event": "queue_stall_sweep",
-                    "purged": out["purged"], "archive": out.get("archive", ""),
-                    "failed_before": out["failed"], "total": out["total"],
-                })
-        else:
-            out["reason"] = "below_threshold"
-    except Exception as e:
-        out["ok"] = False
-        out["error"] = str(e)[:160]
-    return out
-
     try:
         if action == "exec":
             if not goal:
@@ -749,6 +897,52 @@ def stall_sweep(*, dry: bool = False) -> dict[str, Any]:
             f.write(json.dumps(m, ensure_ascii=False, default=str) + "\n")
 
     return result
+
+
+def stall_sweep(*, dry: bool = False) -> dict[str, Any]:
+    """Deterministic queue-stall sweep — ghost's answer to a clogged queue.
+
+    Ghost should handle a queue full of failed/stalled tasks itself (the operator's
+    doctrine: build the path, don't hand-run it). This reads the orchestrator queue;
+    if failed + killed rows have piled up past a threshold, it purges them (reversibly
+    archived to memory/runs/orchestrator/purged/, NOT hard-deleted) and logs the event
+    to the ghost trail so the purge is measured, not silent.
+
+    No LLM, no model spend — this is deterministic janitor work (bytes, not vibes).
+    """
+    out: dict[str, Any] = {"ok": True, "ts": _now(), "dry": dry,
+                           "checked": True, "purged": 0, "failed": 0,
+                           "killed": 0, "queued": 0, "total": 0}
+    try:
+        from mag.orchestrator import queue_status, purge_failed_queue
+        qs = queue_status()
+        counts = qs.get("counts", {})
+        out["total"] = int(qs.get("total", 0))
+        out["failed"] = int(counts.get("failed", 0))
+        out["killed"] = int(counts.get("killed", 0))
+        out["queued"] = int(counts.get("queued", 0))
+        stale = out["failed"] + out["killed"]
+        # Threshold: only act when the clog is real (>=8 stale rows) and the
+        # queue is meaningfully full (>=60% of the view) — don't churn on a
+        # handful of legitimately-failed rows.
+        if stale >= 8 and out["total"] >= 60:
+            if dry:
+                out["would_purge"] = stale
+            else:
+                pr = purge_failed_queue(also_killed=True)
+                out["purged"] = int(pr.get("moved", 0))
+                out["archive"] = pr.get("archive", "")
+                _append_jsonl(TRAIL_PATH, {
+                    "ts": _now(), "event": "queue_stall_sweep",
+                    "purged": out["purged"], "archive": out.get("archive", ""),
+                    "failed_before": out["failed"], "total": out["total"],
+                })
+        else:
+            out["reason"] = "below_threshold"
+    except Exception as e:
+        out["ok"] = False
+        out["error"] = str(e)[:160]
+    return out
 
 
 async def copilot_watch_loop(app, interval_s: float = 5.0) -> None:
@@ -1949,6 +2143,20 @@ async def daemon_mode(port: int = 9000, host: str = "0.0.0.0") -> None:
     async def copilot_inbox_get():
         return sense_copilot()
 
+    # SINGLE-INSTANCE GUARD: refuse to start if another ghost-daemon already serves :port.
+    # The 2026-08-09 ghost-daemon cascade (daemon spawning daemon, "again with the python spam")
+    # came from duplicate daemons fighting over the port — a second daemon now exits instead of
+    # storming. Only the one that first bound the port keeps running.
+    try:
+        import socket as _socket
+        _probe = _socket.create_connection((host, port), timeout=1)
+        _probe.close()
+        print(f"[ghost-daemon] {host}:{port} already serving (another ghost-daemon) — "
+              f"refusing to start (single-instance).")
+        return
+    except OSError:
+        pass  # nothing listening on the port — we are the single instance
+
     print(f"[ghost-daemon] starting on {host}:{port}")
     config = uvicorn.Config(app, host=host, port=port, log_level="info")
     server = uvicorn.Server(config)
@@ -2140,6 +2348,35 @@ def deploy(text: str, *, source: str = "ghost", dry: bool = False) -> dict[str, 
         }
     except Exception as e:
         return {"ok": False, "text": text[:200], "status": "failed", "error": str(e), "ts": _now()}
+
+
+def run_recurring() -> dict[str, Any]:
+    """Ghost is the central dispatcher for the recurring self-learning loop.
+
+    All recurring cadence processes (press digest / scrum / research-loop surfacing)
+    route THROUGH ghost, not inline in the governor. Ghost runs the press digest
+    (gather percolating signals -> pick pressing matter -> cheap rashomon -> surface
+    to operator) and folds the outcome. Cheap-only: local/flash, never grok.
+
+    Cadence: wired to MAG_PRESS_EVERY in governor_autorun (calls this via ghost).
+    """
+    out: dict[str, Any] = {"ok": True, "schema": "ghost.recurring.v1", "ts": _now(),
+                           "steps": [], "source": "ghost-dispatcher"}
+    try:
+        from mag.press_digest import emit as press_emit
+        pe = press_emit()
+        out["press"] = {"ok": bool(pe.get("ok")), "pressing": (pe.get("pressing") or {}).get("title"),
+                        "count": pe.get("candidate_count"), "path": pe.get("path")}
+        out["steps"].append("press_digest")
+    except Exception as e:
+        out["press_error"] = str(e)[:160]
+    try:
+        from mag.scrum import sprint
+        sp = sprint()
+        out["scrum_next"] = (sp.get("item") or {}).get("id")
+    except Exception as e:
+        out["scrum_error"] = str(e)[:120]
+    return out
 
 
 # ====================================================================
@@ -2441,11 +2678,148 @@ def _score_emergent(output: str, task_kind: str) -> dict[str, Any]:
 # CYCLE
 # ====================================================================
 
+def self_window(*, commit: bool = True, session_id: str | None = None) -> dict[str, Any]:
+    """The ghost's OWN self-aware agent window (the whole point of ghost): fold its recent
+    loop outcomes into a self-authored agent_state (label, one_line, next_moves,
+    do_not_redesign, notes). Ghost stops being only a sensor of others' state and becomes
+    the author of its own persistent self — the self-aware custom agent window that runs
+    the self-improvement loop on ITSELF.
+
+    Deterministic aggregation from ghost's own signals (sense_surfaces, skill_ledger,
+    failure_kb, self_steal, comms_trail) — no LLM, bytes not vibes.
+    """
+    from mag.agent_state import commit_state, load_latest
+
+    st = sense()
+    surfaces = st.get("surfaces") or {}
+    myc = surfaces.get("mycelium") or {}
+    comms = surfaces.get("comms_trail") or {}
+    self_steal = surfaces.get("self_steal") or []
+    if isinstance(self_steal, dict):
+        self_steal = self_steal.get("seen") or []
+
+    # ghost's own recent signals
+    sl = {}
+    try:
+        from mag.skill_ledger import progress
+        sl = progress()
+    except Exception:
+        pass
+    fkb = {}
+    try:
+        from mag.failure_kb import stats
+        fkb = stats()
+    except Exception:
+        pass
+
+    lessons: list[str] = []
+    if isinstance(self_steal, list) and self_steal:
+        lessons.append(f"self_steal gaps open: {len(self_steal)}")
+    if (fkb.get("total") or 0) > 0:
+        lessons.append(f"failure_kb entries: {fkb.get('total')}")
+
+    # derive next_moves + do_not_redesign from the surfaces the ghost sees
+    next_moves: list[str] = []
+    do_not: list[str] = []
+    if (myc.get("edges") or 0) and (comms.get("seen") or 0):
+        next_moves.append("eat comms_trail consumption into routing")
+    if (myc.get("nodes") or 0) > 0 and (myc.get("decayed") or 0) >= 0:
+        next_moves.append("run republic_os round to reinforce/prune graph")
+    if self_steal:
+        next_moves.append("close self_steal capability gaps")
+    do_not = ["redesign the mycelium graph", "hand-build plans grok should produce",
+              "prompt the operator for secrets"]
+
+    prev = load_latest()
+    one_line = (f"ghost-self: sensing {len(surfaces)} surfaces · graph {myc.get('nodes', 0)}n/{myc.get('edges', 0)}e"
+                f" · comms {comms.get('seen', 0)} · skill_ledger {sl.get('n_decisions', 0)}")
+
+    window: dict[str, Any] = {
+        "one_line": one_line,
+        "next_moves": next_moves[:8],
+        "do_not_redesign": do_not[:8],
+        "notes": "; ".join(lessons)[:800],
+        "commitment": f"ghost-self-window-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}",
+        "stack": {"surfaces": len(surfaces)},
+        "leave": list(prev.get("do_not_redesign") or []) if prev else [],
+    }
+    res = {}
+    if commit:
+        res = commit_state(window, label="ghost-self", reason="ghost self-window introspection",
+                           session_id=session_id)
+    return {"ok": True, "window": window, "commit": res, "surfaces_n": len(surfaces)}
+
+
+def ping(agent: str, kind: str = "steer", text: str = "", *, dry: bool = False) -> dict[str, Any]:
+    """Ghost pings an agent via a control channel (steal: agentswarm ControlMsg/control.ts).
+
+    Ghost appends a ControlMsg to memory/runs/control/<agent>.jsonl; each agent polls it and
+    acts (steer/restart/check/pause/resume). This is how ghost nudges a sick or idle swarm
+    agent based on doctor/self-improvement signals.
+    """
+    ctrl_dir = ROOT / "memory" / "runs" / "control"
+    ctrl_dir.mkdir(parents=True, exist_ok=True)
+    msg: dict[str, Any] = {"ts": _now(), "agent": str(agent)[:60], "kind": str(kind)[:20],
+                           "text": str(text)[:300]}
+    if not dry:
+        with (ctrl_dir / f"{str(agent)[:60]}.jsonl").open("a", encoding="utf-8") as f:
+            f.write(json.dumps(msg, ensure_ascii=False) + "\n")
+    return {"ok": True, "ping": msg, "dry": dry, "channel": str(ctrl_dir / f"{str(agent)[:60]}.jsonl")}
+
+
 def cycle(dry: bool = False, deploy_text: str | None = None) -> dict[str, Any]:
     trail: dict[str, Any] = {"ts": _now(), "dry": dry}
 
     state = sense()
     trail["state"] = {k: v for k, v in state.items() if not k.startswith("_")}
+
+    # LOOP-BREAKER (lesson 2026-08-09): a crash-respawn storm from a broken process is an
+    # INFINITE LOOP, not genuine strain. Detect it and break it BEFORE it spawns more work.
+    # Never touch genuine load (few healthy processes). Dry never mutates.
+    try:
+        from mag.loop_breaker import break_loop, detect
+        lb = detect()
+        trail["loop_breaker"] = {"verdict": lb.get("verdict")}
+        if lb.get("verdict") == "crash_loop" and not dry:
+            broke = break_loop(dry=False)
+            trail["loop_breaker"]["broke"] = True
+            trail["loop_breaker"]["killed"] = broke.get("killed_count")
+            trail["loop_breaker"]["reason"] = broke.get("reason", "")[:200]
+            try:
+                from mag.failure_kb import log_failure
+                log_failure(kind="crash_loop", tool="loop_breaker",
+                            error="respawn storm from broken process — loop broken",
+                            detail=(lb.get("evidence") or "")[:300], phase="cycle")
+            except Exception:
+                pass
+        elif lb.get("verdict") == "crash_loop":
+            trail["loop_breaker"]["broke"] = False  # dry run — would break
+        else:
+            trail["loop_breaker"]["broke"] = False  # genuine load or none — leave alone
+    except Exception as e:
+        trail["loop_breaker_error"] = str(e)[:160]
+
+    # SELF-AWARE: the ghost authors its own agent window each cycle (the whole point of ghost).
+    try:
+        if not dry:
+            trail["self_window"] = self_window(commit=True, session_id=state.get("session_id"))
+        else:
+            trail["self_window"] = self_window(commit=False, session_id=state.get("session_id"))
+    except Exception as e:
+        trail["self_window_error"] = str(e)[:200]
+
+    # SWARM HEALTH LAW: probe the swarm + APPLY the self-improvement law (ghost is the
+    # always-on enforcer — the loop actually turns, not applied:false).
+    try:
+        from mag.swarm_health import health_law, swarm_health
+        h = swarm_health()
+        law = health_law(h, apply=True)
+        trail["swarm_health"] = {"overall": h.get("overall"), "agents_up": h.get("agents_up"),
+                                 "agents_total": h.get("agents_total"),
+                                 "applied": law.get("applied"),
+                                 "law_actions": [a.get("action") for a in law.get("actions", [])]}
+    except Exception as e:
+        trail["swarm_health_error"] = str(e)[:200]
 
     # PIPE 5: Auto-deploy frustration vectors (skip when deploying specific text)
     # AWARE: hold auto-deploy during an unattended autonomy run or when the

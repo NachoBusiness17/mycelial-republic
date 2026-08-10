@@ -277,6 +277,30 @@ def main(argv: list[str] | None = None) -> int:
     p_ws.add_argument("--rounds", type=int, default=3, help="Socratic rounds")
     p_ws.add_argument("--no-speak", action="store_true", help="Don't speak the refined prompt")
 
+    p_sroute = sub.add_parser(
+        "session-route",
+        help="Print the data-backed session routing preamble (seed + agent-state + learned principles)",
+    )
+    p_sroute.add_argument("--state", default=None, help="agent state (default coding-agent)")
+    p_sroute.add_argument("--json", action="store_true")
+    p_sroute.add_argument("goal", nargs="*", default=[])
+
+    p_summon = sub.add_parser(
+        "ghost-summon",
+        help="Summon @ghost with the current session: current + future + coldest vertices -> intent (skips stale processes)",
+    )
+    p_summon.add_argument("--reason", action="store_true", help="Narrate the intent via a model call")
+    p_summon.add_argument("--model", default=None, help="model for --reason")
+    p_summon.add_argument("context", nargs="*", default=[], help="optional operator context")
+
+    p_legacy = sub.add_parser(
+        "legacy-audit",
+        help="Catalog + retire leftover/legacy Mag processes (scan|catalog|retire|research) — maps each to its newer system",
+    )
+    p_legacy.add_argument("legacy_cmd", nargs="?", default="catalog",
+                          choices=["scan", "catalog", "retire", "research"])
+    p_legacy.add_argument("--dry", action="store_true", help="retire: report only, don't kill")
+
     p_vis = sub.add_parser(
         "visual",
         help="Build/amend Mag visual pack (chambers) for a session",
@@ -284,6 +308,13 @@ def main(argv: list[str] | None = None) -> int:
     p_vis.add_argument("--session", default="latest")
 
     sub.add_parser("doctor", help="Sanity map: integral / live board / lanes (anti-hallucination)")
+    p_scrum = sub.add_parser(
+        "scrum",
+        help="Formalized Scrum backlog + proof-first socratic sprint loop (backlog|sprint|advance|surface) + trusted surface",
+    )
+    p_scrum.add_argument("cmd", nargs="?", default="backlog",
+                         choices=["backlog", "sprint", "advance", "surface"])
+    p_scrum.add_argument("--apply", action="store_true", help="advance: actually move the item + save board")
     p_nerv = sub.add_parser(
         "nervous",
         help="Nervous system: at-a-glance body + Verkle tips + key presence (agent ops)",
@@ -849,6 +880,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_proc_sup.add_argument("proc_sup_args", nargs=argparse.REMAINDER,
                             help="up | down | status | start <name> | stop <name> | restart <name>")
+    p_docker = sub.add_parser(
+        "docker-ops",
+        help="Docker containment: probe/status (report-only) or up/down (explicit routed cutover). Framework path for the containerized deployment.",
+    )
+    p_docker.add_argument("docker_args", nargs=argparse.REMAINDER,
+                          help="status | probe | up | down")
     p_wake = sub.add_parser(
         "wake",
         help="Cheap cold start: bring up default supervisor loops + write the START BRIEF greeting. One command, no ceremony.",
@@ -879,6 +916,156 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_clean.add_argument("--live", action="store_true",
                          help="Actually move transient artifacts to trash (reversible)")
+    p_costlearn = sub.add_parser(
+        "cost-learn",
+        help="Cost/cache learning fold: analyze provider cache/cost/latency and fold into skill_ledger",
+    )
+    p_costlearn.add_argument("--hours", type=int, default=24, help="analysis window hours")
+    p_costlearn.add_argument("--fold", action="store_true", help="write daily leaf + skill_ledger decisions")
+    p_costlearn.add_argument("--cadence", action="store_true", help="idempotent autorun fold (skip if no new usage)")
+    p_ufc = sub.add_parser(
+        "usage-forecast",
+        help="Right-size-based usage forecast: estimate tokens/cost from the ask queue + calibrate vs actual",
+    )
+    ufc_sub = p_ufc.add_subparsers(dest="ufc_cmd")
+    p_ufc_goal = ufc_sub.add_parser("goal", help="estimate one ask")
+    p_ufc_goal.add_argument("goal", nargs="+")
+    p_ufc_goal.add_argument("--agent-state", default=None)
+    ufc_sub.add_parser("queue", help="forecast pending queue goals")
+    p_ufc_cal = ufc_sub.add_parser("calibrate", help="projection vs actual bias")
+    p_ufc_cal.add_argument("--hours", type=int, default=24)
+    p_ctxg = sub.add_parser("context-growth", help="Per-session context-growth analyzer (find repack ballooners)")
+    p_ctxg.add_argument("--hours", type=int, default=24)
+    p_ctxg.add_argument("--cadence", action="store_true", help="write maintenance leaf")
+    p_ss = sub.add_parser("self-steal", help="Capability-utilization audit (part of doctor/maintenance)")
+    p_ss.add_argument("--cadence", action="store_true", help="idempotent: audit + leaf + launch/resume research")
+    p_ql = sub.add_parser("queue-learn", help="Queue-as-training-surface: fold terminal queue items into skill_ledger")
+    p_ql.add_argument("--fold", action="store_true", help="fold terminals into training rows")
+    p_ql.add_argument("--cadence", action="store_true", help="idempotent autorun fold")
+    p_qo = sub.add_parser("queue-ops", help="Queue logger + error handler + auto-digest")
+    p_qo.add_argument("--cadence", action="store_true", help="idempotent digest")
+    p_qo.add_argument("--hours", type=int, default=24)
+    p_rm = sub.add_parser("renderman-ask", help="RenderMan-style ask contract: compact->expand->elevate (grok gives executor spec)")
+    rm_sub = p_rm.add_subparsers(dest="rm_cmd")
+    rm_c = rm_sub.add_parser("compact", help="compact a goal into a RenderMan RIB")
+    rm_c.add_argument("goal", nargs="+")
+    rm_c.add_argument("--vectors", action="append", default=[])
+    rm_c.add_argument("--rib-out", default="")
+    rm_e = rm_sub.add_parser("expand", help="expand a RIB file into a full prompt")
+    rm_e.add_argument("--rib", required=True)
+    rm_v = rm_sub.add_parser("elevate", help="build RIB + ask grok what the executor needs")
+    rm_v.add_argument("goal", nargs="+")
+    rm_v.add_argument("--executor", default="deepseek-v4-flash")
+    rm_v.add_argument("--no-grok", action="store_true")
+    p_gm = sub.add_parser("gap-map", help="Map cheap-vs-frontier gap + frontier stack accumulator")
+    p_gm.add_argument("--stack", type=float, metavar="COMPLEXITY", help="accumulate a frontier-worthy ask")
+    p_gm.add_argument("--stack-status", action="store_true", help="show frontier stack status")
+    p_gm.add_argument("--stack-goal", default="", help="goal label for --stack")
+    p_fh = sub.add_parser("frontier-help", help="Percolate journaled asks into a frontier HELP-WANTED doc")
+    p_fh.add_argument("--cadence", action="store_true", help="idempotent: skip if nothing new")
+    p_gt = sub.add_parser("grok-terminal", help="Frontier ghost: launch a grok terminal to build packages for cheap swarms")
+    p_gt.add_argument("--scan", action="store_true", help="list critical coding tasks that deserve the frontier ghost")
+    p_gt.add_argument("--run", default="", metavar="TASK", help="run the frontier ghost on a task (id/goal; empty=auto-pick)")
+    p_gt.add_argument("--cwd", default="", help="working dir for the ghost")
+    p_gt.add_argument("--rounds", type=int, default=4, help="max navigate rounds")
+    p_gt.add_argument("--yolo", action="store_true", help="always-approve shell in the ghost")
+    p_aos = sub.add_parser("aos-grok", help="Budgeted AOS grok access (start small, prove it)")
+    p_aos.add_argument("--status", action="store_true", help="courtesy-budget status")
+    p_aos.add_argument("--probe", action="store_true", help="START SMALL: one bounded probe ask + write the PROOF doc")
+    p_aos.add_argument("--ask", default="", metavar="GOAL", help="dispatch a specific ask (budget + gate enforced)")
+    p_aos.add_argument("--force", action="store_true", help="bypass gate/budget (operator-only)")
+    p_rl = sub.add_parser("research-lens", help="Iterative self-referencing research lens (grows a corpus)")
+    p_rl.add_argument("--reindex", action="store_true", help="rebuild the corpus index over landed answers")
+    p_rl.add_argument("--status", action="store_true", help="corpus growth + lens edge weights")
+    p_rl.add_argument("--prior", default="", metavar="ASK", help="retrieve PRIOR RESEARCH for a new ask")
+    p_rl.add_argument("--build", default="", metavar="ASK", help="build a self-referencing research pack")
+    p_rl.add_argument("--title", default="", help="title for --build")
+    p_rl.add_argument("--lens", default="default", help="lens id")
+    p_rl.add_argument("--fold", default="", metavar="ANSWER_PATH", help="fold a landed answer back into the corpus")
+    p_rl.add_argument("--cadence", action="store_true", help="idempotent: reindex + fold unfed answers")
+    p_cs = sub.add_parser("cheap-swarm", help="Cheap swarm: expand + execute ghost-built packages")
+    p_cs.add_argument("--scan", action="store_true", help="list pending ghost/build packages")
+    p_cs.add_argument("--status", action="store_true", help="swarm state")
+    p_cs.add_argument("--dispatch", default="", metavar="PATH", help="dispatch one package")
+    p_cs.add_argument("--cadence", action="store_true", help="idempotent: dispatch up to 3 pending")
+    p_gm = sub.add_parser("grok-mirror", help="Mirror Grok's instruction-production through our pipeline")
+    p_gm.add_argument("vision", nargs="*", help="the vision prompt to mirror (or 'window on|off|status')")
+    p_gm.add_argument("--no-grok", action="store_true", help="dry: no grok calls")
+    p_gm.add_argument("--no-research", action="store_true", help="skip the research pack")
+    p_gm.add_argument("--no-skill", action="store_true", help="skip skill distillation")
+    p_gm.add_argument("--no-socratic", action="store_true", help="skip socratic elevation questions to grok")
+    p_gm.add_argument("--lens", default="default")
+    p_gm.add_argument("--window-on", action="store_true", help="set active-coding-window flag (ghost observes)")
+    p_gr = sub.add_parser("grok-free", help="Free grok surfaces: CLI harness + grok.com private idea space")
+    p_gr.add_argument("--status", action="store_true", help="which free grok surfaces are reachable")
+    p_gr.add_argument("--capture", default="", metavar="GOAL", help="free grok CLI call (subscription seat, $0)")
+    p_gr.add_argument("--save-idea", nargs="+", metavar="TITLE", help="save an idea privately")
+    p_gr.add_argument("--body", default="", help="body for --save-idea")
+    p_gr.add_argument("--handoff", default="", metavar="GOAL", help="free grok spec -> frozen BUILD contract -> cheap executor")
+    p_gr.add_argument("--cadence", action="store_true", help="autonomous loop over the private idea backlog")
+    p_gr.add_argument("--control", default="", metavar="ACTION", help="control channel (stop|pause|kill|resume|status)")
+    p_gr.add_argument("--skill", action="store_true", help="write the grok-free SKILL.md")
+    p_mc = sub.add_parser("mycelium", help="Unified self-scoring mycelium graph (republic OS Phase 1)")
+    p_mc.add_argument("--status", action="store_true", help="graph state")
+    p_mc.add_argument("--boot", action="store_true", help="rehydrate from snapshot")
+    p_mc.add_argument("--adopt", action="store_true", help="seed from idea_graph")
+    p_mc.add_argument("--decay", action="store_true", help="self-prune low-salience edges")
+    p_mc.add_argument("--link", nargs=2, metavar=("SRC","DST"), help="link two nodes")
+    p_mc.add_argument("--link-type", default="related")
+    p_mc.add_argument("--reinforce", nargs=2, metavar=("SRC","DST"), help="reinforce an edge")
+    p_mc.add_argument("--reward", type=float, default=1.0)
+    p_ros = sub.add_parser("republic-os", help="Persistent mycelial-republic OS (Phases 2-5, AOS-grounded)")
+    p_ros.add_argument("--status", action="store_true", help="OS + mycelium state")
+    p_ros.add_argument("--boot", action="store_true", help="rehydrate graph + state")
+    p_ros.add_argument("--seed-aos", action="store_true", help="seed AOS interaction as foundational research")
+    p_ros.add_argument("--round", action="store_true", help="stigmergic control-unit round")
+    p_ros.add_argument("--round-dry", action="store_true", help="dry round (no worker spend)")
+    p_ros.add_argument("--checkpoint", action="store_true", help="durable checkpoint")
+    p_ros.add_argument("--memory-block", action="store_true", help="inject persistent memory block")
+    p_ros.add_argument("--cadence", action="store_true", help="full OS loop")
+    p_ct = sub.add_parser("comms-trail", help="Steal the cheap agent-communication trail (shared private language)")
+    p_ct.add_argument("--capture", action="store_true", help="record communication surfaces into the mycelium graph")
+    p_ct.add_argument("--confirm", action="store_true", help="round-trip confirm the shared private language")
+    p_ct.add_argument("--status", action="store_true", help="trail state")
+    p_ct.add_argument("--cadence", action="store_true", help="capture + confirm + dual-write")
+    p_ml = sub.add_parser("memlang", help="Shared-verkle trigger language (mem language)")
+    p_ml.add_argument("--compile", nargs=2, metavar=("ACTION","SPEC"), help="compile a spec into a binary token")
+    p_ml.add_argument("--decode", default="", metavar="TOKEN_HEX", help="decode a token")
+    p_ml.add_argument("--resolve", default="", metavar="TOKEN_HEX", help="resolve a token against shared state")
+    p_ml.add_argument("--trigger", default="", metavar="TOKEN_HEX", help="resolve + optionally execute")
+    p_ml.add_argument("--trigger-execute", action="store_true", help="execute on --trigger")
+    p_ml.add_argument("--roundtrip", action="store_true", help="compile->transmit->resolve prove-first")
+    p_ml.add_argument("--vocab", action="store_true", help="opcode vocabulary")
+    p_ml.add_argument("--status", action="store_true", help="registry state")
+    p_sh = sub.add_parser("swarm-health", help="Watch swarm health + self-improvement law")
+    p_sh.add_argument("--health", action="store_true", help="aggregate swarm health")
+    p_sh.add_argument("--law", action="store_true", help="the coded self-improvement law")
+    p_sh.add_argument("--law-apply", action="store_true", help="apply the law actions")
+    p_sh.add_argument("--status", action="store_true", help="quick health status")
+    p_sh.add_argument("--cadence", action="store_true", help="probe + apply the law")
+    p_law = sub.add_parser("law", help="Code-as-law enforcement registry")
+    p_law.add_argument("--seed", action="store_true", help="register default operator laws")
+    p_law.add_argument("--enforce", action="store_true", help="run the law (probe)")
+    p_law.add_argument("--enforce-apply", action="store_true", help="run the law + apply actions")
+    p_law.add_argument("--id", default=None, help="law id to enforce (default all)")
+    p_law.add_argument("--status", action="store_true", help="registry state")
+    p_steer = sub.add_parser("steer", help="WINDOW_STEER loop machinery")
+    p_steer.add_argument("--emit", action="store_true", help="emit a STEER packet")
+    p_steer.add_argument("--id", default="", help="steer id")
+    p_steer.add_argument("--source", default="ask-window", help="steer source")
+    p_steer.add_argument("--text", default="", help="steer body")
+    p_steer.add_argument("--consume", action="store_true", help="scan for [STEER] markers -> memlang")
+    p_steer.add_argument("--status", action="store_true", help="steer store state")
+    p_elev = sub.add_parser(
+        "elevate",
+        help="Shape the right-sized ask for the strongest model (grok) + capture it (deliberate-ask protocol)",
+    )
+    p_elev.add_argument("goal", nargs="?", default="")
+    p_elev.add_argument("--model", default="grok-4.5")
+    p_elev.add_argument("--live", action="store_true",
+                        help="Mark as live (dispatch) rather than dry-run")
+    p_elev.add_argument("--no-capture", action="store_true",
+                        help="Skip folding to pro_library/skill_ledger")
     p_gate = sub.add_parser(
         "spec-gate",
         help="Wrong-offset gate: freeze/check a file's base fingerprint before a spec is applied",
@@ -2200,6 +2387,28 @@ def main(argv: list[str] | None = None) -> int:
         print("=== FINAL PROMPT ===")
         print(res["final"])
         return 0
+    if args.cmd == "session-route":
+        from mag.session_route import main as sroute_main
+
+        return sroute_main(
+            (["--state", args.state] if args.state else [])
+            + (["--json"] if args.json else [])
+            + list(args.goal)
+        )
+    if args.cmd == "ghost-summon":
+        from mag.ghost_summon import main as gsummon_main
+
+        return gsummon_main(
+            (["--reason"] if args.reason else [])
+            + (["--model", args.model] if args.model else [])
+            + list(args.context)
+        )
+    if args.cmd == "legacy-audit":
+        from mag.legacy_audit import main as legacy_main
+
+        return legacy_main(
+            [args.legacy_cmd] + (["--dry"] if getattr(args, "dry", False) else [])
+        )
     if args.cmd == "visual":
         from mag.visual_pack import write_visual_pack
 
@@ -2215,6 +2424,13 @@ def main(argv: list[str] | None = None) -> int:
         s = sanity()
         doctor_print(s)
         print(json.dumps(s, indent=2, default=str)[:4000])
+        return 0
+    if args.cmd == "scrum":
+        from mag.scrum import main as scrum_main
+
+        return scrum_main(
+            [args.cmd] + (["--apply"] if getattr(args, "apply", False) else [])
+        )
         return 0 if s.get("status") == "up" else 1
     if args.cmd == "catch-up":
         from mag.health import catch_up
@@ -3572,6 +3788,10 @@ def main(argv: list[str] | None = None) -> int:
         from mag.process_supervisor import main as ps_main
 
         return ps_main(list(getattr(args, "proc_sup_args", []) or []))
+    if args.cmd == "docker-ops":
+        from mag.docker_ops import main as docker_main
+
+        return docker_main(list(getattr(args, "docker_args", []) or []))
     if args.cmd == "wake":
         from mag.state_brief import write as sb_write
         from mag.process_supervisor import start_all
@@ -3603,6 +3823,319 @@ def main(argv: list[str] | None = None) -> int:
         from mag.cleanup import main as clean_main
 
         return clean_main(["--live"] if getattr(args, "live", False) else [])
+    if args.cmd == "cost-learn":
+        from mag.cost_learn import main as costlearn_main
+
+        argv = []
+        if getattr(args, "hours", 24):
+            argv += ["--hours", str(args.hours)]
+        if getattr(args, "fold", False):
+            argv += ["--fold"]
+        if getattr(args, "cadence", False):
+            argv += ["--cadence"]
+        return costlearn_main(argv)
+    if args.cmd == "usage-forecast":
+        from mag.usage_forecast import main as ufc_main
+
+        uargv = [getattr(args, "ufc_cmd", "queue")]
+        if getattr(args, "ufc_cmd", "") == "goal":
+            uargv = ["goal"] + list(getattr(args, "goal", []))
+            if getattr(args, "agent_state", None):
+                uargv += ["--agent-state", args.agent_state]
+        elif getattr(args, "ufc_cmd", "") == "calibrate":
+            uargv = ["calibrate", "--hours", str(getattr(args, "hours", 24))]
+        return ufc_main(uargv)
+    if args.cmd == "context-growth":
+        from mag.context_growth import main as ctxg_main
+
+        argv = []
+        if getattr(args, "hours", 24):
+            argv += ["--hours", str(args.hours)]
+        if getattr(args, "cadence", False):
+            argv += ["--cadence"]
+        return ctxg_main(argv)
+    if args.cmd == "self-steal":
+        from mag.self_steal import main as ss_main
+
+        return ss_main(["--cadence"] if getattr(args, "cadence", False) else [])
+    if args.cmd == "queue-learn":
+        from mag.queue_learn import main as ql_main
+
+        argv = []
+        if getattr(args, "fold", False):
+            argv += ["--fold"]
+        if getattr(args, "cadence", False):
+            argv += ["--cadence"]
+        return ql_main(argv)
+    if args.cmd == "queue-ops":
+        from mag.queue_ops import main as qo_main
+
+        argv = []
+        if getattr(args, "cadence", False):
+            argv += ["--cadence"]
+        if getattr(args, "hours", 24):
+            argv += ["--hours", str(args.hours)]
+        return qo_main(argv)
+    if args.cmd == "renderman-ask":
+        from mag.renderman_ask import main as rm_main
+
+        if getattr(args, "rm_cmd", "") == "compact":
+            argv = ["compact"] + list(getattr(args, "goal", []))
+            for v in getattr(args, "vectors", []) or []:
+                argv += ["--vectors", v]
+            if getattr(args, "rib_out", ""):
+                argv += ["--rib-out", args.rib_out]
+        elif getattr(args, "rm_cmd", "") == "expand":
+            argv = ["expand", "--rib", args.rib]
+        elif getattr(args, "rm_cmd", "") == "elevate":
+            argv = ["elevate"] + list(getattr(args, "goal", [])) + ["--executor", getattr(args, "executor", "deepseek-v4-flash")]
+            if getattr(args, "no_grok", False):
+                argv += ["--no-grok"]
+        else:
+            argv = []
+        return rm_main(argv)
+    if args.cmd == "gap-map":
+        from mag.gap_map import main as gm_main
+
+        argv = []
+        if getattr(args, "stack", None) is not None:
+            argv += ["--stack", str(args.stack)]
+            if getattr(args, "stack_goal", ""):
+                argv += ["--stack-goal", args.stack_goal]
+        if getattr(args, "stack_status", False):
+            argv += ["--stack-status"]
+        return gm_main(argv)
+    if args.cmd == "aos-grok":
+        from mag.aos_grok import main as aos_main
+
+        if getattr(args, "status", False):
+            return aos_main(["status"])
+        if getattr(args, "probe", False):
+            return aos_main(["probe"])
+        if getattr(args, "ask", ""):
+            argv = ["ask", args.ask]
+            if getattr(args, "force", False):
+                argv += ["--force"]
+            return aos_main(argv)
+        return aos_main(["status"])
+    if args.cmd == "research-lens":
+        from mag.research_lens import main as rl_main
+
+        argv = []
+        if getattr(args, "cadence", False):
+            argv += ["cadence"]
+        elif getattr(args, "reindex", False):
+            argv += ["reindex"]
+        elif getattr(args, "status", False):
+            argv += ["status"]
+        elif getattr(args, "prior", ""):
+            argv += ["prior", args.prior, "--lens", args.lens]
+        elif getattr(args, "build", ""):
+            argv += ["build", args.build, "--lens", args.lens]
+            if getattr(args, "title", ""):
+                argv += ["--title", args.title]
+        elif getattr(args, "fold", ""):
+            argv += ["fold", args.fold, "--lens", args.lens]
+        else:
+            argv += ["status"]
+        return rl_main(argv)
+    if args.cmd == "cheap-swarm":
+        from mag.cheap_swarm import main as cs_main
+
+        argv = []
+        if getattr(args, "cadence", False):
+            argv += ["cadence"]
+        elif getattr(args, "scan", False):
+            argv += ["scan"]
+        elif getattr(args, "status", False):
+            argv += ["status"]
+        elif getattr(args, "dispatch", ""):
+            argv += ["dispatch", args.dispatch]
+        else:
+            argv += ["status"]
+        return cs_main(argv)
+    if args.cmd == "grok-mirror":
+        from mag.grok_mirror import main as gm_main
+
+        argv = list(args.vision or [])
+        if getattr(args, "no_grok", False):
+            argv += ["--no-grok"]
+        if getattr(args, "no_research", False):
+            argv += ["--no-research"]
+        if getattr(args, "no_skill", False):
+            argv += ["--no-skill"]
+        if getattr(args, "no_socratic", False):
+            argv += ["--no-socratic"]
+        if getattr(args, "window_on", False):
+            argv += ["--window-on"]
+        if getattr(args, "lens", "default") != "default":
+            argv += ["--lens", args.lens]
+        return gm_main(argv)
+    if args.cmd == "grok-free":
+        from mag.grok_free import main as gr_main
+
+        if getattr(args, "status", False):
+            return gr_main(["status"])
+        if getattr(args, "capture", ""):
+            return gr_main(["capture", args.capture])
+        if getattr(args, "save_idea", ""):
+            argv = ["save-idea"] + list(args.save_idea)
+            if getattr(args, "body", ""):
+                argv += ["--body", args.body]
+            return gr_main(argv)
+        if getattr(args, "handoff", ""):
+            return gr_main(["handoff", args.handoff])
+        if getattr(args, "cadence", False):
+            return gr_main(["cadence"])
+        if getattr(args, "skill", False):
+            return gr_main(["skill"])
+        if getattr(args, "control", ""):
+            return gr_main(["control", args.control])
+        return gr_main(["status"])
+    if args.cmd == "mycelium":
+        from mag.mycelium import main as mc_main
+
+        argv = []
+        if getattr(args, "status", False):
+            argv += ["status"]
+        elif getattr(args, "boot", False):
+            argv += ["boot"]
+        elif getattr(args, "adopt", False):
+            argv += ["adopt"]
+        elif getattr(args, "decay", False):
+            argv += ["decay"]
+        elif getattr(args, "link", None):
+            argv += ["link"] + list(args.link) + ["--type", args.link_type]
+        elif getattr(args, "reinforce", None):
+            argv += ["reinforce"] + list(args.reinforce) + ["--reward", str(args.reward)]
+        else:
+            argv += ["status"]
+        return mc_main(argv)
+    if args.cmd == "republic-os":
+        from mag.republic_os import main as ros_main
+
+        if getattr(args, "boot", False):
+            return ros_main(["boot"])
+        if getattr(args, "seed_aos", False):
+            return ros_main(["seed-aos"])
+        if getattr(args, "round", False) or getattr(args, "round_dry", False):
+            return ros_main(["round", "--dry"] if getattr(args, "round_dry", False) else ["round"])
+        if getattr(args, "checkpoint", False):
+            return ros_main(["checkpoint"])
+        if getattr(args, "memory_block", False):
+            return ros_main(["memory-block"])
+        if getattr(args, "cadence", False):
+            return ros_main(["cadence"])
+        return ros_main(["status"])
+    if args.cmd == "comms-trail":
+        from mag.comms_trail import main as ct_main
+
+        argv = []
+        if getattr(args, "capture", False):
+            argv += ["capture"]
+        elif getattr(args, "confirm", False):
+            argv += ["confirm"]
+        elif getattr(args, "status", False):
+            argv += ["status"]
+        elif getattr(args, "cadence", False):
+            argv += ["cadence"]
+        else:
+            argv += ["status"]
+        return ct_main(argv)
+    if args.cmd == "memlang":
+        from mag.memlang import main as ml_main
+
+        argv = []
+        if getattr(args, "compile", None):
+            argv += ["compile"] + list(args.compile)
+        elif getattr(args, "decode", ""):
+            argv += ["decode", args.decode]
+        elif getattr(args, "resolve", ""):
+            argv += ["resolve", args.resolve]
+        elif getattr(args, "trigger", ""):
+            argv += ["trigger", args.trigger]
+            if getattr(args, "trigger_execute", False):
+                argv += ["--execute"]
+        elif getattr(args, "roundtrip", False):
+            argv += ["roundtrip"]
+        elif getattr(args, "vocab", False):
+            argv += ["vocab"]
+        else:
+            argv += ["status"]
+        return ml_main(argv)
+    if args.cmd == "swarm-health":
+        from mag.swarm_health import main as sh_main
+
+        argv = []
+        if getattr(args, "health", False):
+            argv += ["health"]
+        elif getattr(args, "law", False) or getattr(args, "law_apply", False):
+            argv += ["law"]
+            if getattr(args, "law_apply", False):
+                argv += ["--apply"]
+        elif getattr(args, "status", False):
+            argv += ["status"]
+        elif getattr(args, "cadence", False):
+            argv += ["cadence"]
+        else:
+            argv += ["health"]
+        return sh_main(argv)
+    if args.cmd == "law":
+        from mag.law import main as law_main
+
+        argv = []
+        if getattr(args, "seed", False):
+            argv += ["enforce", "--seed"]
+        elif getattr(args, "enforce", False) or getattr(args, "enforce_apply", False):
+            argv += ["enforce"]
+            if getattr(args, "enforce_apply", False):
+                argv += ["--apply"]
+            if getattr(args, "id", None):
+                argv += ["--id", str(args.id)]
+        else:
+            argv += ["status"]
+        return law_main(argv)
+    if args.cmd == "steer":
+        from mag.steer import main as steer_main
+
+        argv = []
+        if getattr(args, "emit", False):
+            argv += ["emit", "--id", str(getattr(args, "id", "") or "steer"),
+                     "--source", str(getattr(args, "source", "") or "ask-window"),
+                     "--text", str(getattr(args, "text", "") or "")]
+        elif getattr(args, "consume", False):
+            argv += ["consume"]
+        else:
+            argv += ["status"]
+        return steer_main(argv)
+    if args.cmd == "frontier-help":
+        from mag.frontier_help import main as fh_main
+
+        return fh_main(["--cadence"] if getattr(args, "cadence", False) else [])
+    if args.cmd == "grok-terminal":
+        from mag.grok_terminal import main as gt_main
+
+        argv = []
+        if getattr(args, "scan", False):
+            argv += ["scan"]
+        elif getattr(args, "run", ""):
+            argv += ["run", "--task", args.run]
+        else:
+            argv += ["scan"]
+        if getattr(args, "cwd", ""):
+            argv += ["--cwd", args.cwd]
+        argv += ["--rounds", str(getattr(args, "rounds", 4))]
+        if getattr(args, "yolo", False):
+            argv += ["--yolo"]
+        return gt_main(argv)
+    if args.cmd == "elevate":
+        from mag.elevate import main as elev_main
+
+        argv = [args.goal] if getattr(args, "goal", "") else []
+        argv += ["--model", getattr(args, "model", "grok-4.5")]
+        if getattr(args, "live", False):
+            argv.append("--live")
+        return elev_main(argv)
     if args.cmd == "spec-gate":
         from mag.spec_gate import main as gate_main
 
@@ -4133,6 +4666,7 @@ def main(argv: list[str] | None = None) -> int:
             if sys.platform == "win32":
                 creation = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0x00000200)
                 creation |= getattr(subprocess, "DETACHED_PROCESS", 0x00000008)
+                creation |= getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
             from datetime import datetime, timezone
 
             with log.open("a", encoding="utf-8") as lf:
@@ -4307,6 +4841,7 @@ def main(argv: list[str] | None = None) -> int:
             if sys.platform == "win32":
                 creation = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0x00000200)
                 creation |= getattr(subprocess, "DETACHED_PROCESS", 0x00000008)
+                creation |= getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
             from datetime import datetime, timezone
 
             with log.open("a", encoding="utf-8") as lf:

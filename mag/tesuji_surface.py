@@ -370,7 +370,7 @@ def riddler_tesuji_test(
     This is the meta-test: using Riddler to find Tesuji in our OWN prompts.
     """
     if models is None:
-        models = ["deepseek-chat"]  # Default to what we have credits for
+        models = ["deepseek-v4-flash"]  # Default to the cheap v4 flash tier (cache-priced)
 
     results = {
         "schema": "riddler_tesuji.v1",

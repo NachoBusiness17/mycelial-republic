@@ -368,8 +368,10 @@ def _finalize(task_id: str, status: str, exit_code: int | None = None,
 def _creation_flags() -> int:
     if sys.platform != "win32":
         return 0
-    # own process group so taskkill /T can reap children; not detached (we log)
-    return getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+    # own process group so taskkill /T can reap children; CREATE_NO_WINDOW so
+    # queued sub-agents never pop a console window on the desktop.
+    return (getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+            | getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000))
 
 
 def _spawn_cmd(cmd: list[str], *, task_id: str, timeout: int,
@@ -662,6 +664,26 @@ def spawn_task(goal: str, *, provider: str = "deepseek", model: str | None = Non
 # ---------------------------------------------------------------------------
 QUEUE_TERMINAL = {"done", "failed", "timeout", "stalled", "killed", "died"}
 
+# Separate de-facto queues by tier; the single drainer drains in this rank order
+# (mission -> research -> maintenance -> filler) so auto-generated busywork never
+# crowds out real work. Operated by the ghost via the one drainer.
+TIER_RANK = {"mission": 0, "research": 1, "maintenance": 2, "filler": 3}
+
+
+def _auto_tier(tag: str, goal: str) -> str:
+    """Infer a queue tier from the goal/tag so filler self-de-prioritizes."""
+    g = (goal or "").lower()
+    t = (tag or "").lower()
+    if ("research" in t or "research-pack" in g or "grok batch" in g or "code-as-law" in g
+            or "context-growth" in g or "self-steal-research" in t):
+        return "research"
+    if ("janitor" in t or "cleanup" in t or "orphan" in t or "warning" in t or "docker" in t):
+        return "maintenance"
+    if ("verkle" in g or "summarize-session" in g or "smoke" in g or "milestone" in g
+            or "progress in" in g or "scut-retry" in t):
+        return "filler"
+    return "mission"
+
 
 def _queue_path(queue_id: str) -> Path:
     return QUEUE_DIR / (queue_id + ".json")
@@ -693,7 +715,7 @@ def queue_has_goal(goal: str) -> bool:
 
 def enqueue(goal: str, *, provider: str = "ollama", model: str | None = None,
             timeout: int = DEFAULT_TIMEOUT, tag: str = "", priority: int = 0,
-            require_build: str | None = None) -> dict[str, Any]:
+            tier: str | None = None, require_build: str | None = None) -> dict[str, Any]:
     """Add a goal to the queue. Returns the queue entry (not yet spawned)."""
     goal = goal.strip()
     if not goal:
@@ -731,6 +753,7 @@ def enqueue(goal: str, *, provider: str = "ollama", model: str | None = None,
         "created_at": _now(),
         "status": "queued",   # queued -> running -> done/failed
         "priority": max(0, int(priority)),
+        "tier": (tier if tier in TIER_RANK else _auto_tier(tag, goal)),
         "task_id": None,
         "detail": "",
     }
@@ -812,7 +835,11 @@ def promote_queue(queue_id: str, priority: int = 1) -> dict[str, Any]:
 
 
 def _next_queued() -> dict[str, Any] | None:
-    """Highest-priority queued (not yet running) entry, then oldest by created_at."""
+    """Highest-priority queued (not yet running) entry, by tier then priority then age.
+
+    Drains tier-by-tier (mission -> research -> maintenance -> filler) so real work is
+    served before auto-generated busywork — one drainer, ghost-operated, priority-aware.
+    """
     _ensure_dirs()
     QUEUE_DIR.mkdir(parents=True, exist_ok=True)
     best = None
@@ -826,9 +853,11 @@ def _next_queued() -> dict[str, Any] | None:
         if best is None:
             best = q
             continue
-        bp = int(best.get("priority") or 0)
-        qp = int(q.get("priority") or 0)
-        if qp > bp or (qp == bp and q.get("created_at", "") < best.get("created_at", "")):
+        def _key(x):
+            return (TIER_RANK.get(str(x.get("tier") or "mission"), 99),
+                    -int(x.get("priority") or 0),
+                    str(x.get("created_at") or ""))
+        if _key(q) < _key(best):
             best = q
     return best
 
@@ -930,6 +959,14 @@ def drain_once(*, force: bool = False) -> dict[str, Any]:
         q["detail"] = rec.get("error", "spawn failed")
         _queue_save(q)
         _trail("queue-fail", qid, error=rec.get("error", ""))
+        try:
+            from mag.queue_ops import handle_error, log_event
+            handle_error(rec.get("error", ""), queue_id=qid, phase="spawn",
+                         goal=nxt.get("goal", ""), provider=nxt.get("provider") or "",
+                         model=nxt.get("model") or "")
+            log_event("drain_fail", qid, goal=nxt.get("goal", "")[:120])
+        except Exception:
+            pass
         return {"ok": False, "action": "spawn_failed", "queue_id": qid,
                 "detail": rec.get("error", "")}
     q = _queue_load(qid) or nxt
@@ -939,6 +976,12 @@ def drain_once(*, force: bool = False) -> dict[str, Any]:
     q["usage_started_at"] = _now()
     _queue_save(q)
     _trail("queue-start", qid, spawned_task_id=rec["task_id"])
+    try:
+        from mag.queue_ops import log_event
+        log_event("drain_start", qid, task_id=rec.get("task_id", ""),
+                  tier=nxt.get("tier") or "mission", goal=nxt.get("goal", "")[:120])
+    except Exception:
+        pass
     try:
         from mag.tripartite_boot import weave_drain
 

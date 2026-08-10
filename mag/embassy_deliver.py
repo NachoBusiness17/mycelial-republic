@@ -47,7 +47,7 @@ def _desktop_deliver() -> Path:
     (e.g. headless/test runs). Prevents scattering artifacts into the project tree.
     """
     user = os.environ.get("USERPROFILE") or str(Path.home())
-    desktop = Path(user) / "Desktop" / "MagOutput" / "embassy-aos"
+    desktop = Path(user) / "Desktop" / "Mag" / "Output" / "embassy-aos"
     if desktop.is_dir():
         return desktop
     return ROOT / "deliver" / "embassy-aos"
@@ -166,7 +166,14 @@ def assemble(dry: bool = True) -> dict:
         if r.returncode != 0:
             return {"ok": False, "error": r.stderr.strip()[:300]}
     _git("add", "-A", cwd=DELIVER)
-    r = _git("commit", "-m", "Embassy · Pattern A · §6 intake + integrity suite", cwd=DELIVER)
+    # Fresh repo may have no git identity -> pass one locally so commit succeeds.
+    r = subprocess.run(
+        ["git", "-c", "user.name=Ghost Sovereign Agent System",
+         "-c", "user.email=ghost@mycelial.republic",
+         "commit", "-m", "Embassy · Pattern A · §6 intake + integrity suite"],
+        cwd=str(DELIVER), capture_output=True, text=True,
+        encoding="utf-8", errors="replace", timeout=120,
+    )
     return {"ok": True, "schema": "embassy_assemble.v1", "dry": False,
             "committed": r.returncode == 0, "detail": (r.stdout or r.stderr).strip()[:300]}
 
@@ -208,12 +215,30 @@ def _create_repo_via_api(token: str, name: str) -> dict:
         },
         method="POST",
     )
+    def _login():
+        try:
+            with urllib.request.urlopen(
+                urllib.request.Request(
+                    "https://api.github.com/user",
+                    headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"},
+                    method="GET",
+                ), timeout=60) as resp:
+                return _json.loads(resp.read().decode("utf-8")).get("login") or ""
+        except Exception:
+            return ""
+
     try:
         with urllib.request.urlopen(req, timeout=60) as resp:
             data = _json.loads(resp.read().decode("utf-8"))
             return {"ok": True, "full_name": data.get("full_name"), "html_url": data.get("html_url")}
     except urllib.error.HTTPError as e:
-        return {"ok": False, "error": f"HTTP {e.code}: {e.read()[:200].decode('utf-8', errors='replace')}"}
+        body = e.read()[:300].decode("utf-8", errors="replace")
+        # 422 with "already exists": treat as ok (idempotent) and still resolve the URL.
+        if e.code in (422,) and "already exists" in body.lower():
+            login = _login()
+            if login:
+                return {"ok": True, "full_name": f"{login}/{name}", "existing": True}
+        return {"ok": False, "error": f"HTTP {e.code}: {body}"}
 
 
 def _have_remote() -> bool:

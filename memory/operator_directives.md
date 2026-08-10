@@ -23,7 +23,53 @@ remains to be done. Do not re-scan the directory unless you lose track of
 your own changes. Scratch home for the stack: memory/working.md — keep it
 current as you go (append/update, don't rebuild from disk).
 
-## 4. (reserved)
+## 4. Consult ghost before long tasks
+Before embarking on a long task (design / heavy / reasoning), consult ghost
+(`mag/ghost_summon`) for a sanity check: verify the goal against CURRENT +
+FUTURE state + COLDEST VERTICES. Do NOT blindly re-run stale processes
+(`do_not_redesign` / stale orphans / superseded next_moves). Surface ghost's
+read once, then proceed. Shown automatically on long-task plans via
+`ghost_sanity` in the self-drive plan.
+
+## 5. Container/service health = verify imports first
+When a container or supervised service reports UNHEALTHY (caught NameError /
+ImportError in its lifecycle loop), check that module's imports before anything
+else: a referenced stdlib name (e.g. `os`, `json`, `time`) used but not imported
+crashes the reconcile/lifecycle pass and flips the healthcheck. Verify a
+frontier model's proposed fix against the REAL file (it may name the right bug
+but the wrong file). Rebuild via the framework path (docker_ops / supervisor),
+never hand-run. Record the lesson (record_decision + training event).
+
+## 6. Self-improving loop is LAW (classification self-learns)
+Every subsystem is a measure → fold → learn loop, in ALL aspects of the platform
+(routing, rightsizing, classification, escalation, cleanup). Never leave a static
+map when an outcome exists to learn from:
+- Rightsize by OUTCOME, not by a frozen table: if a task shape keeps succeeding on
+  a cheap tier, keep it cheap; if it keeps failing and needs a higher tier, escalate
+  (and fold the decision as case law). `queue_rightsize` learns tag→tier from the
+  skill-ledger / decision log.
+- Classification is law: what we label a task/process/pattern is a LEARNED contract
+  that folds back into the next classification. Log each decision (record_decision +
+  training event) so the loop compounds. Trust bytes, not vibes.
+
+## 7. Grok cost-gate (frontier only when it pays)
+Grok (frontier, expensive) is used ONLY when BOTH hold: (a) the task genuinely
+needs frontier-model results (hard reasoning / architecture / novel synthesis), and
+(b) it's cost-effective — the cheap tier was already tested first and failed or is
+insufficient. NEVER default to grok; NEVER escalate a cheap-shaped task to it.
+Test the process on the cheap tier (ollama / deepseek-v4-flash) first, then gate:
+`should_use_grok(goal, cheap_result)`. Treat grok as the summoned specialist
+(operating_protocol), not the default runtime.
+
+## 8. Token/cost discipline — the recurring loop is $0, LLM only when it pays
+The recurring cadence (press digest, rightsize, loop-breaker, scrum, skills) is
+DETERMINISTIC and $0 — never ping DeepSeek/Grok on cadence. Spend budget: if we're
+over ~5% of weekly tokens in a day, HALT new agent spawns and go read-only/deterministic.
+DeepSeek is for real spawned work (rightsized: flash exec, pro only reasoning), never
+for routine loop steps. Grok is the EMERGENCY PARTNER: ghost steers grok ONLY to fix
+something broken (oh_fuck / a real frontier fix), gated by grok_gate — never idle
+pings. "Partner when shit hits the fan" = grok on a real emergency, not deepseek on
+a timer.
 
 ---
 

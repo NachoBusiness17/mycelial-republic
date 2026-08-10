@@ -98,6 +98,7 @@ def _kill_tree(pid: int) -> None:
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
                 check=False,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000),
             )
         else:
             os.kill(pid, 15)
@@ -122,7 +123,8 @@ def _pids_on_port(port: int) -> list[int]:
         except Exception:
             return []
     try:
-        out = subprocess.check_output(["netstat", "-ano"], text=True, errors="replace")
+        out = subprocess.check_output(["netstat", "-ano"], text=True, errors="replace",
+                                      creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000))
     except (OSError, subprocess.CalledProcessError):
         return []
     pids: set[int] = set()
@@ -141,8 +143,8 @@ def _mag_python_pids() -> set[int]:
     root = str(ROOT)
     if os.name == "nt":
         ps_cmd = (
-            "Get-CimInstance Win32_Process -Filter "
-            "\"Name='python.exe' OR Name='pythonw.exe'\" | "
+            "Get-CimInstance Win32_Process | "
+            "Where-Object { $_.Name -in @('python.exe','pythonw.exe') } | "
             f"Where-Object {{ $_.CommandLine -like '*{root}*' }} | "
             "Select-Object -ExpandProperty ProcessId"
         )
@@ -152,6 +154,7 @@ def _mag_python_pids() -> set[int]:
                 text=True,
                 errors="replace",
                 timeout=30,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000),
             )
             for line in out.splitlines():
                 if line.strip().isdigit():
@@ -333,7 +336,8 @@ def start_all(*, open_browser: bool = False) -> dict[str, Any]:
 
     # Spawn detached supervisor (same as start_everything.cmd / boot_mag.cmd)
     try:
-        subprocess.run([py, str(launch), "--once"], cwd=str(ROOT), timeout=120, check=False)
+        subprocess.run([py, str(launch), "--once"], cwd=str(ROOT), timeout=120, check=False,
+                       creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if os.name == "nt" else 0)
     except Exception as exc:
         return {"ok": False, "error": f"launch --once failed: {exc}"}
 

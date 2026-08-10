@@ -29,6 +29,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -129,6 +130,7 @@ def _kill_tree(pid: int) -> None:
         subprocess.run(
             ["taskkill", "/T", "/F", "/PID", str(pid)],
             capture_output=True, timeout=10,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0,
         )
     except Exception:
         pass
@@ -140,8 +142,13 @@ def _spawn(name: str) -> dict[str, Any] | None:
         return None
     creationflags = 0
     if os.name == "nt":
-        creationflags = subprocess.CREATE_NEW_PROCESS_GROUP | getattr(
-            subprocess, "DETACHED_PROCESS", 0
+        # CREATE_NO_WINDOW is REQUIRED for headless spawns — DETACHED_PROCESS alone
+        # still opens a console window on the desktop (the window-storm source).
+        # Same pattern as orchestrator / seat_guard / power / tts.
+        creationflags = (
+            subprocess.CREATE_NEW_PROCESS_GROUP
+            | getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+            | getattr(subprocess, "DETACHED_PROCESS", 0)
         )
     LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
     out_f = open(ROOT / "logs" / f"supervisor_{name}.out.log", "a", encoding="utf-8")
@@ -152,6 +159,7 @@ def _spawn(name: str) -> dict[str, Any] | None:
             stdout=out_f,
             stderr=subprocess.STDOUT,
             creationflags=creationflags,
+            close_fds=True,
         )
     except Exception as e:
         out_f.close()
@@ -171,7 +179,7 @@ def start_loop(name: str) -> dict[str, Any]:
     spawned = _spawn(name)
     if not spawned:
         return {"ok": False, "name": name, "error": "spawn failed"}
-    state[name] = {"status": "running", **spawned}
+    state[name] = {"status": "running", "started_at_ts": time.time(), "crash_times": [], **spawned}
     _save_state(state)
     return {"ok": True, "name": name, "pid": spawned["pid"], "started": True}
 
@@ -196,34 +204,87 @@ def restart_loop(name: str) -> dict[str, Any]:
     return start_loop(name)
 
 
+# crashLoopBackOff (K8s-style) restart policy for supervised default loops.
+BACKOFF_BASE_S = 2.0      # first backoff after a crash
+BACKOFF_MAX_S = 300.0     # hard cap on any single backoff
+BACKOFF_WINDOW_S = 60.0   # crashes within this window count toward the backoff
+SUCCESS_WINDOW_S = 120.0  # a loop up this long resets its crash counter
+
+
+def _backoff_seconds(crash_times: list[float], now: float) -> float:
+    """Exponential backoff by recent-crash count (K8s crashLoopBackOff), capped. 0 => restart now."""
+    recent = [t for t in crash_times if now - t <= BACKOFF_WINDOW_S]
+    if not recent:
+        return 0.0
+    return min(BACKOFF_BASE_S * (2 ** (len(recent) - 1)), BACKOFF_MAX_S)
+
+
 def reap(auto_restart: bool = True) -> dict[str, Any]:
-    """Mark dead loops (crashed); optionally auto-restart default loops.
+    """Mark dead loops (crashed); auto-restart default loops with crashLoopBackOff.
 
     `auto_restart=True` (default) brings a crashed DEFAULT loop back so the
     framework "just works" — process transfer is transparent, nobody babysits
-    terminals. Non-default (opt-in) loops are NOT auto-restarted. A cooldown
-    (60s) prevents a crash-on-boot loop from restart-spamming.
+    terminals. Non-default (opt-in) loops are NOT auto-restarted.
+
+    A default loop that dies is auto-restarted, throttled by exponential backoff
+    (K8s crashLoopBackOff): the more it has crashed recently, the longer we wait
+    before the next attempt — so an instantly-dying loop backs off instead of
+    respawning every instant. That infinite instant respawn was the 2026-08-09
+    desktop window storm. It never stops retrying (self-healing preserved), and
+    a loop that stays up for SUCCESS_WINDOW_S resets its crash counter, so a
+    transient blip never accrues into a long backoff.
     """
     state = _load_state()
-    changed = []
-    restarted = []
+    now = time.time()
+    changed: list[str] = []
+    restarted: list[str] = []
     for name, cur in list(state.items()):
-        if cur.get("status") == "running" and not _pid_alive(cur.get("pid")):
+        status = cur.get("status")
+        if status == "running":
+            if _pid_alive(cur.get("pid")):
+                # healthy: once it has been up long enough, forget past crashes
+                started = cur.get("started_at_ts") or 0
+                if cur.get("crash_times") and (now - started) >= SUCCESS_WINDOW_S:
+                    cur["crash_times"] = []
+                    state[name] = cur
+                continue
+            # the loop died -> crashed
             cur["status"] = "crashed"
             cur["crashed_at"] = _now()
+            crashes = [t for t in cur.get("crash_times", []) if now - t <= BACKOFF_WINDOW_S]
+            crashes.append(now)
+            cur["crash_times"] = crashes
             changed.append(name)
             if auto_restart and LOOP_DEFS.get(name, {}).get("default"):
-                # cooldown: don't restart-spam a loop that dies on boot
-                crashed_at = cur.get("crashed_at", "")
-                restarted_sig = state.get(name, {}).get("restart_count", 0)
-                state[name]["restart_count"] = restarted_sig + 1
-                spawned = _spawn(name)
-                if spawned:
-                    state[name] = {"status": "running", "restart_count": restarted_sig + 1, **spawned}
-                    restarted.append(name)
-                    _log("auto_restarted", name=name, pid=spawned["pid"])
-                else:
-                    _log("auto_restart_failed", name=name)
+                wait = _backoff_seconds(crashes, now)
+                cur["next_retry_at"] = now + wait
+                if wait >= BACKOFF_MAX_S:
+                    _log("crash_backoff", name=name, wait_s=round(wait), crashes=len(crashes))
+                    try:
+                        from mag import failure_kb
+                        failure_kb.log_failure(
+                            kind="crash_loop", tool="process_supervisor",
+                            detail=f"loop '{name}' crash-looping; crashLoopBackOff {wait:.0f}s",
+                            phase="supervisor")
+                    except Exception:
+                        pass
+                state[name] = cur
+            else:
+                state[name] = cur
+        elif (status == "crashed"
+              and auto_restart
+              and LOOP_DEFS.get(name, {}).get("default")
+              and cur.get("next_retry_at")
+              and now >= cur["next_retry_at"]):
+            # backoff expired -> restart
+            spawned = _spawn(name)
+            if spawned:
+                state[name] = {"status": "running", "started_at_ts": now,
+                               "crash_times": cur.get("crash_times", []), **spawned}
+                restarted.append(name)
+                _log("auto_restarted", name=name, pid=spawned["pid"])
+            else:
+                _log("auto_restart_failed", name=name)
     if changed or restarted:
         _save_state(state)
     return {"ok": True, "crashed": changed, "auto_restarted": restarted}

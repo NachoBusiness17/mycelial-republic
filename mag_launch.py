@@ -101,12 +101,18 @@ def _mirror_wanted() -> bool:
 
 
 def _drainer_wanted() -> bool:
+    # DRAINER DEFAULT ON (2026-08-09, operator code-as-law doctrine): the autorun loop that
+    # EXECUTES the laws/cadences must be on so the swarm actually self-heals (was opt-in off,
+    # which left every action applied:false). Env MAG_DRAINER=0 still overrides to off.
+    env_off = os.environ.get("MAG_DRAINER", "").strip().lower() in ("0", "false", "no")
+    if env_off:
+        return False
     try:
         from mag.preferences import drainer_enabled
 
         return drainer_enabled()
     except Exception:
-        return os.environ.get("MAG_DRAINER", "0").strip().lower() in ("1", "true", "yes")
+        return True
 
 # Windows: spawn detached so children survive console closes.
 DETACHED = 0
@@ -353,8 +359,8 @@ def _collect_mag_pids() -> set[int]:
     if os.name == "nt":
         root = str(ROOT)
         ps_cmd = (
-            "Get-CimInstance Win32_Process -Filter "
-            "\"Name='python.exe' OR Name='pythonw.exe'\" | "
+            "Get-CimInstance Win32_Process | "
+            "Where-Object { $_.Name -in @('python.exe','pythonw.exe') } | "
             f"Where-Object {{ $_.CommandLine -like '*{root}*' }} | "
             "Select-Object -ExpandProperty ProcessId"
         )

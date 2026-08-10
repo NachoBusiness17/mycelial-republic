@@ -359,7 +359,8 @@ def _kill_all_agents(violations: list[dict[str, Any]]) -> dict[str, Any]:
                         # Force kill on Windows
                         try:
                             import subprocess
-                            subprocess.run(["taskkill", "/F", "/PID", str(pid)], capture_output=True)
+                            subprocess.run(["taskkill", "/F", "/PID", str(pid)], capture_output=True,
+                                           creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0)
                             killed.append(task_id)
                         except Exception:
                             errors.append(f"{task_id}: force kill failed")

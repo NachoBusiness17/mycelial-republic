@@ -243,12 +243,43 @@ function ghostViewHtml() {
   <div id="bar">
     <button class="btn" data-cmd="python -m mag.ghost --sense" data-name="Ghost Sense">Sense</button>
     <button class="btn" data-cmd="python -m mag.ghost --catalog" data-name="Ghost Catalog">Catalog</button>
+    <button class="btn" onclick="loadControl()">Ghost Control</button>
   </div>
   <div class="row" id="aware"></div>
+  <h2>Talk to Ghost <span class="muted">(the surface — just ask)</span></h2>
+  <div style="display:flex; gap:6px;">
+    <input id="gtalk" type="text" placeholder="what's going on? what should i focus on?" style="flex:1; background:#0d1117; color:#c9d1d9; border:1px solid #21262d; padding:6px; border-radius:6px;"/>
+    <button class="btn" onclick="talkGhost()">Send</button>
+  </div>
+  <div id="grep" class="muted" style="margin:6px 0; white-space:pre-wrap; font-size:11px;"></div>
+  <h2>Ghost Control</h2>
+  <div id="gc" class="muted" style="font-size:11px; white-space:pre-wrap;"></div>
   <h2>Live Trail</h2>
   <table id="trail"><tr><th>ts</th><th>event</th><th class="goal">detail</th></tr></table>
   <div class="err" id="err" style="display:none;">Dashboard not reachable (:8765)</div>
   <script>
+    async function talkGhost() {
+      const q = $('gtalk').value.trim(); if (!q) return;
+      $('grep').textContent = 'ghost is thinking…';
+      try {
+        const r = await fetch('/api/v1/ghost/talk', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({prompt:q})});
+        const d = await r.json();
+        $('grep').textContent = d.reply || JSON.stringify(d).slice(0, 400);
+      } catch(e) { $('grep').textContent = 'err: ' + e; }
+    }
+    async function loadControl() {
+      try {
+        const r = await fetch('/api/v1/ghost/control'); const d = await r.json();
+        const p = d.pressing || {}; const s = d.scrum || {};
+        $('gc').textContent =
+          'pressing: ' + (p.title || 'none') + '\n' +
+          'scrum next: ' + (s.next || '?') + ' — ' + (s.next_title || '') + '\n' +
+          'loop state: ' + (d.loop_state || '?') + '\n' +
+          'skills: ' + ((d.skills||[]).join(', ')) + '\n' +
+          'tokens saved: ' + ((d.tokens_saved_vs_projected||{}).tokens_saved) + ' vs projected ' + ((d.tokens_saved_vs_projected||{}).projected_verbose_tokens);
+      } catch(e) { $('gc').textContent = 'err: ' + e; }
+    }
+    loadControl();
     window.addEventListener('message', (ev) => {
       const msg = ev.data;
       if (msg.type !== 'snapshot') return;

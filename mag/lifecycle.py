@@ -18,6 +18,7 @@ Policy modes:
 from __future__ import annotations
 
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -566,6 +567,11 @@ def reconcile(*, dry_run: bool = False) -> dict[str, Any]:
             skipped.append({"id": pid, "reason": "core — never auto-off via reconcile"})
             continue
         if pid == "drainer":
+            # Respect the env lock: if MAG_DRAINER is explicitly set on, the drainer
+            # is intentionally on (e.g. containerized deployment) — don't fight it.
+            if os.environ.get("MAG_DRAINER", "").strip().lower() in ("1", "true", "yes"):
+                skipped.append({"id": "drainer", "reason": "env-locked on via MAG_DRAINER"})
+                continue
             if dry_run:
                 applied.append({"id": "drainer", "action": "would set_drainer(false)", "dry_run": True})
             else:

@@ -351,6 +351,8 @@ def _boot_ghost() -> bool:
             cwd=str(ROOT),
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
+            creationflags=(getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+                           | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0x00000200)) if sys.platform == "win32" else 0,
         )
         # Wait for it to come up
         for _ in range(10):

@@ -79,6 +79,12 @@ def autorun_allowed() -> bool:
 
 def set_drainer(enabled: bool) -> dict:
     prefs = load_prefs()
+    # Env lock: when MAG_DRAINER is explicitly set on, it owns the drainer state.
+    # Ignore off-writes (e.g. lifecycle reconcile) so the container env can't be
+    # silently overridden by a pref write that drainer_enabled() would ignore anyway.
+    env = os.environ.get("MAG_DRAINER", "").strip().lower()
+    if not enabled and env in ("1", "true", "yes"):
+        return prefs
     prefs["drainer"] = bool(enabled)
     prefs["updated_at"] = datetime.now(timezone.utc).isoformat()
     save_prefs(prefs)

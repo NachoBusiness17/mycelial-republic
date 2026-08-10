@@ -31,6 +31,7 @@ CORE_INVARIANTS = (
     "local_first",
     "no_throne",
     "residual_is_dna",
+    "window_steer",
 )
 
 

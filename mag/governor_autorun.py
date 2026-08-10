@@ -396,9 +396,10 @@ def fill_queue(
         from mag.ghost import sense as ghost_sense
         state = ghost_sense()
         if state.get("verkle_tip_stale"):
-            import subprocess, sys as _sys
+            import subprocess, sys as _sys, os as _os
+            _flags = (getattr(subprocess, "CREATE_NO_WINDOW", 0) if _os.name == "nt" else 0)
             subprocess.run([_sys.executable, "-m", "mag.verkle_audit", "--full"],
-                          cwd=str(ROOT), capture_output=True, timeout=30)
+                          cwd=str(ROOT), capture_output=True, timeout=30, creationflags=_flags)
             filled["janitor_verkle"] = "audited"
         if state.get("training_rows", 0) >= 5:
             # Check W0.3 archive gate
@@ -780,6 +781,37 @@ def autorun_loop(interval_s: float = 5.0, *, once: bool = False) -> None:
     # codex_*, pytest-* scratch, caches) to memory/trash when the operator is away.
     # Deterministic (no model). Default 600 ticks (~50 min at 5s).
     cleanup_every = int(os.environ.get("MAG_CLEANUP_EVERY", "600") or "600")
+    # Docker containment probe cadence: passively report engine/compose/container/
+    # port-conflict state so the containerized path is visible to the architecture.
+    # Deterministic, report-only — never auto-ups/downs. Default 600 ticks.
+    docker_every = int(os.environ.get("MAG_DOCKER_EVERY", "600") or "600")
+    # Cost/learn cadence: fold provider cache/cost/latency telemetry into the skill_ledger
+    # (tesuji-everywhere). Idempotent — only folds when new usage rows landed. Default 600.
+    cost_learn_every = int(os.environ.get("MAG_COST_LEARN_EVERY", "600") or "600")
+    # Context-growth cadence: measure per-session context growth to find repack ballooners.
+    context_growth_every = int(os.environ.get("MAG_CONTEXT_GROWTH_EVERY", "900") or "900")
+    # Self-steal cadence: audit capability utilization + launch/resume research for gaps.
+    self_steal_every = int(os.environ.get("MAG_SELF_STEAL_EVERY", "900") or "900")
+    queue_learn_every = int(os.environ.get("MAG_QUEUE_LEARN_EVERY", "600") or "600")
+    queue_digest_every = int(os.environ.get("MAG_QUEUE_DIGEST_EVERY", "600") or "600")
+    # Recurring self-learning loop (press digest + scrum) routes THROUGH ghost.
+    # Ghost is the central dispatcher for recurring processes (operator directive).
+    press_every = int(os.environ.get("MAG_PRESS_EVERY", "900") or "900")
+    # Rightsize-everything cadence: apply the queue-rightsize lesson to ALL subsystems,
+    # autonomously (cheap-first everywhere). Routes through ghost (ghost.run_recurring).
+    rightsize_every = int(os.environ.get("MAG_RIGHTSIZE_EVERY", "600") or "600")
+    # Live-report cadence: keep state/LIVE_REPORT.md fresh (the operator's ONE view).
+    live_report_every = int(os.environ.get("MAG_LIVE_REPORT_EVERY", "300") or "300")
+    frontier_help_every = int(os.environ.get("MAG_FRONTIER_HELP_EVERY", "900") or "900")
+    grok_terminal_every = int(os.environ.get("MAG_GROK_TERMINAL_EVERY", "3600") or "3600")
+    aos_grok_every = int(os.environ.get("MAG_AOS_GROK_EVERY", "7200") or "7200")
+    research_lens_every = int(os.environ.get("MAG_RESEARCH_LENS_EVERY", "600") or "600")
+    cheap_swarm_every = int(os.environ.get("MAG_CHEAP_SWARM_EVERY", "900") or "900")
+    grok_free_every = int(os.environ.get("MAG_GROK_FREE_EVERY", "1200") or "1200")
+    mycelium_every = int(os.environ.get("MAG_MYCELIUM_EVERY", "600") or "600")
+    republic_os_every = int(os.environ.get("MAG_REPUBLIC_OS_EVERY", "900") or "900")
+    comms_trail_every = int(os.environ.get("MAG_COMMS_TRAIL_EVERY", "600") or "600")
+    swarm_health_every = int(os.environ.get("MAG_SWARM_HEALTH_EVERY", "300") or "300")
     tick = 0
 
     def _dim(s: str) -> str:
@@ -921,6 +953,291 @@ def autorun_loop(interval_s: float = 5.0, *, once: bool = False) -> None:
                     )
             except Exception as e:
                 print(_dim(f"  [cleanup] error: {e}"), flush=True)
+
+        # Recurring self-learning loop routes THROUGH ghost (press digest + scrum).
+        # Ghost is the central dispatcher; cheap-only (local/flash, never grok).
+        if press_every > 0 and tick > 0 and tick % press_every == 0:
+            try:
+                from mag.ghost import run_recurring
+
+                rr = run_recurring()
+                press = rr.get("press") or {}
+                if press.get("pressing"):
+                    print(
+                        _dim(f"  [ghost-recurring] pressing={press.get('pressing')} "
+                             f"candidates={press.get('count')} -> {press.get('path')}"),
+                        flush=True,
+                    )
+            except Exception as e:
+                print(_dim(f"  [ghost-recurring] error: {e}"), flush=True)
+
+        # Rightsize-everything cadence: apply the queue-rightsize lesson to all subsystems,
+        # autonomously (cheap-first, proof-first, no LLM on cadence).
+        if rightsize_every > 0 and tick > 0 and tick % rightsize_every == 0:
+            try:
+                from mag.rightsize_all import run_cadence as rightsize_run
+
+                rs = rightsize_run()
+                print(_dim(f"  [rightsize] fixed={rs.get('fixed')}"), flush=True)
+            except Exception as e:
+                print(_dim(f"  [rightsize] error: {e}"), flush=True)
+
+        # Live-report cadence: keep state/LIVE_REPORT.md fresh so the operator always has
+        # ONE human-readable view of the autonomous loop (running/queued/generated/next).
+        if live_report_every > 0 and tick > 0 and tick % live_report_every == 0:
+            try:
+                from mag.live_report import main as live_report_run
+
+                live_report_run()
+            except Exception:
+                pass
+
+        # Docker containment probe cadence: report-only, NEVER auto-ups/downs.
+        # Surfaces engine/compose/container/port-conflict state so the containerized
+        # path is visible to the architecture instead of invisible (was the gap).
+        if docker_every > 0 and tick > 0 and tick % docker_every == 0:
+            try:
+                from mag.docker_ops import run_cadence as docker_run
+
+                dkr = docker_run()
+                print(
+                    _dim(
+                        f"  [docker] reachable={dkr.get('engine', {}).get('reachable')} "
+                        f"containers={dkr.get('container_count')} "
+                        f"conflicts={len(dkr.get('native_port_conflicts') or [])}",
+                    ),
+                    flush=True,
+                )
+            except Exception as e:
+                print(_dim(f"  [docker] error: {e}"), flush=True)
+
+        # Cost/learn cadence: fold provider cache/cost/latency into case law so the router
+        # gets ground truth on cheapest-per-hit provider/model. Idempotent (skips if no new usage).
+        if cost_learn_every > 0 and tick > 0 and tick % cost_learn_every == 0:
+            try:
+                from mag.cost_learn import run_cadence as costlearn_run
+
+                clr = costlearn_run(hours=24)
+                if clr.get("action") == "folded":
+                    print(
+                        _dim(f"  [cost-learn] folded priced=${clr.get('analysis', {}).get('total_priced_usd', 0):.4f} "
+                             f"decisions={clr.get('fold', {}).get('skill_ledger_decisions')}"),
+                        flush=True,
+                    )
+            except Exception as e:
+                print(_dim(f"  [cost-learn] error: {e}"), flush=True)
+
+        # Context-growth cadence: measure per-session context growth to target repack at the
+        # ballooners (per-call input is dominated by multi-turn context growth).
+        if context_growth_every > 0 and tick > 0 and tick % context_growth_every == 0:
+            try:
+                from mag.context_growth import run_cadence as ctx_growth_run
+
+                cgr = ctx_growth_run(hours=24)
+                if cgr.get("action") == "wrote":
+                    print(
+                        _dim(f"  [context-growth] sessions={cgr.get('n_sessions')} "
+                             f"cumulative={cgr.get('total_cumulative_input')} est_repack_saved={cgr.get('est_repack_saved')}"),
+                        flush=True,
+                    )
+            except Exception as e:
+                print(_dim(f"  [context-growth] error: {e}"), flush=True)
+
+        # Self-steal cadence: audit capability utilization + launch/resume research for new gaps.
+        if self_steal_every > 0 and tick > 0 and tick % self_steal_every == 0:
+            try:
+                from mag.self_steal import run_cadence as self_steal_run
+
+                ssr = self_steal_run()
+                if ssr.get("action") == "ran":
+                    print(
+                        _dim(f"  [self-steal] findings={ssr.get('findings')} launches={len(ssr.get('launches') or [])}"),
+                        flush=True,
+                    )
+            except Exception as e:
+                print(_dim(f"  [self-steal] error: {e}"), flush=True)
+
+        # Queue-learn cadence: fold terminal queue items into training (the queue IS a learning
+        # surface — each terminal is a labeled task_shape/provider/model/outcome/cost row).
+        if queue_learn_every > 0 and tick > 0 and tick % queue_learn_every == 0:
+            try:
+                from mag.queue_learn import run_cadence as queue_learn_run
+
+                qlr = queue_learn_run()
+                if qlr.get("action") == "folded":
+                    print(
+                        _dim(f"  [queue-learn] terminals={qlr.get('fold', {}).get('new_terminals')} "
+                             f"labeled={qlr.get('fold', {}).get('labeled_rows')} "
+                             f"success={qlr.get('analysis', {}).get('successes')}/{qlr.get('analysis', {}).get('terminals')}"),
+                        flush=True,
+                    )
+            except Exception as e:
+                print(_dim(f"  [queue-learn] error: {e}"), flush=True)
+
+        # Queue digest cadence: auto-summarize queue health (per-tier, errors, patterns).
+        if queue_digest_every > 0 and tick > 0 and tick % queue_digest_every == 0:
+            try:
+                from mag.queue_ops import run_cadence as queue_digest_run
+
+                qdr = queue_digest_run()
+                if qdr.get("action") == "wrote":
+                    dd = qdr.get("digest", {})
+                    print(
+                        _dim(f"  [queue-digest] events={dd.get('events_in_window')} "
+                             f"errors={dd.get('error_count')} tiers={dd.get('queue_by_tier')}"),
+                        flush=True,
+                    )
+            except Exception as e:
+                print(_dim(f"  [queue-digest] error: {e}"), flush=True)
+
+        # Frontier-help cadence: percolate journaled asks the system wants help with into a
+        # HELP-WANTED doc for frontier agents (grok) — the capstone of gap/elevation.
+        if frontier_help_every > 0 and tick > 0 and tick % frontier_help_every == 0:
+            try:
+                from mag.frontier_help import run_cadence as frontier_help_run
+
+                fhr = frontier_help_run()
+                if fhr.get("action") == "percolated":
+                    print(
+                        _dim(f"  [frontier-help] percolated {fhr.get('n_asks')} asks -> {fhr.get('doc')}"),
+                        flush=True,
+                    )
+            except Exception as e:
+                print(_dim(f"  [frontier-help] error: {e}"), flush=True)
+
+        # Frontier-ghost cadence: launch a grok terminal to build a package for a NEW
+        # critical coding task; the cheap swarm then expands+executes the built package.
+        if grok_terminal_every > 0 and tick > 0 and tick % grok_terminal_every == 0:
+            try:
+                from mag.grok_terminal import run_cadence as gt_run
+
+                gtr = gt_run()
+                if gtr.get("action") == "skip":
+                    print(_dim("  [grok-terminal] no new critical task — skip"), flush=True)
+                elif gtr.get("ok"):
+                    print(_dim(
+                        f"  [grok-terminal] frontier ghost built package ({gtr.get('rounds_run')} rounds) -> {gtr.get('result_path')}"),
+                        flush=True,
+                    )
+            except Exception as e:
+                print(_dim(f"  [grok-terminal] error: {e}"), flush=True)
+
+        # AOS-grok cadence: dispatch ONE new specific ask to the lent frontier ONLY when
+        # the courtesy budget allows (start small, prove it — never throw volume at it).
+        if aos_grok_every > 0 and tick > 0 and tick % aos_grok_every == 0:
+            try:
+                from mag.aos_grok import run_cadence as aos_run
+
+                ares = aos_run()
+                if ares.get("action") == "dispatched":
+                    print(_dim(f"  [aos-grok] dispatched specific ask ({ares.get('row', {}).get('tokens_out', 0)} tok) -> {ares.get('ledger')}"), flush=True)
+                else:
+                    print(_dim(f"  [aos-grok] {ares.get('action')}"), flush=True)
+            except Exception as e:
+                print(_dim(f"  [aos-grok] error: {e}"), flush=True)
+
+        # Research-lens cadence: reindex the corpus + fold landed answers so research
+        # becomes an iterative, self-referencing knowledge corpus that compounds.
+        if research_lens_every > 0 and tick > 0 and tick % research_lens_every == 0:
+            try:
+                from mag.research_lens import run_cadence as rl_run
+
+                rlr = rl_run()
+                cs = (rlr.get("status") or {}).get("corpus_size")
+                print(_dim(f"  [research-lens] reindex+fold (corpus={cs})"), flush=True)
+            except Exception as e:
+                print(_dim(f"  [research-lens] error: {e}"), flush=True)
+
+        # Cheap-swarm cadence: dispatch ghost-built packages to the cheap tier for
+        # expand + execute (the second half of the frontier-ghost tesuji).
+        if cheap_swarm_every > 0 and tick > 0 and tick % cheap_swarm_every == 0:
+            try:
+                from mag.cheap_swarm import run_cadence as cs_run
+
+                csr = cs_run()
+                n = len(csr.get("dispatched") or [])
+                print(_dim(f"  [cheap-swarm] dispatched {n} package(s) to cheap tier"), flush=True)
+            except Exception as e:
+                print(_dim(f"  [cheap-swarm] error: {e}"), flush=True)
+
+        # grok-free cadence: autonomously work the private idea backlog with the FREE grok
+        # surface (CLI harness, $0), compounding into the corpus — no API cost.
+        if grok_free_every > 0 and tick > 0 and tick % grok_free_every == 0:
+            try:
+                from mag.grok_free import cadence as grf_run
+
+                grf = grf_run()
+                n = len(grf.get("processed") or [])
+                print(_dim(f"  [grok-free] cadence processed {n} idea(s)"), flush=True)
+            except Exception as e:
+                print(_dim(f"  [grok-free] error: {e}"), flush=True)
+
+        # mycelium cadence: boot + decay + dual-write the unified graph (republic OS core).
+        if mycelium_every > 0 and tick > 0 and tick % mycelium_every == 0:
+            try:
+                from mag.mycelium import boot as mc_boot, decay as mc_decay, dual_write as mc_dw
+
+                mc_boot(); d = mc_decay(); mc_dw()
+                print(_dim(f"  [mycelium] boot+decay({d.get('decayed')})+dual-write"), flush=True)
+            except Exception as e:
+                print(_dim(f"  [mycelium] error: {e}"), flush=True)
+
+        # republic_os cadence: run the persistent mycelial-republic OS loop.
+        if republic_os_every > 0 and tick > 0 and tick % republic_os_every == 0:
+            try:
+                from mag.republic_os import run_cadence as ros_run
+
+                rosr = ros_run()
+                print(_dim(f"  [republic-os] round dispatched {rosr.get('dispatched')} | memblock={rosr.get('memory_block')} | cp={rosr.get('checkpoint')}"), flush=True)
+            except Exception as e:
+                print(_dim(f"  [republic-os] error: {e}"), flush=True)
+
+        # comms-trail cadence: steal the cheap agent-communication trail into the graph.
+        if comms_trail_every > 0 and tick > 0 and tick % comms_trail_every == 0:
+            try:
+                from mag.comms_trail import run_cadence as ct_run
+
+                ctr = ct_run()
+                cap = ctr.get("capture") or {}
+                print(_dim(f"  [comms-trail] captured {cap.get('added')} comm surfaces | confirmed={ (ctr.get('confirm_language') or {}).get('confirmed') }"), flush=True)
+            except Exception as e:
+                print(_dim(f"  [comms-trail] error: {e}"), flush=True)
+
+        # swarm-health cadence: probe the swarm + APPLY the self-improvement law (self-healing).
+        if swarm_health_every > 0 and tick > 0 and tick % swarm_health_every == 0:
+            try:
+                from mag.swarm_health import run_cadence as sh_run
+
+                shr = sh_run()
+                h = shr.get("health") or {}
+                print(_dim(f"  [swarm-health] overall={h.get('overall')} up={h.get('agents_up')}/{h.get('agents_total')} law={len((shr.get('law') or {}).get('actions') or [])}"), flush=True)
+            except Exception as e:
+                print(_dim(f"  [swarm-health] error: {e}"), flush=True)
+
+        # law cadence: enforce the code-as-law registry (APPLY — the loop actually turns).
+        law_every = int(os.environ.get("MAG_LAW_EVERY", "300") or "300")
+        if law_every > 0 and tick > 0 and tick % law_every == 0:
+            try:
+                from mag.law import enforce, seed, status as law_status
+
+                if not law_status().get("ids"):
+                    seed()
+                res = enforce(apply=True)
+                applied = sum(1 for r in res.get("results", []) if r.get("applied"))
+                print(_dim(f"  [law] enforced {len(res.get('results', []))} laws | applied={applied}"), flush=True)
+            except Exception as e:
+                print(_dim(f"  [law] error: {e}"), flush=True)
+
+        # steer cadence: consume [STEER] markers from transcripts + control trail -> memlang.
+        steer_every = int(os.environ.get("MAG_STEER_EVERY", "120") or "120")
+        if steer_every > 0 and tick > 0 and tick % steer_every == 0:
+            try:
+                from mag.steer import consume as steer_consume
+
+                sc = steer_consume()
+                print(_dim(f"  [steer] found {sc.get('steers_found')} | compiled {len(sc.get('compiled') or [])}"), flush=True)
+            except Exception as e:
+                print(_dim(f"  [steer] error: {e}"), flush=True)
 
         # Corpus-lens cadence: if a fresh corpus harvest landed, diff it and enqueue
         # the bard + swarm-protocol lens tasks automatically.

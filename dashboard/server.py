@@ -624,6 +624,7 @@ class Handler(BaseHTTPRequestHandler):
                     timeout=180,
                     check=False,
                     capture_output=True,
+                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0,
                 )
             except Exception as e:
                 return self._json(500, {"ok": False, "error": str(e)})

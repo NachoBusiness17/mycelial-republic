@@ -98,7 +98,8 @@ def restart_lab(*, port: int = 8765, wait_s: float = 12.0, local_only: bool = Fa
     log.parent.mkdir(parents=True, exist_ok=True)
     creation = 0
     if sys.platform == "win32":
-        creation = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS  # type: ignore[attr-defined]
+        creation = (subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
+                    | getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000))  # type: ignore[attr-defined]
     argv = [_python_exe(), str(ROOT / "main.py"), "lab", "--port", str(port)]
     if not local_only and read_lab_bind().get("lan"):
         argv.append("--lan")

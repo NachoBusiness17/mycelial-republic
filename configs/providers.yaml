@@ -136,9 +136,10 @@ providers:
     kind: openai_compat
     base_url: https://api.deepseek.com/v1
     api_key_env: DEEPSEEK_API_KEY
-    # Multi-key chain: both env names are tried in order; 401/403/429
+    # Multi-key chain: env names are tried in order; 401/403/429
     # auto-failover to the next key (verified 2026-08-03).
-    api_key_envs: [DEEPSEEK_API_KEY, DEEPSEEK_OVERMIND_API_KEY]
+    # Order: Mag -> Overmind -> Swarm (each its own env, no duplicates).
+    api_key_envs: [DEEPSEEK_API_KEY, DEEPSEEK_OVERMIND_API_KEY, DEEPSEEK_SWARM_API_KEY]
     # DeepSeek v4 defaults thinking ON; reasoning tokens eat max_tokens and
     # small budgets return EMPTY content (the 'agent hallucinating / empty
     # reply' bug). Top-level thinking:{type:disabled} is ~10-15x cheaper and
@@ -223,6 +224,9 @@ providers:
     kind: openai_compat
     base_url: https://api.x.ai/v1
     api_key_env: XAI_API_KEY
+    # Two operator X accounts (e.g. NachoQuixotic + sd20645547), each with a key; only
+    # some are funded. grok_rightsize.call_grok fails over across this chain on 401/403.
+    api_key_envs: [XAI_API_KEY, XAI_API_KEY_2, GROK_API_KEY, GROK_API_KEY_2]
     models:
       - grok-3-mini
       - grok-3

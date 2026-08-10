@@ -6,8 +6,8 @@ Watches a folder on the desktop. When files appear:
   3. Queues a research task if the content is novel
   4. Prompts the operator later: "You dropped X. Want me to research it?"
 
-Linux path: ~/Desktop/research_dropbox/
-Windows path: ~/Desktop/research_dropbox/
+Linux path: ~/Desktop/Mag/Dropbox/
+Windows path: ~/Desktop/Mag/Dropbox/
 
 The folder is a PORTAL — drop anything in, Ghost catalogs it for later.
 Never processes without asking. Never deletes. Never shares.
@@ -34,14 +34,14 @@ def _now() -> str:
 
 
 def _dropbox_path() -> Path:
-    """Get the dropbox path, cross-platform."""
+    """Get the dropbox path, cross-platform (consolidated Desktop Mag/Dropbox)."""
     home = Path.home()
     desktop = home / "Desktop"
     if not desktop.is_dir():
         desktop = home / "desktop"
     if not desktop.is_dir():
         desktop = home
-    return desktop / "research_dropbox"
+    return desktop / "Mag" / "Dropbox"
 
 
 def init_dropbox() -> Path:
@@ -148,7 +148,7 @@ def catalog_and_prompt() -> dict[str, Any]:
             "new_files": [],
             "prompts": [],
             "bard_passages": [],
-            "message": "Dropbox is empty. Drop files on ~/Desktop/research_dropbox/",
+            "message": "Dropbox is empty. Drop files on ~/Desktop/Mag/Dropbox/",
         }
 
     prompts = []

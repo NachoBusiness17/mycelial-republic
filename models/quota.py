@@ -77,13 +77,20 @@ def record_usage(
     calls: int = 1,
     prompt_tokens: int = 0,
     completion_tokens: int = 0,
+    cache_hit_tokens: int = 0,
+    cache_miss_tokens: int = 0,
     ok: bool = True,
+    session_id: str = "",
+    latency_ms: int = 0,
     meta: dict | None = None,
 ) -> None:
     total_tok = int(prompt_tokens or 0) + int(completion_tokens or 0)
     # estimate if missing
     if total_tok <= 0 and meta and meta.get("chars"):
         total_tok = max(1, int(meta["chars"]) // 4)
+    # If only prompt_tokens is given but no cache split, default miss=prompt (safe).
+    if not cache_hit_tokens and not cache_miss_tokens:
+        cache_miss_tokens = int(prompt_tokens or 0)
 
     state = _load_state()
     prov = state.setdefault("providers", {}).setdefault(
@@ -133,6 +140,10 @@ def record_usage(
         "calls": calls,
         "prompt_tokens": prompt_tokens,
         "completion_tokens": completion_tokens,
+        "cache_hit_tokens": int(cache_hit_tokens or 0),
+        "cache_miss_tokens": int(cache_miss_tokens or 0),
+        "session_id": (session_id or (meta or {}).get("session_id") or ""),
+        "latency_ms": int(latency_ms or 0),
         "tokens": total_tok,
         "ok": ok,
         "meta": meta or {},

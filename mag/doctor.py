@@ -317,6 +317,98 @@ def check_chain_discipline() -> dict[str, Any]:
 # FULL EXAMINATION
 # ═══════════════════════════════════════════════════════════════════
 
+def check_self_steal() -> dict[str, Any]:
+    """Self-steal capability-utilization check: surfaces where our own systems aren't being used.
+
+    Surfaces under-utilized internal capabilities (stale/absent/unwired) so doctor/maintenance
+    can see where the architecture isn't leveraging its own machinery (e.g. verkle anchoring).
+    """
+    try:
+        from mag.self_steal import audit
+        a = audit()
+    except Exception as e:
+        return {"check": "self_steal", "ok": False, "issues": [f"self_steal audit error: {e}"], "missing_optional": []}
+    issues = []
+    for f in a.get("findings", []):
+        issues.append(f"self_steal: capability '{f['capability']}' utilization={f['utilization']} "
+                      f"age_s={f['age_s']} wired={f['wired']} -> {f['recommendation']}")
+    return {"check": "self_steal", "ok": len(issues) == 0, "issues": issues, "missing_optional": []}
+
+
+def check_system_tracking() -> dict[str, Any]:
+    """GAP-ANALYSIS HEALTH CHECK: verify every system is present, wired, and tracking data.
+
+    Each system must (a) import, (b) have its store on disk, and (c) hold tracked data
+    (non-empty registry/ledger/graph). Ensures nothing we built is a silent empty shell.
+    """
+    def _rows(p: Path) -> int:
+        if not p.is_file():
+            return 0
+        try:
+            return sum(1 for ln in p.read_text(encoding="utf-8", errors="replace").splitlines() if ln.strip())
+        except Exception:
+            return 0
+
+    def _js(p: Path) -> int:
+        if not p.is_file():
+            return 0
+        try:
+            import json as _j
+            d = _j.loads(p.read_text(encoding="utf-8"))
+            return 1 if isinstance(d, dict) and d else 0
+        except Exception:
+            return 0
+
+    # (name, module, store_path, expected-kind, min_rows)
+    systems = [
+        ("mycelium", "mag.mycelium", ROOT / "memory/mycelium/graph_snapshot.json", "json", 1),
+        ("republic_os", "mag.republic_os", ROOT / "memory/runs/republic_os/state.json", "json", 1),
+        ("comms_trail", "mag.comms_trail", ROOT / "memory/runs/comms_trail/state.json", "json", 1),
+        ("memlang", "mag.memlang", ROOT / "memory/runs/memlang/registry.json", "json", 1),
+        ("research_lens", "mag.research_lens", ROOT / "memory/lenses/corpus_index.json", "json", 1),
+        ("grok_free", "mag.grok_free", ROOT / "memory/runs/grok_free/usage.jsonl", "lines", 1),
+        ("cheap_swarm", "mag.cheap_swarm", ROOT / "memory/runs/cheap_swarm/dispatched.jsonl", "lines", 1),
+        ("frontier_help", "mag.frontier_help", ROOT / "memory/frontier/HELP_WANTED.md", "lines", 1),
+        ("aos_grok", "mag.aos_grok", ROOT / "memory/embassy/AOS/grok_usage.jsonl", "lines", 1),
+        ("grok_mirror", "mag.grok_mirror", ROOT / "memory/runs/grok_mirror", "dir_files", 1),
+        ("gap_map", "mag.gap_map", ROOT / "memory/runs/gap_map/stack.json", "json", 0),
+        ("cost_learn", "mag.cost_learn", ROOT / "memory/training/cost_ledger.jsonl", "lines", 1),
+    ]
+    issues = []
+    tracked = []
+    for name, module, store, kind, min_rows in systems:
+        ok_module, ok_store, ok_data = False, False, False
+        try:
+            __import__(module)
+            ok_module = True
+        except Exception:
+            pass
+        ok_store = store.exists()
+        if kind == "dir_files":
+            ok_store = store.is_dir()
+            ok_data = len(list(store.glob("*.json"))) >= min_rows if ok_store else False
+        elif ok_store:
+            n = _rows(store) if kind == "lines" else _js(store)
+            ok_data = n >= min_rows
+        status = "ok" if (ok_module and ok_store and ok_data) else "gap"
+        if status != "ok":
+            issues.append(f"tracking gap: {name} module={ok_module} store={ok_store} data={ok_data} ({store})")
+        else:
+            tracked.append(name)
+    # ghost self-window must exist (agent_state authored by ghost-self)
+    try:
+        from mag.agent_state import load_latest
+        lat = load_latest() or {}
+        if lat.get("label") == "ghost-self":
+            tracked.append("ghost_self_window")
+        else:
+            issues.append("ghost self-window not authored (agent_state LATEST != ghost-self)")
+    except Exception as e:
+        issues.append(f"ghost self-window check error: {e}")
+    return {"check": "system_tracking", "ok": len(issues) == 0, "issues": issues,
+            "tracked": tracked, "systems_checked": len(systems) + 1, "missing_optional": []}
+
+
 def examine() -> DoctorReport:
     """Run all doctor checks. Returns a full report."""
     checks = [
@@ -326,6 +418,14 @@ def examine() -> DoctorReport:
         check_env_sanity(),
         check_chain_discipline(),
     ]
+    try:
+        checks.append(check_self_steal())
+    except Exception:
+        pass
+    try:
+        checks.append(check_system_tracking())
+    except Exception:
+        pass
 
     errors = []
     warnings = []

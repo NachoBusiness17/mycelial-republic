@@ -305,7 +305,8 @@ def unsloth_start(
     LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
     creation = 0
     if sys.platform == "win32":
-        creation = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS  # type: ignore[attr-defined]
+        creation = (subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
+                    | getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000))  # type: ignore[attr-defined]
 
     with LOG_PATH.open("a", encoding="utf-8") as lf:
         lf.write(f"\n--- unsloth_start {time.strftime('%Y-%m-%d %H:%M:%S')} mode={mode} ---\n")

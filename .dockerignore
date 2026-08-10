@@ -3,15 +3,48 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .git/
+.gitignore
 .cursor/
 .env
 .env.*
 !.env.example
-logs/*
-state/*
-memory/biography/**
-memory/briefs/**
-memory/agent_sessions/**
-memory/agent_state/**
-android/
+
+# Data dirs — volume-mounted at runtime, must NOT bloat/lock the image build
+logs/
+state/
+queue/
+watch/
+memory/
+agents/
+artifacts/
+experiments/
+campaigns/
+mine/
+research/
+handoff/
+stealth_vectors.txt
+found_steers.txt
+
+# Transient / pytest / codex scratch (locked files break the build context send)
+codex_*/
+codex_*/
+pytest-*/
+pytest_*/
+_tmp_*/
+_tmp_*
+_deliver_*/
+_diffs/
+_lenses/
+*.log
+*.jsonl
+
+# Keep required bits the runtime actually reads from the image
 !memory/README.md
+!memory/.gitkeep
+
+# Source packages that ARE runtime deps (NOT data) — must be in the image.
+# handoff/ is imported by main.py at startup and is NOT volume-mounted, so
+# excluding it made every container subprocess crash with ModuleNotFoundError.
+# (agents/ NOT re-included: it contains a locked pytest-* entry that breaks the
+# build context send — handle separately if it's ever imported at startup.)
+!handoff/

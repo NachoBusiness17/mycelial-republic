@@ -181,7 +181,7 @@ def build_seat_fidelity(seat: str) -> dict[str, Any]:
         "seat": seat,
         "peer": peer,
         "peer_label": peer_label,
-        "model": _desk_local_model() if seat == "local" else "deepseek-chat",
+        "model": _desk_local_model() if seat == "local" else "deepseek-v4-flash",
         "role_prompt_excerpt": (
             LOCAL_PROMPT.read_text(encoding="utf-8", errors="replace")[:900]
             if seat == "local" and LOCAL_PROMPT.is_file()

@@ -40,10 +40,10 @@ SYSTEM_PROMPT_CACHE = (
 
 # Tier → (model, max_output_tokens, temperature, approx_cost_per_call)
 BUDGETS: dict[str, dict[str, Any]] = {
-    "sense":      {"model": "grok-2-latest", "max_tokens": 256,  "temp": 0.0, "est_cost": 0.0003},
-    "classify":   {"model": "grok-2-latest", "max_tokens": 128,  "temp": 0.0, "est_cost": 0.0002},
-    "summary":    {"model": "grok-3-mini",   "max_tokens": 512,  "temp": 0.0, "est_cost": 0.0015},
-    "analysis":   {"model": "grok-3-mini",   "max_tokens": 1024, "temp": 0.2, "est_cost": 0.0030},
+    "sense":      {"model": "grok-3-mini", "max_tokens": 256,  "temp": 0.0, "est_cost": 0.0003},
+    "classify":   {"model": "grok-3-mini", "max_tokens": 128,  "temp": 0.0, "est_cost": 0.0002},
+    "summary":    {"model": "grok-3-mini", "max_tokens": 512,  "temp": 0.0, "est_cost": 0.0015},
+    "analysis":   {"model": "grok-3-mini", "max_tokens": 1024, "temp": 0.2, "est_cost": 0.0030},
     "deep":       {"model": "grok-3",        "max_tokens": 2048, "temp": 0.3, "est_cost": 0.0080},
     "orchestrate": {"model": "grok-4",       "max_tokens": 4096, "temp": 0.3, "est_cost": 0.0250},
 }
@@ -57,6 +57,80 @@ GROK4_WORTHY = {"orchestrate", "campaign", "research_sprint", "network_map", "te
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+# Ordered chain of env vars that may hold an xAI Grok API key. The operator has two
+# X accounts (e.g. NachoQuixotic + sd20645547), each with a key; only some are funded.
+# call_grok tries each in order and fails over on auth/credits errors (401/403).
+#
+# IMPORTANT: read keys from the .env FILE first (live source of truth), NOT os.environ.
+# Long-running processes (autorun, ghost-daemon, dashboard) cache env at startup, so a
+# .env edit wouldn't propagate until restart and a stale env key would shadow the live
+# one. Reading the file first means the current key is always used, even in stale procs.
+def _env_value(name: str) -> str:
+    try:
+        envp = ROOT / ".env"
+        if envp.is_file():
+            for line in envp.read_text(encoding="utf-8", errors="replace").splitlines():
+                s = line.strip()
+                if s and not s.startswith("#") and "=" in s:
+                    k, _, val = s.partition("=")
+                    if k.strip() == name:
+                        v = val.strip().strip('"').strip("'")
+                        if v:
+                            return v
+    except Exception:
+        pass
+    return (os.environ.get(name) or "").strip()
+
+
+def xai_key_chain() -> list[tuple[str, str]]:
+    """Return ordered [(env_name, key), ...] for all configured xAI keys (names only)."""
+    chain: list[tuple[str, str]] = []
+    for env_name in ("XAI_API_KEY", "XAI_API_KEY_2", "GROK_API_KEY", "GROK_API_KEY_2"):
+        v = _env_value(env_name)
+        if v:
+            chain.append((env_name, v))
+    return chain
+
+
+def xai_key_status() -> dict[str, Any]:
+    """Which xAI key env slots are configured (names only — never values)."""
+    return {
+        "schema": "grok_rightsize.keys.v1",
+        "configured_envs": [name for name, _ in xai_key_chain()],
+        "n_keys": len(xai_key_chain()),
+        "note": "call_grok fails over across configured keys on 401/403.",
+    }
+
+
+def probe_xai_keys(*, max_tokens: int = 8) -> dict[str, Any]:
+    """Probe each configured xAI key with a 1-token call to find the one that works."""
+    results: list[dict[str, Any]] = []
+    for env_name, key in xai_key_chain():
+        try:
+            import urllib.request
+            body = {"model": "grok-3-mini", "messages": [
+                {"role": "system", "content": "Reply with the single word: ok"},
+                {"role": "user", "content": "ping"}],
+                "max_tokens": max_tokens}
+            req = urllib.request.Request(
+                "https://api.x.ai/v1/chat/completions",
+                data=json.dumps(body).encode("utf-8"),
+                headers={"Content-Type": "application/json",
+                         "Authorization": f"Bearer {key}"},
+                method="POST")
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                raw = json.loads(resp.read().decode("utf-8"))
+            results.append({"env": env_name, "ok": True, "http": resp.status})
+        except Exception as e:
+            # strip secrets/body from the error message for safe logging
+            msg = str(e)
+            msg = re.sub(r"Bearer\s+\S+", "Bearer [redacted]", msg)
+            results.append({"env": env_name, "ok": False, "error": msg[:200]})
+    working = [r["env"] for r in results if r.get("ok")]
+    return {"ok": bool(working), "working_envs": working, "results": results}
+
 
 
 def _approx_tokens(text: str) -> int:
@@ -206,6 +280,7 @@ class GrokCallResult:
     cost_est_usd: float
     latency_ms: float
     error: str = ""
+    key_env: str = ""
 
 
 def call_grok(
@@ -236,8 +311,8 @@ def call_grok(
     import urllib.error
     import urllib.request
 
-    key = os.environ.get("XAI_API_KEY") or os.environ.get("GROK_API_KEY") or ""
-    if not key:
+    key_chain = xai_key_chain()
+    if not key_chain:
         return GrokCallResult(ok=False, content="", model="", tier="",
                               tokens_prompt=0, tokens_completion=0, tokens_total=0,
                               cost_est_usd=0, latency_ms=0,
@@ -272,35 +347,57 @@ def call_grok(
     }
 
     t0 = time.time()
-    try:
-        req = urllib.request.Request(
-            "https://api.x.ai/v1/chat/completions",
-            data=json.dumps(body).encode("utf-8"),
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {key}",
-            },
-            method="POST",
-        )
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            raw = json.loads(resp.read().decode("utf-8"))
-    except urllib.error.HTTPError as e:
-        err_body = e.read().decode("utf-8", errors="replace")
+    raw: dict[str, Any] = {}
+    used_env = ""
+    last_err = ""
+    for env_name, key in key_chain:
+        try:
+            req = urllib.request.Request(
+                "https://api.x.ai/v1/chat/completions",
+                data=json.dumps(body).encode("utf-8"),
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {key}",
+                },
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                raw = json.loads(resp.read().decode("utf-8"))
+            used_env = env_name
+            break
+        except urllib.error.HTTPError as e:
+            err_body = e.read().decode("utf-8", errors="replace")
+            last_err = f"HTTP {e.code}: {err_body[:300]}"
+            # 401/402/403 = auth / no-credits / balance-exhausted on THIS key
+            # -> fail over to the next key in the chain. 402 (Payment Required)
+            # is the "usage balance exhausted" signal from a funded-but-spent key;
+            # omitting it made an exhausted key abort instead of rolling to key #2.
+            if e.code in (401, 402, 403):
+                continue
+            return GrokCallResult(
+                ok=False, content="", model=model, tier=budget["tier"],
+                tokens_prompt=0, tokens_completion=0, tokens_total=0,
+                cost_est_usd=0, latency_ms=(time.time() - t0) * 1000,
+                error=last_err, key_env=used_env or env_name,
+            )
+        except Exception as e:
+            return GrokCallResult(
+                ok=False, content="", model=model, tier=budget["tier"],
+                tokens_prompt=0, tokens_completion=0, tokens_total=0,
+                cost_est_usd=0, latency_ms=(time.time() - t0) * 1000,
+                error=str(e)[:300], key_env=used_env or env_name,
+            )
+    else:
+        # Every key failed with an auth/credits error.
         return GrokCallResult(
             ok=False, content="", model=model, tier=budget["tier"],
             tokens_prompt=0, tokens_completion=0, tokens_total=0,
             cost_est_usd=0, latency_ms=(time.time() - t0) * 1000,
-            error=f"HTTP {e.code}: {err_body[:300]}",
-        )
-    except Exception as e:
-        return GrokCallResult(
-            ok=False, content="", model=model, tier=budget["tier"],
-            tokens_prompt=0, tokens_completion=0, tokens_total=0,
-            cost_est_usd=0, latency_ms=(time.time() - t0) * 1000,
-            error=str(e)[:300],
+            error=f"All xAI keys failed (auth/credits): {last_err}",
         )
 
     latency_ms = (time.time() - t0) * 1000
+    _key_env = used_env
 
     choices = raw.get("choices") or []
     if not choices:
@@ -338,12 +435,58 @@ def call_grok(
         tokens_total=tokens_total,
         cost_est_usd=cost_est,
         latency_ms=round(latency_ms, 0),
+        key_env=_key_env,
     )
 
 
 # ═══════════════════════════════════════════════════════════════════
 # GHOST INTEGRATION — rightsized Grok from copilot inbox
 # ═══════════════════════════════════════════════════════════════════
+
+def call_grok_free(
+    goal: str,
+    *,
+    context: str = "",
+    max_tokens: int | None = None,
+    timeout: int = 300,
+) -> dict[str, Any]:
+    """Prefer the FREE grok CLI harness (subscription seat, private) over the paid API.
+
+    The `grok` binary (Grok Build / open agentic harness) runs on the logged-in
+    subscription — it does NOT bill API credits and is a private local space. This is the
+    DEFAULT transport for grok work; the paid API is only a fallback when the CLI is absent.
+    """
+    try:
+        from harness.grok_cli import escalate_via_harness, harness_available
+
+        if harness_available():
+            res = escalate_via_harness(
+                goal=goal, context=context, max_turns=8,
+                timeout=int(timeout) if timeout else 300,
+            )
+            return {
+                "ok": bool(res.get("ok")),
+                "content": str(res.get("deliverable") or "") or str(res.get("summary") or ""),
+                "model": "grok-cli-harness",
+                "tier": "free-harness",
+                "cost_est_usd": 0.0,
+                "key_env": "grok-cli",
+                "harness": True,
+                "error": str(res.get("error") or res.get("stderr") or "")[:300],
+                "result_path": res.get("result_path"),
+            }
+    except Exception as e:
+        return {"ok": False, "content": "", "model": "grok-cli-harness", "tier": "free-harness",
+                "cost_est_usd": 0.0, "key_env": "grok-cli", "harness": True,
+                "error": str(e)[:200]}
+    # Fallback: paid API (metered, still fine when CLI is absent).
+    r = call_grok(goal, context=context, max_tokens=max_tokens)
+    return {
+        "ok": r.ok, "content": r.content, "model": r.model, "tier": r.tier,
+        "cost_est_usd": r.cost_est_usd, "key_env": r.key_env, "harness": False,
+        "error": r.error, "tokens_prompt": r.tokens_prompt,
+    }
+
 
 def ghost_grok_task(goal: str, *, tier: str | None = None) -> dict[str, Any]:
     """Create a rightsized copilot inbox message for Ghost to route to Grok.
@@ -352,6 +495,11 @@ def ghost_grok_task(goal: str, *, tier: str | None = None) -> dict[str, Any]:
     the copilot inbox so the orchestrator handles execution, retries,
     and budget enforcement.
 
+    GROK COST-GATE (Law #7): grok only when cost-effective AND frontier needed.
+    If the goal is cheap-shaped (janitor/classify/summarize/exec), the gate says
+    NO — this returns a downgraded cheap task (deepseek-v4-flash) instead of grok,
+    so we never waste grok tokens on cheap work. `cheap_ok=True` also forces NO.
+
     Args:
         goal: The task goal.
         tier: Budget tier. Auto-classified if None.
@@ -359,6 +507,26 @@ def ghost_grok_task(goal: str, *, tier: str | None = None) -> dict[str, Any]:
     Returns:
         Dict ready to append to copilot inbox.jsonl.
     """
+    # GROK COST-GATE: skip grok unless frontier-needed (cheap test first).
+    try:
+        from mag.grok_gate import should_use_grok
+        gate = should_use_grok(goal)
+        if not gate.get("use_grok"):
+            return {
+                "id": f"cheap-{_now()[:19].replace(':', '')}",
+                "action": "exec",
+                "goal": compress_prompt(goal),
+                "provider": "deepseek",
+                "model": "deepseek-v4-flash",
+                "timeout_s": 120,
+                "ts": _now(),
+                "source": "ghost-rightsized",
+                "gate": {"use_grok": False, "reason": gate.get("reason", "")},
+                "_budget": {"tier": "cheap", "max_tokens": 2048, "temperature": 0.2, "est_cost": 0.0},
+            }
+    except Exception:
+        pass
+
     budget = budget_for(goal, force_tier=tier)
     compressed = compress_prompt(goal)
 
@@ -371,6 +539,7 @@ def ghost_grok_task(goal: str, *, tier: str | None = None) -> dict[str, Any]:
         "timeout_s": 120 if budget["tier"] != "orchestrate" else 300,
         "ts": _now(),
         "source": "ghost-rightsized",
+        "gate": {"use_grok": True, "reason": "frontier-needed"},
         "_budget": {
             "tier": budget["tier"],
             "max_tokens": budget["max_tokens"],

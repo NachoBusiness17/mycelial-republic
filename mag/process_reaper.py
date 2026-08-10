@@ -77,23 +77,26 @@ def _project_python_procs() -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     try:
         import subprocess
+        import json as _j
         res = subprocess.run(
-            ["wmic", "process", "where", "Name='python.exe'", "get", "ProcessId,CommandLine", "/format:csv"],
+            ["powershell", "-NoProfile", "-Command",
+             "Get-CimInstance Win32_Process | "
+             "Where-Object { $_.Name -in @('python.exe','pythonw.exe') } | "
+             "Select-Object ProcessId,CommandLine | ConvertTo-Json -Compress"],
             capture_output=True, text=True, timeout=20, errors="replace",
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0,
         )
-        for line in res.stdout.splitlines()[1:]:
-            parts = line.split(",", 1)
-            if len(parts) != 2:
-                continue
-            cl = (parts[1] or "").strip()
+        data = _j.loads(res.stdout.strip())
+        if isinstance(data, dict):
+            data = [data]
+        for p in data or []:
+            cl = (p.get("CommandLine") or "").strip()
             if "local_sovereign_agent" not in cl and ".venv" not in cl:
                 continue
-            # PID is in the last CSV column of the row
-            row = line.split(",")
-            pid = row[-1].strip() if row else ""
-            if not pid.isdigit():
+            pid = p.get("ProcessId")
+            if not isinstance(pid, int):
                 continue
-            out.append({"pid": int(pid), "cmdline": cl[:400]})
+            out.append({"pid": pid, "cmdline": cl[:400]})
     except Exception as e:
         _log("reaper-enumerate-error", error=str(e)[:160])
     return out
@@ -181,7 +184,8 @@ def run(*, live: bool = False, grace_s: int = 1800) -> dict[str, Any]:
             try:
                 import subprocess
                 subprocess.run(["taskkill", "/F", "/PID", str(pid)],
-                               capture_output=True, timeout=10)
+                               capture_output=True, timeout=10,
+                               creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0)
                 killed.append({"pid": pid, "cmdline": pr["cmdline"][:200], "age_s": int(age_s)})
                 _log("reaper-kill", pid=pid, cmdline=pr["cmdline"][:160], age_s=int(age_s))
             except Exception as e:

@@ -38,6 +38,14 @@ def recommend_model(goal: str, *, depth: str | None = None) -> dict[str, Any]:
     r = route(goal, depth=depth)
     shape = str(r.get("model_shape") or "balanced")
     model, why = _SHAPE_MODEL.get(shape, (FLASH, "default"))
+    # Apply half of the tesuji loop: fold measured cost evidence into the recommendation
+    # so routing is informed by real provider economics, not just the static rule.
+    cost_evidence: dict[str, Any] = {}
+    try:
+        from mag.cost_learn import recent_cost_evidence
+        cost_evidence = recent_cost_evidence(limit=5)
+    except Exception:
+        cost_evidence = {"source": "cost_learn", "providers": [], "n": 0}
     return {
         "ok": bool(r.get("ok", True)),
         "goal": (goal or "")[:200],
@@ -49,7 +57,9 @@ def recommend_model(goal: str, *, depth: str | None = None) -> dict[str, Any]:
         "depth": r.get("depth"),
         "tier": r.get("tier"),
         "seat": r.get("seat"),
-        "rule": "cheapest model that scores 1.00 on exec; pro only for reason/plan/heavy (tier_probe)",
+        "cost_evidence": cost_evidence,
+        "rule": "cheapest model that scores 1.00 on exec; pro only for reason/plan/heavy (tier_probe); "
+                "cross-checked against measured cost_learn case law",
     }
 
 

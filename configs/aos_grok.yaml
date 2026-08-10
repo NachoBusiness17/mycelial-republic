@@ -1,0 +1,28 @@
+# AOS Grok access controller — courtesy budget for the lent "Super Grok" frontier surface.
+#
+# WHY THIS FILE: the partner (AdventureNLearn) lends us access to their grok-heavy
+# frontier. We must NOT throw volume at it. These are hard, deterministic caps
+# (code-as-law) so the controller NEVER freaks out the guy lending access.
+#
+# The rule: start small, prove it, scale only on partner sign. The probe path fires
+# ONE tiny ask; production asks are gated by the daily budget + cooldown + the
+# specific-ask gate. Every call is logged to a transparent ledger we show the partner.
+#
+# transport: "xai"   = bounded grok API call (grok_rightsize.call_grok) — the model.
+#            "browser" = the Grok-Tutor browser surface (gt2samples.grok.me) — PLACEHOLDER:
+#                        partner product surface, not confirmed public API. Treat as
+#                        Unproven until demonstrated inside the provisioned fence.
+transport: xai
+model: grok-4.5
+
+# Courtesy budget — deliberately tiny. Tune ONLY with partner sign-off.
+max_asks_per_day: 3          # hard ceiling on SPECIFIC grok asks per UTC day
+max_tokens_per_ask: 800      # bounded output per ask (start small)
+cooldown_seconds: 3600       # min gap between dispatched asks (1h)
+probe_max_tokens: 600        # the "start small" proof ask stays tiny
+probe_enabled: true          # the probe path is ON by default (prove it first)
+auto_cadence: true           # run_cadence() may dispatch a new specific ask when budget allows
+
+# Ledger + proof surfaces (what we SHOW the partner as proof-of-respect)
+ledger: memory/embassy/AOS/grok_usage.jsonl
+proof_doc: memory/embassy/AOS/grok_PROOF.md

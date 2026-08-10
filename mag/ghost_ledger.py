@@ -160,47 +160,92 @@ def ledger_summary() -> dict[str, Any]:
     }
 
 
-def sync_deepseek_usage(api_key: Optional[str] = None) -> dict[str, Any]:
-    """Poll DeepSeek usage API and write any uncounted calls to the ledger.
+def sync_deepseek_usage(api_key: Optional[str] = None, provider_label: str = "deepseek") -> dict[str, Any]:
+    """Ingest authoritative provider billing (amount CSV) into the Ghost ledger.
 
-    This is the bridge between the external billing dashboard and the
-    internal Ghost ledger. Without this, the Tax Collector watches an
-    empty door while 5,271 calls go through another.
+    Providers without a public usage API (DeepSeek, and similarly Grok/Copilot/Codex
+    billing exports) are reconciled from their amount-*.csv export under
+    memory/runs/cache_map/billing/. Parses, aggregates per model, writes one summary
+    entry per model to the ledger, and returns the reconciled totals.
 
-    Returns: {calls_found, calls_written, total_cost}
+    Args:
+        api_key: unused (kept for back-compat).
+        provider_label: label stamped on ledger `source` (default "deepseek").
+
+    Returns: {ok, source, by_model, total_cost_usd, entries_written}
     """
-    import os
-    import requests
+    import glob
+    import csv
 
-    key = api_key or os.environ.get("DEEPSEEK_API_KEY", "")
-    if not key:
-        # Try loading from .env
-        env_path = ROOT / ".env"
-        if env_path.is_file():
-            for line in env_path.read_text().splitlines():
-                if line.startswith("DEEPSEEK_API_KEY="):
-                    key = line.split("=", 1)[1].strip()
-                    break
+    billing_dir = ROOT / "memory" / "runs" / "cache_map" / "billing"
+    files = sorted(glob.glob(str(billing_dir / "amount-*.csv")))
+    if not files:
+        return {"ok": False, "error": f"No billing snapshot (amount-*.csv) under {billing_dir}",
+                "hint": "Paste the provider amount export there, or run with an explicit path."}
 
-    if not key:
-        return {"ok": False, "error": "No DeepSeek API key available"}
+    # model -> [hit, miss, out, requests, cost]
+    agg: dict[str, list[float]] = {}
+    for fp in files:
+        with open(fp, encoding="utf-8", errors="replace") as fh:
+            reader = csv.DictReader(fh)
+            for row in reader:
+                model = (row.get("model") or "").strip()
+                typ = (row.get("type") or "").strip()
+                if not model or not typ:
+                    continue
+                a = agg.setdefault(model, [0.0, 0.0, 0.0, 0.0, 0.0])
+                try:
+                    amount = float(row.get("amount") or 0)
+                except ValueError:
+                    amount = 0.0
+                if typ == "input_cache_hit_tokens":
+                    a[0] += amount
+                elif typ == "input_cache_miss_tokens":
+                    a[1] += amount
+                elif typ == "output_tokens":
+                    a[2] += amount
+                elif typ == "request_count":
+                    a[3] += amount
+                # cost = price (per token) * amount for priced lines
+                if typ in ("input_cache_hit_tokens", "input_cache_miss_tokens", "output_tokens"):
+                    try:
+                        price = float(row.get("price") or 0)
+                    except ValueError:
+                        price = 0.0
+                    a[4] += price * amount
 
-    try:
-        # DeepSeek doesn't have a public usage API — this is a best-effort pattern
-        # For now: read existing ledger, compare against known calls, flag gaps
-        summary = ledger_summary()
-        ds_calls = summary.get("by_model", {}).get("deepseek-chat", 0) + \
-                   summary.get("by_model", {}).get("deepseek-v4-flash", 0)
+    by_model = []
+    total_cost = 0.0
+    written = 0
+    for model, (hit, miss, out, reqs, cost) in sorted(agg.items(), key=lambda kv: -kv[1][4]):
+        total_cost += cost
+        write_entry(
+            source=f"{provider_label}_billing",
+            model=model,
+            tokens_in=int(hit + miss),
+            tokens_out=int(out),
+            cost_usd=round(cost, 6),
+            task_type="billing_snapshot",
+            goal_summary=f"Authoritative {provider_label} billing snapshot: {reqs:.0f} reqs, "
+                         f"hit={int(hit):,} miss={int(miss):,} out={int(out):,}",
+            via="api_poll",
+        )
+        written += 1
+        by_model.append({
+            "model": model, "requests": int(reqs),
+            "hit_tokens": int(hit), "miss_tokens": int(miss), "output_tokens": int(out),
+            "hit_ratio": round(hit / (hit + miss), 4) if (hit + miss) else None,
+            "cost_usd": round(cost, 6),
+        })
 
-        return {
-            "ok": True,
-            "deepseek_calls_in_ledger": ds_calls,
-            "total_entries": summary["entries"],
-            "gap_vs_enforcer": summary["ledger_vs_enforcer_gap"],
-            "note": "DeepSeek usage API not yet integrated. Calls tracked via write_entry() at call site.",
-        }
-    except Exception as e:
-        return {"ok": False, "error": str(e)[:200]}
+    return {
+        "ok": True,
+        "provider": provider_label,
+        "source": [str(f) for f in files],
+        "by_model": by_model,
+        "total_cost_usd": round(total_cost, 6),
+        "entries_written": written,
+    }
 
 
 def backfill_manual_calls() -> int:

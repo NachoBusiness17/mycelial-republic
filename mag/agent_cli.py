@@ -363,7 +363,14 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
 ]
 
 
-def _system_prompt(pack_text: str, *, repacked: bool = False) -> str:
+def _system_prompt(
+    pack_text: str,
+    *,
+    repacked: bool = False,
+    goal: str = "",
+    agent_state: str | None = None,
+    preamble: dict[str, Any] | None = None,
+) -> str:
     repack_note = ""
     anchor_text = ""
     anchor_path = os.environ.get("MAG_ANCHORED_PLAN") or str(ROOT / "memory" / "plans" / "ANCHOR.md")
@@ -386,6 +393,11 @@ def _system_prompt(pack_text: str, *, repacked: bool = False) -> str:
             "no .env/verkle_tip/knots writes; irreversible acts need a Human Nod; artifact > transcript.",
         ]
     )
+    from mag.session_route import preamble as _session_preamble
+    from mag.session_route import render as _render_preamble
+    if preamble is None:
+        preamble = _session_preamble(goal=goal, agent_state=agent_state, with_model=False)
+    preamble_block = _render_preamble(preamble)
     if repacked:
         repack_note = (
             "\n## Auto-repack\n"
@@ -428,6 +440,7 @@ Keep each section short. Tool traces belong in tools, not prose walls.
 {anchor_block}
 {law_block}
 {framework_block}
+{preamble_block}
 ## Context pack (authoritative, min tokens)
 {pack_text[:3500]}
 """
@@ -1052,6 +1065,7 @@ def run_turn(
                     temperature=0.7,
                     stream=on_stream is not None,
                     on_stream=on_stream,
+                    session_id=session_id,
                 )
                 if res.get("ok") and not _looks_degenerate(res.get("text") or ""):
                     retried_ok = True
@@ -1729,6 +1743,7 @@ def _chat_with_heartbeat(
             tier=tier,
             stream=on_stream is not None,
             on_stream=on_stream,
+            session_id=session_id,
             **chat_kw,
         )
     finally:
@@ -2135,7 +2150,13 @@ def run_agent(
             )
             return 2
 
-    system = _system_prompt(pack_text)
+    # Data-backed session route: default coding-agent + seed + learned principles,
+    # and (for one-shot goals) right-size the model (flash vs pro) via self_drive.plan.
+    from mag.session_route import preamble as _session_preamble
+    _pre = _session_preamble(one_shot or "", agent_state=None, with_model=bool(one_shot))
+    if model is None and one_shot and provider == "deepseek" and _pre.get("model_hint"):
+        model = _pre["model_hint"]
+    system = _system_prompt(pack_text, goal=one_shot or "", preamble=_pre)
     messages: list[dict[str, Any]] = [{"role": "system", "content": system}]
     last_answer = ""
     pending_attach: list[str] = []
@@ -2506,7 +2527,7 @@ def api_agent_turn(
         except Exception:
             pass
         messages: list[dict[str, Any]] = [
-            {"role": "system", "content": _system_prompt(pack_text)}
+            {"role": "system", "content": _system_prompt(pack_text, goal=goal)}
         ]
         tip = _tip_line(pack)
     else:
@@ -2527,7 +2548,7 @@ def api_agent_turn(
 
             mode = infer_pack_mode(goal, depth=depth)
             pack = build_context_pack(mode=mode, goal=goal, max_brief=900, max_live=400)
-            messages = [{"role": "system", "content": _system_prompt(format_context_pack_text(pack, mode=mode))}] + messages
+            messages = [{"role": "system", "content": _system_prompt(format_context_pack_text(pack, mode=mode), goal=goal)}] + messages
 
     if on_stream is None:
         def _on_stream(delta: str) -> None:

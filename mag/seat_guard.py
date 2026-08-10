@@ -102,6 +102,7 @@ def _kill_tree(pid: int | None) -> None:
             subprocess.run(
                 ["taskkill", "/PID", str(pid), "/T", "/F"],
                 capture_output=True, timeout=30,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0,
             )
         except Exception:
             pass
@@ -141,7 +142,10 @@ def _launch(task_id: str, provider: str, model: str | None) -> subprocess.Popen:
     env["MAG_ALLOW_REPL"] = "1"  # supervised interactive seat — not restful one-shot
     flags = 0
     if sys.platform == "win32":
-        flags = subprocess.CREATE_NEW_PROCESS_GROUP  # Ctrl+C hits guard only
+        # own group so guard Ctrl+C / taskkill reaps it; CREATE_NO_WINDOW so the
+        # supervised seat does not pop a console window on the desktop.
+        flags = (subprocess.CREATE_NEW_PROCESS_GROUP
+                 | getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000))
     return subprocess.Popen(
         cmd, env=env, stdin=None, stdout=None, stderr=None,
         creationflags=flags,

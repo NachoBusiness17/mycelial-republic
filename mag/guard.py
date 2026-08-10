@@ -50,7 +50,8 @@ def ensure_lab(restart: bool = False) -> dict[str, Any]:
         py = sys.executable
         creation = 0
         if sys.platform == "win32":
-            creation = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS  # type: ignore[attr-defined]
+            creation = (subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
+                        | getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000))  # type: ignore[attr-defined]
         log = ROOT / "logs" / "lab_guard.log"
         log.parent.mkdir(parents=True, exist_ok=True)
         with log.open("a", encoding="utf-8") as lf:

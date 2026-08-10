@@ -54,11 +54,53 @@ def test_reap_marks_crashed(_isolate_state, monkeypatch):
     monkeypatch.setattr(ps, "_pid_alive", lambda pid: alive["v"])
     ps.start_loop("autorun")
     alive["v"] = False
-    r = ps.reap()
+    # auto_restart=False isolates the crash-marking (default auto_restart respawns
+    # the loop, so status would be 'running' again — the respawn is a separate concern).
+    r = ps.reap(auto_restart=False)
     assert "autorun" in r["crashed"]
     st = ps.status()
     autorun = next(l for l in st["loops"] if l["name"] == "autorun")
     assert autorun["status"] == "crashed"
+
+
+class _FakeTime:
+    def __init__(self, start: float = 1000.0):
+        self.now = start
+
+    def time(self) -> float:
+        return self.now
+
+
+def test_reap_crash_loop_backoff_no_storm(_isolate_state, monkeypatch):
+    # A default loop that dies instantly must NOT be respawned every instant
+    # (the 2026-08-09 window-storm source) — crashLoopBackOff throttles it.
+    ft = _FakeTime(1000.0)
+    monkeypatch.setattr(ps, "time", ft)
+    monkeypatch.setattr(ps, "_pid_alive", lambda pid: False)  # always looks dead
+    monkeypatch.setattr(ps, "_spawn", lambda name: {"pid": 100, "started_at": "t", "cmd": "x"})
+    ps.start_loop("autorun")
+    restarted = 0
+    for _ in range(10):
+        restarted += len(ps.reap()["auto_restarted"])
+    # first crash sets a backoff; nothing respawns within the same instant
+    assert restarted == 0
+    st = ps.status()
+    autorun = next(l for l in st["loops"] if l["name"] == "autorun")
+    assert autorun["status"] == "crashed"
+    # advance past the max backoff -> it retries (self-healing preserved)
+    ft.now += ps.BACKOFF_MAX_S + 1
+    r = ps.reap()
+    assert "autorun" in r["auto_restarted"]
+
+
+def test_backoff_seconds_exponential_capped():
+    # pure helper: 0 with no recent crashes; exponential; capped at MAX
+    now = 1000.0
+    assert ps._backoff_seconds([], now) == 0.0
+    assert ps._backoff_seconds([now], now) == ps.BACKOFF_BASE_S
+    assert ps._backoff_seconds([now - 1, now], now) == ps.BACKOFF_BASE_S * 2
+    many = [now - i for i in range(20)]
+    assert ps._backoff_seconds(many, now) == ps.BACKOFF_MAX_S
 
 
 def test_unknown_loop():

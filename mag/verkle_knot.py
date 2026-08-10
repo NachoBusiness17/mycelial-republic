@@ -270,6 +270,101 @@ def _rewrite_chain(rows: list[dict[str, Any]]) -> list[str]:
     return hashes
 
 
+# ───────────────────────────────────────────────────────────────────────────
+# PROOF — STOLEN from sovereign_mirror.core.verkle (VerkleProof + prove).
+# Same `_h` / `_leaf` / `node:` pairing scheme, rebuilt against the live chain.
+# O(log n) inclusion path: index + sibling hashes → recompute root == tip.
+# ───────────────────────────────────────────────────────────────────────────
+class VerkleProof:
+    """Membership proof over the knot chain: index + sibling path -> root.
+
+    verify() reconstructs the root from (index, leaf_hash, sibling path) and
+    matches it against the committed root. The invariant equation, executable.
+    """
+
+    def __init__(self, index: int, leaf_hash: str, path: list[str], root: str) -> None:
+        self.index = index
+        self.leaf_hash = leaf_hash
+        self.path = path  # sibling hashes, bottom-up
+        self.root = root
+
+    def verify(self, leaf_obj: Any | None = None, leaf_hash: str | None = None) -> bool:
+        """Recreate the root from the pointer + siblings; match the committed root."""
+        h = leaf_hash or (_leaf_hash(leaf_obj) if leaf_obj is not None else self.leaf_hash)
+        if h != self.leaf_hash:
+            return False
+        idx = self.index
+        for sib in self.path:
+            if idx % 2 == 0:
+                h = _h(b"node:" + h.encode() + b":" + sib.encode())
+            else:
+                h = _h(b"node:" + sib.encode() + b":" + h.encode())
+            idx //= 2
+        return h == self.root
+
+    def equation(self) -> str:
+        """Human-readable invariant: the reconstruction equation."""
+        terms = []
+        idx = self.index
+        for step, sib in enumerate(self.path, 1):
+            terms.append(f"n{step}=H({'L' if idx % 2 == 0 else 'R'}+{sib[:8]})")
+            idx //= 2
+        return f"root = {self.root[:16]}…  ←  " + " → ".join(terms)
+
+
+def _leaf_hashes_in_order() -> list[str]:
+    """Ordered leaf hashes from the chain (no side effects)."""
+    return [r["leaf_hash"] for r in _load_chain_rows() if r.get("leaf_hash")]
+
+
+def prove(index: int | None = None) -> dict[str, Any]:
+    """Build an O(log n) inclusion proof for a leaf in the knot chain.
+
+    Default index = the latest leaf. Returns the proof dict (reversible via
+    VerkleProof.verify) so ghost can demonstrate real reconstruction.
+    """
+    leaves = _leaf_hashes_in_order()
+    if not leaves:
+        return {"ok": False, "error": "no verkle leaves committed yet"}
+    idx = index if index is not None else len(leaves) - 1
+    if not (0 <= idx < len(leaves)):
+        return {"ok": False, "error": f"index {idx} out of range (0..{len(leaves)-1})"}
+    root = _merkle_root(leaves)
+    layer = leaves[:]
+    path: list[str] = []
+    i = idx
+    while len(layer) > 1:
+        if i % 2 == 0:
+            sib = layer[i + 1] if i + 1 < len(layer) else layer[i]
+        else:
+            sib = layer[i - 1]
+        path.append(sib)
+        nxt: list[str] = []
+        for j in range(0, len(layer), 2):
+            left = layer[j]
+            right = layer[j + 1] if j + 1 < len(layer) else left
+            nxt.append(_h(b"node:" + left.encode() + b":" + right.encode()))
+        layer = nxt
+        i //= 2
+    proof = VerkleProof(index=idx, leaf_hash=leaves[idx], path=path, root=root)
+    return {
+        "ok": True,
+        "index": idx,
+        "n_leaves": len(leaves),
+        "leaf_hash": leaves[idx],
+        "path": path,
+        "root": root,
+        "verified": proof.verify(),
+        "equation": proof.equation(),
+    }
+
+
+def prove_latest() -> dict[str, Any]:
+    """Prove the latest leaf's membership against the chain tip (spooky demo)."""
+    return prove()
+
+
+
 def append_verkle_knot(dossier: dict[str, Any], pdf_path: str | None = None) -> dict[str, Any]:
     """
     Write/update one leaf per session (amend in place).

@@ -14,7 +14,10 @@ def main() -> int:
     if not py.is_file():
         py = Path(sys.executable)
     cmd = [str(py), str(ROOT / "main.py"), "virtual-desk-loop", *sys.argv[1:]]
-    return subprocess.call(cmd, cwd=str(ROOT))
+    flags = 0
+    if sys.platform == "win32":
+        flags = getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0x00000200)
+    return subprocess.call(cmd, cwd=str(ROOT), creationflags=flags)
 
 
 if __name__ == "__main__":

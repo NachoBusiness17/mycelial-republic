@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -255,6 +256,7 @@ def chat_provider(
     temperature: float = 0.2,
     max_tokens: int = 1024,
     tier: str = "T1",
+    session_id: str = "",
 ) -> dict[str, Any]:
     """Chat a named provider; records quota usage.
 
@@ -326,9 +328,11 @@ def chat_provider(
         for hk, hv in (pcfg.get("extra_headers") or {}).items():
             headers[str(hk)] = str(hv)
         req = urllib.request.Request(url, data=body, headers=headers, method="POST")
+        t0 = time.perf_counter()
         try:
             with urllib.request.urlopen(req, timeout=90) as r:
                 data = json.loads(r.read().decode("utf-8"))
+            lat_ms = int((time.perf_counter() - t0) * 1000)
             choice = (data.get("choices") or [{}])[0]
             text = ((choice.get("message") or {}).get("content") or "")
             if _looks_degenerate(text):
@@ -346,13 +350,24 @@ def chat_provider(
             usage = data.get("usage") or {}
             pt = int(usage.get("prompt_tokens") or 0)
             ct = int(usage.get("completion_tokens") or 0)
+            # Cache split: DeepSeek exposes prompt_cache_hit/miss at top level;
+            # OpenAI-compat exposes prompt_tokens_details.cached_tokens. Capture both so the
+            # ledger carries hit/miss on EVERY call (cache_map hit ratio becomes self-contained).
+            details = usage.get("prompt_tokens_details") or {}
+            ch = int(usage.get("prompt_cache_hit_tokens") or details.get("cached_tokens") or 0)
+            cm = int(usage.get("prompt_cache_miss_tokens") or max(0, pt - ch) or 0)
             record_usage(
                 provider_id,
                 model=str(model),
                 prompt_tokens=pt,
                 completion_tokens=ct,
+                cache_hit_tokens=ch,
+                cache_miss_tokens=cm,
                 ok=True,
-                meta={"chars": len(text), "key_idx": ki, "multi_key": len(keys) > 1},
+                session_id=session_id,
+                latency_ms=lat_ms,
+                meta={"chars": len(text), "key_idx": ki, "multi_key": len(keys) > 1,
+                      "key_env": (_key_env_names(pcfg)[ki] if ki < len(_key_env_names(pcfg)) else "")},
             )
             return {
                 "ok": True,
@@ -450,6 +465,7 @@ def chat_messages(
     stream: bool = False,
     on_stream=None,
     timeout: int | None = None,
+    session_id: str = "",
 ) -> dict[str, Any]:
     """Multi-turn OpenAI-compat chat with optional tools (DeepSeek / Ollama / etc.).
 
@@ -515,6 +531,7 @@ def chat_messages(
 
         to = timeout or int(pcfg.get("timeout_seconds") or 180)
         req = urllib.request.Request(url, data=body, headers=headers, method="POST")
+        t0 = time.perf_counter()
         try:
             if stream and on_stream is not None:
                 with urllib.request.urlopen(req, timeout=to) as r:
@@ -522,6 +539,7 @@ def chat_messages(
             else:
                 with urllib.request.urlopen(req, timeout=to) as r:
                     data = json.loads(r.read().decode("utf-8"))
+            lat_ms = int((time.perf_counter() - t0) * 1000)
             choice = (data.get("choices") or [{}])[0]
             msg = choice.get("message") or {}
             text = msg.get("content") or ""
@@ -534,6 +552,9 @@ def chat_messages(
             usage = data.get("usage") or {}
             pt = int(usage.get("prompt_tokens") or 0)
             ct = int(usage.get("completion_tokens") or 0)
+            details = usage.get("prompt_tokens_details") or {}
+            ch = int(usage.get("prompt_cache_hit_tokens") or details.get("cached_tokens") or 0)
+            cm = int(usage.get("prompt_cache_miss_tokens") or max(0, pt - ch) or 0)
             if _looks_degenerate(text or ""):
                 record_usage(
                     provider_id, model=str(model), ok=False,
@@ -551,8 +572,13 @@ def chat_messages(
                 model=str(model),
                 prompt_tokens=pt,
                 completion_tokens=ct,
+                cache_hit_tokens=ch,
+                cache_miss_tokens=cm,
                 ok=True,
-                meta={"chars": len(text or ""), "tool_calls": len(tool_calls), "key_idx": ki},
+                session_id=session_id,
+                latency_ms=lat_ms,
+                meta={"chars": len(text or ""), "tool_calls": len(tool_calls), "key_idx": ki,
+                      "key_env": (_key_env_names(pcfg)[ki] if ki < len(_key_env_names(pcfg)) else "")},
             )
             return {
                 "ok": True,

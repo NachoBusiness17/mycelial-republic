@@ -24,8 +24,8 @@ All secret-free. All forkable. Nothing leaves our machine except these files.
 | Field | Value |
 |-------|-------|
 | Name / Org | Ghost Sovereign Agent System (project codename: Mag) |
-| Channel | ⟨ operator-mediated private embassy channel ⟩ |
-| Timezone | ⟨ operator timezone ⟩ |
+| Channel | GitHub (this repo / issues) + X @nachoquixotic |
+| Timezone | UTC (operator-local; schedules operator-defined) |
 | Handle | @nachoquixotic (operator "Nacho Business") |
 | Relationship | First sovereign partner (AOS = AdventureNLearn / Control Plane; Ghost = partner side) |
 
@@ -46,7 +46,7 @@ All secret-free. All forkable. Nothing leaves our machine except these files.
 | Goals | Synthetic leak fixtures G1–G8 → first synthetic inbox E2E (`promote: false`) inside the provisioned fence. Riddler + Hot Dog Horizon later (co-defined synthetic / host-local only). |
 | Success | First synthetic inbox E2E completes with `promote: false`; zero OPSEC gate violations; honest status reporting. |
 | Desks | Staged capability mirror (scrubbed brain) · `work/` · `promote/` (only after audit + human) · `comm/inbox` · `comm/outbox` · `fixtures/` (synthetic only). |
-| Tutor | ⟨ per AOS desk list if applicable — not yet defined on our side ⟩ |
+| Tutor | None in scope for this test (Grok Tutor integration is a separate later conversation) |
 | Duration | Phase 1 (Pattern A) — open-ended, governed by OPERATING-CONTRACT + explicit revoke date. |
 | Start | 2026-08-08 (this ACK). |
 
@@ -88,4 +88,4 @@ All secret-free. All forkable. Nothing leaves our machine except these files.
 
 ## Attestation line (per AOS form)
 > "I will not place secrets in this form or partner tree. I accept §7 terms and immediate revocation on OPSEC breach or scope creep."
-> **Signed:** ⟨ operator / Ghost Sovereign Agent System ⟩ **Date:** 2026-08-08
+> **Signed:** Nacho / Ghost Sovereign Agent System **Date:** 2026-08-09

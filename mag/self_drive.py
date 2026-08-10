@@ -140,6 +140,33 @@ def plan(goal: str, agent_state: str | None = None) -> dict[str, Any]:
         context_plan = rec.get("context_plan")
     ctx = cached_context(goal, is_handoff=is_handoff)
     learn = learned_principles(goal)
+    # Apply half of the tesuji loop: fold measured provider economics into the plan.
+    cost_evidence: dict[str, Any] = {}
+    try:
+        from mag.cost_learn import recent_cost_evidence
+        cost_evidence = recent_cost_evidence(limit=5)
+    except Exception:
+        cost_evidence = {"source": "cost_learn", "providers": [], "n": 0}
+
+    # Directive #4: consult ghost before long tasks (sanity check). Best-effort,
+    # only for heavy/reasoning (long) tasks — never blocks the plan.
+    ghost_sanity: dict[str, Any] | None = None
+    if shape in ("heavy", "reasoning"):
+        try:
+            from mag.ghost_summon import summon as _gsummon
+            g_ = _gsummon(goal, reason=False)
+            stale = g_.get("stale_skip", {}).get("do_not_redesign") or []
+            goal_l = goal.lower()
+            ghost_sanity = {
+                "ok": True,
+                "schema": "ghost_sanity.v1",
+                "stale_hits": [d for d in stale if any(tok and tok in goal_l for tok in d.lower().split())][:5],
+                "coldest": [v.get("title") for v in g_.get("coldest_vertices", [])[:3]],
+                "brief": (g_.get("brief") or "")[:1000],
+            }
+        except Exception as e:
+            ghost_sanity = {"ok": False, "error": str(e)[:120]}
+
     return {
         "ok": True,
         "schema": SCHEMA,
@@ -156,6 +183,8 @@ def plan(goal: str, agent_state: str | None = None) -> dict[str, Any]:
         "context_sources": ctx.get("sources"),
         "context_chars": len(ctx.get("text") or ""),
         "learned": learn,
+        "ghost_sanity": ghost_sanity,
+        "cost_evidence": cost_evidence,
         "redrafted_prompt": redraft(goal, model_shape=shape),
         "context_excerpt": (ctx.get("text") or "")[:200],
     }

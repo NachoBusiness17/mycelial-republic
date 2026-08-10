@@ -252,7 +252,9 @@ def _run_seat(text: str, provider: str) -> tuple[int, str, str]:
     cmd = [_sys.executable, str(ROOT / "main.py"), "agent", "-q", text,
            "--provider", provider]
     try:
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=1200)
+        import os as _os
+        _flags = (getattr(subprocess, "CREATE_NO_WINDOW", 0) if _os.name == "nt" else 0)
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=1200, creationflags=_flags)
     except subprocess.TimeoutExpired:
         return -1, "seat timeout (1200s)", ""
     out = (r.stdout or "") + (r.stderr or "")

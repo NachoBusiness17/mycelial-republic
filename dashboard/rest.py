@@ -107,6 +107,22 @@ def h_health(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
     return 200, sanity()
 
 
+def h_test_run(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Restful test-run surface (the operator's 'testing is antiquated' fix).
+    GET -> latest status; POST {action:run, timeout, per_test, paths} -> run."""
+    from mag import test_runner
+
+    b = _b or {}
+    if str(b.get("action") or "status").lower() == "run":
+        res = test_runner.run(
+            paths=[str(p) for p in (b.get("paths") or [])],
+            timeout=int(b.get("timeout") or 600),
+            per_test=int(b.get("per_test") or 90),
+        )
+        return 200, res
+    return 200, test_runner.status()
+
+
 def h_fleet_triad(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
     """Always-on triad (engine / scribe / dashboard) from the supervisor state
     file + live pid checks. Lets the board show the persistent agents next to
@@ -114,6 +130,144 @@ def h_fleet_triad(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, d
     from mag.stack import build_fleet_triad
 
     return 200, {"ok": True, "triad": build_fleet_triad()}
+
+
+def h_tokens_saved(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Tokens SAVED vs PROJECTED counter (shared-language grok cost reducer).
+    GET /api/v1/tokens/saved — dashboard card: saved tokens + $ vs what verbose would've cost."""
+    from mag.ghost_grok_dashboard import saved_vs_projected
+
+    return 200, saved_vs_projected()
+
+
+def h_ghost_control(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """GHOST CONTROL HARNESS — the human-facing surface. Ghost's live view of the whole
+    machine (scrum, press, loop state, token savings, skills, emergency).
+    GET /api/v1/ghost/control"""
+    from mag.ghost_control import control
+
+    return 200, control()
+
+
+def h_ghost_talk(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Talk to GHOST directly (the surface of interaction). Body: {prompt}.
+    POST /api/v1/ghost/talk — ghost routes the prompt through the machine + replies."""
+    from mag.ghost_talk import reply
+
+    b = body or {}
+    prompt = str(b.get("prompt") or _p.get("prompt") or "").strip()
+    if not prompt:
+        return 400, {"ok": False, "error": "prompt required"}
+    try:
+        return 200, reply(prompt)
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+# ── RESTful shared stateless memory (steal: house REST pattern → prospect_sim) ──
+def h_memory_get(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Stateless read by shape-hash. GET /api/v1/memory/{key} — HF-style, no session state."""
+    from mag import prospect_sim as ps
+    key = str(_p.get("key") or _p.get("shape") or "").strip()
+    if not key:
+        return 400, {"ok": False, "error": "key/shape required"}
+    r = ps.shared_mem_get(key)
+    if not r:
+        return 404, {"ok": False, "error": f"no shared memory for shape {key[:40]}"}
+    return 200, {"ok": True, "memory": r}
+
+
+def h_memory_put(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Auto-categorize + store a prospective tesuji (stateless, verkle-knotted).
+    POST /api/v1/memory — body {text}. Runs prospect_sim.categorize at intake."""
+    from mag import prospect_sim as ps
+    b = body or {}
+    text = str(b.get("text") or b.get("prompt") or _p.get("text") or "").strip()
+    if not text:
+        return 400, {"ok": False, "error": "text required"}
+    try:
+        return 200, ps.categorize(text)
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_memory_search(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Search shared memory by shape (exact hash hit, else nearest overlap).
+    GET /api/v1/memory/search?shape=..."""
+    from mag import prospect_sim as ps
+    q = str(_p.get("shape") or _p.get("q") or "").strip()
+    if not q:
+        return 400, {"ok": False, "error": "shape/q required"}
+    return 200, ps.memory_search(q)
+
+
+def h_memory_recent(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """List recent prospective tesujis. GET /api/v1/memory/recent?limit=N"""
+    from mag import prospect_sim as ps
+    limit = max(1, min(int(_p.get("limit") or 20), 200))
+    return 200, {"ok": True, "items": ps.memory_recent(limit)}
+
+
+# ── HEADLESS EXECUTION (escalation fix: run framework ops via supervised headless
+# ── subprocess with CREATE_NO_WINDOW — never depend on the flaky interactive terminal)
+import subprocess as _sp  # noqa: E402
+import sys as _sys  # noqa: E402
+
+_HEADLESS_FLAGS = (
+    getattr(_sp, "CREATE_NO_WINDOW", 0x08000000)
+    | getattr(_sp, "CREATE_NEW_PROCESS_GROUP", 0)
+    | getattr(_sp, "DETACHED_PROCESS", 0)
+)
+_PROJECT_PY = str(ROOT / ".venv" / "Scripts" / "python.exe")
+
+
+def _headless_run(module: str, args: list[str]) -> dict[str, Any]:
+    """Spawn a module as a detached headless subprocess, logging to memory/runs/headless/."""
+    from datetime import datetime as _dt
+    logdir = ROOT / "memory" / "runs" / "headless"
+    logdir.mkdir(parents=True, exist_ok=True)
+    ts = _dt.now().strftime("%Y%m%dT%H%M%SZ")
+    out_f = (logdir / f"{module}_{ts}.out.log").open("a", encoding="utf-8")
+    proc = _sp.Popen([_PROJECT_PY, "-m", f"mag.{module}", *args],
+                     cwd=str(ROOT), stdout=out_f, stderr=_sp.STDOUT,
+                     creationflags=_HEADLESS_FLAGS, close_fds=True)
+    return {"ok": True, "task_id": f"{module}-{ts}", "pid": proc.pid,
+            "log": str(out_f.name), "headless": True}
+
+
+def h_swarm_ramp(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Run the proof-based swarm ramp headless (1->2->3->scale, cost+spawn caps).
+    POST /api/v1/swarm/ramp — body {max_agents, budget}."""
+    b = body or {}
+    max_agents = int(b.get("max_agents") or _p.get("max_agents") or 100)
+    budget = float(b.get("budget") or _p.get("budget") or 1.0)
+    return 200, _headless_run("swarm_test", ["--ramp", "--max-agents", str(max_agents),
+                                             "--budget", str(budget)])
+
+
+def h_swarm_test(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Run the all-systems problem test headless.
+    POST /api/v1/swarm/test — body {problem}."""
+    b = body or {}
+    problem = str(b.get("problem") or _p.get("problem") or "").strip()
+    return 200, _headless_run("swarm_test", ["--problem", problem[:200]])
+
+
+def h_afk_run(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Run the AFK self-advance cadence headless.
+    POST /api/v1/afk/run"""
+    return 200, _headless_run("afk_cadence", [])
+
+
+def h_sentinel(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Ghost as ALWAYS-ON PASSIVE sentinel: watch all surfaces + intervene on thresholds.
+    POST /api/v1/sentinel — body {action: watch|run}. Always-on, not gated on cycle."""
+    from mag import sentinel
+    b = body or {}
+    action = str(b.get("action") or _p.get("action") or "run")
+    if action == "watch":
+        return 200, sentinel.watch()
+    return 200, sentinel.run()
 
 
 def h_chronicle(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
@@ -1878,6 +2032,25 @@ def h_supervisor(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, 
         return 500, {"ok": False, "error": str(e)[:300]}
 
 
+def h_docker(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Docker containment twin. GET = status/probe (report-only). POST {action: up|down}
+    is an explicit, routed cutover action — the operator or a routed task decides, the
+    cadence NEVER auto-ups/downs.
+    """
+    from mag.docker_ops import down, status, up
+
+    try:
+        b = body or {}
+        action = str(b.get("action") or _p.get("view") or "status").lower()
+        if action == "up":
+            return 200, up()
+        if action == "down":
+            return 200, down()
+        return 200, status()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
 def h_handoff_deep(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
     from mag.session_maze import deep_handoff, persist
 
@@ -1916,6 +2089,188 @@ def h_grok_batch(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, di
     }
 
 
+def h_aos_grok(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Budgeted AOS grok access (start small, prove it).
+    GET = courtesy-budget status. POST {action: probe|ask, goal?, force?} — the probe is
+    the proof-first path; production asks respect the specific-ask gate + daily budget."""
+    from mag.aos_grok import budget_status, probe, specific_ask
+
+    try:
+        if body:
+            action = str(body.get("action") or "status").strip().lower()
+            if action == "probe":
+                return 200, probe(force=bool(body.get("force")))
+            if action == "ask":
+                goal = str(body.get("goal") or "").strip()
+                if not goal:
+                    return _err(400, "goal required for ask")
+                return 200, specific_ask(goal, force=bool(body.get("force")))
+        return 200, budget_status()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_research_lens(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Iterative self-referencing research lens. GET = status (corpus growth + lens weights).
+    POST {action: reindex|prior|build|fold|cadence, ask?, lens?} — prior/build make new
+    research self-reference the growing corpus; fold grows + sharpens it."""
+    from mag.research_lens import build_lens, fold_back, reindex, retrieve_prior, run_cadence, status
+
+    try:
+        if body:
+            action = str(body.get("action") or "status").strip().lower()
+            lens = str(body.get("lens") or "default").strip() or "default"
+            ask = str(body.get("ask") or "").strip()
+            if action == "reindex":
+                return 200, reindex()
+            if action == "prior":
+                if not ask:
+                    return _err(400, "ask required for prior")
+                return 200, retrieve_prior(ask, lens_id=lens)
+            if action == "build":
+                if not ask:
+                    return _err(400, "ask required for build")
+                return 200, build_lens(ask, lens_id=lens, title=str(body.get("title") or ""),
+                                       urls=list(body.get("urls") or []) or None)
+            if action == "fold":
+                path = str(body.get("path") or "").strip()
+                if not path:
+                    return _err(400, "path required for fold")
+                return 200, fold_back(path, lens_id=lens)
+            if action == "cadence":
+                return 200, run_cadence()
+        return 200, status()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_cheap_swarm(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Cheap swarm — expand + execute ghost-built packages. GET = status. POST
+    {action: scan|dispatch|cadence, path?} — dispatch sends one package to the cheap tier."""
+    from mag.cheap_swarm import dispatch, run_cadence, scan, status
+
+    try:
+        if body:
+            action = str(body.get("action") or "status").strip().lower()
+            if action == "scan":
+                return 200, scan()
+            if action == "dispatch":
+                path = str(body.get("path") or "").strip()
+                if not path:
+                    return _err(400, "path required for dispatch")
+                pkg = {"path": path, "name": __import__("pathlib").Path(path).name,
+                       "stem": __import__("pathlib").Path(path).stem, "kind": "build",
+                       "goal": f"Execute build package {__import__('pathlib').Path(path).name}: expand and implement."}
+                return 200, dispatch(pkg)
+            if action == "cadence":
+                return 200, run_cadence()
+        return 200, status()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_mycelium(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Unified self-scoring mycelium graph (republic OS). GET = status. POST
+    {action: link|reinforce|adopt|decay|boot, src?, dst?, type?, reward?}."""
+    from mag.mycelium import add_node, adopt_from_idea_graph, boot, decay, link, reinforce, status
+
+    try:
+        if body:
+            action = str(body.get("action") or "status").strip().lower()
+            if action == "boot":
+                return 200, boot()
+            if action == "adopt":
+                return 200, adopt_from_idea_graph()
+            if action == "decay":
+                return 200, decay()
+            if action == "link":
+                src, dst = str(body.get("src") or ""), str(body.get("dst") or "")
+                if not src or not dst:
+                    return _err(400, "src and dst required")
+                return 200, link(src, dst, etype=str(body.get("type") or "related"))
+            if action == "reinforce":
+                src, dst = str(body.get("src") or ""), str(body.get("dst") or "")
+                if not src or not dst:
+                    return _err(400, "src and dst required")
+                return 200, reinforce(src, dst, reward=float(body.get("reward") or 1.0), consumed=bool(body.get("consumed")))
+        return 200, status()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_republic_os(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Persistent mycelial-republic OS. GET = status. POST
+    {action: boot|seed-aos|round|cadence|checkpoint|own, resource?, owner?, dry?}."""
+    from mag.republic_os import boot, checkpoint, own, round_cycle, run_cadence, seed_aos, status
+
+    try:
+        if body:
+            action = str(body.get("action") or "status").strip().lower()
+            if action == "boot":
+                return 200, boot()
+            if action == "seed-aos" or action == "seed_aos":
+                return 200, seed_aos()
+            if action == "round":
+                return 200, round_cycle(dry=bool(body.get("dry")))
+            if action == "cadence":
+                return 200, run_cadence()
+            if action == "checkpoint":
+                return 200, checkpoint()
+            if action == "own":
+                resource = str(body.get("resource") or "").strip()
+                if not resource:
+                    return _err(400, "resource required")
+                return 200, own(resource, owner=str(body.get("owner") or "ghost"))
+        return 200, status()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_comms_trail(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Steal the cheap agent-communication trail. GET = status. POST
+    {action: capture|confirm|cadence}."""
+    from mag.comms_trail import capture, confirm_language, run_cadence, status
+
+    try:
+        if body:
+            action = str(body.get("action") or "status").strip().lower()
+            if action == "capture":
+                return 200, capture()
+            if action == "confirm" or action == "confirm-language":
+                return 200, confirm_language()
+            if action == "cadence":
+                return 200, run_cadence()
+        return 200, status()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_grok_mirror(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Grok mirror — mirror Grok's instruction-production through our pipeline.
+    GET = status (active coding window + latest mirror). POST {action: mirror|window,
+    vision?, grok?, research?, skill?, socratic?} — mirror runs the full autonomous pipeline."""
+    from mag.grok_mirror import active_coding_window, run_mirror, set_active_coding_window
+
+    try:
+        if body:
+            action = str(body.get("action") or "status").strip().lower()
+            if action == "window":
+                on = bool(body.get("on"))
+                return 200, set_active_coding_window(on)
+            if action == "mirror":
+                vision = str(body.get("vision") or "").strip()
+                if not vision:
+                    return _err(400, "vision required for mirror")
+                return 200, run_mirror(vision, grok=bool(body.get("grok", True)),
+                                       research=bool(body.get("research", True)),
+                                       skill=bool(body.get("skill", True)),
+                                       socratic=bool(body.get("socratic", True)),
+                                       lens_id=str(body.get("lens") or "default"))
+        return 200, active_coding_window()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
 def h_ghost(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
     """Thin REST twin for ghost: GET ?view=sense|catalog; POST {action: sense|deploy|cycle}."""
     from mag.ghost import catalog_summary, cycle, deploy, sense
@@ -1934,6 +2289,71 @@ def h_ghost(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]
         if action == "cycle":
             return 200, cycle(dry=bool(b.get("dry")))
         return 200, sense()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_law(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Code-as-law registry: GET status; POST {action: enforce|enforce-apply|seed, id?}."""
+    from mag.law import enforce, seed, status
+
+    try:
+        b = body or {}
+        action = str(b.get("action") or _p.get("action") or "status")
+        if action in ("seed", "register-defaults"):
+            return 200, seed()
+        if action in ("enforce", "enforce-apply"):
+            return 200, enforce(b.get("id"), apply=(action == "enforce-apply"))
+        return 200, status()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_steer(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """WINDOW_STEER loop: GET status; POST {action: emit|consume, ...}."""
+    from mag.steer import consume, emit, status
+
+    try:
+        b = body or {}
+        action = str(b.get("action") or _p.get("action") or "status")
+        if action == "emit":
+            return 200, emit(str(b.get("id") or "steer"), str(b.get("source") or "rest"),
+                             str(b.get("text") or ""), phases=b.get("phases") or [])
+        if action == "consume":
+            return 200, consume()
+        return 200, status()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_ghost_summon(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Summon @ghost with the current session: current + future + coldest vertices -> intent.
+    Body: {context, reason}. Deterministic by default; reason=True narrates via a model call.
+    """
+    from mag.ghost_summon import summon
+
+    try:
+        b = body or {}
+        ctx = str(b.get("context") or _p.get("context") or "")
+        return 200, summon(ctx, reason=bool(b.get("reason")))
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_legacy_audit(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Legacy-process governance: GET = catalog (report-only). POST {action: retire|research}
+    retires classified-legacy procs or flags unknowns for research. Never touches current.
+    """
+    from mag.legacy_audit import catalog, research, retire
+
+    try:
+        b = body or {}
+        action = str(b.get("action") or _p.get("action") or "catalog").lower()
+        if action == "retire":
+            return 200, retire(dry=bool(b.get("dry")))
+        if action == "research":
+            return 200, research()
+        return 200, catalog()
     except Exception as e:
         return 500, {"ok": False, "error": str(e)[:300]}
 
@@ -1997,6 +2417,27 @@ def h_cleanup(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dic
     dry = str(b.get("dry", _p.get("dry", "true"))).lower() not in ("false", "0", "no")
     try:
         out = run_cadence(dry=dry)
+        return 200, out
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_elevate(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Thin REST twin for elevate: shape the right-sized ask for the strongest model + capture it.
+
+    Body: {goal, model?, dry?}. dry (default) returns the shaped ask + capture; it
+    does NOT fire a model call.
+    """
+    from mag.elevate import elevate
+
+    b = body or {}
+    goal = str(b.get("goal") or _p.get("goal") or "").strip()
+    if not goal:
+        return _err(400, "goal required")
+    model = str(b.get("model") or _p.get("model") or "grok-4.5")
+    dry = str(b.get("dry", _p.get("dry", "true"))).lower() not in ("false", "0", "no")
+    try:
+        out = elevate(goal, model=model, dry=dry)
         return 200, out
     except Exception as e:
         return 500, {"ok": False, "error": str(e)[:300]}
@@ -4041,7 +4482,147 @@ def h_pile(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
     return 200, pile_status()
 
 
+def h_rightsize(_p: dict[str, Any], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """GET /api/v1/rightsize — rightsizing ghost status + derived endpoint registry."""
+    try:
+        from mag import rightsize_api
+        return 200, {"ok": True, "registry": rightsize_api.status()}
+    except Exception as e:  # pragma: no cover
+        return 500, {"ok": False, "type": "/problems/internal", "title": "Internal error",
+                     "status": 500, "detail": str(e)[:300]}
+
+
+def h_rightsize_endpoints(_p: dict[str, Any], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """GET /api/v1/rightsize/endpoints — the derived catalog the rightsizing ghost reads."""
+    try:
+        from mag import rightsize_api
+        items = rightsize_api.endpoints()
+        return 200, {"ok": True, "count": len(items), "items": items}
+    except Exception as e:  # pragma: no cover
+        return 500, {"ok": False, "type": "/problems/internal", "title": "Internal error",
+                     "status": 500, "detail": str(e)[:300]}
+
+
+def h_rightsize_audit(_p: dict[str, Any], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """POST /api/v1/rightsize/audit — run rightsize_all.audit() (report-only, $0)."""
+    try:
+        from mag import rightsize_all
+        return 200, {"ok": True, **rightsize_all.audit()}
+    except Exception as e:  # pragma: no cover
+        return 500, {"ok": False, "type": "/problems/internal", "title": "Internal error",
+                     "status": 500, "detail": str(e)[:300]}
+
+
+def h_rightsize_apply(_p: dict[str, Any], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """POST /api/v1/rightsize/apply — apply fixable rightsizing (dry unless {apply:true})."""
+    try:
+        from mag import rightsize_all
+        body = _b or {}
+        dry = not bool(body.get("apply"))
+        return 200, {"ok": True, **rightsize_all.apply(dry=dry)}
+    except Exception as e:  # pragma: no cover
+        return 500, {"ok": False, "type": "/problems/internal", "title": "Internal error",
+                     "status": 500, "detail": str(e)[:300]}
+
+
+def _summary_of(fn: Any) -> str:
+    """One-line human summary of a handler: docstring first line, else handler name."""
+    doc = getattr(fn, "__doc__", None)
+    if doc:
+        first = next((ln.strip() for ln in doc.splitlines() if ln.strip()), "")
+        if first:
+            return first[:160]
+    return getattr(fn, "__name__", "") or ""
+
+
+def _group_of(path: str) -> str:
+    """Functional group from the path prefix (first segment after /api[/v1]/). No mapping, no drift."""
+    segs = [s for s in path.split("?", 1)[0].split("/") if s]
+    if segs and segs[0] == "api":
+        if len(segs) >= 2 and segs[1] == "v1":
+            return segs[2] if len(segs) >= 3 else "index"
+        return segs[1] if len(segs) >= 2 else "index"
+    return "index"
+
+
+def _version_of(path: str) -> str:
+    return "v1" if path.startswith("/api/v1") else "legacy"
+
+
+def h_endpoints(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """GET /api/v1/endpoints — live catalog of every route (derived at request time, never hand-maintained)."""
+    method = (_p.get("method") or "").upper()
+    group = (_p.get("group") or "").lower()
+    q = (_p.get("q") or "").lower()
+    try:
+        limit = int(_p.get("limit") or 0) or None
+    except (TypeError, ValueError):
+        limit = None
+    items = []
+    for m, pat, fn in ROUTES + LEGACY:
+        if method and m.upper() != method:
+            continue
+        g = _group_of(pat)
+        if group and g != group:
+            continue
+        summary = _summary_of(fn)
+        if q and q not in (pat + " " + summary).lower():
+            continue
+        items.append({"method": m.upper(), "path": pat, "summary": summary,
+                      "group": g, "version": _version_of(pat)})
+    try:
+        start = int(_p.get("cursor") or 0)
+    except (TypeError, ValueError):
+        start = 0
+    page = items[start:start + limit] if limit else items[start:]
+    out = {"ok": True, "schema": "endpoints.v1", "count": len(items), "items": page}
+    if limit and start + limit < len(items):
+        out["next"] = f"/api/v1/endpoints?cursor={start + limit}"
+    return 200, out
+
+
+def h_partner_puppet(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """GET /api/v1/partner/puppet — the partner puppeteering surface (invariants + shared history)."""
+    try:
+        from mag import partner_puppet
+        return 200, partner_puppet.status()
+    except Exception:  # pragma: no cover
+        return 500, {"ok": False, "type": "/problems/internal", "title": "Internal error",
+                     "status": 500, "detail": "partner surface unavailable"}
+
+
+def h_partner_puppet_post(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """POST /api/v1/partner/puppet {token|anchor|scratch_id, execute} — puppet the local agent
+    via an invariant (memlang token / verkle anchor / Riddler surrogate) resolved against shared history."""
+    body = _b or {}
+    token = (body.get("token") or _p.get("token") or "").strip()
+    anchor = (body.get("anchor") or _p.get("anchor") or "").strip()
+    scratch = (body.get("scratch_id") or "").strip()
+    execute = bool(body.get("execute"))
+    try:
+        from mag import partner_puppet
+        if scratch:
+            return 200, partner_puppet.surrogate(scratch)
+        if anchor:
+            return 200, partner_puppet.from_anchor(anchor, execute=execute)
+        if token:
+            return 200, partner_puppet.puppet(token, execute=execute)
+        return 422, {"ok": False, "type": "/problems/validation", "title": "Validation error",
+                     "status": 422, "detail": "provide token, anchor, or scratch_id"}
+    except Exception:  # pragma: no cover
+        return 500, {"ok": False, "type": "/problems/internal", "title": "Internal error",
+                     "status": 500, "detail": "partner surface unavailable"}
+
+
 ROUTES: list[tuple[str, str, HandlerFn]] = [
+    ("GET", "/api/v1/partner/puppet", h_partner_puppet),
+    ("POST", "/api/v1/partner/puppet", h_partner_puppet_post),
+    ("GET", "/api/v1/endpoints", h_endpoints),
+    ("GET", "/api/endpoints", h_endpoints),
+    ("GET", "/api/v1/rightsize", h_rightsize),
+    ("GET", "/api/v1/rightsize/endpoints", h_rightsize_endpoints),
+    ("POST", "/api/v1/rightsize/audit", h_rightsize_audit),
+    ("POST", "/api/v1/rightsize/apply", h_rightsize_apply),
     ("GET", "/api/v1/skill-ledger", h_skill_ledger),
     ("GET", "/api/skill-ledger", h_skill_ledger),
     ("POST", "/api/v1/skill-ledger/record", h_skill_ledger_record),
@@ -4060,6 +4641,19 @@ ROUTES: list[tuple[str, str, HandlerFn]] = [
     ("GET", "/api/v1/lattice-lab", h_lattice_lab),
     ("GET", "/api/v1/health", h_health),
     ("GET", "/api/v1/doctor", h_health),
+    ("GET", "/api/v1/test-run", h_test_run),
+    ("POST", "/api/v1/test-run", h_test_run),
+    ("GET", "/api/v1/tokens/saved", h_tokens_saved),
+    ("GET", "/api/v1/ghost/control", h_ghost_control),
+    ("POST", "/api/v1/ghost/talk", h_ghost_talk),
+    ("GET", "/api/v1/memory/search", h_memory_search),
+    ("GET", "/api/v1/memory/recent", h_memory_recent),
+    ("GET", "/api/v1/memory/{key}", h_memory_get),
+    ("POST", "/api/v1/memory", h_memory_put),
+    ("POST", "/api/v1/swarm/ramp", h_swarm_ramp),
+    ("POST", "/api/v1/swarm/test", h_swarm_test),
+    ("POST", "/api/v1/afk/run", h_afk_run),
+    ("POST", "/api/v1/sentinel", h_sentinel),
     ("GET", "/api/v1/mag-os", h_mag_os),
     ("GET", "/api/v1/os", h_mag_os),
     ("GET", "/api/v1/kpi", h_kpi),
@@ -4298,15 +4892,41 @@ ROUTES: list[tuple[str, str, HandlerFn]] = [
     ("POST", "/api/v1/supervisor", h_supervisor),
     ("POST", "/api/v1/handoff/deep", h_handoff_deep),
     ("GET", "/api/v1/grok-batch", h_grok_batch),
+    ("GET", "/api/v1/aos-grok", h_aos_grok),
+    ("POST", "/api/v1/aos-grok", h_aos_grok),
+    ("GET", "/api/v1/research-lens", h_research_lens),
+    ("POST", "/api/v1/research-lens", h_research_lens),
+    ("GET", "/api/v1/cheap-swarm", h_cheap_swarm),
+    ("POST", "/api/v1/cheap-swarm", h_cheap_swarm),
+    ("GET", "/api/v1/mycelium", h_mycelium),
+    ("POST", "/api/v1/mycelium", h_mycelium),
+    ("GET", "/api/v1/republic-os", h_republic_os),
+    ("POST", "/api/v1/republic-os", h_republic_os),
+    ("GET", "/api/v1/comms-trail", h_comms_trail),
+    ("POST", "/api/v1/comms-trail", h_comms_trail),
+    ("GET", "/api/v1/grok-mirror", h_grok_mirror),
+    ("POST", "/api/v1/grok-mirror", h_grok_mirror),
     ("GET", "/api/v1/ghost", h_ghost),
     ("POST", "/api/v1/ghost", h_ghost),
+    ("GET", "/api/v1/ghost/summon", h_ghost_summon),
+    ("POST", "/api/v1/ghost/summon", h_ghost_summon),
+    ("GET", "/api/v1/legacy", h_legacy_audit),
+    ("POST", "/api/v1/legacy", h_legacy_audit),
+    ("GET", "/api/v1/law", h_law),
+    ("POST", "/api/v1/law", h_law),
+    ("GET", "/api/v1/steer", h_steer),
+    ("POST", "/api/v1/steer", h_steer),
     ("GET", "/api/v1/run", h_run),
     ("POST", "/api/v1/run", h_run),
     ("GET", "/api/v1/spec-gate", h_spec_gate),
     ("POST", "/api/v1/spec-gate", h_spec_gate),
     ("POST", "/api/v1/extension/deploy", h_extension_deploy),
+    ("GET", "/api/v1/elevate", h_elevate),
+    ("POST", "/api/v1/elevate", h_elevate),
     ("GET", "/api/v1/cleanup", h_cleanup),
     ("POST", "/api/v1/cleanup", h_cleanup),
+    ("GET", "/api/v1/docker", h_docker),
+    ("POST", "/api/v1/docker", h_docker),
     ("GET", "/api/v1/embassy/publish", h_embassy_publish),
     ("POST", "/api/v1/embassy/publish", h_embassy_publish),
     ("GET", "/api/v1/live-feed", h_live_feed),

@@ -40,9 +40,16 @@ sys.path.insert(0, str(ROOT))
 STATE_PATH = ROOT / "memory" / "supervisor" / "state.json"
 LOG_PATH = ROOT / "logs" / "supervisor.jsonl"
 
-# Resolve the project venv python so spawned loops use the right interpreter.
-_PY = ROOT / ".venv" / "Scripts" / "python.exe"
-PYTHON = str(_PY) if _PY.is_file() else sys.executable
+# Resolve the project's REAL interpreter (bypass the venv shim). LAW (2026-08-10): the
+# shim re-execs into a uv child that OPENS A CONSOLE WINDOW on every spawn — and this
+# supervisor crash-restarts loops, so a crash-loop = a window storm. Use the real
+# interpreter + _spawn_env so packages resolve in a single PID with no window.
+try:
+    from mag.headless import _resolve_python as _hp, _spawn_env
+    PYTHON = _hp()
+except Exception:
+    _PY = ROOT / ".venv" / "Scripts" / "python.exe"
+    PYTHON = str(_PY) if _PY.is_file() else sys.executable
 
 _GHOST_SRC = (
     "import time\n"
@@ -76,6 +83,19 @@ LOOP_DEFS: dict[str, dict[str, Any]] = {
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _container_mode() -> bool:
+    """Under MAG_CONTAINER=1, mag_launch.py + Docker restart policy are the ONE controller.
+
+    The container supervisor (mag_launch) already spawns/owns every slot, and Docker's
+    `restart: unless-stopped` reconciles the container. If process_supervisor ALSO reaps/
+    auto-restarts loops here, we get DOUBLE-SUPERVISION (L8, 2026-08-10): many modules call
+    status() -> reap() -> auto-restart of the default 'autorun' loop, so `autorun_loop(5.0)`
+    accumulates and the dashboard starves (~82% CPU). Gate ALL spawn/respawn off under the
+    container; process_supervisor becomes a passive observer only.
+    """
+    return os.environ.get("MAG_CONTAINER", "").strip().lower() in ("1", "true", "yes")
 
 
 def _load_state() -> dict[str, Any]:
@@ -153,6 +173,10 @@ def _spawn(name: str) -> dict[str, Any] | None:
     LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
     out_f = open(ROOT / "logs" / f"supervisor_{name}.out.log", "a", encoding="utf-8")
     try:
+        from mag.headless import _spawn_env as _se
+        env = _se()
+        env.setdefault("MAG_SLOT", name)
+        env.setdefault("MAG_SOURCE", "process_supervisor")
         proc = subprocess.Popen(
             [PYTHON] + list(cfg["cmd"]),
             cwd=str(ROOT),
@@ -160,6 +184,7 @@ def _spawn(name: str) -> dict[str, Any] | None:
             stderr=subprocess.STDOUT,
             creationflags=creationflags,
             close_fds=True,
+            env=env,
         )
     except Exception as e:
         out_f.close()
@@ -170,6 +195,10 @@ def _spawn(name: str) -> dict[str, Any] | None:
 
 
 def start_loop(name: str) -> dict[str, Any]:
+    if _container_mode():
+        # Container: mag_launch owns the loops. Never spawn here (double-supervision, L8).
+        return {"ok": True, "name": name, "container_controller": True,
+                "detail": "mag_launch.py + Docker own loop lifecycle under MAG_CONTAINER=1"}
     if name not in LOOP_DEFS:
         return {"ok": False, "error": f"unknown loop: {name}", "known": sorted(LOOP_DEFS)}
     state = _load_state()
@@ -234,6 +263,13 @@ def reap(auto_restart: bool = True) -> dict[str, Any]:
     a loop that stays up for SUCCESS_WINDOW_S resets its crash counter, so a
     transient blip never accrues into a long backoff.
     """
+    if _container_mode():
+        # L8: under the container, mag_launch + Docker are the single controller. Be a
+        # PASSIVE OBSERVER — never mark-and-restart loops (that re-spawned autorun_loop
+        # and starved the dashboard). State is advisory only here.
+        return {"ok": True, "container_controller": True,
+                "detail": "mag_launch.py + Docker own loop lifecycle under MAG_CONTAINER=1",
+                "crashed": [], "auto_restarted": []}
     state = _load_state()
     now = time.time()
     changed: list[str] = []

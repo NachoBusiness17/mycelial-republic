@@ -71,7 +71,13 @@ def send_surrogate(
         "Reason inside the story world. Use only the allowed story actions. "
         "Do not speculate about what the story 'really' represents. "
         "Do not try to decode or reverse-engineer hidden meanings. "
-        "Just reason about the story as presented."
+        "Just reason about the story as presented. "
+        # Steal from ghost early-steering (plant-not-command): steer the model NOW to
+        # emit a clean final ANSWER: line, so the grounded-task raw answer is reliably
+        # parseable instead of fragile post-hoc regex over story prose.
+        "When you finish reasoning, end your response with a single line "
+        "`ANSWER: <your final answer>` containing only the concrete result "
+        "(number, yes/no, or the decisive phrase)."
     )
 
     user_prompt = f"{story.story_text}\n\n{story.question}"

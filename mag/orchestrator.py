@@ -41,6 +41,7 @@ import json
 import os
 import subprocess
 import sys
+from mag import headless
 import threading
 import time
 import uuid
@@ -383,7 +384,7 @@ def _spawn_cmd(cmd: list[str], *, task_id: str, timeout: int,
     log_fh.write("--- %s spawn: %s\n" % (_now(), " ".join(cmd)))
     log_fh.flush()
 
-    env = dict(os.environ)
+    env = headless._spawn_env(os.environ)  # PYTHONPATH = project root + venv site-packages
     env["MAG_AGENT_SESSION"] = "orc-" + task_id
     env["MAG_TASK_ID"] = task_id  # pigeonhole mailbox: knot channel for the seat
     env["NO_COLOR"] = "1"
@@ -607,6 +608,93 @@ def spawn_task(goal: str, *, provider: str = "deepseek", model: str | None = Non
         except Exception as exc:
             return {"ok": False, "error": f"token-chain: {exc}"}
 
+    # FRONTIER-ADVICE (2026-08-12): a drainable task that spends the scarce frontier allowance on a
+    # code-planning / frontier-research ask and steers the real seat headless — the operator's "use
+    # it for code advice" made a tool the drainer runs, never a hand-run.
+    if goal.lower().startswith("[frontier-advice]"):
+        try:
+            from mag.frontier_advisor import execute_goal
+
+            res = execute_goal(goal, dry=False)
+            tid = "t-fadvice-" + uuid.uuid4().hex[:8]
+            ok = bool(res.get("ok"))
+            rec_fa: dict[str, Any] = {
+                "ok": ok,
+                "task_id": tid,
+                "goal": goal,
+                "status": "done" if ok else "failed",
+                "provider": res.get("surface", "frontier"),
+                "tag": tag or "frontier-advice",
+                "detail": (res.get("answer") or res.get("error") or "")[:300],
+                "report": res.get("report"),
+                "created_at": _now(),
+                "ended_at": _now(),
+            }
+            _ensure_dirs()
+            _save(rec_fa)
+            _trail("frontier-advice-inline", tid, goal=goal[:120], ok=ok)
+            return rec_fa
+        except Exception as exc:
+            return {"ok": False, "error": f"frontier-advice: {exc}"}
+
+    # SEAT-STEER (2026-08-12): the architecture path for live seat actions (send a message into
+    # ChatGPT/grok/deepseek) — the agent enqueues a `[seat-steer]` task file and the DRAINER runs
+    # send() headless. Never a shell.
+    if goal.lower().startswith("[seat-steer]"):
+        try:
+            from mag.seat_steer import execute_goal as ss_execute
+
+            res = ss_execute(goal)
+            tid = "t-seat-" + uuid.uuid4().hex[:8]
+            ok = bool(res.get("ok"))
+            rec_ss: dict[str, Any] = {
+                "ok": ok,
+                "task_id": tid,
+                "goal": goal,
+                "status": "done" if ok else "failed",
+                "provider": res.get("surface", "seat"),
+                "tag": tag or "seat-steer",
+                "detail": (res.get("answer") or res.get("error") or "")[:300],
+                "report": res.get("report"),
+                "created_at": _now(),
+                "ended_at": _now(),
+            }
+            _ensure_dirs()
+            _save(rec_ss)
+            _trail("seat-steer-inline", tid, goal=goal[:120], ok=ok)
+            return rec_ss
+        except Exception as exc:
+            return {"ok": False, "error": f"seat-steer: {exc}"}
+
+    # SALON (2026-08-13): summon the COUNCIL — all three frontier seats (chatgpt + supergrok +
+    # v4-pro) witness the same question and salon it into ONE new version. SELF-STEAL: mirrors the
+    # existing [frontier-advice]/[seat-steer] drained-handler pattern (frontier_advisor). The drainer
+    # runs frontier_salon.salon_project() headless; honest if a witness is unreachable.
+    if goal.lower().startswith("[salon]"):
+        try:
+            from mag.frontier_salon import salon_project as fs_project
+
+            res = fs_project()
+            tid = "t-salon-" + uuid.uuid4().hex[:8]
+            ok = bool(res.get("ok"))
+            rec_sal: dict[str, Any] = {
+                "ok": ok,
+                "task_id": tid,
+                "goal": goal,
+                "status": "done" if ok else "failed",
+                "provider": "salon",
+                "tag": tag or "salon",
+                "detail": (res.get("consensus_invariant") or res.get("error") or "")[:300],
+                "created_at": _now(),
+                "ended_at": _now(),
+            }
+            _ensure_dirs()
+            _save(rec_sal)
+            _trail("salon-inline", tid, goal=goal[:120], ok=ok)
+            return rec_sal
+        except Exception as exc:
+            return {"ok": False, "error": f"salon: {exc}"}
+
     timeout = timeout_for_goal(goal, tag=tag, timeout=timeout)
     # Respect runtime local-only toggle (env or dashboard-controlled file).
     try:
@@ -643,7 +731,7 @@ def spawn_task(goal: str, *, provider: str = "deepseek", model: str | None = Non
         refresh_context_for_goal(goal)
     except Exception:
         pass
-    cmd = [sys.executable, str(ROOT / "main.py"), "agent", "--query", goal,
+    cmd = [headless.PYTHON, str(ROOT / "main.py"), "agent", "--query", goal,
            "--provider", provider]
     if build_gate.get("required"):
         cmd += ["--tier", str(build_gate.get("tier") or "T1")]
@@ -834,6 +922,82 @@ def promote_queue(queue_id: str, priority: int = 1) -> dict[str, Any]:
     return {"ok": True, "queue_id": queue_id, "priority": q["priority"]}
 
 
+PROVIDER_USAGE = ROOT / "logs" / "provider_usage.jsonl"
+BREAKER_CONSECUTIVE = 3  # consecutive provider failures before the circuit opens
+
+
+def _provider_failures(provider: str) -> int:
+    """Most-recent consecutive failures for a provider, from the usage ledger tail.
+
+    External steal (agentswarm breaker.ts / subagent-router health): a provider with a
+    run of unreachable/failed calls is 'tripped' — the drainer must not keep handing it
+    work. Deterministic $0: reads the bounded tail of logs/provider_usage.jsonl.
+    """
+    if not PROVIDER_USAGE.is_file():
+        return 0
+    try:
+        with PROVIDER_USAGE.open("r", encoding="utf-8", errors="replace") as fh:
+            fh.seek(0, 2)
+            size = fh.tell()
+            fh.seek(max(0, size - 262144))
+            tail = fh.read().splitlines()
+        n = 0
+        for line in reversed(tail):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                row = json.loads(line)
+            except Exception:
+                continue
+            if str(row.get("provider")) != provider:
+                continue
+            if row.get("ok"):
+                return n
+            n += 1
+            if n >= BREAKER_CONSECUTIVE:
+                return n
+        return n
+    except Exception:
+        return 0
+
+
+def _provider_tripped(provider: str) -> bool:
+    return _provider_failures(provider) >= BREAKER_CONSECUTIVE
+
+
+def _settle_unreachable_queued() -> int:
+    """Mark queued tasks whose provider is circuit-open as failed (self-healing head).
+
+    External steal (agentswarm ready-set + blocked state): a dead/unreachable provider's
+    tasks must vacate the head instead of blocking the drainer. They settle as failed with
+    a stored reason; the drainer then picks the first REACHABLE queued task.
+    """
+    _ensure_dirs()
+    QUEUE_DIR.mkdir(parents=True, exist_ok=True)
+    tripped_cache: dict[str, bool] = {}
+    settled = 0
+    for p in QUEUE_DIR.glob("*.json"):
+        try:
+            q = json.loads(p.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        if q.get("status") != "queued":
+            continue
+        prov = str(q.get("provider") or "deepseek")
+        if prov not in tripped_cache:
+            tripped_cache[prov] = _provider_tripped(prov)
+        if not tripped_cache[prov]:
+            continue
+        q["status"] = "failed"
+        q["detail"] = "provider circuit open (unreachable)"
+        q["ended_at"] = _now()
+        _queue_save(q)
+        _trail("queue-fail", q.get("queue_id"), error="provider circuit open (unreachable)")
+        settled += 1
+    return settled
+
+
 def _next_queued() -> dict[str, Any] | None:
     """Highest-priority queued (not yet running) entry, by tier then priority then age.
 
@@ -915,6 +1079,111 @@ def _reconcile_queue() -> int:
     return fixed
 
 
+def _running_task_count() -> int:
+    """How many tasks are LIVE right now (non-terminal task records OR queue entries running)."""
+    n = len(_running_tasks())
+    QUEUE_DIR.mkdir(parents=True, exist_ok=True)
+    for p in QUEUE_DIR.glob("*.json"):
+        try:
+            q = json.loads(p.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        if q.get("status") == "running" and not any(t.get("task_id") == q.get("task_id") for t in _running_tasks()):
+            n += 1
+    return n
+
+
+def drain_parallel(*, n_agents: int | None = None, force: bool = False,
+                   spawn_cap: int = 8, cost_cap_usd: float | None = None) -> dict[str, Any]:
+    """PARALLEL drainer: spawn up to N queued goals concurrently (the DeepSeek swarm speedup).
+
+    Operator (2026-08-12): "how can we speed up the agent queue could we launch a deep seek swarm
+    to speed it up" + "it can be both" + "i wanna use it for this mapped to what we are doing".
+
+    THE FIX: drain_once() is SEQUENTIAL (spawns one, waits for it to finish). This drains N at
+    once — the real "deepseek swarm". N comes from swarm_rightsize.rightsize() (deepseek-v4-flash
+    = the quantized cheap vector -> MORE agents affordably, up to its max), bounded by spawn_cap
+    (the "can't double" guard, like swarm_test).
+
+    Honest guards (the "don't fuck it up like last time" guarantee):
+      spawn_cap     — never have more than this many concurrent spawns.
+      cost_cap_usd  — if the estimated cost of the queued batch would exceed this, stop early.
+      tier order    — mission -> research -> maintenance -> filler is still honored per batch.
+    Returns what it spawned (the parallel batch) + the running count.
+    """
+    try:
+        from mag.autorun_common import autorun_pause_reason
+        if not force and autorun_pause_reason():
+            return {"ok": True, "action": "paused", "detail": "autorun paused"}
+    except Exception:
+        pass
+    _ensure_dirs()
+    QUEUE_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        reap_stale()
+        reap_completed()
+    except Exception:
+        pass
+    _reconcile_queue()
+    _settle_unreachable_queued()  # circuit-open providers' tasks vacate the head (steal 2026-08-14)
+
+    # N = right-sized swarm size (quantized flash -> more agents), bounded by spawn_cap.
+    if n_agents is None:
+        try:
+            from mag.swarm_rightsize import rightsize
+            n_agents = int(rightsize("parallel drain", provider="deepseek-v4-flash").get("n_agents", 4))
+        except Exception:
+            n_agents = 4
+    n_agents = max(1, min(n_agents, spawn_cap))
+
+    running = _running_task_count()
+    budget = n_agents - running  # how many more we may spawn this pass
+    spawned = []
+    while budget > 0:
+        nxt = _next_queued()
+        if nxt is None:
+            break
+        qid = nxt["queue_id"]
+        # cost cap: stop if the batch estimate would exceed the cap (honest).
+        if cost_cap_usd is not None:
+            est = nxt.get("task_estimate") or {}
+            est_usd = float(est.get("usd", est.get("cost", 0)) or 0) if isinstance(est, dict) else 0.0
+            if est_usd > 0 and est_usd > cost_cap_usd / max(budget, 1):
+                break
+        rec = spawn_task(nxt["goal"], provider=nxt.get("provider") or "deepseek",
+                         model=nxt.get("model"), timeout=int(nxt.get("timeout") or DEFAULT_TIMEOUT),
+                         tag=nxt.get("tag") or "")
+        if not rec.get("ok"):
+            q = _queue_load(qid) or nxt
+            q["status"] = "failed"
+            q["detail"] = rec.get("error", "spawn failed")
+            _queue_save(q)
+            _trail("queue-fail", qid, error=rec.get("error", ""))
+            break  # one bad spawn (e.g. quota) — stop this pass, don't hammer
+        q = _queue_load(qid) or nxt
+        q["status"] = "running"
+        q["task_id"] = rec["task_id"]
+        q["detail"] = "spawned (parallel)"
+        q["usage_started_at"] = _now()
+        _queue_save(q)
+        _trail("queue-start", qid, spawned_task_id=rec["task_id"], mode="parallel")
+        try:
+            from mag.tripartite_boot import weave_drain
+            weave_drain(action="started", goal=nxt.get("goal", ""), task_id=rec.get("task_id", ""),
+                        queue_id=qid)
+        except Exception:
+            pass
+        spawned.append({"queue_id": qid, "task_id": rec["task_id"], "goal": nxt["goal"][:120]})
+        budget -= 1
+
+    return {"ok": True, "schema": "orchestrator.parallel_drain.v1",
+            "action": "parallel", "n_agents": n_agents, "running": _running_task_count(),
+            "spawned_this_pass": len(spawned), "spawned": spawned,
+            "guards": {"spawn_cap": spawn_cap, "cost_cap_usd": cost_cap_usd},
+            "note": (f"parallel DeepSeek swarm: up to {n_agents} concurrent flash agents; "
+                     f"spawned {len(spawned)} this pass; tier order honored per batch")}
+
+
 def drain_once(*, force: bool = False) -> dict[str, Any]:
     """Spawn the next queued goal IF no task is currently running.
 
@@ -944,8 +1213,17 @@ def drain_once(*, force: bool = False) -> dict[str, Any]:
     except Exception:
         pass
     _reconcile_queue()
+    _settle_unreachable_queued()  # circuit-open providers' tasks vacate the head (steal 2026-08-14)
     if _any_running_task():
         return {"ok": True, "action": "busy", "detail": "a task is already running"}
+    # RESUME-ORDER (operator 2026-08-10): before picking the next task, auto-promote the
+    # highest-zeitgeist / blocker-unblocking queued tasks so the drainer serves the project's
+    # current convergence + blockers first, not just FIFO. Deterministic $0, best-effort.
+    try:
+        from mag.resume_order import promote_drainer
+        promote_drainer(top=3, boost=5)
+    except Exception:
+        pass
     nxt = _next_queued()
     if nxt is None:
         return {"ok": True, "action": "empty", "detail": "no queued goals"}
@@ -1250,7 +1528,7 @@ def respawn_dead(max_per_task: int = 2) -> dict[str, Any]:
         _finalize(old_id, "died", detail="pid gone (watchdog), respawning")
         reaped += 1
         cmd = t.get("cmd") or []
-        if not cmd or cmd[0] != sys.executable:
+        if not cmd or cmd[0] != headless.PYTHON:
             continue  # not a respawnable agent cmd
         new_id = "t" + uuid.uuid4().hex[:10]
         nrec = _spawn_cmd(cmd, task_id=new_id,
@@ -1276,7 +1554,7 @@ def tail_log(task_id: str, n: int = 20) -> str:
 def self_test() -> dict[str, Any]:
     """Spawn a trivial python child; assert it completes with status done."""
     task_id = "t" + uuid.uuid4().hex[:10]
-    cmd = [sys.executable, "-c", "print('orc-self-test-ok')"]
+    cmd = [headless.PYTHON, "-c", "print('orc-self-test-ok')"]
     rec = _spawn_cmd(cmd, task_id=task_id, timeout=60, tag="self-test")
     t = rec
     import time

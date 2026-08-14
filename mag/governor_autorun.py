@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+from mag import headless
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -282,6 +283,7 @@ def fill_queue(
         "handoff": [],
         "verkle": [],
         "steward": [],
+        "copilot": [],
         "skipped": [],
     }
 
@@ -380,6 +382,25 @@ def fill_queue(
     except Exception as e:
         filled["steward_error"] = str(e)
 
+    # ── Copilot inbox (RESILIENT MAILBOX, 2026-08-11 steal): the LIVE autorun loop drains it
+    #    too, so work doesn't strand when the ghost daemon's watch loop is down. Dedup via
+    #    queue_has_goal so the daemon (if alive) can't double-enqueue. ──
+    try:
+        from mag.ghost import sense_copilot
+        cp = sense_copilot()
+        for msg in cp.get("messages", [])[:max_handoff]:
+            action = str(msg.get("action") or "exec")
+            goal = str(msg.get("goal") or "").strip()
+            if action != "exec" or not goal:
+                continue
+            if queue_has_goal(goal):
+                filled["skipped"].append(goal[:60])
+                continue
+            rec = enqueue_routed(goal, tag=f"copilot-{str(msg.get('id', ''))[:12]}")
+            filled["copilot"].append(rec)
+    except Exception as e:
+        filled["copilot_error"] = str(e)
+
     # ── Autonomous ghost + janitor (inline, $0, < 2 sec each) ──
     try:
         from mag.ghost import cycle as ghost_cycle, load_vectors
@@ -391,6 +412,20 @@ def fill_queue(
     except Exception as e:
         filled["ghost_error"] = str(e)
 
+    # ── REPUBLIC LOOP (2026-08-11) — the ONE coherent self-improvement cadence, explicit on the
+    # autorun beat: tool-select -> formula -> right-size -> cost-feed -> substrate -> stand -> lens
+    # -> trigger -> compile + diamond-mine -> egregore -> self-loop -> test-steal -> feedback +
+    # sense + emergence. Idempotent (dedup); beats with the autorun heartbeat. ──
+    try:
+        from mag.republic_loop import loop as republic_loop
+        rl = republic_loop()
+        filled["republic_loop"] = {"n_ok": rl.get("n_ok"), "n_steps": rl.get("n_steps"),
+                                   "health": rl.get("health"),
+                                   "verdict": rl.get("verdict"),
+                                   "growth": rl.get("growth")}
+    except Exception as e:
+        filled["republic_loop"] = {"ok": False, "error": str(e)[:120]}
+
     try:
         # Janitor: verkle tip fix + training nudge + inbox health
         from mag.ghost import sense as ghost_sense
@@ -398,7 +433,7 @@ def fill_queue(
         if state.get("verkle_tip_stale"):
             import subprocess, sys as _sys, os as _os
             _flags = (getattr(subprocess, "CREATE_NO_WINDOW", 0) if _os.name == "nt" else 0)
-            subprocess.run([_sys.executable, "-m", "mag.verkle_audit", "--full"],
+            subprocess.run([headless.PYTHON, "-m", "mag.verkle_audit", "--full"],
                           cwd=str(ROOT), capture_output=True, timeout=30, creationflags=_flags)
             filled["janitor_verkle"] = "audited"
         if state.get("training_rows", 0) >= 5:
@@ -422,6 +457,7 @@ def fill_queue(
         + len(filled["handoff"])
         + len(filled["verkle"])
         + len(filled["steward"])
+        + len(filled["copilot"])
     )
     _log_trail(
         {
@@ -434,6 +470,7 @@ def fill_queue(
                     "handoff",
                     "verkle",
                     "steward",
+                    "copilot",
                     "total_queued",
                     "skipped",
                 )
@@ -684,7 +721,7 @@ def autorun_once(*, fill: bool = True, dry: bool = False) -> dict[str, Any]:
         _trail_autorun_once(result)
         return result
 
-    from mag.orchestrator import _any_running_task, drain_once, list_queue
+    from mag.orchestrator import _any_running_task, drain_parallel, drain_once, list_queue
 
     queued_n = sum(1 for q in list_queue() if q.get("status") == "queued")
     # Steer telemetry (tesuji-everywhere): probe a duplicate BEFORE drain so the
@@ -701,10 +738,22 @@ def autorun_once(*, fill: bool = True, dry: bool = False) -> dict[str, Any]:
         result["steer_error"] = str(e)[:200]
 
     drain_res: dict[str, Any] | None = None
-    if queued_n > 0 and not _any_running_task():
-        drain_res = drain_once()
+    if queued_n > 0:
+        # PARALLEL DRAIN (steal 2026-08-14): drain_once() is SERIAL and gated on
+        # "not _any_running_task()", so ONE stuck "running" task (e.g. an unreachable
+        # provider) head-of-line blocks the whole swarm. drain_parallel() only picks
+        # *queued* tasks and spawns up to n_agents concurrently (bounded by spawn_cap
+        # + swarm_rightsize), so real work proceeds past a stuck head; the stuck task
+        # settles on its own timeout/reconcile. "One bad task must not shut it down."
+        try:
+            drain_res = drain_parallel()
+        except Exception as e:  # noqa: BLE001 — never break the cycle
+            drain_res = {"ok": False, "action": "error", "detail": str(e)[:160]}
         result["drain"] = drain_res
-        result["action"] = "drain"
+        spawned_n = int((drain_res or {}).get("spawned_this_pass") or 0)
+        result["action"] = "drain" if (spawned_n or not _any_running_task()) else "busy"
+        if result["action"] == "busy":
+            result["detail"] = "orchestrator task running"
         result["steps"].append({"drain": drain_res.get("action")})
 
     # Governor picks todo/agent_state when idle (or orchestrator drain failed).
@@ -720,7 +769,7 @@ def autorun_once(*, fill: bool = True, dry: bool = False) -> dict[str, Any]:
             if result.get("action") != "drain":
                 result["action"] = "governor"
             result["steps"].append({"governor": cyc.get("action")})
-    elif queued_n > 0:
+    elif queued_n > 0 and result.get("action") not in ("drain", "busy"):
         result["action"] = "busy"
         result["detail"] = "orchestrator task running"
 
@@ -812,7 +861,64 @@ def autorun_loop(interval_s: float = 5.0, *, once: bool = False) -> None:
     republic_os_every = int(os.environ.get("MAG_REPUBLIC_OS_EVERY", "900") or "900")
     comms_trail_every = int(os.environ.get("MAG_COMMS_TRAIL_EVERY", "600") or "600")
     swarm_health_every = int(os.environ.get("MAG_SWARM_HEALTH_EVERY", "300") or "300")
+    frontier_gravity_every = int(os.environ.get("MAG_FRONTIER_GRAVITY_EVERY", "900") or "900")
+    frontier_pennies_every = int(os.environ.get("MAG_FRONTIER_PENNIES_EVERY", "1800") or "1800")
+    gemini_mine_every = int(os.environ.get("MAG_GEMINI_MINE_EVERY", "3600") or "3600")
+    standing_wave_every = int(os.environ.get("MAG_STANDING_WAVE_EVERY", "1800") or "1800")
+    wave_address_every = int(os.environ.get("MAG_WAVE_ADDRESS_EVERY", "900") or "900")
+    grok_bookmarks_every = int(os.environ.get("MAG_GROK_BOOKMARKS_EVERY", "3600") or "3600")
+    meta_percolate_every = int(os.environ.get("MAG_META_PERC_EVERY", "1800") or "1800")
+    deep_research_every = int(os.environ.get("MAG_DEEP_RESEARCH_EVERY", "3600") or "3600")
+    # compute-rightsize cadence (2026-08-13, operator: 46% mem / 9% disk / 1% GPU / 50% CPU + "fix
+    # this automatically"): self-healing compute reconciler — bring up the free GPU tier when it is
+    # idle + local inference is down, surface the dead swarm drain as the one system-imperative item.
+    compute_reconcile_every = int(os.environ.get("MAG_COMPUTE_RECONCILE_EVERY", "900") or "900")
+    # LOCAL SWARM DRAIN cadence (2026-08-13, ROOT-CAUSE fix): the k8s CronJob that was the swarm's ONLY
+    # drainer has NEVER run on Windows (no cluster) -> 734-task all-"queued" backlog, the "route through
+    # the swarm" path enqueues-but-never-executes (the real cause of the recurring terminal-fallback
+    # corrections). The loop now drains the swarm queue LOCALLY (same swarm_worker.run_once, bounded +
+    # daily-capped + key-reconciled), so the sanctioned path actually executes on this host.
+    swarm_local_drain_every = int(os.environ.get("MAG_SWARM_LOCAL_DRAIN_EVERY", "900") or "900")
+    # surface-adapters cadence (2026-08-13, sw48): report the native-vs-browser steering registry so
+    # the loop knows which surfaces are natively steered vs browser-fallback (self-healing visibility).
+    surface_adapters_every = int(os.environ.get("MAG_SURFACE_ADAPTERS_EVERY", "1800") or "1800")
+    # console-render cadence (2026-08-13, 'you keep forgetting console display'): keep the live show()
+    # artifact warm so 'show' is always fresh via our own display tools (never just narrate).
+    console_render_every = int(os.environ.get("MAG_CONSOLE_RENDER_EVERY", "600") or "600")
+    # GAME AS WORK ENVIRONMENT (2026-08-13, operator 'use it as your work environment' + 'full
+    # autonomous build mode'): the loop works THROUGH the game — game_ramp.work() descends the dungeon
+    # and folds real open tasks as knots (the game IS the work; Enders Game).
+    game_work_every = int(os.environ.get("MAG_GAME_WORK_EVERY", "900") or "900")
+    # LIQUID-INTELLIGENCE cadence (2026-08-13, sw59-63): the loop PERFORMS the many-to-one — boil the
+    # game's real work through the lattice (the tons of invariants), trace through the maze, converge
+    # toward one. The machine RUNS the doctrine, on the loop.
+    distill_every = int(os.environ.get("MAG_DISTILL_EVERY", "1200") or "1200")
+    # ADVENTURE-MOONSHOT cadence (2026-08-13, operator 'self steal all related training data and then
+    # build an adventure moonshot'): forge NOVEL adventure threads from the corpus (self-steal) and
+    # route the seams to the swarm — the game's novel threads, on the loop.
+    adventure_moonshot_every = int(os.environ.get("MAG_ADVENTURE_MOONSHOT_EVERY", "3600") or "3600")
     tick = 0
+
+    # SELF-RELOAD / DOGFOOD (2026-08-11): if mag/*.py source changes, re-exec the process to run
+    # OUR OWN latest code — so every fix goes live without a manual restart. The system dogfoods.
+    import hashlib as _hl
+    _reload_every = int(os.environ.get("MAG_SELF_RELOAD_EVERY", "120") or "120")
+
+    def _code_sig() -> str:
+        h = _hl.md5()
+        try:
+            for _dir in ("mag", "backend"):
+                for p in sorted((ROOT / _dir).glob("*.py")):
+                    try:
+                        st = p.stat()
+                        h.update(f"{_dir}/{p.name}:{st.st_mtime_ns}:{st.st_size};".encode())
+                    except OSError:
+                        continue
+        except Exception:
+            pass
+        return h.hexdigest()[:16]
+
+    _sig0 = _code_sig()
 
     def _dim(s: str) -> str:
         if sys.stdout.isatty():
@@ -828,6 +934,15 @@ def autorun_loop(interval_s: float = 5.0, *, once: bool = False) -> None:
 
     while True:
         try:
+            # DOGFOOD self-reload: on code change, re-exec to run our own latest (no manual restart).
+            if _reload_every > 0 and tick > 0 and tick % _reload_every == 0:
+                try:
+                    if _code_sig() != _sig0:
+                        print("[autorun] code changed — self-reloading to run latest (dogfood)", flush=True)
+                        import os as _os, sys as _sys
+                        _os.execv(_sys.executable, [_sys.executable, *(_sys.argv or [])])
+                except Exception:
+                    pass
             do_fill = tick == 0 or (fill_every > 0 and tick % fill_every == 0)
             res = autorun_once(fill=do_fill)
             action = res.get("action")
@@ -1214,6 +1329,247 @@ def autorun_loop(interval_s: float = 5.0, *, once: bool = False) -> None:
             except Exception as e:
                 print(_dim(f"  [swarm-health] error: {e}"), flush=True)
 
+        # frontier-gravity cadence: consume folded frontier-advice and re-plant the pull so the
+        # operation is continuously ATTRACTED to the preferred state (Titor-sinusoidal gravity).
+        if frontier_gravity_every > 0 and tick > 0 and tick % frontier_gravity_every == 0:
+            try:
+                from mag.frontier_gravity import run_cadence as fg_run
+
+                fgr = fg_run()
+                if fgr.get("action") == "gravity":
+                    print(
+                        _dim(f"  [frontier-gravity] local={fgr.get('local_planted')} "
+                             f"swarm={fgr.get('swarm')} cluster={fgr.get('cluster')} "
+                             f"distance={fgr.get('distance')}"),
+                        flush=True,
+                    )
+            except Exception as e:
+                print(_dim(f"  [frontier-gravity] error: {e}"), flush=True)
+
+        # frontier-pennies cadence: distribute a frontier insight for pennies (capture -> quantize
+        # -> swarm three-body $0 + cheap deepseek). Dry by default on cadence — measures the
+        # multiplier, never auto-enqueues without the live gate.
+        if frontier_pennies_every > 0 and tick > 0 and tick % frontier_pennies_every == 0:
+            try:
+                from mag.frontier_pennies import run_cadence as fp_run
+
+                fpr = fp_run(dry=True)
+                if fpr.get("action") == "distributed":
+                    print(
+                        _dim(f"  [frontier-pennies] source={fpr.get('source')} "
+                             f"multiplier={fpr.get('multiplier')}"),
+                        flush=True,
+                    )
+            except Exception as e:
+                print(_dim(f"  [frontier-pennies] error: {e}"), flush=True)
+
+        # gemini-mine cadence (next-window frozen job): route the GOOGLE/Gemini vendor corpus as
+        # stateless research through the ONE primitive (route_novel -> swarm). $0, idempotent.
+        if gemini_mine_every > 0 and tick > 0 and tick % gemini_mine_every == 0:
+            try:
+                from mag.gemini_mine import run_cadence as gm_run
+
+                gmr = gm_run(dry=False)
+                if gmr.get("action") == "mined":
+                    print(
+                        _dim(f"  [gemini-mine] mined={gmr.get('mined')} deduped={gmr.get('deduped')}"),
+                        flush=True,
+                    )
+            except Exception as e:
+                print(_dim(f"  [gemini-mine] error: {e}"), flush=True)
+
+        # standing-wave cadence (2026-08-13, moonshot): seed the republic's true ideas as wave-
+        # packets and PROPAGATE them into the medium via the STEAL mechanism (route_novel -> swarm).
+        # Elias is the lens. $0 deterministic core; propagation is the route_novel seam.
+        if standing_wave_every > 0 and tick > 0 and tick % standing_wave_every == 0:
+            try:
+                from mag.standing_wave import run as sw_run
+
+                swr = sw_run()
+                if swr.get("ok"):
+                    print(
+                        _dim(f"  [standing-wave] packets={swr.get('packets')} "
+                             f"propagated={sum(1 for v in (swr.get('propagated') or {}).values() if v)}"),
+                        flush=True,
+                    )
+            except Exception as e:
+                print(_dim(f"  [standing-wave] error: {e}"), flush=True)
+
+        # wave-address cadence (2026-08-13): keep every real object reachable across the surface by
+        # wave address (content-addressed) — register_surface() idempotently scans the codebase.
+        if wave_address_every > 0 and tick > 0 and tick % wave_address_every == 0:
+            try:
+                from mag.wave_address import run_cadence as wa_run
+
+                war = wa_run()
+                if war.get("ok"):
+                    print(
+                        _dim(f"  [wave-address] n_total={war.get('n_total')} "
+                             f"added={war.get('added')}"),
+                        flush=True,
+                    )
+            except Exception as e:
+                print(_dim(f"  [wave-address] error: {e}"), flush=True)
+
+        # grok-bookmarks cadence (2026-08-13): teach grokbot to grab the operator's curated X bookmark
+        # folder (authenticated desktop session) and bulk-mine it to the swarm. Best-effort + honest:
+        # if the container browser isn't authenticated on x.com, it reports that, never fabricates.
+        if grok_bookmarks_every > 0 and tick > 0 and tick % grok_bookmarks_every == 0:
+            try:
+                from mag import grok_bot as gb
+                bm_url = os.environ.get(
+                    "MAG_GROK_BOOKMARKS_URL",
+                    "https://x.com/i/bookmarks/1876313041077145771")
+                gbr = gb.grab_bookmarks(bm_url, mine=True)
+                if gbr.get("ok"):
+                    print(
+                        _dim(f"  [grok-bookmarks] extracted={gbr.get('extracted')} "
+                             f"routed={gbr.get('routed')}"),
+                        flush=True,
+                    )
+                else:
+                    print(_dim(f"  [grok-bookmarks] {gbr.get('error', 'not-ok')}"), flush=True)
+            except Exception as e:
+                print(_dim(f"  [grok-bookmarks] error: {e}"), flush=True)
+
+        # meta-percolation cadence (2026-08-13): the self-advancing evolutionary flywheel — percolate
+        # the top invariants to the ONE root, genetically vary + select the fittest genes, feed the
+        # best back into the swarm, so each generation brings forth only the most emergent results.
+        if meta_percolate_every > 0 and tick > 0 and tick % meta_percolate_every == 0:
+            try:
+                from mag import meta_percolate as mp
+                mpr = mp.genetic_cadence()
+                if mpr.get("ok"):
+                    print(
+                        _dim(f"  [meta-percolate] n={mpr.get('n_invariants')} "
+                             f"root={mpr.get('quant_root', '')[:8]} "
+                             f"best={len(mpr.get('best_genes') or [])} "
+                             f"fed_back={mpr.get('fed_back', {}).get('ok')}"),
+                        flush=True,
+                    )
+            except Exception as e:
+                print(_dim(f"  [meta-percolate] error: {e}"), flush=True)
+
+        # deep-research-moonshot cadence (2026-08-13, operator 'self steal deep research moonshot' + 'show me'
+        # + 'is there a better way to connect'): the LOOP IS the connection (not a notebook kernel).
+        # Each beat sweeps the standing-wave RIBs (our own deepest questions) and moonshots them: internal
+        # synthesis (prior+witness+shadow+knot -> the marriage, one chain link) + route the NOVEL seam to the
+        # swarm via route_novel (the one primitive). In-process (mem-tool functions), $0 core; the module
+        # persists artifacts to memory/runs/deep_research_moonshot/ + the sent.jsonl ledger.
+        if deep_research_every > 0 and tick > 0 and tick % deep_research_every == 0:
+            try:
+                from mag import deep_research_moonshot as drm
+                drr = drm.cadence(limit=2, route=True)
+                if drr.get("ok"):
+                    print(
+                        _dim(f"  [deep-research] n={drr.get('n_moonshots')} "
+                             f"routed={sum(1 for r in (drr.get('routed') or []) if not r.get('deduped'))}"),
+                        flush=True,
+                    )
+            except Exception as e:
+                print(_dim(f"  [deep-research] error: {e}"), flush=True)
+
+        # compute-rightsize cadence (2026-08-13, operator 'fix this automatically'): the self-healing
+        # compute reconciler. Each beat measures real GPU/ollama/swarm-queue state and reconciles toward
+        # the rightsized split (GPU = $0 build, DeepSeek = cheap research, CPU = coordination); it
+        # auto-signals the free-GPU bring-up and names the dead swarm drain as the one stuck item.
+        if compute_reconcile_every > 0 and tick > 0 and tick % compute_reconcile_every == 0:
+            try:
+                from mag import compute_reconcile as cr
+                crr = cr.run_cadence()
+                if crr.get("ok"):
+                    print(
+                        _dim(f"  [compute-rightsize] verdict={crr.get('verdict')} "
+                             f"actions={[a.get('action') for a in crr.get('actions') or []]}"),
+                        flush=True,
+                    )
+            except Exception as e:
+                print(_dim(f"  [compute-rightsize] error: {e}"), flush=True)
+
+        # LOCAL SWARM DRAIN cadence (2026-08-13, ROOT-CAUSE fix for the dead-end architecture path):
+        # the k8s CronJob drainer never runs on Windows, so the loop drains the swarm queue locally
+        # (bounded + daily-capped + key-reconciled). This makes enqueue -> execute real on this host.
+        if swarm_local_drain_every > 0 and tick > 0 and tick % swarm_local_drain_every == 0:
+            try:
+                from mag import swarm_local_drain as sld
+                sldr = sld.run_cadence()
+                if sldr.get("ok"):
+                    print(
+                        _dim(f"  [swarm-local-drain] done={sldr.get('done')} failed={sldr.get('failed')} "
+                             f"key={sldr.get('key_reconcile', {}).get('resolved_provider_key')} "
+                             f"used_today={sldr.get('used_today')}"),
+                        flush=True,
+                    )
+                elif sldr.get("skipped") == "daily-cap":
+                    print(_dim(f"  [swarm-local-drain] daily-cap hit ({sldr.get('used_today')})"),
+                          flush=True)
+            except Exception as e:
+                print(_dim(f"  [swarm-local-drain] error: {e}"), flush=True)
+
+        # surface-adapters cadence (2026-08-13, sw48): report the native/browser steering registry —
+        # which surfaces we steer NATIVELY (deepseek/slack) vs BROWSER fallback (chatgpt/grok).
+        if surface_adapters_every > 0 and tick > 0 and tick % surface_adapters_every == 0:
+            try:
+                from mag import surface_adapters as sa
+                sar = sa.registry()
+                if sar.get("ok"):
+                    print(_dim(f"  [surface-adapters] "
+                               f"{sum(1 for s in sar['surfaces'] if s['driver'] == 'native')} native / "
+                               f"{sum(1 for s in sar['surfaces'] if s['driver'] == 'browser')} browser / "
+                               f"{sum(1 for s in sar['surfaces'] if s['driver'] == 'unconfigured-native')} unconfigured"),
+                          flush=True)
+            except Exception as e:
+                print(_dim(f"  [surface-adapters] error: {e}"), flush=True)
+
+        # console-render cadence (2026-08-13): keep the live show() artifact warm so the operator's
+        # 'show' is always fresh — render via our own display tools, never just narrate.
+        if console_render_every > 0 and tick > 0 and tick % console_render_every == 0:
+            try:
+                from mag import console_render as cr
+                cr.show()
+            except Exception as e:
+                print(_dim(f"  [console-render] error: {e}"), flush=True)
+
+        # GAME-AS-WORK cadence (2026-08-13, full autonomous build mode): the loop WORKS through the
+        # game — descend the dungeon, fold a real open task as a knot (the game is the work).
+        if game_work_every > 0 and tick > 0 and tick % game_work_every == 0:
+            try:
+                from mag import game_ramp as gr
+                gwr = gr.work(action="turn")
+                if gwr.get("ok"):
+                    print(_dim(f"  [game-work] tier={gwr.get('tier')} folded={gwr.get('folded')}"),
+                          flush=True)
+            except Exception as e:
+                print(_dim(f"  [game-work] error: {e}"), flush=True)
+
+        # LIQUID-INTELLIGENCE cadence (2026-08-13, sw59-63): the loop PERFORMS the many-to-one —
+        # boil the game's real work through the lattice (the tons of invariants), trace through the
+        # maze, feed the ONE back to the bottom. The machine runs the doctrine, on the loop.
+        if distill_every > 0 and tick > 0 and tick % distill_every == 0:
+            try:
+                from mag import distill as _dst
+                dr = _dst.game(n=1)
+                if dr.get("ok"):
+                    print(_dim(f"  [distill] converged={dr.get('converged_root', '')[:8]} "
+                               f"steps={dr.get('n')} traced={len(dr.get('steps') or [])}"),
+                          flush=True)
+            except Exception as e:
+                print(_dim(f"  [distill] error: {e}"), flush=True)
+
+        # ADVENTURE-MOONSHOT cadence (2026-08-13, operator 'build an adventure moonshot'): forge
+        # NOVEL adventure threads from the corpus (self-steal PRIOR->WITNESS->SHADOW->KNOT->MARRIAGE)
+        # and route each novel seam to the swarm via route_novel (the ONE primitive).
+        if adventure_moonshot_every > 0 and tick > 0 and tick % adventure_moonshot_every == 0:
+            try:
+                from mag import adventure_moonshot as _am
+                amr = _am.cadence(limit=2, route=True)
+                if amr.get("ok"):
+                    print(_dim(f"  [adventure-moonshot] n={amr.get('n_moonshots')} "
+                               f"routed={len(amr.get('routed') or [])}"),
+                          flush=True)
+            except Exception as e:
+                print(_dim(f"  [adventure-moonshot] error: {e}"), flush=True)
+
         # law cadence: enforce the code-as-law registry (APPLY — the loop actually turns).
         law_every = int(os.environ.get("MAG_LAW_EVERY", "300") or "300")
         if law_every > 0 and tick > 0 and tick % law_every == 0:
@@ -1267,6 +1623,48 @@ def autorun_loop(interval_s: float = 5.0, *, once: bool = False) -> None:
                     )
             except Exception as e:
                 print(_dim(f"  [research-fold] error: {e}"), flush=True)
+        # Steal-pack: file any queue/handoff steal/deep-research/distill outputs into the
+        # research-pack pipeline so every steal folds to case law automatically (no one-off
+        # files left on the floor). Deterministic, idempotent, no LLM.
+        if fold_every > 0 and tick > 0 and tick % fold_every == 0:
+            try:
+                from mag.steal_pack import file_all
+
+                sa = file_all()
+                if sa.get("filed"):
+                    print(_dim(f"  [steal-pack] filed={len(sa.get('filed', []))} "
+                               f"skipped={len(sa.get('skipped', []))}"), flush=True)
+            except Exception as e:
+                print(_dim(f"  [steal-pack] error: {e}"), flush=True)
+        # Mine-diamonds cadence: deterministically surface the highest-signal gems in the weave
+        # and file them as STEAL_MINE_DIAMONDS.md so steal_pack folds them to case law — the
+        # self-training loop's "extract signal" step, running on its own, $0, no LLM.
+        if fold_every > 0 and tick > 0 and tick % fold_every == 0:
+            try:
+                from mag.mine_diamonds import diamonds, digest
+
+                md = diamonds(top=8)
+                dg = digest(top=8)
+                if md.get("ok"):
+                    print(_dim(f"  [mine-diamonds] scanned={md['scanned']} "
+                               f"top={[g['name'] for g in md['top_diamonds'][:3]]} "
+                               f"digest={dg.get('digest')}"), flush=True)
+            except Exception as e:
+                print(_dim(f"  [mine-diamonds] error: {e}"), flush=True)
+        # Shape-map cadence: export the whole system's structure as a portable verkle-backed
+        # portfolio (one root over every subsystem's shape) so the model's shape stays current
+        # and transmissible. Deterministic, $0, no LLM.
+        if fold_every > 0 and tick > 0 and tick % fold_every == 0:
+            try:
+                from mag.shape_map import export as shape_export
+
+                sp = shape_export()
+                if sp.get("ok"):
+                    print(_dim(f"  [shape-map] subsystems={sp.get('n_subsystems')} "
+                               f"portfolio_root={str(sp.get('portfolio_root'))[:12]}... "
+                               f"path={sp.get('path')}"), flush=True)
+            except Exception as e:
+                print(_dim(f"  [shape-map] error: {e}"), flush=True)
         # Gap analysis: report where we're pretending (defined but not used/running/enforced).
         if gap_every > 0 and tick > 0 and tick % gap_every == 0:
             try:

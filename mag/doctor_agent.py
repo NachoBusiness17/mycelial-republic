@@ -215,7 +215,8 @@ def fix_provider_sanity() -> list[FixAttempt]:
     # Check Ollama specifically — most common failure
     if "Ollama" in str(before.get("issues", [])):
         try:
-            r = subprocess.run(["ollama", "list"], capture_output=True, text=True, timeout=10)
+            r = subprocess.run(["ollama", "list"], capture_output=True, text=True, timeout=10,
+                               creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0)
             if r.returncode == 0:
                 fixes.append(FixAttempt(
                     fix_id="provider-ollama-ok",

@@ -1,4 +1,4 @@
-from . import code_execution, filesystem, shell
+from . import code_execution, filesystem, shell, swarm_tools
 
 TOOL_MAP = {
     "list_dir": lambda **kw: filesystem.list_dir(**kw),
@@ -7,6 +7,18 @@ TOOL_MAP = {
     "search_files": lambda **kw: filesystem.search_files(**kw),
     "run_shell": lambda **kw: shell.run_shell(**kw),
     "run_python": lambda **kw: code_execution.run_python(**kw),
+    # NPC toolbelt — the swarm's sense/communicate/act tools (the castle builds itself)
+    "swarm_sense": lambda **kw: swarm_tools.swarm_sense(**kw),
+    "pheromone_drop": lambda **kw: swarm_tools.pheromone_drop(**kw),
+    "pheromone_trail": lambda **kw: swarm_tools.pheromone_trail(**kw),
+    "blackboard_post": lambda **kw: swarm_tools.blackboard_post(**kw),
+    "blackboard_read": lambda **kw: swarm_tools.blackboard_read(**kw),
+    # deterministic scanner — embedded in the swarm to scan stochastic environments (seeded, $0)
+    "scan_measure": lambda **kw: swarm_tools.scan_measure(**kw),
+    "scan_probe": lambda **kw: swarm_tools.scan_probe(**kw),
+    "scan_grid": lambda **kw: swarm_tools.scan_grid(**kw),
+    "mean_field": lambda **kw: swarm_tools.mean_field(**kw),
+    "research": lambda **kw: swarm_tools.research(**kw),
 }
 
 
@@ -52,6 +64,16 @@ _FN = {
     "search_files": filesystem.search_files,
     "run_shell": shell.run_shell,
     "run_python": code_execution.run_python,
+    "swarm_sense": swarm_tools.swarm_sense,
+    "pheromone_drop": swarm_tools.pheromone_drop,
+    "pheromone_trail": swarm_tools.pheromone_trail,
+    "blackboard_post": swarm_tools.blackboard_post,
+    "blackboard_read": swarm_tools.blackboard_read,
+    "scan_measure": swarm_tools.scan_measure,
+    "scan_probe": swarm_tools.scan_probe,
+    "scan_grid": swarm_tools.scan_grid,
+    "mean_field": swarm_tools.mean_field,
+    "research": swarm_tools.research,
 }
 
 

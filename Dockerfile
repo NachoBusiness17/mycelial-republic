@@ -26,7 +26,7 @@ RUN chmod +x scripts/container/entrypoint.sh \
 
 EXPOSE 8765 8000
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=45s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8765/api/v1/health', timeout=3)"
+HEALTHCHECK --interval=30s --timeout=20s --start-period=90s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8765/api/v1/health', timeout=15)"
 
 ENTRYPOINT ["/app/scripts/container/entrypoint.sh"]

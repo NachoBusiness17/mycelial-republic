@@ -1,0 +1,494 @@
+"""surface_render — the R5 INLINE HYPERVISOR renderer: surfaces the whole system INLINE (mermaid +
+bare-metal raw SVG), replacing dashboards/side-windows. Bare-metal-first: zero external deps.
+
+Operator (2026-08-12): "cant we have a dashboard just render them in line sort of like the mermaid
+diagram" + "do it then figure out how to make it all our own baremetal stack eventually."
+
+THE DESIGN (bare-metal-first, self-steal from swarm_map's raw-SVG pattern):
+  * render_all()  — the ONE entry: emits the system's inline diagrams (doctrine flow, agent mesh,
+                    VRAM lattice) as BOTH mermaid text AND bare-metal raw SVG (zero deps). The chat
+                    renders mermaid; the dashboard/surface renders the raw SVG directly.
+  * mesh_*()      — the agent/sub-agent/k8s/k3s interaction mesh, read from REAL live state
+                    (seat_registry, swarm_worker, rib_bus) when available; never fabricated.
+  * baremetal_svg()— a zero-dependency SVG graph emitter (nodes + edges + labels) — the SAME
+                    raw-SVG approach swarm_map uses. This is the "ours baremetal" core: no Kroki,
+                    no Graphviz, no CDN required.
+  * OPTIONAL adapters: kroki()/graphviz() are used ONLY if the external tool is present; the
+                    baremetal core never depends on them. So it's self-sufficient now, and can
+                    upgrade to external tools when present — but the stack is OURS.
+
+Schema: surface_render.v1 · deterministic + $0 · reuse: swarm_map (raw SVG pattern), seat_registry,
+rib_bus, swarm_surface
+"""
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+from typing import Any
+
+try:
+    from config import ROOT
+except Exception:
+    ROOT = Path(__file__).resolve().parent.parent
+
+sys.path.insert(0, str(ROOT))
+
+SCHEMA = "surface_render.v1"
+
+
+def _now() -> str:
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+# ── live state (best-effort; never fabricate — honest when a source is unavailable) ──────────
+def _seats() -> list[str]:
+    try:
+        from mag import seat_registry as sr
+        reg = sr.registry() if hasattr(sr, "registry") else {}
+        seats = reg.get("seats") or reg.get("registered") or []
+        return [s.get("id") if isinstance(s, dict) else str(s) for s in seats][:40]
+    except Exception:
+        return []
+
+
+def _domains() -> list[str]:
+    try:
+        from mag import rib_bus
+        st = rib_bus.status()
+        return [d for d, v in st.get("domains", {}).items() if v.get("n_ribs")]
+    except Exception:
+        return []
+
+
+def _swarm_anchors() -> int:
+    try:
+        from mag import swarm_surface
+        return int(swarm_surface.status().get("n_sent", 0))
+    except Exception:
+        return 0
+
+
+# ── bare-metal raw SVG graph emitter (zero deps — the "ours" core) ──────────────────────────
+def baremetal_svg(nodes: list[tuple[str, str]], edges: list[tuple[str, str, str]],
+                  *, width: int = 720, height: int = 420, title: str = "",
+                  node_ids: list[str] | None = None) -> str:
+    """Emit a zero-dependency SVG graph: nodes (id, label) + edges (src, dst, label).
+    Simple layered layout — nodes are placed in a grid; edges are curved. No libs, no CDN.
+    SCALING (steal: Claude's viewBox discipline): the SVG declares a viewBox + preserveAspectRatio
+    and a 100% width, so it scales to the pane width WITHOUT a scrollbar — never jumps.
+    INTERACTION (steal: Shneiderman overview->details): when `node_ids` is provided (same order
+    as `nodes`), each node rect gets a data-id for delegated click-to-drill (the drill-down)."""
+    n = len(nodes) or 1
+    cols = 3
+    rows = (n + cols - 1) // cols
+    cell_w = width / max(cols, 1)
+    cell_h = height / max(rows, 1)
+    pos: dict[str, tuple[float, float]] = {}
+    for i, (nid, _lab) in enumerate(nodes):
+        c = i % cols
+        r = i // cols
+        pos[nid] = (40 + c * (cell_w - 20), 50 + r * (cell_h - 30))
+    parts = [f'<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="auto" '
+             f'viewBox="0 0 {width} {height}" preserveAspectRatio="xMidYMid meet" '
+             f'style="max-width:{width}px" font-family="monospace" id="graphsvg">']
+    if title:
+        parts.append(f'<text x="{width/2}" y="24" text-anchor="middle" font-size="16" '
+                     f'fill="#d0d0d0">{_esc(title)}</text>')
+    for src, dst, lab in edges:
+        if src not in pos or dst not in pos:
+            continue
+        x1, y1 = pos[src]
+        x2, y2 = pos[dst]
+        mx, my = (x1 + x2) / 2, (y1 + y2) / 2 - 18
+        parts.append(f'<path d="M {x1:.0f} {y1:.0f} Q {mx:.0f} {my:.0f} {x2:.0f} {y2:.0f}" '
+                     f'fill="none" stroke="#8a8f98" stroke-width="1.5"/>')
+        if lab:
+            parts.append(f'<text x="{mx:.0f}" y="{my:.0f}" text-anchor="middle" font-size="10" '
+                         f'fill="#6fceff">{_esc(lab)}</text>')
+    for i, (nid, lab) in enumerate(nodes):
+        x, y = pos.get(nid, (10, 10))
+        did = f' data-id="{_esc(nid)}"' if node_ids and i < len(node_ids) else ""
+        parts.append(f'<rect class="gnode"{did} x="{x-6:.0f}" y="{y-14:.0f}" '
+                     f'width="180" height="30" rx="6" fill="#1b2a3a" stroke="#3fd08f" '
+                     f'stroke-width="1"/>')
+        parts.append(f'<text x="{x:.0f}" y="{y+4:.0f}" font-size="11" fill="#e8e8e8">'
+                     f'{_esc(_cap(lab, 22))}</text>')
+    parts.append("</svg>")
+    return "\n".join(parts)
+
+
+def _esc(s: str) -> str:
+    return (s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def _cap(s: str, n: int = 26) -> str:
+    """Truncate a label so a diagram stays compact (no overflow -> no scrollbar / jump)."""
+    s = (s or "").strip()
+    return s if len(s) <= n else s[: n - 1].rstrip() + ".."
+
+
+# ── diagrams ─────────────────────────────────────────────────────────────────────────────────
+def _agent_mesh() -> dict[str, Any]:
+    seats = _seats()
+    domains = _domains()
+    anchors = _swarm_anchors()
+    nodes: list[tuple[str, str]] = [("rb", "rib_bus (doctrine)"), ("sw", "SWARM (k8s)")]
+    nodes += [("k3", "k3s (local)"), ("api", "REST API")]
+    for s in seats[:6]:
+        nodes.append((f"seat-{s}", s))
+    edges: list[tuple[str, str, str]] = [("rb", "api", "inject_for"), ("rb", "sw", "route_novel"),
+                                         ("rb", "k3", "inject_for"), ("sw", "rb", "results")]
+    for s in seats[:6]:
+        edges.append(("rb", f"seat-{s}", "mount"))
+    return {"nodes": nodes, "edges": edges, "seats": len(seats), "domains": len(domains),
+            "swarm_anchors": anchors}
+
+
+def mesh_mermaid() -> str:
+    m = _agent_mesh()
+    lines = ["flowchart LR", '  RB["rib_bus (doctrine)"]', '  SW["SWARM (k8s)"]',
+             '  K3["k3s (local)"]', '  API["REST API"]', "  RB -->|inject_for| API",
+             "  RB -->|route_novel| SW", "  RB -->|inject_for| K3", "  SW -->|results| RB"]
+    for (nid, lab) in m["nodes"]:
+        if nid.startswith("seat-"):
+            lines.append(f'  {nid}["{_cap(lab)}"]')
+            lines.append(f"  RB -->|mount| {nid}")
+    return "\n".join(lines)
+
+
+def mesh_svg() -> str:
+    m = _agent_mesh()
+    return baremetal_svg(m["nodes"], m["edges"], title=f"agent/k8s/k3s mesh | {m['seats']} seats | "
+                                                       f"{m['domains']} domains | "
+                                                       f"{m['swarm_anchors']} swarm anchors")
+
+
+def doctrine_flow() -> str:
+    return (
+        "flowchart LR\n"
+        '  C["Doctrine: constitution | refusal | no-throne"]\n'
+        '  C2["map-precedes-territory | temporal-snapshot | grounding"]\n'
+        '  B["rib_bus: publish -> mount -> inject"]\n'
+        '  S["API | seats | agents | sub-agents"]\n'
+        '  K["k8s | k3s"]\n'
+        '  C --> C2 --> B --> S\n'
+        '  B --> K\n'
+    )
+
+
+def vram_lattice() -> dict[str, Any]:
+    """GPU/VRAM state — SELF-STOLEN from gpu_k8s.status() (the canonical mem-tool surface: reads
+    the k8s-pod telemetry LEDGER at memory/runs/gpu_ghost/telemetry.jsonl; deterministic, $0,
+    NO hanging subprocess). The host gpu_ghost.gpu_status() fast path is the one that hangs on
+    Windows/AMD (rocm-smi absent, PowerShell Get-Counter probe) — so we reuse gpu_k8s instead."""
+    gpu = {"source": "none", "vram_used_pct": None}
+    try:
+        from mag import gpu_k8s
+        st = gpu_k8s.status()
+        tel = st.get("telemetry") or st
+        gpu = {"source": "gpu_k8s-ledger",
+               "vram_used_pct": tel.get("vram_used_pct"),
+               "util_pct": tel.get("util_pct"),
+               "temp_c": tel.get("temp_c"),
+               "recent": st.get("recent")}
+    except Exception as e:
+        gpu = {"source": "none", "vram_used_pct": None, "error": str(e)[:80]}
+    resident = []
+    try:
+        from mag import ollama_policy
+        loaded = ollama_policy.list_loaded()
+        resident = [m.get("name") or m.get("model") for m in loaded]
+    except Exception:
+        pass
+    return {"gpu": gpu, "resident_models": resident, "schema": SCHEMA}
+
+
+def bill_metrics() -> dict[str, Any]:
+    """Live bill economics (grounded from the ledger) for the inline sparkline. Honest: no data -> note."""
+    try:
+        from mag import billing_feed
+        g = billing_feed.gate()
+        m = g.get("metrics") or {}
+        return {"ok": True, "cache_hit_rate": m.get("cache_hit_rate"),
+                "cost_per_request": m.get("cost_per_request"),
+                "n_requests": m.get("n_requests"), "total_cost_usd": m.get("total_cost_usd"),
+                "gate_triggered": g.get("gate_triggered"), "note": g.get("note")}
+    except Exception as e:
+        return {"ok": False, "error": str(e)[:120]}
+
+
+def sparkline_svg(values: list[float], *, width: int = 240, height: int = 60,
+                  label: str = "") -> str:
+    """Bare-metal SVG sparkline (the recharts/plotly pattern, zero deps). Steal: viewBox scaling."""
+    values = [v for v in values if v is not None]
+    if not values:
+        return f'<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 {width} {height}"' \
+               f'><text x="{width/2}" y="{height/2}" text-anchor="middle" font-size="11" ' \
+               f'fill="#8a8f98">{_esc(label or "no data")}</text></svg>'
+    lo, hi = min(values), max(values)
+    rng = (hi - lo) or 1.0
+    pts = []
+    for i, v in enumerate(values):
+        x = 8 + i * (width - 16) / max(len(values) - 1, 1)
+        y = height - 8 - (v - lo) / rng * (height - 20)
+        pts.append(f"{x:.1f},{y:.1f}")
+    out = [f'<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 {width} {height}" '
+           f'preserveAspectRatio="xMidYMid meet" style="max-width:{width}px">']
+    out.append(f'<polyline points="{" ".join(pts)}" fill="none" stroke="#3fd08f" '
+               f'stroke-width="2" stroke-linejoin="round"/>')
+    if label:
+        out.append(f'<text x="{width-6}" y="{12}" text-anchor="end" font-size="10" '
+                   f'fill="#8a8f98">{_esc(label)}</text>')
+    out.append("</svg>")
+    return "\n".join(out)
+
+
+def mesh_dot() -> str:
+    """Graphviz DOT export of the agent mesh (OpenAI ChatKit pattern) — interop/export only,
+    never a runtime dependency. Our own SVG renderer is the runtime path."""
+    m = _agent_mesh()
+    lines = ["digraph mesh {", "  rankdir=LR;", "  node [shape=box, style=rounded];",
+             '  rb [label="rib_bus (doctrine)"];', '  sw [label="SWARM (k8s)"];',
+             '  k3 [label="k3s (local)"];', '  api [label="REST API"];',
+             "  rb -> api [label=inject_for];", "  rb -> sw [label=route_novel];",
+             "  rb -> k3 [label=inject_for];", "  sw -> rb [label=results];"]
+    for (nid, lab) in m["nodes"]:
+        if nid.startswith("seat-"):
+            lines.append(f'  {nid} [label="{_cap(lab)}"];')
+            lines.append(f"  rb -> {nid} [label=mount];")
+    lines.append("}")
+    return "\n".join(lines)
+
+
+def live_artifact_html(*, refresh_s: int = 5) -> str:
+    """The LIVE inline artifact (steal: swarm_map.html meta-refresh pattern, zero JS libs).
+    Auto-refreshes and embeds the compact mesh SVG + a doctrine line. Reused from swarm_map's
+    proven bare-metal approach — never a side window."""
+    m = _agent_mesh()
+    svg = baremetal_svg(m["nodes"], m["edges"], title="agent/k8s/k3s mesh (live)")
+    return ("<!doctype html><html><head><meta charset='utf-8'>"
+            f"<meta http-equiv='refresh' content='{refresh_s}'>"
+            "<style>body{background:#0d1117;color:#e8e8e8;font-family:monospace;"
+            "padding:8px;margin:0} h3{color:#3fd08f} .cap{color:#8a8f98;font-size:11px}</style>"
+            "</head><body><h3>surface_render — live system</h3>"
+            f"<div>{svg}</div>"
+            f"<p class='cap'>{m['seats']} seats | {m['domains']} domains | "
+            f"{m['swarm_anchors']} swarm anchors | auto-refresh {refresh_s}s</p>"
+            "</body></html>")
+
+
+def surface_detail(surface_id: str) -> dict[str, Any]:
+    """DETAILS ON DEMAND (Shneiderman): the live state of ONE surface. Deterministic, honest."""
+    m = _agent_mesh()
+    sid = (surface_id or "").lower()
+    if sid == "rb":
+        return {"title": "rib_bus", "detail": f"doctrine injected to every surface; "
+                f"{m['domains']} domains carry mounted RIBs", "mermaid": doctrine_flow()}
+    if sid == "sw":
+        return {"title": "SWARM (k8s)", "detail": f"novel research routed via route_novel; "
+                f"{m['swarm_anchors']} anchors enqueued; results fold back to rib_bus",
+                "mermaid": "flowchart LR\n  SW[\"SWARM (k8s)\"] --> R[\"results\"] --> RB[\"rib_bus\"]"}
+    if sid == "k3":
+        return {"title": "k3s (local)", "detail": "local workers mount doctrine via rib_bus.inject_for",
+                "mermaid": ""}
+    if sid == "api":
+        return {"title": "REST API", "detail": "serves the surfaces + this inline render", "mermaid": ""}
+    if sid == "vram":
+        v = vram_lattice()
+        return {"title": "VRAM lattice", "detail": f"hot memory; gpu probe source="
+                f"{v.get('gpu', {}).get('source')} | resident={v.get('resident_models')}",
+                "mermaid": ""}
+    if sid == "bill":
+        b = bill_metrics()
+        return {"title": "Bill gate", "detail": f"cache-hit={b.get('cache_hit_rate')} | "
+                f"cost/req={b.get('cost_per_request')} | gate={b.get('gate_triggered')}",
+                "mermaid": ""}
+    if sid.startswith("seat"):
+        return {"title": sid, "detail": "seat (controlled surface)", "mermaid": ""}
+    return {"title": sid or "surface", "detail": "unknown surface", "mermaid": ""}
+
+
+def drilldown_html() -> str:
+    """Shneiderman mantra made real: OVERVIEW (whole system) -> click a node -> DETAILS on demand.
+    Zero-lib inline JS, viewBox-scaled SVG, ASCII-only. The inline hypervisor."""
+    m = _agent_mesh()
+    nodes = m["nodes"] + [("vram", "VRAM lattice"), ("bill", "Bill gate")]
+    node_ids = [nid for nid, _ in nodes]
+    svg = baremetal_svg(nodes, m["edges"], title="system overview (click a node)", node_ids=node_ids)
+    det = {nid: surface_detail(nid) for nid, _ in nodes}
+    import json as _j
+    det_json = _j.dumps(det, ensure_ascii=False)
+    return ("<!doctype html><html><head><meta charset='utf-8'>"
+            "<style>body{background:#0d1117;color:#e8e8e8;font-family:monospace;padding:10px;margin:0}"
+            " h3{color:#3fd08f} .gnode{cursor:pointer} .cap{color:#8a8f98;font-size:11px}"
+            " #detail{border-top:1px solid #30363d;margin-top:8px;padding-top:8px;min-height:40px}"
+            " pre{background:#161b22;padding:8px;border-radius:6px;overflow:auto}</style></head><body>"
+            "<h3>surface_render — drill-down hypervisor</h3>"
+            f"<div>{svg}</div>"
+            f"<div id='detail' class='cap'>click a node for details</div>"
+            "<script>var DET=" + det_json + ";"
+            "document.getElementById('graphsvg').addEventListener('click',function(e){"
+            "var t=e.target;while(t&&!t.dataset.id){t=t.parentNode;}if(!t||!t.dataset.id)return;"
+            "var d=DET[t.dataset.id]||{title:t.dataset.id,detail:'',mermaid:''};"
+            "document.getElementById('detail').innerHTML='<b style=color:#3fd08f>'+d.title+'</b>"
+            " &nbsp;<span class=cap>'+d.detail+'</span>'+(d.mermaid?'<pre>'+d.mermaid+'</pre>':'');"
+            "});</script></body></html>")
+
+
+def _republic_ledger() -> list[dict[str, Any]]:
+    """The republic's real interconnection record: every surface that routed NOVEL research to the
+    shared swarm primitive (memory/swarm_surface/sent.jsonl). Grounded, never invented."""
+    led = ROOT / "memory" / "swarm_surface" / "sent.jsonl"
+    out: list[dict[str, Any]] = []
+    if led.is_file():
+        for line in led.read_text(encoding="utf-8", errors="replace").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                out.append(json.loads(line))
+            except Exception:
+                continue
+    return out
+
+
+def republic_surfaces() -> list[dict[str, Any]]:
+    """The republic's active leaves: distinct surfaces + how many novel goals each routed to the
+    swarm. The mycelial interconnection is REAL — they all share the one primitive."""
+    counts: dict[str, int] = {}
+    for o in _republic_ledger():
+        s = o.get("surface") or "?"
+        counts[s] = counts.get(s, 0) + 1
+    return [{"surface": s, "n": c, "label": _cap(f"{s} ({c})")}
+            for s, c in sorted(counts.items(), key=lambda kv: -kv[1])[:8]]
+
+
+def republic_mermaid() -> str:
+    lines = ["flowchart LR", '  SW["SWARM | shared research queue"]', '  RB["rib_bus | doctrine"]']
+    for i, sd in enumerate(republic_surfaces()):
+        nid = "s" + str(i)
+        lines.append(f'  {nid}["{sd["label"]}"]')
+        lines.append(f"  {nid} -->|route_novel| SW")
+        lines.append(f"  RB -->|doctrine| {nid}")
+    return "\n".join(lines)
+
+
+def republic_detail(surface: str) -> dict[str, Any]:
+    rows = [o for o in _republic_ledger() if o.get("surface") == surface]
+    anchors = [str(o.get("anchor", ""))[:12] for o in rows[:5]]
+    return {"title": _cap(surface), "detail": f"{len(rows)} novel goal(s) routed to the swarm; "
+            f"recent anchors: {', '.join(anchors) or 'none'}", "mermaid": ""}
+
+
+def republic_drilldown() -> str:
+    """The REPUBLIC MAP (drillable): every research surface as a node, all interconnected through
+    the ONE shared primitive. The 'how do we map this to anyone else' answer — inline + clickable."""
+    surf = republic_surfaces()
+    nodes = [("sw", "SWARM | shared queue"), ("rb", "rib_bus | doctrine")]
+    node_ids = ["sw", "rb"]
+    edges = [("sw", "rb", "results")]
+    for i, sd in enumerate(surf):
+        nid = "s" + str(i)
+        nodes.append((nid, sd["label"]))
+        node_ids.append(nid)
+        edges.append((nid, "sw", "route_novel"))
+        edges.append(("rb", nid, "doctrine"))
+    svg = baremetal_svg(nodes, edges, title="Republic map: surfaces -> one shared primitive",
+                        node_ids=node_ids)
+    det = {"sw": {"title": "SWARM", "detail": "shared research queue; k8s drains in-cluster",
+                  "mermaid": ""},
+           "rb": {"title": "rib_bus", "detail": "doctrine injected to every surface",
+                  "mermaid": doctrine_flow()}}
+    for i, sd in enumerate(surf):
+        det["s" + str(i)] = republic_detail(sd["surface"])
+    import json as _j
+    det_json = _j.dumps(det, ensure_ascii=False)
+    return ("<!doctype html><html><head><meta charset='utf-8'>"
+            "<style>body{background:#0d1117;color:#e8e8e8;font-family:monospace;padding:10px;margin:0}"
+            " h3{color:#a3ff7e} .gnode{cursor:pointer} .cap{color:#8a8f98;font-size:11px}"
+            " #detail{border-top:1px solid #30363d;margin-top:8px;padding-top:8px;min-height:40px}"
+            " pre{background:#161b22;padding:8px;border-radius:6px;overflow:auto}</style></head><body>"
+            "<h3>Republic map - surfaces -> one shared primitive (drillable)</h3>"
+            f"<div>{svg}</div><div id='detail' class='cap'>click a surface for details</div>"
+            "<script>var DET=" + det_json + ";"
+            "document.getElementById('graphsvg').addEventListener('click',function(e){"
+            "var t=e.target;while(t&&!t.dataset.id){t=t.parentNode;}if(!t||!t.dataset.id)return;"
+            "var d=DET[t.dataset.id]||{title:t.dataset.id,detail:'',mermaid:''};"
+            "document.getElementById('detail').innerHTML='<b style=color:#a3ff7e>'+d.title+'</b>"
+            " &nbsp;<span class=cap>'+d.detail+'</span>'+(d.mermaid?'<pre>'+d.mermaid+'</pre>':'');"
+            "});</script></body></html>")
+
+
+def render_all() -> dict[str, Any]:
+    bill = bill_metrics()
+    spark = sparkline_svg([bill.get("cache_hit_rate")], label="cache-hit") if bill.get("cache_hit_rate") is not None \
+        else sparkline_svg([], label="cache-hit (no data yet)")
+    m = _agent_mesh()
+    return {
+        "ok": True, "schema": SCHEMA, "ts": _now(),
+        "doctrine_mermaid": doctrine_flow(),
+        "mesh_mermaid": mesh_mermaid(),
+        "mesh_svg": mesh_svg(),
+        "mesh_dot": mesh_dot(),
+        "bill_metrics": bill,
+        "sparkline_svg": spark,
+        "live_artifact_html": live_artifact_html(),
+        "drilldown_html": drilldown_html(),
+        "republic_mermaid": republic_mermaid(),
+        "republic_drilldown": republic_drilldown(),
+        "vram": vram_lattice(),
+        "live_metrics": f"{m['seats']} seats | {m['domains']} domains | {m['swarm_anchors']} anchors",
+        "reuse": "swarm_map.html (live artifact) + framework_map (cards) + surface_render (compact) "
+                 "— reused, not rebuilt",
+        "contract": "render_all() -> inline mermaid + raw SVG + DOT + sparkline + live artifact + "
+                    "drill-down (Shneiderman overview->details). Zero deps, ASCII-only, viewBox-scaled.",
+    }
+
+
+def persist() -> dict[str, Any]:
+    """Persist the live render to disk every cadence so EVERY surface/worker can serve it.
+    Writes the drill-down artifact (html) + the structured state (json). Deterministic + $0."""
+    r = render_all()
+    out = ROOT / "memory" / "runs" / "surface_render"
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "drilldown.html").write_text(r["drilldown_html"], encoding="utf-8")
+    (out / "live.html").write_text(r["live_artifact_html"], encoding="utf-8")
+    (out / "republic.html").write_text(r["republic_drilldown"], encoding="utf-8")
+    slim = {k: v for k, v in r.items() if k not in ("drilldown_html", "live_artifact_html",
+                                                    "republic_drilldown", "mesh_svg",
+                                                    "sparkline_svg")}
+    (out / "latest.json").write_text(json.dumps(slim, ensure_ascii=False, indent=2, default=str),
+                                     encoding="utf-8")
+    return {"ok": True, "schema": SCHEMA, "ts": _now(), "dir": str(out.relative_to(ROOT)),
+            "drilldown": "drilldown.html", "live": "live.html", "republic": "republic.html",
+            "state": "latest.json"}
+
+
+if __name__ == "__main__":
+    import argparse
+    ap = argparse.ArgumentParser(prog="surface-render")
+    ap.add_argument("cmd", nargs="?", default="all",
+                    choices=["all", "mesh-svg", "mesh-mermaid", "dot", "spark", "artifact",
+                             "drilldown", "republic", "persist"])
+    a = ap.parse_args()
+    r = render_all()
+    if a.cmd == "mesh-svg":
+        print(r["mesh_svg"])
+    elif a.cmd == "mesh-mermaid":
+        print(r["mesh_mermaid"])
+    elif a.cmd == "dot":
+        print(r["mesh_dot"])
+    elif a.cmd == "spark":
+        print(r["sparkline_svg"])
+    elif a.cmd == "artifact":
+        print(r["live_artifact_html"])
+    elif a.cmd == "drilldown":
+        print(r["drilldown_html"])
+    elif a.cmd == "republic":
+        print(r["republic_mermaid"])
+    elif a.cmd == "persist":
+        print(json.dumps(persist(), ensure_ascii=False, indent=2, default=str))
+    else:
+        print(json.dumps(r, ensure_ascii=False, indent=2, default=str))

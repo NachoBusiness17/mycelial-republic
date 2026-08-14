@@ -64,7 +64,12 @@ def _right_size() -> dict[str, Any]:
         return {"level": "full", "budget": 4}
 
 
-def steal_search(source: str | None = None) -> dict[str, Any]:
+def _default_steal_sources() -> list[str]:
+    """External steal sources routed BY DEFAULT (steal_protocol forest + arXiv research)."""
+    return ["steal_protocol", "arxiv"]
+
+
+def steal_search(source: str | None = None, *, max_papers: int | None = None) -> dict[str, Any]:
     """STEAL-SEARCH: pull a high-quality source and extract capability invariants."""
     source = source or "steal_protocol"
     if source == "steal_protocol" and STEAL_ROOT.is_dir():
@@ -78,6 +83,22 @@ def steal_search(source: str | None = None) -> dict[str, Any]:
                     "n_invariants": len(invariants)}
         except Exception as e:
             return {"ok": False, "source": source, "error": str(e)[:150]}
+    if source in ("arxiv", "arxiv_mine"):
+        # arXiv mined the same way we steal: route novel papers through route_novel -> swarm.
+        try:
+            from mag import arxiv_mine
+            r = arxiv_mine.mine(max_papers=max_papers or 3)
+            return {
+                "ok": True, "source": "arxiv", "n_invariants": len(r.get("results", [])),
+                "invariants": [
+                    {"family": f"arxiv:{p.get('topic', '?')}", "verdict": "take",
+                     "title": p.get("title", ""), "routed": p.get("routed"),
+                     "link": p.get("link", "")}
+                    for p in r.get("results", [])
+                ],
+            }
+        except Exception as e:
+            return {"ok": False, "source": "arxiv", "error": str(e)[:150]}
     # fallback: synthesize a probe invariant from the source name
     return {"ok": True, "source": source, "invariants": [
         {"family": "capability", "verdict": "take", "n_files": 0}], "n_invariants": 1}
@@ -108,10 +129,16 @@ def expand(*, force: bool = False) -> dict[str, Any]:
         return {"ok": True, "action": "skip", "reason": "right-sized to none"}
     budget = int(rs.get("budget") or 1)
 
-    # 1) steal-search a gated high-quality source
-    ss = steal_search()
+    # 1) steal-search gated high-quality sources — external steal BY DEFAULT includes arXiv
+    sources = _default_steal_sources()
+    invariants_all: list[dict[str, Any]] = []
+    for src in sources:
+        _ss = steal_search(src, max_papers=max(1, budget))
+        invariants_all.extend(_ss.get("invariants") or [])
+    ss = {"source": "+".join(sources), "invariants": invariants_all,
+          "n_invariants": len(invariants_all)}
     expanded = []
-    for inv in (ss.get("invariants") or [])[:budget]:
+    for inv in invariants_all[:budget]:
         family = inv.get("family") or "capability"
         # 2) test local model on it
         tl = test_local(family)

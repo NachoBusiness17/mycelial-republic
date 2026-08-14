@@ -53,6 +53,10 @@ _TRANSIENT_FILES = [
     "_tmp_*",
     "_deliver_*",
     "*.pyc",
+    # verify_*.ipynb = legacy DEMO/verification notebooks (ad-hoc execution surfaces we reach for
+    # when the right surface is the LOOP + persisted artifacts, per loop-is-the-connection). They are
+    # transient clutter, NOT the architecture — retire them via the framework trash, never PowerShell.
+    "verify_*.ipynb",
 ]
 # Paths we NEVER touch, even if they match a pattern.
 _PROTECT = {"worktrees", "mine", "reference", "node_modules", ".git", ".venv", "memory"}

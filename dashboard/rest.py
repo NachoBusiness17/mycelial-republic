@@ -107,6 +107,34 @@ def h_health(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
     return 200, sanity()
 
 
+def h_web_fetch(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """NATIVE web-fetch surface (2026-08-14, operator: stop pinging me with the console).
+    GET /api/v1/web/fetch?url=...&max_chars=N — silent, server-side fetch over our own
+    machinery, NOT a console/terminal curl. The agent calls this REST route for web research.
+    Honest: reports status/bytes/truncation; never fabricates content."""
+    import re
+    import urllib.request
+    url = str(_p.get("url") or "").strip()
+    if not url:
+        return 400, {"ok": False, "error": "missing ?url="}
+    if not (url.startswith("http://") or url.startswith("https://")):
+        return 400, {"ok": False, "error": "url must be http(s)"}
+    max_chars = int(_p.get("max_chars") or 8000)
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "mag-sovereign/1.0"})
+        with urllib.request.urlopen(req, timeout=20) as r:
+            raw = r.read()
+        enc = r.headers.get_content_charset() or "utf-8"
+        text = raw.decode(enc, errors="replace")
+        snippet = re.sub(r"<[^>]+>", " ", text)
+        snippet = re.sub(r"\s+", " ", snippet).strip()
+        return 200, {"ok": True, "url": url, "status": 200, "bytes": len(raw),
+                     "chars": len(snippet), "truncated": len(snippet) > max_chars,
+                     "text": snippet[:max_chars]}
+    except Exception as e:  # noqa: BLE001
+        return 502, {"ok": False, "url": url, "error": str(e)[:200]}
+
+
 def h_test_run(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
     """Restful test-run surface (the operator's 'testing is antiquated' fix).
     GET -> latest status; POST {action:run, timeout, per_test, paths} -> run."""
@@ -147,6 +175,72 @@ def h_ghost_control(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int,
     from mag.ghost_control import control
 
     return 200, control()
+
+
+def h_sovereign(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Whole-stack one-call view — the SEAT's primary "machine reconciled" payload.
+    Thin twin of the ghost daemon's /api/v1/sovereign so the seat can call it SAME-ORIGIN
+    on the dashboard proxy (no cross-origin CORS against :9000).
+    GET /api/v1/sovereign"""
+    try:
+        from mag.sovereign_dashboard import sovereign_dashboard
+        return 200, sovereign_dashboard()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_solved(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """What our history already solved — surfaced automatically from the internals
+    (pro_library case law + RIB + verkle tip). Fast (reads local files). The seat's
+    'Solved' card. GET /api/v1/solved"""
+    try:
+        from mag.solved_surface import solved
+        return 200, solved()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_schemas(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """SCHEMA REGISTRY — the versioning manifest for all session modules (self-describing
+    SCHEMA per module). The seat's 'Versions' view. GET /api/v1/schemas"""
+    try:
+        from mag.schema_registry import versions
+        return 200, versions()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_ecosystem(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """ECOSYSTEM SURFACE — the whole ecosystem (swarms + modules + steal + ledgers + opcodes +
+    cost + handoffs) in one machine-readable bundle. The seat's 'Ecosystem' card + the source
+    for the scannable RIB. Deterministic, $0. GET /api/v1/ecosystem"""
+    try:
+        from mag.ecosystem_surface import ecosystem
+        return 200, ecosystem()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_ecosystem_rib(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """ECOSYSTEM RIB — compress the ecosystem into a scannable QR-like token for instant
+    inference + memory handoff. GET /api/v1/ecosystem/rib"""
+    try:
+        from mag.ecosystem_surface import rib
+        return 200, rib()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_ecosystem_scan(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """ECOSYSTEM SCAN — decode a RIB payload (?payload=<b64>) into instant-inference + handoff
+    pointers; with no payload, scan the live ecosystem. GET /api/v1/ecosystem/scan"""
+    try:
+        from mag.ecosystem_surface import scan
+        return 200, scan(_p.get("payload"))
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
 
 
 def h_ghost_talk(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
@@ -2405,6 +2499,23 @@ def h_extension_deploy(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[i
         return 500, {"ok": False, "error": str(e)[:300]}
 
 
+def h_seat_steer(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """POST /api/v1/seat/steer — the architecture path for live seat actions: send a message into
+    a surface (chatgpt/grok/grok_x/deepseek) headless. Body {surface, message, enqueue?:bool}.
+    Mirrors h_extension_deploy (the path precedent) — the agent never reaches for a shell."""
+    from mag.seat_steer import send, enqueue
+
+    body = body or {}
+    surface = str(body.get("surface") or "chatgpt")
+    message = str(body.get("message") or "")
+    try:
+        if body.get("enqueue"):
+            return 200, enqueue(surface, message)
+        return 200, send(surface, message)
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
 def h_cleanup(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
     """Thin REST twin for passive cleanup: audit + (dry=false) move transient to trash.
 
@@ -4617,6 +4728,10 @@ def h_partner_puppet_post(_p: dict[str, str], _b: dict[str, Any] | None) -> tupl
 ROUTES: list[tuple[str, str, HandlerFn]] = [
     ("GET", "/api/v1/partner/puppet", h_partner_puppet),
     ("POST", "/api/v1/partner/puppet", h_partner_puppet_post),
+    ("GET", "/api/v1/ecosystem", h_ecosystem),
+    ("GET", "/api/v1/ecosystem/rib", h_ecosystem_rib),
+    ("GET", "/api/v1/ecosystem/scan", h_ecosystem_scan),
+    ("GET", "/api/v1/schemas", h_schemas),
     ("GET", "/api/v1/endpoints", h_endpoints),
     ("GET", "/api/endpoints", h_endpoints),
     ("GET", "/api/v1/rightsize", h_rightsize),
@@ -4640,11 +4755,14 @@ ROUTES: list[tuple[str, str, HandlerFn]] = [
     ("POST", "/api/v1/tapestry/rebuild", h_post_tapestry),
     ("GET", "/api/v1/lattice-lab", h_lattice_lab),
     ("GET", "/api/v1/health", h_health),
+    ("GET", "/api/v1/web/fetch", h_web_fetch),
     ("GET", "/api/v1/doctor", h_health),
     ("GET", "/api/v1/test-run", h_test_run),
     ("POST", "/api/v1/test-run", h_test_run),
     ("GET", "/api/v1/tokens/saved", h_tokens_saved),
     ("GET", "/api/v1/ghost/control", h_ghost_control),
+    ("GET", "/api/v1/sovereign", h_sovereign),
+    ("GET", "/api/v1/solved", h_solved),
     ("POST", "/api/v1/ghost/talk", h_ghost_talk),
     ("GET", "/api/v1/memory/search", h_memory_search),
     ("GET", "/api/v1/memory/recent", h_memory_recent),
@@ -4921,6 +5039,7 @@ ROUTES: list[tuple[str, str, HandlerFn]] = [
     ("GET", "/api/v1/spec-gate", h_spec_gate),
     ("POST", "/api/v1/spec-gate", h_spec_gate),
     ("POST", "/api/v1/extension/deploy", h_extension_deploy),
+    ("POST", "/api/v1/seat/steer", h_seat_steer),
     ("GET", "/api/v1/elevate", h_elevate),
     ("POST", "/api/v1/elevate", h_elevate),
     ("GET", "/api/v1/cleanup", h_cleanup),

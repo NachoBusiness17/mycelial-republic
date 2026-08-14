@@ -312,7 +312,7 @@ def seed_default_moves() -> dict[str, Any]:
     seeds = [
         ("claimed edits but no file change, tool result empty, done with no diff",
          "steer",
-         "Verify with git diff / actual file bytes before declaring done. Trust bytes, not reports.",
+         "Verify via OUR systems before declaring done (get_errors + read the actual file bytes on disk). Trust bytes, not reports. Do NOT use git diff.",
          "catches false-success hallucination before escalation",
          "steer:false-success-verify"),
         ("about to edit a file, base may have changed, spec frozen",

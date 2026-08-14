@@ -1,5 +1,11 @@
 @echo off
 REM Full-stack Mag boot — silent (Windows Startup / auto).
+REM Self-minimize so the boot never flashes a full console window at launch
+REM (2026-08-10: the startup .lnk opened a visible cmd window for the boot duration).
+if /i "%~1"=="min" goto :main
+start "" /min "%~f0" min
+exit /b
+:main
 REM Supervisor: backend :8000 + dashboard :8765 + integral lab + scribe (+ mirror if set)
 REM Opens Direct Mag: http://127.0.0.1:8765/?tab=chat
 setlocal

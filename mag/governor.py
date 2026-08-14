@@ -249,7 +249,7 @@ def _run_seat(text: str, provider: str) -> tuple[int, str, str]:
     except Exception:
         pass
 
-    cmd = [_sys.executable, str(ROOT / "main.py"), "agent", "-q", text,
+    cmd = [headless.PYTHON, str(ROOT / "main.py"), "agent", "-q", text,
            "--provider", provider]
     try:
         import os as _os

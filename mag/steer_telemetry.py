@@ -60,7 +60,7 @@ _TASK_TYPE_RE = [
 # default-state hints per task_type (channel B — moves as defaults)
 _DEFAULT_HINTS = {
     "summarize": "This is a summarize/re-read task: file quickly, do NOT re-derive, do NOT rewrite existing artifacts.",
-    "build": "This is a build task: verify with git diff / actual file bytes before declaring done. Trust bytes, not reports.",
+    "build": "This is a build task: verify via OUR systems before declaring done (get_errors + read the actual file bytes on disk). Trust bytes, not reports. Do NOT use git diff.",
     "design": "This is a design task: thinking on, produce a spec to disk, output a nugget (<=200 chars).",
     "generic": "",
 }

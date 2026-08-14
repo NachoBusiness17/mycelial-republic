@@ -23,6 +23,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+from mag import headless
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -255,6 +256,26 @@ def session_exit(record: SessionRecord) -> SessionRecord:
     except Exception as e:
         print(f"  Exit dialogue failed: {e}")
 
+    # ── Step 2b: ROSHOMON-MINE THIS SESSION (2026-08-12) ──
+    # The operator: "do this with every session." Roshomon the conversation to its core, route the
+    # direction to the swarm, and passively measure tesuji from this session's own logs (every
+    # interaction is data). Deterministic + $0, idempotent, reuse only.
+    print("\n[2b/5] ROSHOMON-MINE — mine this session for direction + passive tesuji")
+    try:
+        from mag import roshomon_mine
+        mine = roshomon_mine.inform_swarm(enqueue=True, limit=5)
+        print(f"  Roshomon core invariants: {mine.get('mined', {}).get('n_core_invariants', 0)} "
+              f"| routed to swarm: {mine.get('routed_to_swarm')} | deduped: {mine.get('already_deduped')}")
+    except Exception as e:
+        print(f"  Roshomon-mine failed: {e}")
+    try:
+        from mag import roshomon_mine
+        tesuji = roshomon_mine.tesuji_from_sessions(log=True)
+        print(f"  Passive tesuji from session logs: {tesuji.get('tesuji_shells_logged')} shells "
+              f"from {tesuji.get('n_session_sources')} session sources")
+    except Exception as e:
+        print(f"  Passive tesuji failed: {e}")
+
     # ── Step 3: Build vs Deploy count ──
     print(f"\n[3/5] BUILD vs DEPLOY")
     ratio = record.deploy_ratio()
@@ -347,7 +368,7 @@ def _boot_ghost() -> bool:
     try:
         # Start Ghost in background
         subprocess.Popen(
-            [sys.executable, "-m", "uvicorn", "mag.ghost:app", "--host", "127.0.0.1", "--port", "9000"],
+            [headless.PYTHON, "-m", "uvicorn", "mag.ghost:app", "--host", "127.0.0.1", "--port", "9000"],
             cwd=str(ROOT),
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,

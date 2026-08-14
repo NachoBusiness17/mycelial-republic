@@ -95,7 +95,16 @@ def probe_agent(name: str) -> dict[str, Any]:
     row: dict[str, Any] = {"agent": name, "alive": False, "status": "down", "staleness_s": None}
     try:
         if name in ("ghost", "autorun"):
-            row.update(_supervisor_row(name))
+            if name == "ghost":
+                # Control plane = ghost-daemon on :9000. NOT process_supervisor's
+                # 'ghost' loop (that is a DIFFERENT opt-in auto-deploy cadence whose
+                # name collides). Checking that loop reported ghost 'down' always,
+                # so health_law restarted 'ghost' every cadence = the 16s cycle storm.
+                from mag.health import _port_open
+                row["alive"] = bool(_port_open(9000))
+                row["status"] = "up" if row["alive"] else "down"
+            else:
+                row.update(_supervisor_row(name))
         elif name == "drainer":
             try:
                 from mag.preferences import drainer_status

@@ -284,6 +284,12 @@ def run_mirror(vision: str, *, grok: bool = True, research: bool = True,
     cap = capture_plan(vision, grok=grok)
     report["capture"] = cap
     plan_text = cap.get("plan") or ""
+    # HONESTY (operator 2026-08-10): 'grok' is only the REQUEST flag. Whether real grok output
+    # was captured lives in grok_captured (true only when the call succeeded AND returned text).
+    # No artifact may imply frontier output that did not actually arrive.
+    report["grok_captured"] = bool(cap.get("ok") and (plan_text or "").strip())
+    if report["grok_captured"] is False:
+        report["provenance_note"] = "grok was requested but returned no real output; this is OUR synthesis, not frontier output"
 
     report["interpret"] = interpret(plan_text)
 

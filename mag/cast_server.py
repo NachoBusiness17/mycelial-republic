@@ -31,6 +31,7 @@ _ALLOWED = frozenset(
         "/",
         "/cast.html",
         "/voice",
+        "/wearable",
         "/control",
         "/health",
         "/api/v1/display",
@@ -41,6 +42,8 @@ _ALLOWED = frozenset(
         "/api/v1/voice/dictate",
         "/api/v1/remote/status",
         "/api/v1/remote/intent",
+        "/api/v1/wearable/surface",
+        "/api/v1/wearable/command",
     }
 )
 
@@ -131,6 +134,28 @@ class Handler(BaseHTTPRequestHandler):
             return
         if path == "/voice":
             return self._file(STATIC / "cast-voice.html", "text/html; charset=utf-8")
+        if path == "/wearable":
+            if not self._guard(control=False):
+                return
+            return self._file(STATIC / "wearable.html", "text/html; charset=utf-8")
+        if path == "/api/v1/wearable/surface":
+            if not self._guard(control=False):
+                return
+            try:
+                from mag.wearable_swarm import surface
+                self._json(200, surface())
+            except Exception as exc:
+                self._json(500, {"ok": False, "error": f"wearable surface: {exc!s}"[:200]})
+            return
+        if path == "/api/v1/wearable/command":
+            if not self._guard(control=True):
+                return
+            try:
+                from mag.wearable_swarm import command
+                self._json(200, command(self._query_param("text", ""), dry=True, source="wearable"))
+            except Exception as exc:
+                self._json(500, {"ok": False, "error": f"wearable command: {exc!s}"[:200]})
+            return
         if path == "/control":
             return self._file(STATIC / "control.html", "text/html; charset=utf-8")
         if path == "/api/v1/voice/stt":
@@ -142,11 +167,10 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(500, {"ok": False, "error": f"stt status: {exc!s}"[:200]})
             return
         if path == "/api/v1/remote/status":
-            from mag.remote_control import authorized, status, token_from_headers
-
-            if not authorized(token_from_headers(self.headers)):
-                self._json(401, {"ok": False, "error": "valid remote token required"})
+            if not self._guard(control=True):
                 return
+            from mag.remote_control import status
+
             self._json(200, status())
             return
         if path in ("/", "/cast.html"):
@@ -167,6 +191,21 @@ class Handler(BaseHTTPRequestHandler):
 
             self._json(200, build_display_payload())
             return
+        if path == "/api/v1/feed":
+            # The Mycelial Republic feed: high-signal $0 wins (Tumblr/IG-style), mapped to internals.
+            try:
+                from mag.republic_feed import feed
+                tail_raw = self._query_param("tail", "50")
+                try:
+                    tail_n = int(tail_raw)
+                except ValueError:
+                    tail_n = 50
+                self._json(200, feed(tail=tail_n))
+            except Exception as exc:
+                self._json(500, {"ok": False, "error": f"feed: {exc!s}"[:200]})
+            return
+        if path == "/feed":
+            return self._file(STATIC / "feed.html", "text/html; charset=utf-8")
 
     def do_POST(self) -> None:
         path = urlparse(self.path).path
@@ -187,11 +226,10 @@ class Handler(BaseHTTPRequestHandler):
             self._json(400, {"ok": False, "error": f"bad JSON: {exc!s}"[:120]})
             return
         if path == "/api/v1/remote/intent":
-            from mag.remote_control import authorized, submit_intent, token_from_headers
-
-            if not authorized(token_from_headers(self.headers)):
-                self._json(401, {"ok": False, "error": "valid remote token required"})
+            if not self._guard(control=True):
                 return
+            from mag.remote_control import submit_intent
+
             out = submit_intent(body)
             self._json(202 if out.get("ok") else 400, out)
             return
@@ -240,6 +278,27 @@ class Handler(BaseHTTPRequestHandler):
             self._json(200 if out.get("ok") else 400, out)
         except Exception as exc:
             self._json(500, {"ok": False, "error": f"voice_turn crash: {exc!s}"[:240]})
+
+    def _query_param(self, name: str, default: str = "") -> str:
+        """Read a query-string param from self.path (no deps)."""
+        from urllib.parse import parse_qs, urlparse
+        q = parse_qs(urlparse(self.path).query)
+        vals = q.get(name)
+        return vals[0] if vals else default
+
+    def _guard(self, *, control: bool = True) -> bool:
+        """Baked-in LAN-only + token defense (mag.cast_guard). Writes 401/403 on deny."""
+        try:
+            from mag.cast_guard import guard
+            from mag.remote_control import token_from_headers
+            ip = self.client_address[0] if self.client_address else ""
+            g = guard(ip, self.path, token_from_headers(self.headers), control=control)
+            if g.get("ok"):
+                return True
+            self._json(401 if g.get("deny") == "unauthorized" else 403, {"ok": False, **g})
+        except Exception as exc:
+            self._json(500, {"ok": False, "error": f"guard: {exc!s}"[:160]})
+        return False
 
     def _cors(self) -> None:
         self.send_header("Access-Control-Allow-Origin", "*")

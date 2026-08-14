@@ -25,6 +25,7 @@ import json
 import os
 import subprocess
 import sys
+from mag import headless
 import time
 import uuid
 from datetime import datetime, timezone
@@ -134,7 +135,7 @@ def _dim(msg: str) -> str:
 
 def _launch(task_id: str, provider: str, model: str | None) -> subprocess.Popen:
     """Spawn the seat REPL sharing our console; stable MAG_TASK_ID = knot."""
-    cmd = [sys.executable, str(ROOT / "main.py"), "agent", "--provider", provider]
+    cmd = [headless.PYTHON, str(ROOT / "main.py"), "agent", "--provider", provider]
     if model:
         cmd += ["--model", model]
     env = dict(os.environ)

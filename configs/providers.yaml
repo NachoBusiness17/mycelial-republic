@@ -135,11 +135,9 @@ providers:
     name: DeepSeek
     kind: openai_compat
     base_url: https://api.deepseek.com/v1
-    api_key_env: DEEPSEEK_API_KEY
-    # Multi-key chain: env names are tried in order; 401/403/429
-    # auto-failover to the next key (verified 2026-08-03).
-    # Order: Mag -> Overmind -> Swarm (each its own env, no duplicates).
-    api_key_envs: [DEEPSEEK_API_KEY, DEEPSEEK_OVERMIND_API_KEY, DEEPSEEK_SWARM_API_KEY]
+    api_key_env: DEEPSEEK_SWARM_API_KEY
+    # 2026-08-10: Mag + Overmind keys were wiped; ONLY the Swarm key remains.
+    api_key_envs: [DEEPSEEK_SWARM_API_KEY]
     # DeepSeek v4 defaults thinking ON; reasoning tokens eat max_tokens and
     # small budgets return EMPTY content (the 'agent hallucinating / empty
     # reply' bug). Top-level thinking:{type:disabled} is ~10-15x cheaper and
@@ -153,6 +151,15 @@ providers:
     default_model: deepseek-v4-flash
     tier_max: T2
     free_local: false
+    quota:
+      period: daily
+      reset_day: 1
+      # AUTORUN BUDGET (2026-08-12, operator: "spend a dollar"): bound the swarm to ~$1 of
+      # deepseek spend. Grounded on the measured warm-prefix cost (~$0.0012/req). ~1.0M tokens
+      # daily cap approximates a dollar; the quota system refuses work past the cap.
+      max_calls: 850
+      max_tokens: 1000000
+      note: "Autorun bounded to ~$1/day (850 calls / 1M tokens) — operator 'spend a dollar' 2026-08-12"
 
   deepseek_overmind:
     name: DeepSeek Overmind (second key chain)

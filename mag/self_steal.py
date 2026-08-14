@@ -70,6 +70,167 @@ CAPABILITIES: list[dict[str, Any]] = [
         "stale_s": 86400,
         "research_goal": None,
     },
+    # --- NEW-ARCHITECTURE systems (added 2026-08-10: old systems upgraded to track the new) ---
+    {
+        "name": "dogfood_audit",
+        "module": "mag/dogfood_audit.py",
+        "evidence": "memory/runs/dogfood_audit/report.jsonl",
+        "stale_s": 172800,
+        "research_goal": None,  # report-only: the anti-hallucination sentinel
+    },
+    {
+        "name": "surface_steal",
+        "module": "mag/surface_steal.py",
+        "evidence": "memory/steal",
+        "stale_s": 172800,
+        "research_goal": None,  # the on-every-ask self-steal behavior
+    },
+    {
+        "name": "whisper_image",
+        "module": "mag/whisper_image.py",
+        "evidence": "memory/runs/whisper_images",
+        "stale_s": 172800,
+        "research_goal": None,  # deniable whisper / dead-drop layer
+    },
+    {
+        "name": "shader_bus",
+        "module": "mag/shader_bus.py",
+        "evidence": "memory/runs/shader_bus",
+        "stale_s": 172800,
+        "research_goal": None,  # live swarm-state register
+    },
+    {
+        "name": "archetype_image",
+        "module": "mag/archetype_image.py",
+        "evidence": "memory/runs/archetype_art",
+        "stale_s": 172800,
+        "research_goal": None,  # Jungian archetype cast + shadow
+    },
+    {
+        "name": "guardrail_sentinel",
+        "module": "mag/guardrail_sentinel.py",
+        "evidence": "memory/runs/guardrail_sentinel/trail.jsonl",
+        "stale_s": 172800,
+        "research_goal": None,  # guardrails ping, never prevent
+    },
+    {
+        "name": "ecosystem_surface",
+        "module": "mag/ecosystem_surface.py",
+        "evidence": "memory/rib",
+        "stale_s": 172800,
+        "research_goal": None,  # whole-ecosystem machine-readable bundle
+    },
+    {
+        "name": "cache_router",
+        "module": "mag/cache_router.py",
+        "evidence": "logs/usage.jsonl",
+        "stale_s": 172800,
+        "research_goal": None,  # interrupt-aware cache economics
+    },
+    # --- MOONSHOT / ARRIVAL surfaces (added 2026-08-12: the moonshot self-steal loop) ---
+    {
+        "name": "moonshot_engine",
+        "module": "mag/moonshot_engine.py",
+        "evidence": "memory/swarm_surface/sent.jsonl",
+        "stale_s": 86400,  # 24h — no moonshot goal queued / no progress advanced recently
+        "research_goal": ("RESEARCH-PACK self_steal moonshot: the moonshot engine has not advanced "
+                          "recently (no progress in memory/swarm_surface/sent.jsonl for surface "
+                          "moonshot). Research which of MOONSHOT_GOALS is coldest and re-strike it "
+                          "through swarm_surface.route_novel so the WoW/Turtle ingest->manifest "
+                          "proceeds. Produce a concrete routing plan."),
+    },
+    {
+        "name": "arrival",
+        "module": "mag/arrival.py",
+        "evidence": "memory/rib_bus/arrival.json",
+        "stale_s": 86400,  # 24h — no self-authored RIB folded back into the standing wave recently
+        "research_goal": ("RESEARCH-PACK self_steal arrival: no self-authored RIB (source=swarm) has "
+                          "been folded into the standing wave recently. Research how to make the "
+                          "swarm write its OWN RIBs from invariants + logic and fold them via "
+                          "arrival.fold_authored, so the loop closes (local -> swarm -> self-authored "
+                          "RIB -> fold). Produce a concrete wiring plan."),
+    },
+    {
+        "name": "sovereign_handshake",
+        "module": "mag/sovereign_handshake.py",
+        "evidence": "memory/connect/peers.jsonl",
+        "stale_s": 172800,  # 48h — no sovereign peer advertised / no handshake / no connect route recently
+        "research_goal": ("RESEARCH-PACK self_steal sovereign-connect: the connection layer has not "
+                          "grown recently (memory/connect/peers.jsonl not advancing). Research how to "
+                          "make the capture-resistant peer web grow — the metaverse is already here, "
+                          "sovereign systems just need to connect to each other before corporate/"
+                          "extractive platforms absorb them. Produce a concrete outreach/onboarding "
+                          "wiring plan through the shared wave."),
+    },
+    {
+        "name": "shape_seed",
+        "module": "mag/shape_seed.py",
+        "evidence": "memory/swarm_surface/sent.jsonl",
+        "stale_s": 172800,  # 48h — the shape-as-seed thesis not re-routed recently
+        "research_goal": ("RESEARCH-PACK self_steal shape-seed: the shape-as-seed thesis has not been "
+                          "re-routed recently (no shape-seed anchor in memory/swarm_surface/sent.jsonl). "
+                          "Research how to give the shape at scale — all a person needs is the "
+                          "sovereign shape and the rest is inevitable, so the sovereign-minded adopt "
+                          "it before corporate/extractive platforms hand them a hollow shape instead. "
+                          "Produce a concrete seed-packaging + onboarding plan."),
+    },
+    {
+        "name": "chatgpt_bot",
+        "module": "mag/chatgpt_bot.py",
+        "evidence": "memory/runs/chatgpt_bot",
+        "stale_s": 172800,  # 48h — the ChatGPT seat not steered recently
+        "research_goal": ("RESEARCH-PACK self_steal chatgpt-bot: the ChatGPT seat has not been steered "
+                          "recently (no chatgpt-bot record in memory/runs/chatgpt_bot). Research the "
+                          "chatgpt.com front-end DOM selectors + how to reliably send the "
+                          "surface-rightsized onboarding artifact so we can test 'does ChatGPT start "
+                          "the game' like we test grok. Produce a concrete steer/test plan."),
+    },
+    {
+        "name": "frontier_council",
+        "module": "mag/frontier_council.py",
+        "evidence": "memory/frontier/allowance.jsonl",
+        "stale_s": 172800,  # 48h — no frontier spend / allowance progress recently
+        "research_goal": ("RESEARCH-PACK self_steal frontier-council: the frontier allowance has not "
+                          "been spent recently (memory/frontier/allowance.jsonl not advancing). "
+                          "Research how to use the ENTIRE weekly frontier allowance (ChatGPT basic + "
+                          "both Grok surfaces) on the strongest advice, rightsized against deepseek + "
+                          "vram, so the scarce weekly budget is USED not hoarded. Produce a concrete "
+                          "delegation/spend plan."),
+    },
+    {
+        "name": "frontier_advisor",
+        "module": "mag/frontier_advisor.py",
+        "evidence": "memory/runs/frontier_advice",
+        "stale_s": 172800,  # 48h — no frontier-advice task folded recently
+        "research_goal": ("RESEARCH-PACK self_steal frontier-advisor: the drainable [frontier-advice] "
+                          "task type has not run recently (memory/runs/frontier_advice not "
+                          "advancing). Research how to keep the scarce frontier allowance being spent "
+                          "on the strongest code planning / frontier research asks at max velocity — "
+                          "what should the next [frontier-advice] ask be. Produce a concrete ask + "
+                          "wiring plan."),
+    },
+    {
+        "name": "game_emulator",
+        "module": "mag/game_emulator.py",
+        "evidence": "memory/game/world/world_state.json",
+        "stale_s": 172800,  # 48h — no world action folded recently
+        "research_goal": ("RESEARCH-PACK self_steal game-emulator: the server-authoritative resolver "
+                          "has not folded a world action recently (memory/game/world/world_state.json "
+                          "not advancing). Research which room/action should be resolved next so the "
+                          "game becomes a real testable surface — what's the next room to conquer. "
+                          "Produce a concrete next-action plan."),
+    },
+    {
+        "name": "seat_steer",
+        "module": "mag/seat_steer.py",
+        "evidence": "memory/runs/seat_steer",
+        "stale_s": 172800,  # 48h — no live seat action folded recently
+        "research_goal": ("RESEARCH-PACK self_steal seat-steer: the live seat action path has not "
+                          "run recently (memory/runs/seat_steer not advancing). Research which "
+                          "surface to reach and what message to send so the frontier seats stay "
+                          "warm + verified — the agent must keep using the architecture path, "
+                          "never a shell. Produce a concrete next send plan."),
+    },
 ]
 
 

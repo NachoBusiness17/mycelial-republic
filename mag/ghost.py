@@ -391,6 +391,145 @@ def sense_surfaces() -> dict[str, Any]:
         out["swarm_health"] = sh_status()
     except Exception:
         pass
+
+    # ── Steal-awareness (closes the "STEAL BOTH BY DEFAULT" blind spot) ──
+    # Ghost surfaced only the INTERNAL self_steal audit. The EXTERNAL steal results
+    # (capability_steal expansions, field_steal ledgers) and the AFK self-advance
+    # reflections were written to disk but never read back into the sense snapshot.
+    try:
+        cs = ROOT / "memory" / "capability_steal" / "expansions.jsonl"
+        rows = _read_jsonl(cs, tail=500) if cs.is_file() else []
+        out["capability_steal"] = {
+            "n_expansions": len(rows),
+            "n_promoted": sum(1 for r in rows if r.get("promoted")),
+            "families": sorted({str(r.get("family", "?")) for r in rows})[:8],
+        }
+    except Exception:
+        pass
+    try:
+        fs = ROOT / "memory" / "improve" / "field_steal"
+        ledgers = sorted(fs.glob("ledger_*.json")) if fs.is_dir() else []
+        out["field_steal"] = {"n_ledgers": len(ledgers),
+                              "latest": ledgers[-1].name if ledgers else None}
+    except Exception:
+        pass
+    try:
+        sa = ROOT / "memory" / "self_advance" / "reflections.jsonl"
+        refs = _read_jsonl(sa, tail=500) if sa.is_file() else []
+        out["self_advance"] = {"n_reflections": len(refs)}
+    except Exception:
+        pass
+
+    # ── Economy — live spend / totals (ghost saw only the derived cost_learn leaf) ──
+    try:
+        cl = ROOT / "memory" / "training" / "cost_ledger.jsonl"
+        led = _read_jsonl(cl, tail=1000) if cl.is_file() else []
+        total = 0.0
+        for r in led:
+            v = r.get("value")
+            try:
+                total += float(v) if v is not None else 0.0
+            except (TypeError, ValueError):
+                pass
+        et = ROOT / "memory" / "improve" / "economy_totals.json"
+        totals = {}
+        if et.is_file():
+            try:
+                d = json.loads(et.read_text(encoding="utf-8"))
+                totals = d if isinstance(d, dict) else {}
+            except Exception:
+                pass
+        out["economy"] = {
+            "n_cost_ledger_rows": len(led),
+            "sum_value": round(total, 4),
+            "totals_keys": sorted(totals.keys())[:8],
+        }
+    except Exception:
+        pass
+
+    # ── Frontier scout — adopt/ignore candidate findings (alongside HELP_WANTED) ──
+    try:
+        sc = ROOT / "memory" / "frontier" / "scout_findings.jsonl"
+        findings = _read_jsonl(sc, tail=200) if sc.is_file() else []
+        from collections import Counter
+        verdicts = Counter(str(f.get("verdict", "?")) for f in findings)
+        out["frontier_scout"] = {
+            "n_findings": len(findings),
+            "verdicts": dict(verdicts),
+        }
+    except Exception:
+        pass
+
+    # ── Incidents / hygiene — open flares + remedies (highest operator-facing signal) ──
+    try:
+        fl = ROOT / "memory" / "flares"
+        n_flares = len(list(fl.glob("flare-*.json"))) if fl.is_dir() else 0
+        rem = ROOT / "memory" / "remedies"
+        n_rem = len([p for p in (rem.glob("rem-*.md") if rem.is_dir() else [])])
+        out["incidents"] = {"open_flares": n_flares, "remedies": n_rem}
+    except Exception:
+        pass
+
+    # ── Audit hygiene — ghost reports on its own dead code / leftover procs ──
+    try:
+        from mag.process_reaper import classify as _reap_classify
+        _rc = _reap_classify()
+        out["audit"] = {
+            "leak_processes": len(_rc.get("leaks") or []),
+            "unknown_processes": len(_rc.get("unknown") or []),
+            "total_python": _rc.get("total", 0),
+        }
+    except Exception:
+        pass
+
+    # ── Loop liveness — which loop trails are fresh vs silently dead ──
+    # The 2026-08-09 storm lesson: blind governance can't police. Ghost tracked only
+    # one of the many *_trail.jsonl liveness logs; a loop going silently quiet was
+    # invisible. Surface each known trail's staleness so ghost can see a dead loop.
+    try:
+        import time as _time
+        _trails = {
+            "governor_autorun": "memory/runs/governor_autorun_trail.jsonl",
+            "governor": "memory/runs/governor_trail.jsonl",
+            "conductor": "memory/runs/conductor_trail.jsonl",
+            "switchboard": "memory/runs/switchboard_trail.jsonl",
+            "routing_concert": "memory/runs/routing_concert_trail.jsonl",
+            "session_overseer": "memory/runs/session_overseer_trail.jsonl",
+            "improve_loop": "memory/runs/improve_loop_trail.jsonl",
+            "self_drive_cadence": "memory/runs/self_drive_cadence.jsonl",
+            "afk_cadence": "memory/runs/afk_cadence_trail.jsonl",
+            "orphan_timer": "memory/ideas/orphans.jsonl",
+        }
+        _stale_s = 3600  # a loop that hasn't written in 1h is suspect
+        _liveness = []
+        _now = _time.time()
+        for _name, _rel in _trails.items():
+            _p = ROOT / _rel
+            _age = _now - _p.stat().st_mtime if _p.is_file() else None
+            _liveness.append({
+                "loop": _name,
+                "age_s": int(_age) if _age is not None else None,
+                "stale": _age is not None and _age > _stale_s,
+                "missing": _age is None,
+            })
+        out["loop_liveness"] = {
+            "n_tracked": len(_liveness),
+            "stale": [l["loop"] for l in _liveness if l.get("stale")],
+            "missing": [l["loop"] for l in _liveness if l.get("missing")],
+            "detail": _liveness,
+        }
+    except Exception:
+        pass
+
+    # ── LIVENESS SENSE (2026-08-11) — the stateless / stateful / hidden-director classifier.
+    # Senses each agent type + labels the DEAD ones to its clever test, from REAL bytes
+    # (verkle prove, pid-held supervisor loops, swarm queue drain, cold-boot). Bounded
+    # (boot_context is time-boxed so this never blocks the sense). Auto-runs every cadence.
+    try:
+        from mag.liveness_sense import classify
+        out["liveness"] = classify()
+    except Exception:
+        pass
     return out
 
 
@@ -433,6 +572,33 @@ def sense() -> dict[str, Any]:
     pending = [i for i in inbox.get("committed", []) if i.get("status") == "pending"]
     state["inbox_pending"] = len(pending)
 
+    # Copilot inbox (assistant -> ghost exec surface) — SURFACE GAP FIX (2026-08-11):
+    # sense previously only counted the operator inbox, so a pending copilot exec (e.g.
+    # x-grok-*) was invisible. Count pending exec/steer messages here too.
+    try:
+        cop = ROOT / "memory" / "copilot" / "inbox.jsonl"
+        n_cop = 0
+        if cop.is_file():
+            for _l in cop.read_text(encoding="utf-8", errors="replace").splitlines():
+                if not _l.strip():
+                    continue
+                try:
+                    _m = json.loads(_l)
+                except json.JSONDecodeError:
+                    continue
+                if _m.get("status") in (None, "pending", "queued"):
+                    n_cop += 1
+        state["copilot_inbox_pending"] = n_cop
+    except Exception:
+        state["copilot_inbox_pending"] = 0
+
+    # Switchboard orphan backlog (undone intents in the mesh) — SURFACE GAP FIX.
+    try:
+        from mag.switchboard import status as _sw_status
+        state["orphans"] = (_sw_status().get("summary") or {}).get("n_orphans", 0)
+    except Exception:
+        state["orphans"] = 0
+
     # Training
     training_rows = ROOT / "memory" / "pile" / "training_rows.jsonl"
     state["training_rows"] = 0
@@ -440,9 +606,77 @@ def sense() -> dict[str, Any]:
         state["training_rows"] = sum(1 for _ in training_rows.read_text(
             encoding="utf-8", errors="replace").splitlines() if _.strip())
 
+    # Hiccups (operational tool failures — surfaced so the system learns, not quietly skipped)
+    try:
+        hiccups = _read_jsonl(HICCUP_PATH, tail=25)
+        state["hiccups_recent"] = len(hiccups)
+        state["hiccup_kinds"] = sorted({r.get("kind", "?") for r in hiccups})
+    except Exception:
+        state["hiccups_recent"] = 0
+        state["hiccup_kinds"] = []
+
     # Steering telemetry
     steer = _read_jsonl(ROOT / "memory" / "steer_telemetry.jsonl", tail=10)
     state["recent_steers"] = len([r for r in steer if r.get("status") == "accepted"])
+
+    # TOP PROCESSES — the bug-hunt STARTS here (operator standing rule 2026-08-11):
+    # when errors surface, check top CPU/memory processes FIRST via ghost sense, then descend.
+    try:
+        from mag.top_processes import top_processes as _tp
+        state["top_processes"] = _tp(8)
+    except Exception as e:
+        state["top_processes"] = {"ok": False, "error": str(e)[:120]}
+
+    # GPU SURFACE — the GPU as a first-class sense surface (gpu-as-rightsizer-surface RIB):
+    # SENSE -> COMPRESS(auto_quantize law) -> MEMORY(verkle) -> ROUTE(rightsizer). Read-only, $0.
+    # The GPU gets the same four-part treatment as every subsystem: sense its telemetry, quantize
+    # by variance (anomalies kept raw, never flattened), and expose it so the rightsizer can route
+    # on it. Fully guarded — GPU absent/error must never break sense().
+    state["gpu_surface"] = {"ok": True, "free_for_render": False, "vram_used_pct": None,
+                            "util_pct": None, "temp_c": None, "source": "none",
+                            "quantized_level": "L0-raw"}
+    try:
+        from mag.gpu_lifecycle import resources as _gpu_res
+        _g = _gpu_res()
+        _tel = _g.get("resources") or {}
+        state["gpu_surface"].update({
+            "free_for_render": bool(_g.get("free_for_render")),
+            "vram_used_pct": _tel.get("vram_used_pct"),
+            "util_pct": _tel.get("util_pct"),
+            "temp_c": _tel.get("temp_c"),
+            "source": _tel.get("source", "none"),
+        })
+        # COMPRESS (auto_quantize law): variance decides resolution; an anomaly is NEVER quantized.
+        _vu = _tel.get("vram_used_pct")
+        if _vu is not None:
+            if _vu >= 80:
+                state["gpu_surface"]["quantized_level"] = "L0-raw-anomaly"   # spike kept raw
+            elif _vu >= 50:
+                state["gpu_surface"]["quantized_level"] = "L1-hourly"
+            else:
+                state["gpu_surface"]["quantized_level"] = "L2-daily"          # low variance -> compress
+    except Exception as e:
+        state["gpu_surface"]["ok"] = False
+        state["gpu_surface"]["error"] = str(e)[:120]
+
+    # FRONTIER INTERNALS — collect the remote model's cache internals (the mine, not the text):
+    # cache_map.build_map() returns the DeepSeek KV-cache telemetry (hit ratio per theme/provider) +
+    # verkle root. Exposed live so sense() captures internals automatically each cadence. Fully
+    # guarded — cache_map absent/error must never break sense().
+    state["frontier_internals"] = {"ok": True}
+    try:
+        from mag import cache_map
+        _ci = cache_map.build_map()
+        state["frontier_internals"] = {
+            "ok": True,
+            "deepseek_hit_ratio": next((p.get("hit_ratio") for p in (_ci.get("by_provider") or [])
+                                        if p.get("provider") == "deepseek"), None),
+            "themes_zero_cache": [t.get("theme") for t in (_ci.get("by_theme") or [])
+                                  if t.get("split_hit_ratio") == 0],
+            "verkle_root_short": (_ci.get("verkle") or {}).get("root_short"),
+        }
+    except Exception as e:
+        state["frontier_internals"] = {"ok": False, "error": str(e)[:120]}
 
     # ── Frustration signals (operator escalations, steer overrides, replans) ──
     # HONESTY FIX (2026-08-09, surface audit): never let ghost's OWN detection echo
@@ -477,7 +711,8 @@ def sense() -> dict[str, Any]:
     state["available_models"] = []
     try:
         import subprocess
-        r = subprocess.run(["ollama", "list"], capture_output=True, text=True, timeout=5)
+        r = subprocess.run(["ollama", "list"], capture_output=True, text=True, timeout=5,
+                           creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0)
         for line in r.stdout.strip().split("\n")[1:]:
             parts = line.split()
             if parts:
@@ -539,6 +774,53 @@ def sense() -> dict[str, Any]:
 
     # ── FULL-SURFACE AWARENESS — the ghost sees every operational surface ──
     state["surfaces"] = sense_surfaces()
+
+    # ── PERCOLATOR (2026-08-11) — signal-pipeline live stats, visible every loop ──
+    state["percolator"] = {"ok": False}
+    try:
+        from mag import percolator as _pc
+        reg = _pc._load_registry()
+        state["percolator"] = {
+            "ok": True, "n_invariants": len(reg.get("invariants") or {}),
+            "false_positives": reg.get("false_positives", 0),
+            "noise": _pc.noise_log("behavioral")["n"],
+            "intake_open": _pc.open_intake()["n_open"],
+            "explore": len(_pc._read_jsonl(_pc.EXPLORE_QUEUE, 1_000_000)),
+        }
+    except Exception:
+        state["percolator"] = {"ok": False}
+
+    # ── REPUBLIC LOOP (2026-08-11) — THE ONE coherent self-improvement cadence. Consolidates the
+    # previously-scattered sense() blocks (trigger_learn, lens_shader, lens_knot, compiler_lang,
+    # agent_knot, chain_substrate, self_loop, agentic_test_steal) into a single loop contract:
+    # substrate -> stand -> lens/roshomon -> trigger -> compile -> egregore -> self-loop(map/
+    # stochastic/zeitgeist) -> test-steal. Idempotent (dedup via swarm_surface); swarm-routed. ──
+    state["republic_loop"] = {"ok": False}
+    try:
+        from mag import republic_loop
+        state["republic_loop"] = republic_loop.loop(state)
+    except Exception as e:
+        state["republic_loop"] = {"ok": False, "error": str(e)[:120]}
+
+    # ── ORPHAN SENSE (2026-08-11) — SENSE TEST: ghost detects ALL novel orphans across every
+    # orphan/novel surface (switchboard orphans, percolator novel queue, cold idea-graph vertices,
+    # shadow latent). Diagnostic on the loop by default. ──
+    state["orphan_sense"] = {"ok": False}
+    try:
+        from mag import orphan_sense
+        state["orphan_sense"] = orphan_sense.novel_orphans()
+    except Exception as e:
+        state["orphan_sense"] = {"ok": False, "error": str(e)[:120]}
+
+    # ── LOOP DOCTOR (2026-08-11) — errors/warnings are PART of the standing sense: every beat scans
+    # the corpus (deterministic ast) and surfaces errors/warnings for patching. Trust bytes, not
+    # reports — the loop checks and patches when they appear. ──
+    state["loop_doctor"] = {"ok": False}
+    try:
+        from mag import loop_doctor
+        state["loop_doctor"] = loop_doctor.sense()
+    except Exception as e:
+        state["loop_doctor"] = {"ok": False, "error": str(e)[:120]}
 
     # Signature text for vector matching — system signals first
     parts = []
@@ -1454,21 +1736,56 @@ async def daemon_mode(port: int = 9000, host: str = "0.0.0.0") -> None:
                     pass
                 await asyncio.sleep(30)
 
+        async def sentinel_loop():
+            """ALWAYS-ON safety sentinel (2026-08-10). The cycle loop is GATED
+            off while the operator is active, so loop_breaker (which runs inside
+            cycle) never fires exactly when the window storm shows up. This
+            passive watcher runs INDEPENDENT of that gate and auto-intervenes
+            (kills the storm) whenever python spawn count crosses the cap.
+            """
+            while True:
+                try:
+                    from mag.sentinel import run as sentinel_run
+                    sentinel_run(force=True)
+                except asyncio.CancelledError:
+                    break
+                except Exception:
+                    pass
+                await asyncio.sleep(20)
+
+        async def window_audit_loop():
+            """PASSIVE flash-crash window RECORDER (2026-08-10): appends every
+            windowed python spawn+death to logs/window_spawns.jsonl. Observes
+            only — never kills, never acts. Operator asked for a record of the
+            '8 windows that spawn and die regularly'."""
+            from mag.window_audit import poll_once
+            known: dict = {}
+            while True:
+                try:
+                    known = poll_once(known)
+                except asyncio.CancelledError:
+                    break
+                except Exception:
+                    pass
+                await asyncio.sleep(0.5)
+
         sense_task = asyncio.create_task(sense_loop())
         cycle_task = asyncio.create_task(cycle_loop())
         copilot_task = asyncio.create_task(copilot_watch_loop(app))
         autonomous_task = asyncio.create_task(autonomous_task_loop(app))
         cost_task = asyncio.create_task(_cost_enforcer_loop_wrapper())
         bard_task = asyncio.create_task(_bard_loop_wrapper())
+        sentinel_task = asyncio.create_task(sentinel_loop())
+        window_audit_task = asyncio.create_task(window_audit_loop())
 
         print("[ghost-daemon] lifespan: serving")
         yield  # ← serve REST + SSE
 
         # 3. Graceful shutdown
         print("[ghost-daemon] lifespan: shutdown")
-        for task in [autonomous_task, copilot_task, cycle_task, sense_task, cost_task, bard_task]:
+        for task in [autonomous_task, copilot_task, cycle_task, sense_task, cost_task, bard_task, sentinel_task, window_audit_task]:
             task.cancel()
-        await asyncio.gather(autonomous_task, copilot_task, cycle_task, sense_task, cost_task, bard_task, return_exceptions=True)
+        await asyncio.gather(autonomous_task, copilot_task, cycle_task, sense_task, cost_task, bard_task, sentinel_task, window_audit_task, return_exceptions=True)
         if redis:
             await redis.close()
 
@@ -2122,13 +2439,10 @@ async def daemon_mode(port: int = 9000, host: str = "0.0.0.0") -> None:
 
         return StreamingResponse(event_stream(), media_type="text/event-stream")
 
-    # Mount existing dashboard REST routes
-    try:
-        from dashboard.rest import router as dashboard_router
-        app.include_router(dashboard_router)
-        print("[ghost-daemon] mounted dashboard REST routes")
-    except Exception as e:
-        print(f"[ghost-daemon] dashboard routes not mounted: {e}")
+    # NOTE (2026-08-10): the old best-effort `from dashboard.rest import router`
+    # ALWAYS failed — dashboard/rest.py exposes ROUTES + h_* handlers, not `router` —
+    # so it only printed a noisy error every boot. The dashboard :8765 server is the
+    # actual REST surface; ghost-daemon :9000 does not need a redundant mount. Removed.
 
     # Copilot inbox endpoint (POST)
     @app.post("/api/v1/copilot/inbox")
@@ -2189,6 +2503,30 @@ def log_frustration(signal: str, *, source: str = "system", detail: str = "",
         entry["task_family"] = task_family
     _append_jsonl(FRUSTRATION_PATH, entry)
     return {"ok": True, "signal": signal, "path": str(FRUSTRATION_PATH)}
+
+
+# ====================================================================
+# HICCUP LOGGING — operational tool/toolchain failures as sense events
+# ====================================================================
+
+HICCUP_PATH = GHOST_DIR / "hiccup.jsonl"
+
+
+def log_hiccup(kind: str, *, source: str = "copilot", detail: str = "",
+               tool: str = "") -> dict[str, Any]:
+    """Log an operational hiccup (buggy tool, wrong-tool usage, failed tool call) as a sense event.
+
+    Operator (2026-08-11): "you should have a sense that logs stuff like this as hiccups."
+    Every tool-chain failure (buggy PowerShell terminal, a spawn that should have been ghost's
+    surface, a failed window-open) is a FIRST-CLASS hiccup the sense surfaces and the system can
+    learn from — instead of quietly moving past it. Mirrors log_frustration.
+    """
+    entry: dict[str, Any] = {"ts": _now(), "kind": kind, "source": source,
+                             "detail": detail[:500]}
+    if tool:
+        entry["tool"] = tool
+    _append_jsonl(HICCUP_PATH, entry)
+    return {"ok": True, "kind": kind, "path": str(HICCUP_PATH)}
 
 
 def log_model_switch(model_from: str, model_to: str, load_ms: float) -> dict[str, Any]:
@@ -2799,6 +3137,30 @@ def cycle(dry: bool = False, deploy_text: str | None = None) -> dict[str, Any]:
     except Exception as e:
         trail["loop_breaker_error"] = str(e)[:160]
 
+    # SOURCE-TRACE (steal 2026-08-10): sense runaway python AND where it came
+    # from (duplicate slots / cascade / multi-boot), so ghost reports the SOURCE
+    # chain, not just a count. Read-only here — loop_breaker does the breaking.
+    try:
+        from mag.source_trace import sense as st_sense
+        st = st_sense()
+        trail["source_trace"] = {
+            "verdict": st.get("verdict"),
+            "python_count": st.get("python_count"),
+            "duplicates": st.get("duplicates"),
+            "evidence": st.get("evidence"),
+        }
+        if st.get("verdict") == "runaway" and not dry:
+            try:
+                from mag.failure_kb import log_failure
+                log_failure(kind="runaway_python", tool="source_trace",
+                            error=f"runaway python: {str(st.get('evidence',''))[:200]}",
+                            detail=(json.dumps(st.get("duplicates", [])[:3], default=str))[:400],
+                            phase="cycle")
+            except Exception:
+                pass
+    except Exception as e:
+        trail["source_trace_error"] = str(e)[:160]
+
     # SELF-AWARE: the ghost authors its own agent window each cycle (the whole point of ghost).
     try:
         if not dry:
@@ -2808,18 +3170,45 @@ def cycle(dry: bool = False, deploy_text: str | None = None) -> dict[str, Any]:
     except Exception as e:
         trail["self_window_error"] = str(e)[:200]
 
-    # SWARM HEALTH LAW: probe the swarm + APPLY the self-improvement law (ghost is the
-    # always-on enforcer — the loop actually turns, not applied:false).
+    # SWARM HEALTH LAW: probe the swarm and REPORT (RESTFUL OBSERVER, 2026-08-10).
+    # This was apply=True (a timer-driven enforcer) and it restart_loop()'d ghost/
+    # autorun every cycle with unreliable liveness = the 16s thrash storm. Restful
+    # single-controller doctrine: health_law OBSERVES and files; restarts belong to
+    # ONE event-driven controller (process_supervisor.reap, crashLoopBackOff on real
+    # death) + the always-on sentinel. So apply=False here.
     try:
         from mag.swarm_health import health_law, swarm_health
         h = swarm_health()
-        law = health_law(h, apply=True)
+        law = health_law(h, apply=False)
         trail["swarm_health"] = {"overall": h.get("overall"), "agents_up": h.get("agents_up"),
                                  "agents_total": h.get("agents_total"),
                                  "applied": law.get("applied"),
                                  "law_actions": [a.get("action") for a in law.get("actions", [])]}
     except Exception as e:
         trail["swarm_health_error"] = str(e)[:200]
+
+    # GUARD REGISTRY (2026-08-10): "permanent fixes you forget about are future bugs"
+    # and "not just AMD, everything." Verify EVERY known fix this session on cadence
+    # and surface any regression as a labeled signal, never a mystery.
+    try:
+        from mag.guard_registry import check as guard_check
+        gr_ = guard_check()
+        trail["guard_registry"] = {"ok": gr_.get("ok"),
+                                   "regressions": [f.get("id") for f in gr_.get("regressions", [])],
+                                   "guards": [g.get("id") for g in gr_.get("guards", [])]}
+    except Exception as e:
+        trail["guard_registry_error"] = str(e)[:160]
+
+    # AMD FLASH-WINDOW GUARD (2026-08-10): the desktop flash windows were AMD's
+    # StartCN/StartDVR respawning AMDRSServ, NOT Mag. "Permanent fixes you forget about
+    # are future bugs" — so every cadence, check they're still disabled and surface a
+    # labeled signal if AMD re-enables them (known regression, never a mystery).
+    try:
+        from mag.amd_window_guard import check as amd_check
+        amd = amd_check()
+        trail["amd_window_guard"] = {"ok": amd.get("ok"), "task_states": amd.get("task_states")}
+    except Exception as e:
+        trail["amd_window_guard_error"] = str(e)[:160]
 
     # PIPE 5: Auto-deploy frustration vectors (skip when deploying specific text)
     # AWARE: hold auto-deploy during an unattended autonomy run or when the

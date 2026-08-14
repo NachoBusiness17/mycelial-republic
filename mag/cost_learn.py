@@ -129,7 +129,43 @@ def analyze(*, hours: int = 24, rows: list[dict[str, Any]] | None = None) -> dic
         "total_priced_usd": round(sum(e["priced_usd"] for e in models), 6),
         "by_model": models,
         "by_provider": providers,
+        "spikes": _detect_spikes(win, rates),
     }
+
+
+# STEAL (2026-08-11): cache-miss spike detection — make the 50x tax auto-surface.
+# DeepSeek caches by PREFIX, time-windowed (~1h); a mid-context edit invalidates a long prefix at
+# once -> a BURST of miss tokens. Detect hourly miss bursts (not per-call averages, which hide
+# bursts). Deterministic + $0.
+MISS_SPIKE_THRESHOLD = 100_000   # miss tokens in one hour bucket -> flag
+MISS_RATIO_SPIKE = 0.20          # miss_ratio >= 20% in a bucket -> flag
+
+
+def _detect_spikes(win: list[dict[str, Any]], rates: dict[str, dict[str, float]]) -> list[dict[str, Any]]:
+    """Bucket rows by UTC hour; flag buckets whose miss tokens / ratio are a spike (the 50x tax)."""
+    from collections import defaultdict
+    buckets: dict[str, list[float]] = defaultdict(lambda: [0.0, 0.0, 0.0])  # hit, miss, out
+    for r in win:
+        if str(r.get("provider") or "") in ("ollama", "test_provider"):
+            continue
+        if r.get("cache_hit_tokens") is None and r.get("cache_miss_tokens") is None:
+            continue
+        h = str(r.get("ts") or "")[:13]  # 'YYYY-MM-DDTHH'
+        b = buckets[h]
+        b[0] += int(r.get("cache_hit_tokens") or 0)
+        b[1] += int(r.get("cache_miss_tokens") or 0)
+        b[2] += int(r.get("completion_tokens") or 0)
+    spikes = []
+    for hour, (hit, miss, out) in sorted(buckets.items()):
+        tin = hit + miss
+        ratio = miss / tin if tin else 0.0
+        if miss >= MISS_SPIKE_THRESHOLD or ratio >= MISS_RATIO_SPIKE:
+            rate = rates.get("deepseek-v4-flash") or rates.get("deepseek") or {}
+            est_waste = miss / 1e6 * (rate.get("miss", 0.14) - rate.get("hit", 0.0028))
+            spikes.append({"hour": hour, "miss_tokens": int(miss), "hit_ratio": round(hit / tin, 4) if tin else None,
+                           "est_waste_usd": round(est_waste, 4),
+                           "likely_cause": "mid_context_edit" if ratio >= 0.05 else "cold_start"})
+    return spikes
 
 
 def render_leaf(a: dict[str, Any]) -> str:
@@ -150,6 +186,13 @@ def render_leaf(a: dict[str, Any]) -> str:
     for e in a["by_model"]:
         hr = f"{e['hit_ratio']*100:.0f}%" if e["hit_ratio"] is not None else "n/a"
         lines.append(f"| {e['model']} | - | {e['calls']} | {hr} | ${e['priced_usd']:.4f} |")
+    # STEAL (2026-08-11): cache-miss spikes visible in every leaf — the 50x tax auto-surfaces.
+    if a.get("spikes"):
+        lines += ["", "## Cache-miss spikes (50x tax)", "",
+                  "| hour | miss_tokens | hit_ratio | est_waste_usd | likely_cause |", "|---|---|---|---|---|"]
+        for s in a["spikes"]:
+            hr = f"{s['hit_ratio']*100:.0f}%" if s["hit_ratio"] is not None else "n/a"
+            lines.append(f"| {s['hour']} | {s['miss_tokens']:,} | {hr} | ${s['est_waste_usd']:.4f} | {s['likely_cause']} |")
     lines += ["", "## Fixed / subscription surfaces (no per-call token API)", "",
               "| surface | label | cost_kind | est |", "|---|---|---|---|"]
     try:
@@ -209,7 +252,22 @@ def fold(a: dict[str, Any]) -> dict[str, Any]:
     except Exception:
         pass
 
-    return {"ok": True, "leaf": str(leaf_path), "skill_ledger_decisions": folded}
+    # STEAL (2026-08-11): fold each cache-miss spike as a training signal so the 50x tax is never
+    # invisible — the system learns its own cost bursts (cache-miss-spike detection).
+    spike_folded = 0
+    for s in a.get("spikes") or []:
+        try:
+            from mag.behavioral_analytics import log_behavioral_event
+            log_behavioral_event(kind="cache_miss_spike",
+                                 detail=f"hour={s['hour']} miss={s['miss_tokens']:,} "
+                                        f"ratio={s['hit_ratio']} waste=${s['est_waste_usd']:.4f} "
+                                        f"cause={s['likely_cause']}")
+            spike_folded += 1
+        except Exception:
+            pass
+
+    return {"ok": True, "leaf": str(leaf_path), "skill_ledger_decisions": folded,
+            "spike_folded": spike_folded, "n_spikes": len(a.get("spikes") or [])}
 
 
 def recent_cost_evidence(limit: int = 5) -> dict[str, Any]:

@@ -29,6 +29,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from mag import orchestrator as orc  # reuse spawn/kill/monitor/log machinery (no reinvent)
+from mag import headless
 
 PIPE_DIR = ROOT / "memory" / "runs" / "gpipes"
 TRAIL = ROOT / "memory" / "runs" / "gpipes_trail.jsonl"
@@ -364,7 +365,7 @@ def _spawn_supervisor(pipe_id: str, timeout: int) -> None:
     polls pipe_status, kills the whole pipe when the deadline passes.
     """
     import subprocess
-    cmd = [sys.executable, str(ROOT / "mag" / "gpipes.py"), "supervise",
+    cmd = [headless.PYTHON, str(ROOT / "mag" / "gpipes.py"), "supervise",
            pipe_id, "--timeout", str(int(timeout))]
     flags = (getattr(subprocess, "CREATE_NO_WINDOW", 0)
              | getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0))

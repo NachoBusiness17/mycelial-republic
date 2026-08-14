@@ -53,7 +53,8 @@ def ollama_base() -> str:
 
     raw = (os.environ.get("OLLAMA_HOST") or os.environ.get("OLLAMA_BASE") or "").strip()
     if not raw:
-        return "http://127.0.0.1:11434"
+        # STRICTLY cluster (headless): no local desktop ollama / runner windows.
+        return "http://ollama:11434"
     if raw.startswith("http://") or raw.startswith("https://"):
         return raw.rstrip("/")
     # bare host:port

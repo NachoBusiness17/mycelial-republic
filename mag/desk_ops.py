@@ -18,6 +18,12 @@ from config import ROOT
 
 
 def _python_exe() -> str:
+    """Real interpreter (bypass the venv shim -> no double PID / no window on spawn)."""
+    try:
+        from mag.headless import _resolve_python
+        return _resolve_python()
+    except Exception:
+        pass
     venv_py = ROOT / ".venv" / "Scripts" / "python.exe"
     if venv_py.is_file():
         return str(venv_py)

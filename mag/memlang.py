@@ -58,8 +58,47 @@ OPCODES: dict[str, int] = {
     # ghost operational surface — the built capabilities mapped to ops (2026-08-09)
     "learn": 9, "sources": 10, "occupy": 11, "boot": 12, "prove": 13,
     "plant": 14, "prospect": 15,
+    "rightsize": 16,  # resolve cheapest-capable tier from the joined one-sizer store
 }
 _OPNAME = {v: k for k, v in OPCODES.items()}
+
+# ───────────────────────────────────────────────────────────────── MEMORY CONTRACTS ──
+# Formalized memory system (operator 2026-08-10): "formalize a memory system we use so our
+# memlang actually has meaning other than handwaving". Each opcode maps to the CONCRETE,
+# source-backed memory surface it reads/writes — NOT a handwave. resolve()/trigger() attach
+# this contract so every token's grounding is provable:
+#   kind       the memory kind (graph node kind / state file stem)
+#   surface    the exact memory/ path that is the source of truth
+#   schema     the owning module's SCHEMA that manages that surface
+#   rw         read / write semantics (what the op does to that memory)
+MEMORY_CONTRACTS: dict[str, dict[str, str]] = {
+    "memo":         {"kind": "knot", "surface": "memory/runs/memlang/registry.json", "schema": "memlang.v1", "rw": "write"},
+    "rib_elevate":  {"kind": "rib", "surface": "memory/rib", "schema": "rib_struct.v1", "rw": "read"},
+    "handoff_build":{"kind": "handoff", "surface": "memory/handoffs", "schema": "grok_free.v1", "rw": "write"},
+    "research_pack":{"kind": "steal", "surface": "memory/steal", "schema": "frontier_intake.v1", "rw": "write"},
+    "reinforce":    {"kind": "edge", "surface": "memory/mycelium", "schema": "mycelium.v1", "rw": "write"},
+    "self_window":  {"kind": "knot", "surface": "memory/biography/knots", "schema": "verkle_knot.v1", "rw": "write"},
+    "steer":        {"kind": "steer", "surface": "memory/behavior", "schema": "steer_router.v1", "rw": "write"},
+    "steer_back":   {"kind": "steer", "surface": "memory/behavior", "schema": "steer_router.v1", "rw": "write"},
+    "route":        {"kind": "case_law", "surface": "memory/case_law", "schema": "knowledge_graph.v2", "rw": "read"},
+    "learn":        {"kind": "doctrine", "surface": "memory/knowledge_graph.json", "schema": "knowledge_graph.v2", "rw": "write"},
+    "sources":      {"kind": "steal", "surface": "memory/steal", "schema": "surface_steal.v1", "rw": "read"},
+    "occupy":       {"kind": "knot", "surface": "memory/biography/knots", "schema": "verkle_knot.v1", "rw": "write"},
+    "boot":         {"kind": "case_law", "surface": "memory/case_law", "schema": "knowledge_graph.v2", "rw": "read"},
+    "prove":        {"kind": "case_law", "surface": "memory/case_law", "schema": "knowledge_graph.v2", "rw": "read"},
+    "plant":        {"kind": "doctrine", "surface": "memory/knowledge_graph.json", "schema": "knowledge_graph.v2", "rw": "write"},
+    "prospect":     {"kind": "steal", "surface": "memory/steal", "schema": "frontier_intake.v1", "rw": "read"},
+    "rightsize":    {"kind": "learn", "surface": "memory/learn/sizing.jsonl", "schema": "rightsize.v1", "rw": "read"},
+}
+
+
+def contracts() -> dict[str, Any]:
+    """The formal memory contract for every opcode — what real memory surface it grounds to."""
+    out = {}
+    for op, c in MEMORY_CONTRACTS.items():
+        surface = ROOT / c["surface"]
+        out[op] = {**c, "exists": surface.exists() if surface else False}
+    return {"ok": True, "schema": SCHEMA, "n_contracts": len(out), "contracts": out}
 
 
 def _executor_up(target: str | None = None) -> bool:
@@ -169,9 +208,14 @@ def resolve(token_hex: str) -> dict[str, Any]:
     if not entry:
         return {"ok": False, "error": "anchor not in shared registry (receiver lacks the map)",
                 "anchor_hex": d["anchor_hex"]}
+    # FORMAL GROUNDING: attach the memory contract for this action so the resolved intent
+    # is provably anchored to a real memory surface, not handwaved (operator 2026-08-10).
+    contract = MEMORY_CONTRACTS.get(entry.get("action", d["action"]), {})
     return {"ok": True, "action": entry.get("action", d["action"]), "spec": entry.get("spec", ""),
             "params": entry.get("params", d.get("params")), "anchor_hex": d["anchor_hex"],
             "token_len": d["token_len"], "verkle_path": entry.get("verkle_path"),
+            "grounding": {**contract, "exists": (ROOT / contract["surface"]).exists() if contract.get("surface") else False}
+            if contract else {},
             "note": "intent reconstructed from shared state, not from the token bytes"}
 
 
@@ -309,6 +353,15 @@ def trigger(token_hex: str, *, execute: bool = False) -> dict[str, Any]:
             from mag import prospect_sim
             out["executed"] = True
             out["result"] = prospect_sim.prospect((r.get("spec") or "")[:600], train=True)
+        except Exception as e:
+            out["executed"] = False; out["error"] = str(e)[:120]
+    elif action == "rightsize":
+        try:
+            from mag import one_sizer as osz
+            p = params or {}
+            out["executed"] = True
+            out["result"] = osz.resolve_sizing(shape=p.get("shape"), domain=p.get("domain"),
+                                               skill=p.get("skill"))
         except Exception as e:
             out["executed"] = False; out["error"] = str(e)[:120]
     else:

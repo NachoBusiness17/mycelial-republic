@@ -244,6 +244,80 @@ def _clip(path: Path, n: int) -> str:
     return path.read_text(encoding="utf-8", errors="replace")[:n]
 
 
+def _rib_doctrine(max_chars: int = 2800) -> str:
+    """Load the RIB doctrine (the system's understanding) into stateless-agent context.
+
+    Reads memory/rib/*.md — the memweave/doctrine layer the stateless agent never
+    sees otherwise (human-read-only). Emits title + goal line per doc, capped.
+    Deterministic, $0 — the "understanding" seam for a stateless boot.
+    """
+    rib_dir = ROOT / "memory" / "rib"
+    if not rib_dir.is_dir():
+        return ""
+    files = sorted(rib_dir.glob("*.md"))
+    if not files:
+        return ""
+    out: list[str] = []
+    total = 0
+    for f in files:
+        try:
+            text = f.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        title = ""
+        goal = ""
+        for line in text.splitlines():
+            s = line.strip()
+            if not title and (s.startswith("# ") or s.startswith("**Schema:**")):
+                title = s.lstrip("# ").strip()[:100]
+            if not goal and ("**RIB goal:**" in s or "**Goal:" in s or s.startswith("**Operator")):
+                goal = s[:160]
+            if title and goal:
+                break
+        entry = f"- {title or f.name}" + (f" — {goal}" if goal else "")
+        if len(entry) > total + max_chars:
+            break
+        out.append(entry)
+        total += len(entry)
+    return "\n".join(out)
+
+
+def _proven_moves_excerpt(limit: int = 8) -> str:
+    """Proven case-law moves from skill_ledger — the moves the agent can trust."""
+    try:
+        from mag.skill_ledger import proven_moves
+        moves = proven_moves(limit=limit)
+        if not moves:
+            return ""
+        return "\n".join(
+            f"- {m['move'][:90]} (n={m['count']}, ok={m['ok_rate']})"
+            for m in moves
+        )
+    except Exception:
+        return ""
+
+
+def _solved_excerpt(limit: int = 10) -> str:
+    """Solved history (case law + RIB + verkle tip) — what the system already holds."""
+    try:
+        from mag.solved_surface import solved
+        s = solved()
+        rows = (s.get("case_law") or []) + (s.get("rib") or [])
+        if not rows:
+            return ""
+        lines = []
+        for r in rows[:limit]:
+            title = r.get("move") or r.get("title") or r.get("id")
+            if title:
+                lines.append(f"- {str(title)[:90]}")
+        tip = s.get("verkle_tip") or {}
+        if tip.get("n_leaves"):
+            lines.append(f"- ({tip.get('n_leaves')} verkle leaves · {tip.get('root')}…)")
+        return "\n".join(lines)
+    except Exception:
+        return ""
+
+
 def build_context_pack(
     *,
     mode: str = "full",
@@ -567,6 +641,8 @@ def build_context_pack(
         "open_loops": loops,
         "run_trail": trail_excerpt,
         "skills_excerpt": skills_excerpt,
+        "proven_moves": _proven_moves_excerpt(),
+        "solved_excerpt": _solved_excerpt(),
         "ijl_skills": ijl_skills,
         "mirror_voice_excerpt": mirror_voice_excerpt,
         "clue_chain_excerpt": clue_chain_excerpt,
@@ -581,6 +657,7 @@ def build_context_pack(
         "live_tail": live or "(no live board)",
         "attention_tail": att[:400] if att else "",
         "directives": directives or "",
+        "doctrine": _rib_doctrine(),
         "todo_open": [
             ln.strip()
             for ln in todo.splitlines()
@@ -679,8 +756,26 @@ def format_context_pack_text(
         tip_line,
         f"- health: {p.get('health')}",
         "",
-        *ns_lines,
     ]
+    if p.get("doctrine") and mode in ("plan", "full", "build", "audit"):
+        policy.extend([
+            "### L0d RIB Doctrine (the system's understanding — memweave)",
+            p.get("doctrine") or "(none — memory/rib/)",
+            "",
+        ])
+    if p.get("proven_moves") and mode in ("plan", "full", "build", "audit"):
+        policy.extend([
+            "### L0d Proven moves (verified case law — trust these)",
+            p.get("proven_moves"),
+            "",
+        ])
+    if p.get("solved_excerpt") and mode in ("plan", "full", "build", "audit"):
+        policy.extend([
+            "### L0d Solved history (what the system already holds — don't redo)",
+            p.get("solved_excerpt"),
+            "",
+        ])
+    policy.extend(ns_lines)
     if mode != "janitor":
         policy.extend([
             as_line,

@@ -49,8 +49,15 @@ def run_python(code: str, timeout: int = 30) -> dict:
         with tempfile.TemporaryDirectory(prefix="lsa_exec_") as td:
             script = Path(td) / "snippet.py"
             script.write_text(_PREAMBLE + "\n" + code, encoding="utf-8")
+            # HEADLESS (2026-08-10): use the REAL interpreter (not the venv shim,
+            # which doubles + windows) and CREATE_NO_WINDOW so run_python never pops
+            # a console window in the stateless auto-loop.
+            try:
+                from mag.headless import PYTHON as _PY
+            except Exception:
+                _PY = sys.executable
             proc = subprocess.run(
-                [sys.executable, str(script)],
+                [_PY, str(script)],
                 cwd=td,
                 capture_output=True,
                 text=True,
@@ -58,6 +65,7 @@ def run_python(code: str, timeout: int = 30) -> dict:
                 env={
                     **dict(**{k: v for k, v in __import__("os").environ.items() if k in ("SYSTEMROOT", "PATH", "PYTHONPATH") or k.startswith("PYTHON")}),
                 },
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0,
             )
             out = (proc.stdout or "") + (proc.stderr or "")
             return {

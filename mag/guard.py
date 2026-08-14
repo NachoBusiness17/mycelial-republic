@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import subprocess
 import sys
+from mag import headless
 import time
 from pathlib import Path
 from typing import Any
@@ -47,7 +48,7 @@ def ensure_lab(restart: bool = False) -> dict[str, Any]:
         return {"ok": cu.get("ok"), "action": "catch_up", "catch_up": cu, "sanity": sanity()}
     if restart:
         # spawn lab detached
-        py = sys.executable
+        py = headless.PYTHON
         creation = 0
         if sys.platform == "win32":
             creation = (subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS

@@ -71,6 +71,21 @@ something broken (oh_fuck / a real frontier fix), gated by grok_gate — never i
 pings. "Partner when shit hits the fan" = grok on a real emergency, not deepseek on
 a timer.
 
+## 9. Public/private surface split — the game stays hidden (OPSEC LAW)
+The sovereign machinery is PRIVATE and must NEVER be committed to a public repo:
+`ghost`, `memlang`, `Riddler` (riddler/ghost_whisper/surrogate), `verkle_knot`,
+`partner_puppet`, the swarm internals (cheap_swarm, frontier_ghost, mycelium,
+comms_trail), the doctrine (CONSTITUTION, nudge spec, laws), and T0/T1 state/memory.
+The PUBLIC surface is ONLY the mycelial republic + our first steps: clean, shareable
+foundational patterns, the constitution-as-practice, the basic scaffold — never the
+specialized factory.
+- When pushing, hold back specialized tools by DEFAULT; ship only the republic/first-steps.
+- If unsure whether a file exposes the game (lets an observer infer the swarm, the
+  deniable-communication layer, or the doctrine), keep it private.
+- A partner sees the CONTRACT, not the implementation. The public repo is the republic's
+  practice, not the factory that makes it.
+- The GitHub `Mag` repo stays PRIVATE; the mycelial-republic repo is the public face.
+
 ---
 
 # Execution rules (zero babysitting) — operator-set, stable

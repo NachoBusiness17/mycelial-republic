@@ -80,6 +80,22 @@ class PrivateGraph:
     goal: str                          # what needs to be decided
     domain_hint: str = ""              # optional: "routing", "scheduling", etc.
 
+    def __hash__(self) -> int:
+        # A default @dataclass (eq=True) is UNHASHABLE, but the surrogate/cache path keys on
+        # the graph (the flock's "unhashable type: 'PrivateGraph'"). Hash a canonical JSON
+        # serialization so it's deterministic and content-based. (2026-08-10 flock fix.)
+        try:
+            import json as _json
+            raw = _json.dumps({
+                "a": self.actors, "r": self.resources, "d": self.dependencies,
+                "c": self.constraints, "f": self.conflicts, "g": self.goal,
+                "h": self.domain_hint,
+            }, sort_keys=True, default=str)
+            return hash(raw)
+        except Exception:
+            return object.__hash__(self)
+
+
 
 @dataclass
 class ValidationReport:

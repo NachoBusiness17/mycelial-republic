@@ -88,7 +88,7 @@ SKILLS: dict[str, dict[str, Any]] = {
     },
     "grok_gate": {
         "desc": "Decide whether a task warrants frontier grok (cost-effective + cheap-test-first).",
-        "triggers": ("grok", "frontier", "deep research", "synthesize"),
+        "triggers": ("grok", "frontier", "deep research", "deep dive", "deep-dive", "synthesize", "dive into"),
         "tier": "local",
         "run": lambda p: _safe_run("mag.grok_gate", "should_use_grok", p),
     },
@@ -136,7 +136,7 @@ SKILLS: dict[str, dict[str, Any]] = {
     },
     "word_skill_map": {
         "desc": "Map the operator's repeated words to skill-groups and steer the swarm through ONE model (collaborative steer) — learn/map/steer.",
-        "triggers": ("word", "behavioral pattern", "map words", "skill group", "swarm in one model", "collaborative steer", "steer me", "word to skill"),
+        "triggers": ("word", "behavioral pattern", "user pattern", "user patterns", "our patterns", "patterns", "map words", "skill group", "swarm in one model", "collaborative steer", "steer me", "word to skill"),
         "tier": "local",
         "run": lambda p: _safe_run("mag.word_skill_map", "steer_collab", p),
     },
@@ -184,7 +184,7 @@ SKILLS: dict[str, dict[str, Any]] = {
     },
     "capability_steal": {
         "desc": "Ghost's aggressive OFFLINE capability expansion via steal-searches: pull high-quality sources (steal_protocol/arXiv/portals), extract invariants, test the local model, fold verified ones to the pro-library.",
-        "triggers": ("steal search", "expand capability", "offline expand", "grow capabilities", "capability steal", "test local model", "fleet"),
+        "triggers": ("steal", "steal it", "do a steal", "steal search", "expand capability", "offline expand", "grow capabilities", "capability steal", "test local model", "fleet"),
         "tier": "local",
         "run": lambda p: _safe_run("mag.capability_steal", "expand", ""),
     },
@@ -303,6 +303,20 @@ def run(prompt: str) -> dict[str, Any]:
                       "ok": res.get("ok"),
                       "result": res.get("result") or res.get("error", "")[:300]})
         _fold(sk["id"], ok=bool(res.get("ok")), effective_tier=rs.get("effective_tier"))
+        # one_sizer: join this (skill, domain, shape) -> tier observation across domains.
+        try:
+            from mag import one_sizer as osz
+            domain = "general"
+            try:
+                from ijl_core import infer_task_family
+                domain = infer_task_family(prompt) or "general"
+            except Exception:
+                pass
+            osz.record_sizing(skill=sk["id"], domain=domain, shape=rs.get("model_shape", "balanced"),
+                              effective_tier=rs.get("effective_tier", sk["tier"]),
+                              model=rs.get("model") or "", ok=bool(res.get("ok")))
+        except Exception:
+            pass
     return {"schema": SCHEMA, "ts": _now(), "ok": True, "prompt": (prompt or "")[:200],
             "chain": [s["id"] for s in chain], "steps": steps}
 

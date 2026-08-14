@@ -1,12 +1,16 @@
 # Mag browser / computer-use seat (OpenClaw or Playwright later)
 # Only pre-approved hosts and window titles. Residual stays local.
 schema: mag_browser_env.v1
-enabled: false
+enabled: true
 mode: allowlist
-driver: none   # none | openclaw | playwright
+driver: playwright   # none | openclaw | playwright (runs in the `browser` container)
+cdp: "ws://127.0.0.1:9222"   # containerized Playwright/Chromium CDP over localhost
 hosts:
-  - chat.openai.com
+  - perplexity.ai
+  - chat.deepseek.com
+  - deepseek.com
   - chatgpt.com
+  - chat.openai.com
   - claude.ai
   - grok.x.ai
   - x.com
@@ -14,10 +18,16 @@ hosts:
   - localhost
   - 127.0.0.1
 windows:
+  - title_contains: Perplexity
+  - title_contains: DeepSeek
   - title_contains: ChatGPT
   - title_contains: Claude
   - title_contains: Grok
   - title_contains: GitHub
 notes: >
-  Flip enabled when a driver is installed. Mag routes goals; this seat
-  only opens allowlisted web surfaces (ChatGPT-style computer use, gated).
+  Free-frontend seat, run as a CONTAINER driver (not the desktop): the Playwright/Chromium
+  browser lives in the `browser` docker service under xvfb (headless), exposed to Mag only
+  over localhost CDP (:9222). Drives FREE web frontends (Perplexity deep research, DeepSeek
+  chat, Grok, ChatGPT, Claude) instead of paying their APIs. Sandboxed: cap_drop ALL +
+  no-new-privileges, no desktop access. Residual stays local. Login/captcha are operator-owned.
+

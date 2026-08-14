@@ -129,7 +129,7 @@ def classify() -> dict[str, Any]:
     procs = _project_python_procs()
     buckets: dict[str, list[dict[str, Any]]] = {
         "supervised-loop": [], "active-subagent": [], "dashboard-server": [],
-        "leak": [], "unknown": [],
+        "known-supervised": [], "leak": [], "unknown": [],
     }
     for pr in procs:
         pid = pr["pid"]
@@ -140,6 +140,11 @@ def classify() -> dict[str, Any]:
             buckets["active-subagent"].append(pr)
         elif "dashboard" in cl or "8765" in cl or "rest" in cl:
             buckets["dashboard-server"].append(pr)
+        elif "synthesis_agent" in cl or "scribe" in cl:
+            # Known part of the mag_launch stack (host scribe / container scribe slot).
+            # Prior tesuji (operator, 2026-08-09): "reaper reports, operator decides LIVE;
+            # left synthesis_agent leaks alone — live kill is explicit + scoped."
+            buckets["known-supervised"].append(pr)
         elif "autorun_loop" in cl or "ghost" in cl or "server" in cl:
             # Known supervised-ish but not in the supervisor set (stray) — treat as leak.
             buckets["leak"].append(pr)
@@ -155,6 +160,7 @@ def classify() -> dict[str, Any]:
         "total": len(procs),
         "buckets": {k: len(v) for k, v in buckets.items()},
         "leaks": buckets["leak"],
+        "known_supervised": buckets["known-supervised"],
         "unknown": buckets["unknown"],
     }
 

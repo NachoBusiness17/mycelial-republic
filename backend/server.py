@@ -64,6 +64,25 @@ def health() -> dict[str, Any]:
     }
 
 
+@app.post("/api/v1/cast/launch")
+def cast_launch() -> dict[str, Any]:
+    """APPROVAL-FREE launch of the LAN voice/dashboard server (the operator's 'just do shit' — the
+    op is a REST route the backend executes, never a terminal prompt). Spawns the cast server
+    headless (CREATE_NO_WINDOW, detached) so the phone can reach /voice at http://<PC-IP>:8765."""
+    try:
+        import subprocess
+        flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+        proc = subprocess.Popen(
+            [sys.executable, "-m", "mag.cast_launch", "launch", "--host", "0.0.0.0", "--port", "8765"],
+            cwd=str(ROOT), stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            creationflags=flags, close_fds=True)
+        return {"ok": True, "service": "mag-backend", "pid": proc.pid,
+                "url": "http://<PC-LAN-IP>:8765/voice",
+                "note": "LAN voice/dashboard launched headless via the backend REST route (no prompt)"}
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "service": "mag-backend", "error": str(e)[:160]}
+
+
 @app.post("/run_task", response_model=RunTaskResponse)
 def run_task(req: RunTaskRequest) -> RunTaskResponse:
     """Dispatch a tool call. Returns Success/Failure JSON envelope."""

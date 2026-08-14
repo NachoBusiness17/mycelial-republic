@@ -30,6 +30,14 @@ for _stream in (sys.stdout, sys.stderr):
 # Provider keys from project .env (never commit .env)
 load_dotenv()
 
+# No headed console windows, ever (window-storm lesson): default EVERY subprocess
+# spawn to CREATE_NO_WINDOW at process start. This monkey-patch covers the whole
+# process tree (incl. library/indirect spawns), so no module can pop a window.
+# Call BEFORE any command handler so no subprocess runs un-patched.
+from mag.headless import install_no_window_defaults  # noqa: E402
+
+install_no_window_defaults()
+
 
 def cmd_run(goal: str, thread_id: str | None = None) -> int:
     from graph import default_graph  # lazy: only run needs LangGraph

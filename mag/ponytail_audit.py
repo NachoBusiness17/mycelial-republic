@@ -149,12 +149,73 @@ def _ladder_compliance() -> dict[str, Any]:
     return {"ok": not missing, "missing": missing}
 
 
+def _socratic_challenges(label: str, body: str) -> list[str]:
+    """Socratic flow for an ungrounded doctrine — challenge to ground, never delete.
+    Balanced: SOCRATES questions (Plato: define · Bernays: who benefits · Jung: what's under the
+    ask) and DIOGENES punctures (parrhesia: blunt concrete truth over abstraction). End with ?"""
+    t = (label or "this doctrine").strip()
+    b = (body or "").strip()
+    return [
+        # SOCRATES — elenchus: define, evidence, who benefits, what's under it, refute it
+        f"Socrates: what precisely does '{t}' assert, and what evidence would prove it?",
+        f"Socrates: whose power or comfort is served by holding '{t}' without a source?",
+        f"Socrates: what is the ask or fear that '{t}' protects ({b[:80]}...)?",
+        f"Socrates: what would have to be true for '{t}' to be WRONG, and is that the case?",
+        # DIOGENES — the Cynic cut: blunt, concrete, deflate the pretension
+        f"Diogenes: show me the concrete thing '{t}' refers to, or it's a featherless biped.",
+        f"Diogenes: strip the words — in one plain sentence, what does '{t}' actually DO?",
+    ]
+
+
+def _scan_grounding() -> list[dict[str, Any]]:
+    """Frontier #6, ponytail style (Socratic flow, NOT delete): every folded doctrine's source must
+    resolve to a real steal doc or known module; an ungrounded one is CHALLENGED (Socratic questions
+    to ground or refute), never silently erased. Ponytail: verify don't assume. ~$0, reads graph + steal."""
+    out: list[dict[str, Any]] = []
+    try:
+        import json as _json
+        from mag.knowledge_graph import GRAPH_PATH
+        steal_dir = ROOT / "memory" / "steal"
+        known = {"session", "dream", "shadow_work", "shadow_work_session_test",
+                 "shadow_work_session_specific", "frontier_advice", "memweave_internals"}
+        docs = {p.stem.lower() for p in steal_dir.glob("*.md")} if steal_dir.is_dir() else set()
+        if GRAPH_PATH.is_file():
+            g = _json.loads(GRAPH_PATH.read_text(encoding="utf-8"))
+            for n in g.get("nodes", []):
+                src = str(n.get("source") or "").strip()
+                if n.get("kind") != "doctrine":
+                    continue
+                label = str(n.get("label") or "?")
+                body = str(n.get("summary") or "")
+                q = _socratic_challenges(label, body)
+                if not src:
+                    out.append({"tag": "ungrounded", "what": f"doctrine '{label}' has no source",
+                                "path": str(GRAPH_PATH).replace(str(ROOT), ""), "severity": "high",
+                                "socratic": q,
+                                "replacement": "Socratic flow: challenge to ground — do NOT delete"})
+                    continue
+                if src in known:
+                    continue
+                if any(src == d or src in d for d in docs):
+                    continue
+                out.append({"tag": "ungrounded",
+                            "what": f"doctrine '{label}' source '{src}' matches no steal doc/module",
+                            "path": str(GRAPH_PATH).replace(str(ROOT), ""), "severity": "medium",
+                            "socratic": q,
+                            "replacement": "Socratic flow: interrogate to find its source, or hold it as CHALLENGED — do NOT delete"})
+    except Exception as e:
+        out.append({"tag": "grounding", "what": f"grounding scan failed: {str(e)[:80]}",
+                    "path": "mag/ponytail_audit.py", "severity": "low"})
+    return out
+
+
 def run_audit(*, hints: bool = False) -> dict[str, Any]:
     files = _iter_py()
     findings: list[dict[str, Any]] = []
     findings.extend(_find_duplicate_constants())
     findings.extend(_scan_abandoned())
     findings.extend(_scan_large_files(files))
+    findings.extend(_scan_grounding())
     if hints:
         findings.extend(_scan_yagni_wrappers(files))
 

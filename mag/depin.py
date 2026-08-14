@@ -334,7 +334,8 @@ def _detect_local_models() -> list[tuple[str, list[str]]]:
     """Detect locally available Ollama models."""
     try:
         import subprocess
-        r = subprocess.run(["ollama", "list"], capture_output=True, text=True, timeout=5)
+        r = subprocess.run(["ollama", "list"], capture_output=True, text=True, timeout=5,
+                           creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0)
         if r.returncode != 0:
             return []
 

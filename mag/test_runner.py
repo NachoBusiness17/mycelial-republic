@@ -27,6 +27,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+from mag import headless
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -67,7 +68,7 @@ def run(
     ts = _now()
     slug = ts.replace(":", "").replace("-", "").replace(".", "")[:15]
 
-    cmd = [sys.executable, "-m", "pytest", "-q", "-p", "no:cacheprovider"]
+    cmd = [headless.PYTHON, "-m", "pytest", "-q", "-p", "no:cacheprovider"]
     cmd += ["--maxfail", str(maxfail)]
     pt = per_test if per_test is not None else (90 if _has_pytest_timeout() else None)
     if pt and _has_pytest_timeout():

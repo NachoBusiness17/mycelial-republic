@@ -415,6 +415,17 @@ def log_behavioral_event(
             )
         except Exception:
             pass
+    # PERCOLATOR EVERYWHERE (2026-08-11): route the event's free-text through the signal
+    # percolator — noise/theater to the noise file, false positives filtered (never truth),
+    # repeatable signal compiled into invariants, novel signal queued for exploration, and a
+    # training event emitted. Non-blocking: never throws, never alters the caller's contract.
+    try:
+        from mag.percolator import percolate_signal
+        if (detail or "").strip():
+            percolate_signal(detail, pattern=kind or "route_decision", source="behavioral_event",
+                             domain="behavioral")
+    except Exception:
+        pass
 
 
 def apply_actions_to_messages(

@@ -67,7 +67,17 @@ def _lifecycle_every_ticks(check_s: float) -> int:
 
 
 def _python_exe() -> str:
-    """Spawn services with python.exe even when supervisor runs as pythonw."""
+    """Spawn services with the REAL interpreter (bypass the venv shim).
+
+    LAW (2026-08-10): the venv shim re-execs into the base interpreter as a child,
+    doubling every spawn and causing the host reap/seat-exit=-1 mismatch. Use the
+    canonical real interpreter from headless so each service is a single PID.
+    """
+    try:
+        from mag.headless import _resolve_python, _spawn_env  # noqa: F401
+        return _resolve_python()
+    except Exception:
+        pass
     venv_py = ROOT / ".venv" / "Scripts" / "python.exe"
     if venv_py.is_file():
         return str(venv_py)
@@ -138,9 +148,16 @@ def _log(msg: str) -> None:
 def _spawn(name: str, cmd: list[str]):
     out = open(LOG_DIR / f"{name}_sv.log", "ab")
     err = open(LOG_DIR / f"{name}_sv.err.log", "ab")
+    # SINGLE-INTERPRETER ENV (LAW 2026-08-10): PYTHONPATH to root + venv site-packages
+    # so children running under the REAL interpreter (no venv shim -> no doubling)
+    # still resolve mag/deps. Plus SOURCE ATTRIBUTION markers (supervisord contract).
+    from mag.headless import _spawn_env
+    env = _spawn_env()
+    env.setdefault("MAG_SLOT", name)
+    env.setdefault("MAG_SOURCE", os.environ.get("MAG_SOURCE", "mag_launch"))
     p = subprocess.Popen(cmd, cwd=str(ROOT), stdout=out, stderr=err,
                          creationflags=DETACHED,
-                         stdin=subprocess.DEVNULL)
+                         stdin=subprocess.DEVNULL, env=env)
     _log(f"spawned {name} pid={p.pid} cmd={' '.join(cmd)}")
     return p
 
@@ -588,13 +605,23 @@ def main() -> int:
             return 0 if all(alive.get(k) for k in wanted) else 1
         try:
             loop_tick = 0
+            powered_down = False
             while True:
                 if (ROOT / "state" / "mag_power.off").is_file():
-                    _log("power off flag set; supervisor exiting (no respawn)")
-                    for s in slots:
-                        if s.get("proc") is not None and s["proc"].poll() is None:
-                            _kill_pid(s["proc"].pid)
-                    break
+                    # Powered off = intentionally down, NO respawn. Docker
+                    # restart policies churn on container exit (spawn -> exit 0
+                    # -> restart -> ...), so stay ALIVE in a holding pattern
+                    # rather than exiting. Kill children once; resume the full
+                    # stack automatically once the flag is cleared.
+                    if not powered_down:
+                        _log("power off flag set; killing children (supervisor held alive, no respawn)")
+                        for s in slots:
+                            if s.get("proc") is not None and s["proc"].poll() is None:
+                                _kill_pid(s["proc"].pid)
+                        powered_down = True
+                    time.sleep(_check_interval_s())
+                    continue
+                powered_down = False
                 check_s = _check_interval_s()
                 life_every = _lifecycle_every_ticks(check_s)
                 time.sleep(check_s)

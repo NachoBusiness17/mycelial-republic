@@ -94,7 +94,8 @@ def check_provider_sanity() -> dict[str, Any]:
     # Check Ollama
     try:
         import subprocess
-        r = subprocess.run(["ollama", "list"], capture_output=True, text=True, timeout=5)
+        r = subprocess.run(["ollama", "list"], capture_output=True, text=True, timeout=5,
+                           creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0)
         if r.returncode == 0:
             providers_ok.append("ollama")
         else:
@@ -313,6 +314,50 @@ def check_chain_discipline() -> dict[str, Any]:
     }
 
 
+def check_memlance_discipline() -> dict[str, Any]:
+    """Check that modules use ghost_memlance's CANONICAL surface (select/index), not guessed keys.
+
+    2026-08-11 operator: "this is the same bug ... fix it automatically moving forward." The
+    recurring bug = calling ghost_memlance then guessing its return key (e.g. .get("states"),
+    .get("entries")) instead of reading the REAL shape. select() returns {selected: [...]},
+    index() returns a LIST. This guard flags the guess-internals pattern automatically.
+    """
+    issues = []
+    mag_dir = ROOT / "mag"
+    if not mag_dir.is_dir():
+        return {"check": "memlance_discipline", "ok": True, "issues": [],
+                "note": "mag/ directory not found"}
+    # guessed keys that are NOT what ghost_memlance returns (select->selected, index->list)
+    guessed = ['.get("states")', '.get("entries")', '.get("results")', '.get("rows")']
+    for py_file in sorted(mag_dir.glob("*.py")):
+        if py_file.name == "ghost_memlance.py":
+            continue
+        try:
+            content = py_file.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        # only modules that actually touch memlance
+        if "ghost_memlance" not in content and "memlance" not in content:
+            continue
+        # does it use the canonical surface?
+        uses_canonical = (".select(" in content) or (".index(" in content)
+        if uses_canonical:
+            continue
+        # it references memlance but reads a guessed key / doesn't call select or index
+        for g in guessed:
+            if g in content:
+                issues.append(
+                    f"MEMLANCE DISCIPLINE: {py_file.name} reads a guessed key {g} on a memlance "
+                    f"result instead of the canonical surface. Use ghost_memlance.select(goal,k)"
+                    f" (returns {{selected:[...]}}) or index() (returns a list). Read the real "
+                    f"shape from the code, never guess."
+                )
+                break
+    return {"check": "memlance_discipline", "ok": len(issues) == 0,
+            "issues": issues, "modules_checked": len(list(mag_dir.glob("*.py"))),
+            "discipline_violations": len(issues)}
+
+
 # ═══════════════════════════════════════════════════════════════════
 # FULL EXAMINATION
 # ═══════════════════════════════════════════════════════════════════
@@ -417,6 +462,7 @@ def examine() -> DoctorReport:
         check_inbox_sanity(),
         check_env_sanity(),
         check_chain_discipline(),
+        check_memlance_discipline(),
     ]
     try:
         checks.append(check_self_steal())

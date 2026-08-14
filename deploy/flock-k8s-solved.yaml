@@ -1,0 +1,66 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mag-flock-k8s-solved
+  namespace: mag
+  labels:
+    app: mag
+    kind: flock
+  annotations:
+    mag.flock/goal: "Test emergent flock: surface the solved capabilities on K8s via cheap local agen"
+    mag.flock/n: "5"
+    mag.flock/invariants: "consent_first,local_first,no_throne,residual_is_dna,window_steer"
+spec:
+  parallelism: 5
+  completions: 5
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: flock-0
+        image: mag-sovereign:local
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: MAG_SLOT
+            value: "flock-0"
+          - name: MAG_SOURCE
+            value: "flock_job"
+        command: ["python", "-m", "mag.flock_steal", "Test emergent flock: surface the solved capabilities on K8s via cheap local agents, invariant-aligned", "--tag", "k8s-solved", "--providers", "ollama,deepseek"]
+      - name: flock-1
+        image: mag-sovereign:local
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: MAG_SLOT
+            value: "flock-1"
+          - name: MAG_SOURCE
+            value: "flock_job"
+        command: ["python", "-m", "mag.flock_steal", "Test emergent flock: surface the solved capabilities on K8s via cheap local agents, invariant-aligned", "--tag", "k8s-solved", "--providers", "ollama,deepseek"]
+      - name: flock-2
+        image: mag-sovereign:local
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: MAG_SLOT
+            value: "flock-2"
+          - name: MAG_SOURCE
+            value: "flock_job"
+        command: ["python", "-m", "mag.flock_steal", "Test emergent flock: surface the solved capabilities on K8s via cheap local agents, invariant-aligned", "--tag", "k8s-solved", "--providers", "ollama,deepseek"]
+      - name: flock-3
+        image: mag-sovereign:local
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: MAG_SLOT
+            value: "flock-3"
+          - name: MAG_SOURCE
+            value: "flock_job"
+        command: ["python", "-m", "mag.flock_steal", "Test emergent flock: surface the solved capabilities on K8s via cheap local agents, invariant-aligned", "--tag", "k8s-solved", "--providers", "ollama,deepseek"]
+      - name: flock-4
+        image: mag-sovereign:local
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: MAG_SLOT
+            value: "flock-4"
+          - name: MAG_SOURCE
+            value: "flock_job"
+        command: ["python", "-m", "mag.flock_steal", "Test emergent flock: surface the solved capabilities on K8s via cheap local agents, invariant-aligned", "--tag", "k8s-solved", "--providers", "ollama,deepseek"]

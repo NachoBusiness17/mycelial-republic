@@ -118,7 +118,13 @@ def _enum() -> list[dict[str, Any]]:
 
 def detect() -> dict[str, Any]:
     """Return verdict: none | crash_loop | strain. LOOP if a same-cmd group is huge/short-lived."""
-    procs = _enum()
+    # Dedup the Windows venv-shim -> uv-cpython pair (one logical process per slot) so a
+    # HEALTHY single stack is never misread as a 2x-duplicate storm (2026-08-10 false alarm).
+    try:
+        from mag.source_trace import dedupe_uv_pairs
+        procs = dedupe_uv_pairs(_enum())
+    except Exception:
+        procs = _enum()
     if not procs:
         return {"schema": SCHEMA, "ts": _now(), "verdict": "none", "procs": 0,
                 "evidence": "no framework processes running"}
@@ -128,23 +134,27 @@ def detect() -> dict[str, Any]:
 
     candidates = []
     for sig, group in by_sig.items():
-        if len(group) >= LOOP_CONCURRENCY:
-            young = [g for g in group if g.get("age_s", 999) < SHORT_LIFETIME_S]
-            # a storm = many same-cmd AND most are short-lived (spinning), OR simply too many.
-            # PLUS: a framework SINGLETON loop (autorun_loop / ghost cycle) must have EXACTLY ONE
-            # instance — 4+ identical cmdlines is ALWAYS a duplicate-brains storm, even if all are
-            # long-lived (the 2026-08-09 window-storm was exactly this: multiple long-lived
-            # autorun_loops each spawning sub-agents into desktop windows). Ghost must break it.
-            singleton = any(m in sig for m in ("autorun_loop", "from mag.ghost import cycle"))
-            storm = len(group) >= LOOP_CONCURRENCY and (
-                len(young) >= 2 or len(group) >= LOOP_CONCURRENCY * 2 or singleton
-            )
-            if storm:
-                candidates.append({
-                    "sig": sig, "count": len(group), "young": len(young),
-                    "pids": [g["pid"] for g in group],
-                    "cmd_sample": group[0]["cmd"][:160],
-                })
+        # A framework SINGLETON loop (autorun_loop / ghost cycle) must have EXACTLY ONE
+        # instance — ANY duplicate (>=2) is a duplicate-brains storm, even if all are
+        # long-lived (2026-08-09 window-storm + the 2026-08-10 ghost-daemon spawning 2
+        # autorun_loops). The old >= LOOP_CONCURRENCY(4) guard made ghost blind to a
+        # 2-way duplicate crash-loop — the operator saw this for three days. Lowered.
+        singleton = any(m in sig for m in ("autorun_loop", "from mag.ghost import cycle"))
+        dup_cap = 2 if singleton else LOOP_CONCURRENCY
+        if len(group) < dup_cap:
+            continue
+        young = [g for g in group if g.get("age_s", 999) < SHORT_LIFETIME_S]
+        # a storm = many same-cmd AND most are short-lived (spinning), OR simply too many,
+        # OR a duplicate singleton (>=2 identical singleton loops is ALWAYS a storm).
+        storm = len(group) >= dup_cap and (
+            len(young) >= 2 or len(group) >= LOOP_CONCURRENCY * 2 or singleton
+        )
+        if storm:
+            candidates.append({
+                "sig": sig, "count": len(group), "young": len(young),
+                "pids": [g["pid"] for g in group],
+                "cmd_sample": group[0]["cmd"][:160],
+            })
     # Runaway-spawner cascade: one PARENT spawning many framework children. A healthy
     # supervisor has 2-4; >= RUN_AWAY_CHILD_COUNT under one parent = a cascade. Ghost must
     # break the PARENT tree (taskkill /T on the spawner kills all its children).
@@ -184,6 +194,17 @@ def break_loop(*, dry: bool = False) -> dict[str, Any]:
     for p in _enum():
         if p["pid"] in pids and p.get("ppid"):
             pids.add(p["ppid"])
+    # SOURCE TRACE (steal 2026-08-10): report WHERE the storm came from, not
+    # just that it exists — walk the ancestry to the root spawner.
+    source: dict[str, Any] = {}
+    try:
+        from mag.source_trace import trace_source
+        chain = trace_source(d["loop"]["pids"][0])
+        if chain:
+            src = chain[-1]
+            source = {"root_pid": src["pid"], "root_cmd": src["cmd"]}
+    except Exception:
+        pass
     killed = []
     for pid in sorted(pids):
         if dry:
@@ -202,7 +223,7 @@ def break_loop(*, dry: bool = False) -> dict[str, Any]:
             killed.append({"pid": pid, "error": str(e)[:80]})
     return {"schema": SCHEMA, "ts": _now(), "ok": True, "action": "break_loop",
             "verdict": "crash_loop", "dry": dry, "killed": killed, "killed_count": len(killed),
-            "reason": d["evidence"]}
+            "reason": d["evidence"], "source": source}
 
 
 def main(argv: list[str] | None = None) -> int:

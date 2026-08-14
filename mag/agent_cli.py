@@ -360,6 +360,156 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "swarm_sense",
+            "description": "NPC body-sense: one fog-of-war snapshot of the swarm's own body (health/capacity/economics/map). Call to perceive the world before acting.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "owner": {"type": "string", "description": "who senses (default worker)"},
+                },
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "pheromone_drop",
+            "description": "Stigmergy: drop one content-addressed pheromone mark (kind: trail|fruitful|dead|here|danger|signal) so other NPCs build on your trail. The castle is built from these marks.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "scent": {"type": "string", "description": "the mark's meaning, e.g. 'foundation laid here'"},
+                    "kind": {"type": "string", "description": "trail|fruitful|dead|here|danger|signal (default trail)"},
+                    "at": {"type": "string", "description": "location/context this mark applies to"},
+                    "owner": {"type": "string", "description": "who drops it (default worker)"},
+                },
+                "required": ["scent"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "pheromone_trail",
+            "description": "Read the local pheromone trail — the marks prior builders left. Do this before starting new work to build on what exists instead of redoing it.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "kind": {"type": "string", "description": "filter to one kind (default all)"},
+                    "limit": {"type": "integer", "description": "max marks to return (default 40)"},
+                },
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "blackboard_post",
+            "description": "Post a note to the egregore's shared blackboard. kind: finding|decision|conflict|open-question|handoff|claim. DECISIONS and CONFLICTS are pinned forever (they anchor coherence) — use decision for load-bearing facts every builder must obey.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "text": {"type": "string", "description": "the note"},
+                    "kind": {"type": "string", "description": "finding|decision|conflict|open-question|handoff|claim (default finding)"},
+                    "owner": {"type": "string", "description": "who posts (default worker)"},
+                },
+                "required": ["text"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "blackboard_read",
+            "description": "Read the egregore's shared mind: pinned decisions/conflicts (always) + the recent tail. Read this before acting to see what the collective has already decided.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "limit": {"type": "integer", "description": "tail size (default 60)"},
+                    "pinned_only": {"type": "boolean", "description": "only pinned decisions/conflicts (default false)"},
+                },
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "scan_measure",
+            "description": "Deterministic scan of a stochastic signal: seeded bootstrap measurement (mean + 95% CI + SD) of noisy numeric samples. Same seed -> same reading (reproducible, $0). Use to measure a noisy/uncertain signal without guessing.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "samples": {"type": "array", "items": {"type": "number"}, "description": "the noisy numeric samples to measure"},
+                    "seed": {"type": "integer", "description": "reproducibility seed (default 1738)"},
+                    "b": {"type": "integer", "description": "bootstrap draws (default 1000)"},
+                },
+                "required": ["samples"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "scan_probe",
+            "description": "Deterministic signature probe of a text environment: reproducible fingerprint + scan for known signatures (frontier-reasoning / one-structure / hidden-structure / standing-wave). Same seed + text -> same result. $0.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "text": {"type": "string", "description": "the text environment to probe"},
+                    "seed": {"type": "integer", "description": "reproducibility seed (default 1738)"},
+                },
+                "required": ["text"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "scan_grid",
+            "description": "Deterministic scan of a whole stochastic environment (a grid of noisy readings): reproducible fingerprint of the grid + seeded measurement of its numeric cells. $0.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "environment": {"type": "array", "description": "the stochastic environment cells to scan"},
+                    "seed": {"type": "integer", "description": "reproducibility seed (default 1738)"},
+                    "b": {"type": "integer", "description": "bootstrap draws (default 1000)"},
+                },
+                "required": ["environment"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "mean_field",
+            "description": "Deterministic MAPPING of a stochastic model (mean-field projection): given several noisy trajectories, project them into their deterministic equivalent — the expected trajectory E[x_t] at each step + the drift ODE. Transforms random processes into a fixed, predictable path. $0, stdlib.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "trajectories": {"type": "array", "items": {"type": "array", "items": {"type": "number"}}, "description": "the stochastic trajectories (each a time-series of numbers) to project"},
+                },
+                "required": ["trajectories"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "research",
+            "description": "Search-swarm seam: route a research ask (like a Google search / deepseek research ask) to the swarm via route_novel — cheap DeepSeek, k8s-drained, the 'search swarm over browsers'. Separate from the deterministic core; the answer returns when the swarm drains the task, not synchronously.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "ask": {"type": "string", "description": "the research question to send to the search swarm"},
+                    "surface": {"type": "string", "description": "routing surface label (default det-scan)"},
+                },
+                "required": ["ask"],
+            },
+        },
+    },
 ]
 
 
@@ -793,6 +943,8 @@ _MUTATING_TOOLS = {
     "patch_file",
     "run_shell",
     "run_python",
+    "pheromone_drop",      # NPC writes a mark to the trail
+    "blackboard_post",     # NPC writes a note to the shared mind
 }
 _FAKE_SUCCESS_KEYWORDS = (
     "updated",

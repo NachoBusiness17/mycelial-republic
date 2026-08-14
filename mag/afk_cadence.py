@@ -73,16 +73,53 @@ def run_once() -> dict[str, Any]:
     # MID-STEER HEAL: see errors, mint the mem solution, patch for the future
     # BEFORE running, so past errors never recur while the loop advances.
     steps.append(_safe("error_healer", lambda: _import_run("error_healer", "heal", None)))
+    # FREE-COMPUTE HUNT (legacy afk_loop) — always: scan free tiers for running/more freebies, $0.
+    steps.append(_safe("freebie_scan", lambda: _import_run("afk_loop", "freebie_scan", None)))
+    # DOGFOOD SENTINEL (this is why we dogfood): probe the real systems every cycle so failures
+    # (cache-miss waste, broken grok dispatch, graph persistence) SURFACE instead of hiding.
+    steps.append(_safe("dogfood_audit", lambda: _import_run("dogfood_audit", "audit", None)))
     steps.append(_safe("seed_chain", lambda: _import_run("seed_chain", "seed_build", _next_problem())))
     if budget >= 2:
         steps.append(_safe("self_advance", lambda: _import_run("self_advance", "expand", None, force=True)))
+    # GHOST AUTO (bounded, cheap): synthesize the tesuji leaf, record sizing, and dispatch a bounded
+    # frontier-steered stateless agent (cap=1/day) to mine the untagged shadow corpus.
+    steps.append(_safe("ghost_auto", lambda: _import_run("ghost_auto", "run_cadence", None)))
+    # AUTO HANDOFF: keep a current handoff persisted every cycle so any new chat picks up cleanly
+    # without asking (the operator wants handoffs automatic, not on request).
+    steps.append(_safe("auto_handoff", lambda: _import_run("auto_handoff", "run", None)))
+    # VS CODE SEAT: auto-prepare a ready-to-paste controlled task spec from the pending backlog,
+    # so the next chat (or a fresh executor seat) has an opener ready — no re-explaining.
+    steps.append(_safe("vscode_seat", lambda: _import_run("vscode_seat", "cadence_generate", None)))
     if budget >= 3:
         steps.append(_safe("capability_steal", lambda: _import_run("capability_steal", "expand", None, force=True)))
+        # THE BUS SWARM (legacy emergent_harvest) — full-time, rightsized: the flock hunts
+        # emergent tesuji across free compute + shared invariants. Full blast, not runaway.
+        steps.append(_safe("emergent_harvest", lambda: _import_run("emergent_harvest", "tesuji_harvest", None, n_agents=40, steps=120)))
     if budget >= 2:
         steps.append(_safe("learn_rightsize", lambda: _import_run("learn_rightsize", "learn_loop", None)))
     if budget >= 1:
         steps.append(_safe("scribe", lambda: _import_run("scribe", "scribe", None)))
+    # GPU AFK inference-training: if operator AFK + GPU free + local models up, run FREE local
+    # inference on curated seed prompts -> training rows -> folded. Free compute -> training data.
+    steps.append(_safe("gpu_afk_train", lambda: _import_run("gpu_ghost", "afk_train", None)))
     steps.append(_safe("cold_boot", lambda: _import_run("ghost_cold_boot", "boot_and_fold", None)))
+    # ---- SELF-RUNNING AUGMENTATION (operator 2026-08-10: 'wire the full autonomous loop') ----
+    # DOCTRINE DEDUPE: consolidate structural-template doctrine families (template = invariant,
+    # instances = data) so the graph never bloats. $0.
+    steps.append(_safe("doctrine_dedupe", lambda: _import_run("template_invariant", "consolidate_all", None)))
+    # CORPUS MINE: mine the leaked-prompt corpus for invariants (expand the knowledge corpus). $0.
+    steps.append(_safe("corpus_mine", lambda: _import_run("leaked_prompt_mine", "mine", None)))
+    # GHOST PLAY: the ghost experiments on the swarms/tools -> training rows + steer-protocol learning.
+    steps.append(_safe("ghost_play", lambda: _import_run("ghost_experimenter", "ghost_play", None, iterations=2)))
+    # READOUT FOLD: close the reservoir loop — read the liquid, curate + inject the readout back.
+    steps.append(_safe("readout_fold", lambda: _import_run("readout_controller", "control_loop", None, iterations=1)))
+    # RIB RECONCILE: report how the k8s cluster conforms to the RIB invariants (read-only; no auto-apply).
+    steps.append(_safe("rib_reconcile", lambda: _import_run("rib_k8s", "reconcile", None, apply=False)))
+    # STEER RESUME: process any pinned tasks from the steer protocol (pop the pin stack).
+    steps.append(_safe("steer_resume", lambda: _import_run("steer_router", "resume", None)))
+    # ---- HONESTY EVERYWHERE (operator 2026-08-10): the ponytail grounding audit runs every cycle
+    # so ungrounded doctrine (incl. mislabeled 'grok/frontier' claims) is CHALLENGED, not trusted.
+    steps.append(_safe("ponytail_grounding", lambda: _import_run("ponytail_audit", "run_audit", None)))
 
     out["steps"] = steps
     out["ok_steps"] = sum(1 for s in steps if s.get("ok"))
@@ -136,8 +173,8 @@ def _fold(out: dict[str, Any]) -> None:
 def status() -> dict[str, Any]:
     return {"schema": "afk_cadence.status.v1", "ts": _now(),
             "afk": _operator_afk(), "right_size": _right_size(),
-            "steps": ["rightsize", "seed_chain", "self_advance", "capability_steal",
-                      "learn_rightsize", "scribe", "cold_boot"]}
+            "steps": ["rightsize", "freebie_scan", "seed_chain", "self_advance",
+                      "capability_steal", "emergent_harvest", "learn_rightsize", "scribe", "cold_boot"]}
 
 
 def main(argv: list[str] | None = None) -> int:

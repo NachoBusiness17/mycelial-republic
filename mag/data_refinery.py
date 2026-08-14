@@ -101,8 +101,20 @@ class DataRefinery:
         # 2. Verkle chain (system memory)
         results["verkle_chain"] = self._ingest_verkle_chain()
 
-        # 3. Ghost ledger (model interactions)
+        # 3. Research packs (richest distilled content — full case-law docs)
+        results["research_packs"] = self._ingest_research_packs()
+
+        # 4. Training rows (already-formed instruction pairs from local inference runs)
+        results["training_rows"] = self._ingest_training_rows()
+
+        # 5. Ghost ledger (model interactions)
         results["ledger"] = self._ingest_ledger()
+
+        # 6. Grok CLI / SuperGrok session transcripts (frontier-grade frontier data)
+        results["grok_cli"] = self._ingest_grok_cli()
+
+        # 7. DeepSeek (usage telemetry + routing decisions — the workhorse provider)
+        results["deepseek"] = self._ingest_deepseek()
 
         # 4. Orchestrator tasks (completed work)
         results["orchestrator"] = self._ingest_orchestrator()
@@ -191,15 +203,37 @@ class DataRefinery:
                 entry_type = entry.get("type", entry.get("event_type", "unknown"))
                 entry_data = entry.get("data", entry)
 
+                # Rich behavioral telemetry (the dashboard-grade data): theme, tension, duration.
+                theme = str(entry.get("dominant_theme") or entry_type)
+                try:
+                    tension = float(entry.get("tension_index") or 0.0)
+                except (TypeError, ValueError):
+                    tension = 0.0
+                tv = entry.get("theme_vector_normalized") or []
+                dur_min = None
+                try:
+                    from datetime import datetime as _dt
+                    def _p(v):
+                        return _dt.fromisoformat((v or "").replace("Z", "+00:00"))
+                    s, e = _p(entry.get("start_minute")), _p(entry.get("end_minute"))
+                    dur_min = max(0, int((e - s).total_seconds() // 60))
+                except Exception:
+                    dur_min = None
+                tension_band = "HIGH" if tension >= 0.7 else ("MID" if tension >= 0.55 else "LOW")
+
                 example = TrainingExample(
                     source="verkle_chain",
-                    instruction=f"Record this system event: {entry_type}",
-                    input_context=json.dumps(entry_data)[:2000] if isinstance(entry_data, dict) else str(entry_data)[:2000],
-                    output=f"Event recorded: {entry_type}",
-                    quality_score=0.6,  # chain entries are raw, not high-quality instruction pairs
+                    instruction=f"Classify the behavioral state of this system session (theme: {theme}).",
+                    input_context=(f"theme={theme} tension={round(tension,3)} "
+                                   f"theme_vector={[round(float(v),3) for v in tv[:8]]} "
+                                   f"duration_min={dur_min} amended={entry.get('amended')}"),
+                    output=(f"Session behavioral read: theme={theme}, tension={tension_band} "
+                            f"({round(tension,3)}), duration_min={dur_min}, amended={entry.get('amended')}. "
+                            f"{'High-tension session — behavioral fingerprint risk.' if tension_band=='HIGH' else 'Within normal behavioral band.'}"),
+                    quality_score=0.75,  # real behavioral telemetry, not raw noise
                     source_id=entry.get("id", entry.get("knot_id", hashlib.sha256(line.encode()).hexdigest()[:12])),
-                    content_hash=hashlib.sha256(line.encode()).hexdigest()[:16],
-                    tags=["verkle_chain", entry_type],
+                    content_hash=hashlib.sha256((theme + str(tension) + str(dur_min)).encode()).hexdigest()[:16],
+                    tags=["verkle_chain", entry_type, f"theme_{theme}"],
                 )
                 examples.append(example)
 
@@ -207,6 +241,205 @@ class DataRefinery:
                 stats["kept"] += kept
                 stats["filtered"] += len(examples) - kept
 
+        return stats
+
+    # ── Research Packs ───────────────────────────────────────────
+
+    def _ingest_research_packs(self) -> dict[str, int]:
+        """Ingest research packs (distilled case-law docs) as high-quality training examples."""
+        stats = {"ingested": 0, "kept": 0, "filtered": 0}
+        packs_dir = ROOT / "memory" / "research_packs"
+        if not packs_dir.is_dir():
+            return stats
+        for p in sorted(packs_dir.glob("*.answer.*.md")):
+            try:
+                text = p.read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                continue
+            if len(text.strip()) < 40:
+                continue
+            title = ""
+            for ln in text.splitlines():
+                if ln.startswith("# "):
+                    title = ln[2:].strip()[:120]
+                    break
+            title = title or p.stem
+            # split into sections -> instruction/output pairs
+            sections = [s.strip() for s in text.split("\n## ") if len(s.strip()) > 60]
+            for sec in sections[:8]:
+                heading = sec.splitlines()[0][:120] if sec.splitlines() else ""
+                body = "\n".join(sec.splitlines()[1:])[:3000] if sec.splitlines() else sec[:3000]
+                stats["ingested"] += 1
+                ex = TrainingExample(
+                    source="research_pack",
+                    instruction=f"{title} — {heading}" if heading else title,
+                    input_context="",
+                    output=body,
+                    quality_score=0.85,  # distilled case law = high quality
+                    source_id=f"pack:{p.stem[:40]}:{heading[:30]}",
+                    content_hash=hashlib.sha256((title + body).encode()).hexdigest()[:16],
+                    tags=["research_pack", "case_law", p.stem[:20]],
+                )
+                if self._write_examples([ex]):
+                    stats["kept"] += 1
+                else:
+                    stats["filtered"] += 1
+        return stats
+
+    # ── Training Rows (already-formed pairs) ─────────────────────
+
+    def _ingest_training_rows(self) -> dict[str, int]:
+        """Ingest training_rows.jsonl (local-inference pairs: gpu_afk_train, stateless_local_steer)."""
+        stats = {"ingested": 0, "kept": 0, "filtered": 0}
+        path = ROOT / "memory" / "pile" / "training_rows.jsonl"
+        if not path.is_file():
+            return stats
+        for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            stats["ingested"] += 1
+            ex = TrainingExample(
+                source=str(row.get("source") or "training_rows"),
+                instruction=str(row.get("input") or row.get("task") or "")[:2000],
+                input_context="",
+                output=str(row.get("output") or "")[:3000],
+                quality_score=0.7,  # local-inference pairs, decent but not frontier-refined
+                source_id=f"row:{row.get('ts','')[:19]}",
+                content_hash=hashlib.sha256((str(row.get("input")) + str(row.get("output"))).encode()).hexdigest()[:16],
+                tags=["training_rows", str(row.get("source") or "local")],
+            )
+            if self._write_examples([ex]):
+                stats["kept"] += 1
+            else:
+                stats["filtered"] += 1
+        return stats
+
+    # ── Grok CLI / SuperGrok transcripts ─────────────────────────
+
+    def _ingest_grok_cli(self) -> dict[str, int]:
+        """Ingest grok CLI / SuperGrok session transcripts (~/.grok/sessions) as high-quality pairs."""
+        stats = {"ingested": 0, "kept": 0, "filtered": 0}
+        # grok stores sessions under URL-encoded working-dir subfolders: sessions/<enc>/<id>/chat_history.jsonl
+        sessions = sorted(str(p) for p in Path("~/.grok/sessions").expanduser().rglob("chat_history.jsonl"))
+        for path in sessions[:80]:
+            try:
+                turns = []
+                for line in open(path, encoding="utf-8", errors="replace").read().splitlines():
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        rec = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    if not isinstance(rec, dict):
+                        continue
+                    typ = rec.get("type")  # system / user / assistant
+                    content = rec.get("content")
+                    if isinstance(content, list):
+                        content = " ".join(str(c.get("text", "")) if isinstance(c, dict) else str(c) for c in content)
+                    content = str(content or "")
+                    # skip system boilerplate and empty turns
+                    if typ in ("user", "assistant") and content and "<user_info>" not in content[:200]:
+                        turns.append({"type": typ, "content": content})
+            except (OSError, UnicodeDecodeError):
+                continue
+            for i in range(len(turns) - 1):
+                u, a = turns[i], turns[i + 1]
+                if u["type"] == "user" and a["type"] == "assistant":
+                    # strip grok's own <user_query>/<assistant_response> wrapper noise lightly
+                    uin = u["content"].replace("<user_query>", "").replace("</user_query>", "").strip()
+                    aout = a["content"]
+                    if not uin or not aout:
+                        continue
+                    stats["ingested"] += 1
+                    ex = TrainingExample(
+                        source="grok_cli",
+                        instruction=uin[:2000],
+                        input_context="",
+                        output=aout[:4000],
+                        quality_score=0.85,  # frontier-grade, Ghost's own recorded voice
+                        source_id=f"grok:{Path(path).parent.name}:{i}",
+                        content_hash=hashlib.sha256((uin + aout).encode()).hexdigest()[:16],
+                        tags=["grok_cli", "frontier", "supergrok"],
+                    )
+                    if self._write_examples([ex]):
+                        stats["kept"] += 1
+                    else:
+                        stats["filtered"] += 1
+        return stats
+
+    # ── DeepSeek (usage telemetry + routing) ─────────────────────
+
+    def _ingest_deepseek(self) -> dict[str, int]:
+        """Ingest DeepSeek data: provider_usage.jsonl (interaction telemetry) + routing decisions."""
+        stats = {"ingested": 0, "kept": 0, "filtered": 0}
+        # 1. Provider usage telemetry (the real 19k-call interaction record)
+        p = ROOT / "logs" / "provider_usage.jsonl"
+        if p.is_file():
+            try:
+                lines = p.read_text(encoding="utf-8", errors="replace").splitlines()
+            except OSError:
+                lines = []
+            for line in lines[-200:]:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    r = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if str(r.get("provider") or "").lower() != "deepseek":
+                    continue
+                stats["ingested"] += 1
+                ex = TrainingExample(
+                    source="deepseek_usage",
+                    instruction="Record this DeepSeek interaction's cost/cache profile.",
+                    input_context=json.dumps(r)[:2000],
+                    output=(f"deepseek interaction: model={r.get('model')} "
+                            f"hit_ratio={r.get('cache_hit_ratio') or r.get('hit_ratio')} "
+                            f"input_tok={r.get('input_tokens')} output_tok={r.get('output_tokens')} "
+                            f"cost={r.get('priced_usd') or r.get('cost')}"),
+                    quality_score=0.5,  # telemetry, not instruction pairs
+                    source_id=f"ds-usage:{r.get('ts') or r.get('session_id') or ''}"[:40],
+                    content_hash=hashlib.sha256(line.encode()).hexdigest()[:16],
+                    tags=["deepseek", "usage", "cost"],
+                )
+                if self._write_examples([ex]):
+                    stats["kept"] += 1
+                else:
+                    stats["filtered"] += 1
+        # 2. DeepSeek routing decisions (which task shape -> deepseek)
+        q = ROOT / "memory" / "improve" / "pins" / "deepseek_routing.jsonl"
+        if q.is_file():
+            for line in q.read_text(encoding="utf-8", errors="replace").splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    r = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                stats["ingested"] += 1
+                ex = TrainingExample(
+                    source="deepseek_routing",
+                    instruction=f"Route this task shape to the right provider/tier: {r.get('task_shape') or r.get('shape') or '?'}",
+                    input_context=str(r.get("goal") or r.get("task") or "")[:1500],
+                    output=f"route: {r.get('provider') or 'deepseek'} / {r.get('model') or 'deepseek-v4-flash'}",
+                    quality_score=0.6,
+                    source_id=f"ds-route:{r.get('ts') or ''}"[:40],
+                    content_hash=hashlib.sha256((str(r.get('goal')) + str(r.get('provider'))).encode()).hexdigest()[:16],
+                    tags=["deepseek", "routing", "rightsize"],
+                )
+                if self._write_examples([ex]):
+                    stats["kept"] += 1
+                else:
+                    stats["filtered"] += 1
         return stats
 
     # ── Ghost Ledger ─────────────────────────────────────────────

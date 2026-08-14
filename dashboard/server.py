@@ -463,6 +463,13 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(404, {"error": "cast-voice.html missing"})
             return self._bytes(200, vf.read_bytes(), "text/html; charset=utf-8")
 
+        # SEAT — the new knot-centric ghost surface (control room / the seat)
+        if path in ("/seat", "/seat.html"):
+            sf = STATIC / "seat.html"
+            if not sf.is_file():
+                return self._json(404, {"error": "seat.html missing"})
+            return self._bytes(200, sf.read_bytes(), "text/html; charset=utf-8")
+
         if path.startswith("/static/"):
             f = safe_file(path.lstrip("/"))
             if not f:

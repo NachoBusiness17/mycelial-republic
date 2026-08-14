@@ -12,9 +12,10 @@ Cost estimates (per 1M tokens, xAI pricing ~Aug 2026):
   grok-3-mini:    ~$0.30 in / $2.50 out  ← default (cheapest reasoning)
   grok-3:         ~$3 in / $15 out
   grok-4:         ~$5 in / $20 out       ← scarce, multi-agent only
+  grok-4.5:       ~$5 in / $20 out       ← current frontier opinion (orchestrate)
 
 Schema: grok_rightsize.v1
-Law: Never send >200 token system prompts. Never default to grok-4.
+Law: Never send >200 token system prompts. Never default to grok-4.5 (auto-classify).
 """
 
 from __future__ import annotations
@@ -45,13 +46,13 @@ BUDGETS: dict[str, dict[str, Any]] = {
     "summary":    {"model": "grok-3-mini", "max_tokens": 512,  "temp": 0.0, "est_cost": 0.0015},
     "analysis":   {"model": "grok-3-mini", "max_tokens": 1024, "temp": 0.2, "est_cost": 0.0030},
     "deep":       {"model": "grok-3",        "max_tokens": 2048, "temp": 0.3, "est_cost": 0.0080},
-    "orchestrate": {"model": "grok-4",       "max_tokens": 4096, "temp": 0.3, "est_cost": 0.0250},
+    "orchestrate": {"model": "grok-4.5",     "max_tokens": 4096, "temp": 0.3, "est_cost": 0.0250},
 }
 
 # Tasks that should NEVER use grok-4 (deterministic, local-capable)
 NEVER_GROK4 = {"sense", "classify", "summary", "status", "health", "list", "count"}
 
-# Tasks that justify grok-4 (multi-agent coordination, deep analysis)
+# Tasks that justify grok-4.5 / grok-4 (multi-agent coordination, deep analysis)
 GROK4_WORTHY = {"orchestrate", "campaign", "research_sprint", "network_map", "tesuji_deep"}
 
 
@@ -197,8 +198,8 @@ def budget_for(goal: str, *, force_tier: str | None = None) -> dict[str, Any]:
     budget = dict(BUDGETS.get(tier, BUDGETS["analysis"]))
     budget["tier"] = tier
 
-    # Safety: never let auto-classification pick grok-4
-    if force_tier is None and budget["model"] == "grok-4":
+    # Safety: never let auto-classification pick grok-4.5/grok-4
+    if force_tier is None and budget["model"] in ("grok-4", "grok-4.5"):
         if tier not in GROK4_WORTHY:
             budget["model"] = "grok-3"
             budget["max_tokens"] = 2048
@@ -419,8 +420,8 @@ def call_grok(
     tokens_total = usage.get("total_tokens", tokens_prompt + tokens_completion)
 
     # Cost estimate based on model pricing
-    cost_per_1m_in = {"grok-2-latest": 2, "grok-3-mini": 0.30, "grok-3": 3, "grok-4": 5}
-    cost_per_1m_out = {"grok-2-latest": 10, "grok-3-mini": 2.50, "grok-3": 15, "grok-4": 20}
+    cost_per_1m_in = {"grok-2-latest": 2, "grok-3-mini": 0.30, "grok-3": 3, "grok-4": 5, "grok-4.5": 5}
+    cost_per_1m_out = {"grok-2-latest": 10, "grok-3-mini": 2.50, "grok-3": 15, "grok-4": 20, "grok-4.5": 20}
     cost_in = tokens_prompt / 1_000_000 * cost_per_1m_in.get(model, 3)
     cost_out = tokens_completion / 1_000_000 * cost_per_1m_out.get(model, 15)
     cost_est = round(cost_in + cost_out, 6)
@@ -449,43 +450,45 @@ def call_grok_free(
     context: str = "",
     max_tokens: int | None = None,
     timeout: int = 300,
+    force_paid: bool = False,
 ) -> dict[str, Any]:
-    """Prefer the FREE grok CLI harness (subscription seat, private) over the paid API.
+    """Grok via the SUPERGROK FRONT-END (grok.com via the container browser seat, $0) — NOT the paid
+    token API.
 
-    The `grok` binary (Grok Build / open agentic harness) runs on the logged-in
-    subscription — it does NOT bill API credits and is a private local space. This is the
-    DEFAULT transport for grok work; the paid API is only a fallback when the CLI is absent.
+    STEAL 2026-08-11 (operator, hard): stop burning the $10 API credit. Grok goes through the
+    free front-end (mag.browser_driver -> grok.com/supergrok) by default; the paid API is GATED OFF
+    unless explicitly overridden (force_paid=True or env GROK_ALLOW_PAID=1). Free-frontend-first,
+    cost-gate the API.
     """
+    # 1) SUPERGROK FRONT-END ($0) via the container browser seat over CDP.
+    fe_err = ""
     try:
-        from harness.grok_cli import escalate_via_harness, harness_available
-
-        if harness_available():
-            res = escalate_via_harness(
-                goal=goal, context=context, max_turns=8,
-                timeout=int(timeout) if timeout else 300,
-            )
-            return {
-                "ok": bool(res.get("ok")),
-                "content": str(res.get("deliverable") or "") or str(res.get("summary") or ""),
-                "model": "grok-cli-harness",
-                "tier": "free-harness",
-                "cost_est_usd": 0.0,
-                "key_env": "grok-cli",
-                "harness": True,
-                "error": str(res.get("error") or res.get("stderr") or "")[:300],
-                "result_path": res.get("result_path"),
-            }
+        from mag import browser_driver as bd
+        r = bd.ask(goal, surface="grok", max_wait_s=int(timeout) if timeout else 120)
+        if isinstance(r, dict) and r.get("ok"):
+            content = str(r.get("answer") or r.get("content") or r.get("text") or "")
+            if content.strip():
+                return {"ok": True, "content": content, "model": "grok-supergrok-frontend",
+                        "tier": "free-frontend", "cost_est_usd": 0.0, "key_env": "frontend",
+                        "harness": False, "surface": "supergrok-frontend", "error": ""}
+            fe_err = "front-end returned empty"
+        else:
+            fe_err = str((r or {}).get("error") or "browser_driver.ask failed")[:200]
     except Exception as e:
-        return {"ok": False, "content": "", "model": "grok-cli-harness", "tier": "free-harness",
-                "cost_est_usd": 0.0, "key_env": "grok-cli", "harness": True,
-                "error": str(e)[:200]}
-    # Fallback: paid API (metered, still fine when CLI is absent).
+        fe_err = str(e)[:200]
+
+    # 2) Paid API — GATED OFF by default (protect the $10 credit).
+    allow = os.environ.get("GROK_ALLOW_PAID", "").strip().lower() in ("1", "true", "yes")
+    if not (force_paid or allow):
+        return {"ok": False, "content": "", "model": "grok-supergrok-frontend",
+                "tier": "free-frontend", "cost_est_usd": 0.0, "key_env": "frontend",
+                "harness": False, "surface": "supergrok-frontend", "gated_paid": True,
+                "error": f"supergrok front-end unavailable ({fe_err}); paid API GATED OFF "
+                         f"(set GROK_ALLOW_PAID=1 to allow) — protecting credit"}
     r = call_grok(goal, context=context, max_tokens=max_tokens)
-    return {
-        "ok": r.ok, "content": r.content, "model": r.model, "tier": r.tier,
-        "cost_est_usd": r.cost_est_usd, "key_env": r.key_env, "harness": False,
-        "error": r.error, "tokens_prompt": r.tokens_prompt,
-    }
+    return {"ok": r.ok, "content": r.content, "model": r.model, "tier": r.tier,
+            "cost_est_usd": r.cost_est_usd, "key_env": r.key_env, "harness": False,
+            "surface": "paid-api", "error": r.error, "tokens_prompt": r.tokens_prompt}
 
 
 def ghost_grok_task(goal: str, *, tier: str | None = None) -> dict[str, Any]:
@@ -559,11 +562,20 @@ LEDGER_PATH = ROOT / "memory" / "ghost" / "grok_ledger.jsonl"
 def log_grok_call(result: GrokCallResult, task_id: str = "") -> None:
     """Log a Grok API call to the cost ledger."""
     LEDGER_PATH.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        from mag.model_classify import classify as _mc
+        _cls = _mc(result.content, result.model)
+        _cap = _cls.get("tier")
+        _kind = _cls.get("kind")
+    except Exception:
+        _cap = _kind = None
     entry = {
         "ts": _now(),
         "task_id": task_id,
         "model": result.model,
-        "tier": result.tier,
+        "tier": result.tier,  # grok budget tier (rightsize), NOT capability tier
+        "model_capability": _cap,  # model_classify: low/med/high by producing model
+        "content_kind": _kind,     # model_classify: bulk/reasoning/frontier
         "ok": result.ok,
         "tokens_prompt": result.tokens_prompt,
         "tokens_completion": result.tokens_completion,
@@ -571,6 +583,7 @@ def log_grok_call(result: GrokCallResult, task_id: str = "") -> None:
         "cost_est_usd": result.cost_est_usd,
         "latency_ms": result.latency_ms,
         "error": result.error[:200] if result.error else "",
+        "content": result.content[:20000],  # durable record — never drop the frontier answer
     }
     with open(LEDGER_PATH, "a", encoding="utf-8") as f:
         f.write(json.dumps(entry, ensure_ascii=False) + "\n")

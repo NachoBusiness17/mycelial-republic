@@ -105,7 +105,48 @@ def decode(scratch_id: str) -> dict[str, Any]:
             "has_private_map": bool(private),
             "private_map": private,
             "stored_title": rec.get("title"), "public_face": rec.get("public_face"),
+            "joined_knowledge": _resolve_joined(rec),
             "note": "decode with the private map = only we can read the whisper"}
+
+
+def _resolve_joined(rec: dict[str, Any]) -> dict[str, Any]:
+    """Resolve the decoded whisper against the joined one-sizer store + verkle chain:
+    returns the cheapest-capable tier for the topic's shape AND recent verkle fragment
+    pointers. This is the rib/whisper half that decodes to skills + verkle fragments."""
+    out: dict[str, Any] = {"ok": False, "sizing": None, "verkle_fragments": [], "skills": []}
+    try:
+        shape = "balanced"
+        try:
+            from mag.self_drive import plan as _plan
+            shape = str(_plan(rec.get("stored_title") or "").get("model_shape") or "balanced")
+        except Exception:
+            pass
+        try:
+            from mag import one_sizer as osz
+            sz = osz.resolve_sizing(shape=shape, domain=rec.get("domain"))
+            out["sizing"] = sz
+            if sz.get("found"):
+                try:
+                    from mag.word_skill_map import match
+                    skills = match(rec.get("stored_title") or "")
+                    out["skills"] = skills[:8] if isinstance(skills, list) else []
+                except Exception:
+                    pass
+            out["ok"] = True
+        except Exception:
+            pass
+        # recent verkle fragment pointers (content-addressed, shared)
+        try:
+            from mag.chain_query import chain
+            tail = chain.tail(5)
+            out["verkle_fragments"] = [
+                {"leaf_hash": (k.get("leaf_hash") or k.get("hash") or "")[:16],
+                 "theme": k.get("theme") or ""} for k in tail if isinstance(k, dict)]
+        except Exception:
+            pass
+    except Exception:
+        pass
+    return out
 
 
 def main(argv: list[str] | None = None) -> int:

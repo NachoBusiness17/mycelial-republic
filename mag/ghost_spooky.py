@@ -62,6 +62,19 @@ CATALOG: dict[str, dict[str, Any]] = {
                "effect": "ghost sees what you should do next, not just what you asked", "triggers": ("intent", "summon", "what should", "next")},
     "fold": {"name": "Fold", "what": "fold every decision into skill_ledger + training_events",
              "effect": "each interaction makes the system measurably smarter", "triggers": ("learn", "train", "record", "fold")},
+    # ── PROACTIVE LEVERS (2026-08-11, forged this session) — the kit goes HUNT, not just react ──
+    "steal": {"name": "Steal", "what": "self-steal (audit our own pro_library/skill_ledger/memory) AND external-steal (find other systems) and ADAPT before answering/building",
+              "effect": "never build from blank; the mechanism is stolen + adapted to our deterministic shape", "triggers": ("steal", "!steal", "adapt", "borrow", "spook")},
+    "survey": {"name": "Survey", "what": "draw the territory via the hypervisor/observability (Prometheus/Grafana/k8s metrics) + ghost.sense scanning the seams",
+               "effect": "the machine monitors itself; ghost sees the map before it moves (survey->mine->slay)", "triggers": ("survey", "observability", "metrics", "hypervisor", "monitor", "prometheus", "grafana")},
+    "map": {"name": "Map/Solve", "what": "roll the d8 (1 of 8 lenses), look at the map (jones_lens coordinate), shade the flock seams, dispatch to the k8s swarm render farm",
+             "effect": "the territory solver: emergent swarm behavior, frontier at the seams only, pennies", "triggers": ("map", "territory", "d8", "lens", "solve", "collapse")},
+    "fetch": {"name": "Fetch", "what": "reach our OWN fetch surface (research_pack._fetch_url then browser_driver CDP) for blocked/JS/anti-bot content — never 'can't'",
+               "effect": "a 403 is a signal to switch surfaces, not a dead end; the container browser reads JS-walled shares", "triggers": ("fetch", "share", "url", "blocked", "read", "page")},
+    "btw": {"name": "Btw", "what": "drop a live-aside dot (btw_sidechannel: inject/travel/sense/rightsize) that re-maps the territory live",
+             "effect": "a '/btw' aside IS a live instruction; cold vector +1 agent, warm -1; pointillism operational", "triggers": ("btw", "aside", "coordinate", "travel", "dot", "vector")},
+    "campaign": {"name": "Campaign", "what": "run survey->mine->slay as ONE operation (seed the map as a series of territories, drift the stateless self toward the goal)",
+                  "effect": "the strategic umbrella: hypervisor surveys so the swarm can mine diamonds and slay dragons", "triggers": ("campaign", "survey mine slay", "drift", "goal", "strategic")},
 }
 
 

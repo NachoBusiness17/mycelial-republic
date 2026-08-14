@@ -9,6 +9,16 @@ metadata:
   namespace: mag
   labels:
     app: mag
+  # SOLVED PROBLEMS surfaced from our internals (pro_library + RIB + verkle history).
+  # K8s should surface what the system already solved, not just run the pod.
+  annotations:
+    mag.solved/single-controller: "replicas:1 DELIBERATE — anti-double-drain (the window-storm fix); ONE controller owns the autorun loop, never two"
+    mag.solved/reconcile: "guard_registry desired-state reconcile = the operator loop (probe/reapply/backoff, K8s controller pattern)"
+    mag.solved/surfaces-as-spec: "the seat/surfaces ARE the spec of intent; port/adapter discipline (hexagonal) — never let data shrink the castle"
+    mag.solved/steering: "memlang chord = plant-not-command; deniable seed steering (origin: 'Test chord 44 28 K13 e4 Fool #NachoOvermindSeed')"
+    mag.solved/standard-pattern: "ugliness = missing standard pattern; escalate + history-search (crashLoopBackOff) — never hand-roll an ugly patch"
+    mag.solved/frontier-coordinator: "frontier compacts vision into specs; the cheap swarm EXECUTES (RenderMan tesuji)"
+    mag.solved/verkle-substrate: "memory is a chain of content-addressed knots (filename=address); surface is a viewer, the artifact is truth"
 spec:
   replicas: 1
   selector:

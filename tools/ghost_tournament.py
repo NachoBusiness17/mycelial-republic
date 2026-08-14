@@ -67,7 +67,8 @@ def detect_models() -> list[tuple[str, int]]:
     """Return [(model_name, timeout_seconds), ...] for available models."""
     import subprocess
     try:
-        r = subprocess.run(["ollama", "list"], capture_output=True, text=True, timeout=10)
+        r = subprocess.run(["ollama", "list"], capture_output=True, text=True, timeout=10,
+                           creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0)
         lines = r.stdout.strip().split("\n")[1:]  # skip header
     except Exception:
         lines = []

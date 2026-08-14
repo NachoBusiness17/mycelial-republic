@@ -559,6 +559,7 @@ def _run_passes(cmd: str | None, cwd: Path) -> float:
             cmd, shell=True, cwd=str(cwd),
             capture_output=True, text=True,
             encoding="utf-8", errors="replace", timeout=200.0,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0,
         )
         out = (p.stdout or "") + (p.stderr or "")
         return 1.0 if p.returncode == 0 and re.search(r"\bpassed\b", out) else 0.0
@@ -575,9 +576,14 @@ def _bytes_clean(snippet: str | None) -> float:
     try:
         env = dict(os.environ)
         env["PYTHONIOENCODING"] = "cp1252"
+        try:
+            from mag.headless import PYTHON as _PY
+        except Exception:
+            _PY = sys.executable
         p = subprocess.run(
-            [sys.executable, "-c", code],
+            [_PY, "-c", code],
             capture_output=True, env=env, timeout=60.0,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0,
         )
         # Windows print() appends \r\n, so strip the line ending before comparing.
         clean = p.stdout.rstrip(b"\r\n")

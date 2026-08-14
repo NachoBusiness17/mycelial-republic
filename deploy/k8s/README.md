@@ -79,6 +79,26 @@ kubectl -n mag scale deploy/mag --replicas=1   # keep it 1 (double-drain guard)
 kubectl -n mag get events --sort-by=.lastTimestamp
 ```
 
+## P4 — ghost-as-operator: the knot is a Custom Resource (refactor 2026-08-10)
+
+The whole architecture is one K8s controller pattern. The final refactor step makes it
+explicit: the **Verkle knot is a CRD** (`mag-knot-crd.yaml`, kind `Knot`, group
+`mag.verkle`), and **ghost is the OPERATOR** that reconciles each knot
+(spec=desired / status=observed+reconciled). The source-backed memory becomes a first-class,
+rescheduleable, reconcilable resource instead of a hidden pod volume.
+
+```sh
+kubectl apply -f deploy/k8s/mag-knot-crd.yaml
+kubectl -n mag get knots          # the lattice as K8s resources (kind, title, state)
+kubectl -n mag describe knot <name>   # spec (immutable ref_leaf card) + status (reconciled by ghost)
+```
+
+The deployment already surfaces the solved history (`mag.solved/*` annotations): single-controller,
+reconcile, surfaces-as-spec, steering, standard-pattern, frontier-coordinator, verkle-substrate.
+The operator reconcile (ghost reconciling Knot CRs) is the end-state that makes "castles in the sky,
+foundations beneath" a native K8s loop. Migration sequencing (kind → deployment → CRD → operator)
+lives in `memory/rib/RIB_REFACTOR_CONSOLIDATION_20260810.md`.
+
 ## Why replicas must stay 1
 
 The autorun loop (fill/drain/governor/cadence) is a single logical worker. Two

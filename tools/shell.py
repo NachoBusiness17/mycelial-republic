@@ -32,7 +32,11 @@ def run_shell(command: str, timeout: int = 60) -> dict:
             return {"ok": False, "exit_code": 126, "error": f"blocked pattern: {bad}"}
 
     try:
-        # Prefer PowerShell on Windows for dir/Get-ChildItem
+        # Prefer PowerShell on Windows for dir/Get-ChildItem.
+        # HEADLESS (2026-08-10): subprocess.run without CREATE_NO_WINDOW pops a
+        # console window for EVERY shell command the janitor/agent runs (the
+        # System32 conhost window you see in the stateless auto-loop). All shell
+        # execution must be headless — same LAW as the python spawners.
         if sys.platform == "win32":
             proc = subprocess.run(
                 ["powershell", "-NoProfile", "-Command", command],
@@ -40,6 +44,7 @@ def run_shell(command: str, timeout: int = 60) -> dict:
                 capture_output=True,
                 text=True,
                 timeout=timeout,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000),
             )
         else:
             proc = subprocess.run(

@@ -835,6 +835,19 @@ def scout(*, dry: bool = False) -> dict[str, Any]:
     all_rows = all_rows[:max_cand]
     written = 0 if dry else append_candidates(all_rows, paths)
 
+    # Mine arXiv the same way we steal: route novel arXiv findings through the ONE primitive
+    # (route_novel -> swarm) so frontier seats mine them, dedupe by anchor, and fold. Always-on.
+    if not dry and any(
+        "arxiv" in str(t.get("source") or "") or "arxiv.org" in str(t.get("url") or "")
+        for t in targets
+    ):
+        try:
+            from mag import arxiv_mine
+
+            arxiv_mine.route_candidates(all_rows, max_papers=max_arxiv)
+        except Exception:
+            pass
+
     # Promote practices draft
     promo = cfg.get("promote") or {}
     if not dry and promo.get("auto_append_practices_to_playbook", True):

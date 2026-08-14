@@ -43,8 +43,11 @@ CH_VERKLE    = "mag:verkle"
 CH_SCRUM     = "mag:scrum"
 CH_BARD      = "mag:bard"
 CH_FLARE     = "mag:flare"
+CH_RIB       = "mag:rib"      # RIB/steer instruction-layer fold/publish (rib_bus)
+CH_FACT      = "mag:fact"     # FACT fold/publish (fact_bus, 5-W surfacing)
 
-ALL_CHANNELS = [CH_SENSE, CH_CYCLE, CH_COPILOT, CH_LEAK, CH_TASK, CH_VERKLE, CH_SCRUM, CH_BARD, CH_FLARE]
+ALL_CHANNELS = [CH_SENSE, CH_CYCLE, CH_COPILOT, CH_LEAK, CH_TASK, CH_VERKLE, CH_SCRUM,
+                CH_BARD, CH_FLARE, CH_RIB, CH_FACT]
 
 # ── Redis connection ──────────────────────────────────────────────
 

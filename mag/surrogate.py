@@ -42,6 +42,7 @@ class DecodedResponse:
     provider: str
     operations: list[CanonicalOperation] = field(default_factory=list)
     raw_output: str = ""
+    raw_answer: str = ""   # the model's ACTUAL final answer (number/text), for grounded-task consensus
     warnings: list[str] = field(default_factory=list)
 
 
@@ -52,6 +53,8 @@ class AggregatedDecision:
     decisions: dict[str, int]        # territory_action → vote_count
     consensus_action: str | None     # majority action, or None if split
     consensus_strength: float        # 0.0–1.0 (1.0 = unanimous)
+    raw_answer_consensus: str | None = None   # majority raw final answer (grounded-task consensus)
+    raw_answer_strength: float = 0.0          # agreement on the raw answer
     per_model: list[DecodedResponse] = field(default_factory=list)
     hallucination_count: int = 0
 
@@ -89,6 +92,14 @@ def decode_response(
     if not model_output.strip():
         result.warnings.append("empty model output")
         return result
+
+    # Extract the model's ACTUAL final answer (numbers, $ amounts, yes/no, or the
+    # last substantive phrase). This is the task-output-space signal that the
+    # surrogate story-action verb does NOT capture (the consensus-illusion fix).
+    result.raw_answer = _extract_raw_answer(model_output)
+
+    # Reverse role map: story_name → private_name
+    reverse_roles: dict[str, str] = {v: k for k, v in story.role_map.items()}
 
     # Reverse role map: story_name → private_name
     reverse_roles: dict[str, str] = {v: k for k, v in story.role_map.items()}
@@ -197,6 +208,36 @@ def _extract_key_phrase(text: str, max_len: int = 120) -> str:
     return text.strip()[:max_len]
 
 
+def _extract_raw_answer(text: str) -> str:
+    """Extract the model's ACTUAL final answer into task-output space.
+
+    Prefers an explicit `ANSWER:` line (the early-steer contract planted in the
+    system prompt — steal from ghost's plant-not-command), else a trailing number
+    / $amount / yes-no, else the last substantive phrase.
+    """
+    if not text:
+        return ""
+    t = text.strip()
+    # 1) explicit ANSWER: line (early-steer contract) — the reliable channel
+    m = re.search(r"(?:^|\n)\s*ANSWER\s*:\s*(.+?)\s*$", t, re.IGNORECASE | re.MULTILINE)
+    if m and m.group(1).strip():
+        return m.group(1).strip()[:80]
+    # 2) trailing number or $amount (e.g. "... = 9", "cost: $0.54", "9")
+    m = re.search(r"(?:=|:)?\s*\$?\s*(\d+(?:\.\d+)?)\s*$", t)
+    if m:
+        return m.group(1).lstrip("$").strip()
+    # 3) yes / no answer
+    m = re.search(r"\b(yes|no)\b", t, re.IGNORECASE)
+    if m:
+        return m.group(1).lower()
+    # 4) fall back to the last substantive phrase
+    sentences = re.split(r"[.!?\n]", t)
+    substantive = [s.strip() for s in sentences if len(s.strip().split()) > 3]
+    if substantive:
+        return substantive[-1][:80]
+    return t[:80]
+
+
 def _detect_hallucinations(
     text: str, story: SurrogateStory,
 ) -> list[str]:
@@ -241,11 +282,16 @@ def aggregate_responses(
 
     question = responses[0][0].question
     decisions: dict[str, int] = {}
+    raw_votes: dict[str, int] = {}
     all_ops: list[DecodedResponse] = []
     hall_count = 0
 
     for story, decoded in responses:
         all_ops.append(decoded)
+        # Grounded-task channel: vote on the model's ACTUAL final answer.
+        if decoded.raw_answer:
+            ra = _normalize_decision(decoded.raw_answer)
+            raw_votes[ra] = raw_votes.get(ra, 0) + 1
         for op in decoded.operations:
             if op.kind == "hallucination":
                 hall_count += 1
@@ -254,7 +300,7 @@ def aggregate_responses(
             key = _normalize_decision(op.territory_action)
             decisions[key] = decisions.get(key, 0) + 1
 
-    # Find consensus
+    # Find consensus (surrogate-action channel)
     total_votes = sum(decisions.values()) if decisions else 0
     consensus_action = None
     consensus_strength = 0.0
@@ -264,11 +310,21 @@ def aggregate_responses(
         consensus_action = max(decisions, key=decisions.get)
         consensus_strength = max_votes / total_votes if total_votes > 0 else 0.0
 
+    # Grounded-task channel: majority raw answer (the fix for consensus illusion).
+    raw_answer_consensus = None
+    raw_answer_strength = 0.0
+    if raw_votes:
+        raw_total = sum(raw_votes.values())
+        raw_answer_consensus = max(raw_votes, key=raw_votes.get)
+        raw_answer_strength = raw_votes[raw_answer_consensus] / raw_total if raw_total else 0.0
+
     return AggregatedDecision(
         question=question,
         decisions=decisions,
         consensus_action=consensus_action,
         consensus_strength=consensus_strength,
+        raw_answer_consensus=raw_answer_consensus,
+        raw_answer_strength=raw_answer_strength,
         per_model=all_ops,
         hallucination_count=hall_count,
     )

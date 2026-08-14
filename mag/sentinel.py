@@ -37,7 +37,9 @@ except Exception:
 
 LOG = ROOT / "memory" / "runs" / "sentinel_trail.jsonl"
 
-SPAWN_CAP = 12   # too many python processes = a storm
+SPAWN_CAP = 24   # too many python processes = a storm. > a healthy single stack's
+                 # physical count (a healthy stack is ~18 pids: 9 logical x venv/uv
+                 # shim+child pair), so it can NEVER false-kill a healthy stack.
 COST_CAP = 2.0   # recent spend ceiling before blocking
 
 

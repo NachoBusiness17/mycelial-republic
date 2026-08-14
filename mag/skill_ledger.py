@@ -56,6 +56,49 @@ def _count(path: Path) -> int:
     return n
 
 
+def proven_moves(*, min_count: int = 3, min_ok_rate: float = 0.7, limit: int = 12) -> list[dict[str, Any]]:
+    """The case-law moves that have PROVEN (count >= min_count and ok_rate >= min_ok_rate).
+
+    This turns skill_ledger from a write-only sink into a context source: the moves
+    the stateless agent can trust, because they've been verified across >=min_count tries.
+    Deterministic, $0. Consumed by context_pack as the L1c proven-moves layer.
+    """
+    if not DECISIONS_PATH.is_file():
+        return []
+    buckets: dict[str, dict[str, Any]] = {}
+    try:
+        lines = DECISIONS_PATH.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return []
+    for line in lines:
+        if not line.strip():
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        key = str(row.get("task_shape") or row.get("goal") or "")[:120]
+        if not key:
+            continue
+        b = buckets.setdefault(key, {"count": 0, "ok": 0, "model": row.get("model"), "provider": row.get("provider")})
+        b["count"] += 1
+        if row.get("outcome") == "ok":
+            b["ok"] += 1
+    out = []
+    for key, b in buckets.items():
+        ok_rate = b["ok"] / b["count"] if b["count"] else 0
+        if b["count"] >= min_count and ok_rate >= min_ok_rate:
+            out.append({
+                "move": key,
+                "count": b["count"],
+                "ok_rate": round(ok_rate, 2),
+                "model": b.get("model"),
+                "provider": b.get("provider"),
+            })
+    out.sort(key=lambda x: (x["count"], x["ok_rate"]), reverse=True)
+    return out[:limit]
+
+
 def record_decision(
     *,
     goal: str,
@@ -67,6 +110,7 @@ def record_decision(
     outcome: str | None = None,
     detail: str = "",
     source: str = "router",
+    content_hash: str = "",
 ) -> dict[str, Any]:
     """Record one routing decision (+ optional verified outcome) as case law."""
     row = {
@@ -82,6 +126,8 @@ def record_decision(
         "detail": (detail or "")[:200],
         "source": source,
     }
+    if content_hash:
+        row["content_hash"] = content_hash[:40]
     return _append(DECISIONS_PATH, row)
 
 
@@ -153,6 +199,75 @@ def seed_from_bench(*, limit: int = 200) -> dict[str, Any]:
                 source="bench",
             )
             added += 1
+    return {"ok": True, "seeded": added, "progress": progress()}
+
+
+def seed_from_training(
+    *, path: Path | None = None, min_quality: float = 0.7, limit: int = 600
+) -> dict[str, Any]:
+    """Fold refined training data (operator-correction lessons) into the ledger as case law.
+
+    Reads memory/training/refined_training_data.jsonl — the richest operator-teaching
+    corpus (1,157 rows) — and records high-quality (>= min_quality) rows as decisions,
+    so the stateless agent's proven_moves reflects what the operator ACTUALLY taught.
+    Deterministic, $0. Idempotent-ish: dedupes by content_hash.
+    """
+    p = path or ROOT / "memory" / "training" / "refined_training_data.jsonl"
+    if not p.is_file():
+        return {"ok": False, "error": f"no training file: {p}"}
+    # existing hashes already in ledger (source=training)
+    seen: set[str] = set()
+    if DECISIONS_PATH.is_file():
+        try:
+            for line in DECISIONS_PATH.read_text(encoding="utf-8", errors="replace").splitlines():
+                if not line.strip():
+                    continue
+                try:
+                    row = json.loads(line)
+                except Exception:
+                    continue
+                if row.get("source") == "training" and row.get("content_hash"):
+                    seen.add(str(row["content_hash"]))
+        except OSError:
+            pass
+    added = 0
+    try:
+        lines = p.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return {"ok": False, "error": "read failed"}
+    for line in lines:
+        if added >= limit:
+            break
+        if not line.strip():
+            continue
+        try:
+            row = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if (row.get("quality_score") or 0) < min_quality:
+            continue
+        h = str(row.get("content_hash") or "")
+        if h and h in seen:
+            continue
+        instruction = str(row.get("instruction") or "").strip()[:160]
+        output = str(row.get("output") or "").strip()
+        if not instruction:
+            continue
+        record_decision(
+            goal=f"[training] {instruction}",
+            task_shape=instruction,
+            provider="ollama",
+            model="copilot",
+            reasoning_level="none",
+            seat="copilot",
+            outcome="ok",
+            detail=output[:120],
+            source="training",
+            content_hash=h,
+        )
+        if h:
+            seen.add(h)
+        added += 1
     return {"ok": True, "seeded": added, "progress": progress()}
 
 

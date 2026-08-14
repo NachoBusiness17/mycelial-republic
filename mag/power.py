@@ -49,6 +49,12 @@ def clear_off() -> None:
 
 
 def _python_exe() -> str:
+    """Real interpreter (bypass the venv shim -> no double PID / no window on spawn)."""
+    try:
+        from mag.headless import _resolve_python
+        return _resolve_python()
+    except Exception:
+        pass
     venv_py = ROOT / ".venv" / "Scripts" / "python.exe"
     if venv_py.is_file():
         return str(venv_py)
@@ -174,6 +180,53 @@ def _mag_python_pids() -> set[int]:
     return targets
 
 
+def _self_ancestor_pids() -> set[int]:
+    """PID of the caller plus every ancestor up the chain.
+
+    On a uv-based venv the code runs as a child of the venv shim `python.exe`, and BOTH
+    processes carry the project ROOT in their cmdline. A naive ROOT-path scan therefore
+    sweeps up the caller's own shim and kills the very process invoking stop_all. Exclude
+    the whole caller lineage from any kill set (only os.getpid() is re-added by include_self).
+    """
+    out: set[int] = set()
+    try:
+        if os.name == "nt":
+            ps = ("Get-CimInstance Win32_Process | "
+                  "Select-Object ProcessId,ParentProcessId | ConvertTo-Json -Compress -Depth 3")
+            res = subprocess.run(["powershell", "-NoProfile", "-Command", ps],
+                                 capture_output=True, text=True, timeout=20, errors="replace",
+                                 creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000))
+            pp: dict[int, int] = {}
+            rows = json.loads(res.stdout) if res.stdout.strip() else []
+            if isinstance(rows, dict):
+                rows = [rows]
+            for r in rows or []:
+                pid = r.get("ProcessId")
+                if pid is not None:
+                    pp[int(pid)] = int(r.get("ParentProcessId") or 0)
+            pid = os.getpid()
+            for _ in range(64):
+                out.add(pid)
+                pid = pp.get(pid, 0)
+                if pid <= 0:
+                    break
+        else:
+            pid = os.getpid()
+            for _ in range(64):
+                out.add(pid)
+                try:
+                    with open(f"/proc/{pid}/stat", encoding="utf-8", errors="replace") as f:
+                        parts = f.read().split()
+                    pid = int(parts[3])
+                except Exception:
+                    break
+                if pid <= 0:
+                    break
+    except Exception:
+        out.add(os.getpid())
+    return out
+
+
 def _collect_all_pids() -> set[int]:
     """Every pid belonging to this Mag stack."""
     targets: set[int] = set()
@@ -218,8 +271,9 @@ def _collect_all_pids() -> set[int]:
         targets.add(int(mag_pid.read_text(encoding="utf-8").strip()))
     except Exception:
         pass
-    # Never kill our own pid during status/stop orchestration from CLI
-    targets.discard(os.getpid())
+    # Never kill our own pid (or the caller's whole lineage — on a uv-venv the code
+    # runs as a child of the venv shim python and both match the ROOT-path scan)
+    targets -= _self_ancestor_pids()
     return targets
 
 
@@ -326,8 +380,47 @@ DASH_URL = "http://127.0.0.1:8765/?tab=chat"
 
 
 def start_all(*, open_browser: bool = False) -> dict[str, Any]:
-    """Turn-on switch — full stack: supervisor (backend+dash+lab+scribe) + UI face."""
+    """Turn-on switch — full stack: supervisor (backend+dash+lab+scribe) + UI face.
+
+    SELF-GUARDING (2026-08-10, operator: "heard that before"): `power start` is
+    IDEMPOTENT. If the stack is already healthy it opens the face and returns —
+    it NEVER stacks a second windowed boot. A boot lock serializes concurrent
+    boots so a startup race can't double-spawn. No manual "only boot once"
+    discipline required.
+    """
     clear_off()
+
+    # 1) Already-up -> open face and return (never stack a second boot).
+    try:
+        if _health("http://127.0.0.1:8765/") and _health("http://127.0.0.1:8000/health"):
+            if open_browser:
+                try:
+                    import webbrowser
+                    webbrowser.open(DASH_URL)
+                except Exception:
+                    pass
+            return {"ok": True, "schema": SCHEMA, "ts": _now(), "action": "start",
+                    "already_up": True,
+                    "hint": "stack already healthy — opened face, no new boot"}
+    except Exception:
+        pass
+
+    # 2) Boot lock — serialize concurrent boots (race-safe idempotency).
+    boot_lock = ROOT / "state" / "mag_boot.lock"
+    try:
+        if boot_lock.is_file():
+            info = json.loads(boot_lock.read_text(encoding="utf-8"))
+            pid = int(info.get("pid") or 0)
+            ts = float(info.get("ts") or 0)
+            if pid and _pid_alive(pid) and (time.time() - ts) < 60:
+                return {"ok": True, "schema": SCHEMA, "ts": _now(), "action": "start",
+                        "already_starting": True, "boot_pid": pid,
+                        "hint": "another boot is in flight — not stacking a second stack"}
+        boot_lock.parent.mkdir(parents=True, exist_ok=True)
+        boot_lock.write_text(json.dumps({"pid": os.getpid(), "ts": time.time()}), encoding="utf-8")
+    except Exception:
+        pass
+
     py = _python_exe()
     pyw = py.replace("python.exe", "pythonw.exe") if py.endswith("python.exe") else py
     launch = ROOT / "mag_launch.py"

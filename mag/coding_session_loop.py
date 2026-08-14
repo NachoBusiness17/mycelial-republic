@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+from mag import headless
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -165,7 +166,7 @@ def _normalize_cmd(cmd: str) -> str:
     """Use the active interpreter so preflight gates match the invoking venv."""
     cmd = (cmd or "").strip()
     if cmd.startswith("python "):
-        return f'"{sys.executable}" {cmd[7:]}'
+        return f'"{headless.PYTHON}" {cmd[7:]}'
     return cmd
 
 

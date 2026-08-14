@@ -388,6 +388,19 @@ def _run_round_worker(chain_id: str, round_i: int) -> None:
         user += f"## Prior artifact (do not restart from scratch)\n{prior_text}\n\n"
     else:
         user += "## Prior artifact\n(none — you are first refine)\n\n"
+    # MoA-style critical aggregation: give the synthesizer EVERY high-level seat's contribution,
+    # numbered + attributed, and tell it to EVALUATE critically, not merge blindly.
+    contribs = chain.get("role_outputs") or {}
+    if role == "synthesize" and contribs:
+        user += "## Contributions from all seats (each is a frontier model's output)\n"
+        for i, (key, c) in enumerate(contribs.items(), 1):
+            model = str(c.get("model") or c.get("seat") or key)
+            user += f"{i}. [{key}] model={model}:\n{c.get('text', '')[:1500]}\n\n"
+        user += (
+            "Synthesize these contributions by CRITICALLY evaluating each — some may be biased or "
+            "wrong. Do not merely concatenate or average; choose the strongest, reconcile "
+            "conflicts, and label which contribution each part came from.\n"
+        )
     user += (
         "Produce the expected_output as markdown. "
         "Label Mag capabilities vs proposed vs simulation. Be concrete."
@@ -459,6 +472,33 @@ def _run_round_worker(chain_id: str, round_i: int) -> None:
             rnd["model"] = res.get("model")
             rnd["finished"] = _utc()
             rnd["error"] = ""
+            # C3-style provenance: attribute this seat's contribution on the chain record so every
+            # high-level model's output is attributable + can be credited/influenced later.
+            chain.setdefault("role_outputs", {})
+            try:
+                from mag.model_classify import classify as _mc
+                _cls = _mc(text, str(res.get("model") or seat))
+                _cap = _cls.get("tier")
+                _kind = _cls.get("kind")
+            except Exception:
+                _cap = _kind = None
+            chain["role_outputs"][f"{role}:{seat}"] = {
+                "role": role, "seat": seat, "model": res.get("model"),
+                "model_capability": _cap, "content_kind": _kind,
+                "artifact_hash": ah, "artifact_path": rel, "ts": _utc(),
+                "text": text[:4000],
+            }
+            # swarm-surface law: route each high-level seat's output through the ONE primitive so
+            # it enters the research loop + gets recorded (no dead-end artifacts).
+            try:
+                from mag import swarm_surface
+                swarm_surface.route_novel(
+                    f"Refine chain {chain_id} round {round_i} ({role}/{seat}):\n{text[:6000]}",
+                    surface=f"refine:{role}",
+                    lens=f"refine:{seat}",
+                )
+            except Exception:
+                pass
     except Exception as exc:
         rnd["status"] = "failed"
         rnd["error"] = str(exc)[:300]

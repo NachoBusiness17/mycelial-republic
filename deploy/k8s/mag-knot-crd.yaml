@@ -1,0 +1,78 @@
+# mag-knot-crd.yaml — the knot as a Kubernetes Custom Resource (P4: ghost-as-operator).
+#
+# The Verkle knot (ref_leaf / verkle_knot, filename=address, content-addressed) is the
+# system's atomic context artifact. Making it a CRD lets the GHOST act as an OPERATOR:
+# it reconciles each Knot CR to its desired state (spec=desired, status=observed/reconciled),
+# exactly the K8s controller pattern the whole architecture maps to (see RIB_REFACTOR).
+#
+# This is the "knot-as-CRD" step: it makes the source-backed memory a first-class,
+# rescheduleable, reconcilable K8s resource — surfaced, not hidden in a pod volume.
+#
+# Apply: kubectl apply -f deploy/k8s/mag-knot-crd.yaml
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: knots.mag.verkle
+spec:
+  group: mag.verkle
+  names:
+    kind: Knot
+    listKind: KnotList
+    plural: knots
+    singular: knot
+    shortNames: [knt]
+  scope: Namespaced
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              description: "Desired state — the immutable ref_leaf card/payload (content-addressed)."
+              properties:
+                kind:
+                  type: string
+                  enum: [session, doc, framework, x_thread, exchange, research, artifact]
+                card:
+                  type: object
+                  properties:
+                    title: { type: string }
+                    blurb: { type: string }
+                    bullets: { type: array, items: { type: string } }
+                commitment: { type: string }
+                one_line: { type: string }
+                payload_core:
+                  type: object
+                  description: "Free-form structured facts or markdown (the ref_leaf payload for truth)."
+                edges: { type: array, items: { type: object, x-kubernetes-preserve-unknown-fields: true } }
+            status:
+              type: object
+              description: "Observed/reconciled by the ghost operator."
+              properties:
+                state:
+                  type: string
+                provenance:
+                  type: object
+                  properties:
+                    leaf_hash: { type: string }
+                    verkle_root_at: { type: string }
+                reconciled:
+                  type: object
+                  properties:
+                    by: { type: string }
+                    ts: { type: string }
+          required: [spec]
+      additionalPrinterColumns:
+        - name: Kind
+          type: string
+          jsonPath: .spec.kind
+        - name: Title
+          type: string
+          jsonPath: .spec.card.title
+        - name: State
+          type: string
+          jsonPath: .status.state

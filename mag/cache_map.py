@@ -125,6 +125,26 @@ def is_remote(r: dict[str, Any]) -> bool:
     return (int(r.get("prompt_tokens") or 0) + int(r.get("completion_tokens") or 0)) > 0
 
 
+def recent_hit_ratio(rows: list[dict[str, Any]] | None = None) -> float:
+    """Real cache hit ratio from the most recent provider usage split rows. Falls back to
+    the billing-authoritative ratio when no split rows are captured. Consumed by
+    right_size_skills._cache_likely (previously a dead import -> always True)."""
+    rows = rows if rows is not None else _read_jsonl(USAGE)
+    split = [r for r in rows if is_remote(r)
+             and r.get("cache_hit_tokens") is not None
+             and r.get("cache_miss_tokens") is not None]
+    if split:
+        h = sum(int(r.get("cache_hit_tokens") or 0) for r in split)
+        m = sum(int(r.get("cache_miss_tokens") or 0) for r in split)
+        if (h + m) > 0:
+            return round(h / (h + m), 4)
+    for prov, b in (BILLING_AUTH or {}).items():
+        hr = b.get("hit_ratio")
+        if hr is not None:
+            return float(hr)
+    return 0.0
+
+
 def _bucket(ts: str, sessions: list[dict[str, Any]]) -> dict[str, Any] | None:
     """Find the verkle session whose [start,end] window contains ts (last match wins)."""
     key = _iso_min(ts)

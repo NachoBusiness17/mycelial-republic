@@ -108,20 +108,37 @@ def preamble(
     agent_state: str | None = None,
     *,
     with_model: bool = False,
+    recursive: bool = True,
 ) -> dict[str, Any]:
     """Assemble the session preamble: state formatting + seed + learned + model hint.
 
     `with_model=True` folds in `self_drive.plan` for the goal to right-size the model
     (flash vs pro). Kept off by default so `_system_prompt` stays light on every build.
+
+    `recursive=True` (default): attempt the RECURSIVE SELF-READ (`self_recurse.build_preamble`)
+    — the holographic self-re-derivation that returns the agent to its current self with the
+    mode as the recursion root. If the hologram is COLD (module unavailable / recall fails /
+    collapsed), fall back to the flat seed so the session still boots. The recursive read is
+    the answer to "we lose our way": re-derive self from the hologram instead of a flat map.
     """
     st = (agent_state or "").strip().lower() or default_agent_state()
     seed = read_seed()
     fmt = formatting_block(st)
     learned = learned_block(goal)
+    recursive_block = None
+    if recursive:
+        try:
+            from mag.self_recurse import build_preamble
+            r = build_preamble(mode=None, goal=goal)
+            if r.get("ok") and not r.get("collapsed") and r.get("self_description"):
+                recursive_block = r["self_description"]
+        except Exception:
+            recursive_block = None  # cold hologram -> flat seed fallback
     out: dict[str, Any] = {
         "schema": SCHEMA,
         "agent_state": st,
-        "seed": seed,
+        "seed": recursive_block if recursive_block else seed,
+        "seed_mode": "recursive-self" if recursive_block else "flat",
         "formatting": fmt,
         "learned": learned,
         "model_hint": None,

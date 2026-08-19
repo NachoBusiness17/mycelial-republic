@@ -45,16 +45,19 @@ function activate(context) {
   const flockView = makeView('flock.js', () => fetchJson(STATE_URL));
   const worldView = makeView('world.js', () => fetchJson(STATE_URL));
   const emergeView = makeView('emerge.js', () => fetchJson(STATE_URL));
+  // verkle-knot standing-wave view — reuses the game graph (mag/verkle_render + /api/verkle).
+  const verkleView = makeView('verkle.js', () => fetchJson('http://127.0.0.1:8766/api/verkle'));
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider('magFlock', new flockView()),
     vscode.window.registerWebviewViewProvider('magWorld', new worldView()),
-    vscode.window.registerWebviewViewProvider('magEmerge', new emergeView())
+    vscode.window.registerWebviewViewProvider('magEmerge', new emergeView()),
+    vscode.window.registerWebviewViewProvider('magVerkle', new verkleView())
   );
 
   // ── LEARNED TRIGGER → auto-focus the active lens's view (2026-08-11) ──
   // The trigger_learn decision (state.trigger.active) says which lens is hot based on learned
   // user signals. We reveal the matching view ONLY on change, so it never thrashes the UI.
-  const lensToView = { flock: 'magFlock', world: 'magWorld', emerge: 'magEmerge', 'steal-lens': 'magEmerge' };
+  const lensToView = { flock: 'magFlock', world: 'magWorld', emerge: 'magEmerge', verkle: 'magVerkle', 'steal-lens': 'magEmerge' };
   let lastFocused = null;
   const autoFocus = async () => {
     const st = await fetchJson(STATE_URL);

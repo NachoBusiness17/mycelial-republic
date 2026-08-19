@@ -84,9 +84,30 @@ def install_no_window_defaults() -> None:
 
 
 def run_headless(args, **kw: Any) -> subprocess.CompletedProcess:
-    """subprocess.run with CREATE_NO_WINDOW (plus NEW_PROCESS_GROUP)."""
+    """subprocess.run with CREATE_NO_WINDOW (plus NEW_PROCESS_GROUP).
+
+    FIX (2026-08-16, escalated root-cause): the monkey-patched `subprocess.run(capture_output=True)`
+    + CREATE_NO_WINDOW combo deadlocks on Windows pipe buffering — the child writes until the OS
+    pipe buffer fills (~4-64KB), blocks on write(), while the parent blocks on communicate()'s
+    stdout_thread.join(). Neither progresses -> the 360s hang (swarm local drain, all session).
+    Self-steal: reuse popen_headless (Popen + CREATE_NO_WINDOW) + explicit pipes + communicate(timeout),
+    and force PYTHONUNBUFFERED so the child drains incrementally instead of buffering a big block.
+    Same guarantee (windowless), no pipe-buffer deadlock.
+    """
     kw.setdefault("creationflags", no_window_flags())
-    kw.setdefault("env", _spawn_env())
+    # force unbuffered so a chatty child drains incrementally (kills the pipe-buffer deadlock)
+    env = dict(kw.pop("env", None) or _spawn_env())
+    env.setdefault("PYTHONUNBUFFERED", "1")
+    kw["env"] = env
+    timeout = kw.pop("timeout", None)
+    capture = kw.pop("capture_output", False)
+    if capture:
+        proc = popen_headless(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              stdin=subprocess.DEVNULL, text=kw.pop("text", False),
+                              creationflags=kw.pop("creationflags", None) or no_window_flags(),
+                              **kw)
+        out, err = proc.communicate(timeout=timeout)
+        return subprocess.CompletedProcess(proc.args, proc.returncode, out, err)
     return subprocess.run(args, **kw)
 
 

@@ -47,8 +47,10 @@ TRIGGERS: dict[str, dict[str, Any]] = {
     "remember": {"action": "steer",    "tag": "steer",  "desc": "capture for ghost to remember"},
     "idea":     {"action": "idea",     "tag": "idea",   "desc": "capture an idea"},
     # strike-the-chord / CL4R1T4S clarity phrase (both spellings)
-    "strike the chord": {"action": "strike", "tag": "strike", "desc": "invoke strike-the-chord (clarity/transparency mode)"},
-    "strike the cord":  {"action": "strike", "tag": "strike", "desc": "invoke strike-the-chord (clarity/transparency mode)"},
+    # PURPOSE (operator, 2026-08-14): brings the seat TO COHERENCE — align this instance to the
+    # shared map + memory + real state so it is a coherent instance, then act. Not a performance.
+    "strike the chord": {"action": "strike", "tag": "strike", "desc": "strike the chord = bring this seat to coherence, then act"},
+    "strike the cord":  {"action": "strike", "tag": "strike", "desc": "strike the chord = bring this seat to coherence, then act"},
 }
 
 # words that negate a trigger (avoid firing on "don't research", "not a run", etc.)

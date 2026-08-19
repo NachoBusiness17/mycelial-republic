@@ -122,17 +122,53 @@ def act(action: str, who: str = "player") -> dict[str, Any]:
             "note": "player action folded as a verkle knot — server-authoritative, replayable"}
 
 
+def _narrate(action: str, *, scene: str = "", world_root: str = "") -> dict[str, Any]:
+    """Narrate the turn's consequence. Deterministic + $0 by default; the creative DM
+    (game_dm_llm, deepseek) is the STOCHASTIC flesh layer ON TOP when reachable.
+    Honest: never fabricate — if the DM is down, fall back to a real, grounded line."""
+    try:
+        from mag import game_dm_llm
+        r = game_dm_llm.dm_narrate(scene, world_root=world_root, action=action)
+        if r.get("ok") and (r.get("text") or "").strip():
+            return {"ok": True, "narration": str(r["text"]).strip(), "dm": True}
+    except Exception:
+        pass
+    # Deterministic fallback (honest, $0): grounded in the actual action + world, not invented.
+    fallback = {
+        "look": "You look around the Mycelial Republic. The world holds still, patient, remembering.",
+        "walk": "You walk forward. The world folds a knot beneath your feet and holds.",
+        "map": "You trace the shape of the world in your mind — it is larger than one room.",
+        "rest": "You rest. The world keeps ticking while you are gone.",
+        "survey": "You survey what is here. The land remembers what it took to build it.",
+        "help": "The world lists what you can do: look, walk, map, rest, survey, help.",
+    }
+    return {"ok": True, "narration": fallback.get(action, f"You {action}. The world records it."),
+            "dm": False}
+
+
 def play(action: str, who: str = "player") -> dict[str, Any]:
-    """ONE FULL TURN: sense -> validate -> act (fold to verkle) -> re-sense -> report. Deterministic
-    + $0. This is the actual loop you play against."""
+    """ONE FULL TURN: sense -> validate -> act (fold to verkle) -> re-sense -> narrate -> report.
+    The world is the authority (deterministic commit); the DM narrates the consequence on top.
+    Honest: narration is real prose (dm=True) or a grounded deterministic line (dm=False)."""
     pre = sense()
     a = act(action, who)
     post = sense()
+    narr = _narrate(action, world_root=post.get("root") or "")
+    # GWAP score (2026-08-16): the real-work total, surfaced per turn — the fun IS the work.
+    gwap = {}
+    try:
+        from mag import game_score
+        gwap = (game_score.score().get("score") or {})
+    except Exception:
+        gwap = {}
     return {"ok": a.get("ok") and post.get("ok"), "schema": SCHEMA,
             "turn": {"action": a.get("action"), "who": who, "accepted": a.get("ok")},
             "world_before": {"root": pre.get("root"), "n_changes": pre.get("n_changes")},
             "world_after": {"root": post.get("root"), "n_changes": post.get("n_changes")},
             "committed": a.get("ok"),  # honest: true only if the knot committed
+            "narration": narr.get("narration"),
+            "dm": narr.get("dm", False),  # honest: true = creative DM narrated, false = deterministic
+            "gwap": gwap,  # the world-built score: real folded work, never fake points
             "valid_actions": sorted(VALID_ACTIONS),
             "hint": "try: look / walk / map / rest / survey / help — or `game_play.map` to see the world"}
 

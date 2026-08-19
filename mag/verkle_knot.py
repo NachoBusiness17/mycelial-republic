@@ -365,13 +365,43 @@ def prove_latest() -> dict[str, Any]:
 
 
 
+def _verify_chain_consistent() -> tuple[bool, str]:
+    """Verify the committed chain is tamper-evident before extending it (party_subchain pattern,
+    2026-08-16). Recompute the merkle root over ALL leaves once (O(n), not O(n^2)) and check it
+    matches the last committed row's root + the tip. Any tampered leaf -> root mismatch -> False.
+    This is the integrity GATE: refuse to extend an unverified chain (never build on a lie)."""
+    rows = _load_chain_rows()
+    if not rows:
+        return True, "empty chain (genesis ok)"
+    hashes = [r.get("leaf_hash") for r in rows if r.get("leaf_hash")]
+    if not hashes:
+        return True, "no leaf hashes yet"
+    expect = _merkle_root(hashes)
+    if rows[-1].get("verkle_root") != expect:
+        return False, f"last row root mismatch (committed {str(rows[-1].get('verkle_root'))[:16]} vs recomputed {expect[:16]})"
+    try:
+        tip = json.loads(TIP.read_text(encoding="utf-8")) if TIP.is_file() else {}
+        if tip.get("root") and tip.get("root") != expect:
+            return False, f"tip root mismatch (tip {str(tip.get('root'))[:16]} vs recomputed {expect[:16]})"
+    except (OSError, json.JSONDecodeError):
+        pass
+    return True, f"chain consistent ({len(hashes)} leaves)"
+
+
+
 def append_verkle_knot(dossier: dict[str, Any], pdf_path: str | None = None) -> dict[str, Any]:
     """
     Write/update one leaf per session (amend in place).
 
     Same session_id → replace existing chain row + knot file (no bloat).
     New session_id → append. Same leaf_hash → skip.
+
+    INTEGRITY GATE (2026-08-16, party_subchain pattern): refuse to extend an unverified chain.
     """
+    ok, why = _verify_chain_consistent()
+    if not ok:
+        return {"ok": False, "schema": SCHEMA, "error": "refusing to extend an unverified verkle chain",
+                "verify": why}
     KNOTS.mkdir(parents=True, exist_ok=True)
     leaf = build_leaf_from_dossier(dossier)
     fname = knot_filename(
@@ -440,11 +470,26 @@ def append_verkle_knot(dossier: dict[str, Any], pdf_path: str | None = None) -> 
     if existing_i is not None:
         rows[existing_i] = chain_row
         amended = True
+        # AMEND (2026-08-16): history changes -> full rewrite is correct (rare, on re-summarize).
+        all_hashes = _rewrite_chain(rows)
     else:
         rows.append(chain_row)
         amended = False
+        # PURE APPEND (2026-08-16, Option A incremental): a new leaf does NOT require rewriting
+        # every row's merkle root. Compute the new root ONCE (O(n), not O(n^2)) and append one line.
+        # This was the 65s O(n^2) landmine (5,874 leaves -> ~34M sha256 on every append).
+        all_hashes = [r.get("leaf_hash") for r in rows if r.get("leaf_hash")]
+        root = _merkle_root(all_hashes) if all_hashes else _h(b"empty")
+        parent_root = _merkle_root(all_hashes[:-1]) if len(all_hashes) > 1 else _h(b"empty")
+        chain_row["index"] = len(all_hashes) - 1
+        chain_row["n_leaves"] = len(all_hashes)
+        chain_row["parent_verkle_root"] = parent_root
+        chain_row["verkle_root"] = root
+        CHAIN.parent.mkdir(parents=True, exist_ok=True)
+        with CHAIN.open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(chain_row, ensure_ascii=False) + "\n")
+        root = chain_row["verkle_root"]
 
-    all_hashes = _rewrite_chain(rows)
     root = _merkle_root(all_hashes) if all_hashes else _h(b"empty")
     parent_root = (
         _merkle_root(all_hashes[:-1]) if len(all_hashes) > 1 else _h(b"empty")

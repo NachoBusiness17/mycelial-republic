@@ -37,6 +37,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import sys
 import threading
 import time
 from mag.chain_query import chain  # auto-added by doctor_agent
@@ -54,6 +55,40 @@ except ImportError:
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+# ═══════════════════════════════════════════════════════════════════
+# MEMORY GUARD (2026-08-16): caches were bounded in COUNT but unbounded in per-entry SIZE —
+# a GeometryCache of large parsed objects could hold gigabytes (the desk process 5GB leak).
+# Skip caching any single value over this size; huge render/geometry objects don't benefit.
+# ═══════════════════════════════════════════════════════════════════
+MAX_CACHE_VALUE_BYTES = 2 * 1024 * 1024  # 2 MiB per entry
+
+
+def _approx_size(o: Any, _seen: Optional[set] = None) -> int:
+    """Rough in-memory size of a value in bytes. Best-effort; safe on any object."""
+    try:
+        if _seen is None:
+            _seen = set()
+        oid = id(o)
+        if oid in _seen:
+            return 0
+        _seen.add(oid)
+        base = sys.getsizeof(o)
+        if isinstance(o, dict):
+            return base + sum(_approx_size(k, _seen) + _approx_size(v, _seen) for k, v in o.items())
+        if isinstance(o, (list, tuple, set, frozenset)):
+            return base + sum(_approx_size(i, _seen) for i in o)
+        if isinstance(o, str):
+            return len(o.encode("utf-8", "replace")) + 64
+        if isinstance(o, (bytes, bytearray)):
+            return len(o)
+        return base
+    except Exception:
+        try:
+            return len(str(o)) + 64
+        except Exception:
+            return 0
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -231,6 +266,10 @@ class TextureCache:
         )
 
         with self._lock:
+            # MEMORY GUARD: never cache a single huge value (leak -> 5GB desk balloon).
+            if _approx_size(value) > MAX_CACHE_VALUE_BYTES:
+                self._skipped_large = getattr(self, "_skipped_large", 0) + 1
+                return line  # caller keeps the value; cache does NOT retain it
             # Evict LRU if needed
             while len(self._lines) >= self.max_size:
                 self._lines.popitem(last=False)
@@ -301,8 +340,10 @@ class GeometryCache:
             return line.hit()
 
     def put_structured(self, raw_key: str, value: Any, ttl_s: float = 600.0) -> None:
-        """Cache a structured extraction."""
+        """Cache a structured extraction. Skips values over the size guard (memory leak fix)."""
         key = hashlib.sha256(f"geo:{raw_key}".encode()).hexdigest()[:32]
+        if _approx_size(value) > MAX_CACHE_VALUE_BYTES:
+            return  # MEMORY GUARD: do not retain huge parsed objects (leak -> 5GB balloon)
         line = CacheLine(key=key, value=value, model="parser", cost=0.0, ttl_s=ttl_s)
         with self._lock:
             while len(self._lines) >= self.max_size:

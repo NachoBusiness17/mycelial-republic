@@ -565,6 +565,10 @@ def handle_voice_turn(body: dict[str, Any] | None) -> dict[str, Any]:
     if not text:
         return {"ok": False, "schema": SCHEMA, "error": "empty transcript — pass text"}
 
+    if str(body.get("channel") or "") == "table":
+        from mag.table_turn import handle as _table_handle
+        return _table_handle(body)
+
     # --- Memory lane (Voice Mag ≠ Code Mag ≠ desk RAM sludge) ---
     from mag.voice_lanes import (
         infer_lane,
@@ -648,6 +652,7 @@ def handle_voice_turn(body: dict[str, Any] | None) -> dict[str, Any]:
         from mag.game_campaign import (
             apply_action,
             begin_play,
+            latest_any,
             latest_for_session,
             parse_character,
             parse_player_speech,
@@ -684,7 +689,9 @@ def handle_voice_turn(body: dict[str, Any] | None) -> dict[str, Any]:
         camp = latest_for_session(game_sid)
         if not camp:
             camp = latest_for_session(session_id)
-            if camp:
+        if not camp and str(body.get("channel") or "") == "table":
+            camp = latest_any()
+        if camp:
                 # migrate sticky campaign onto base so ASCII map can see it
                 try:
                     camp["voice_session_id"] = game_sid
@@ -964,11 +971,7 @@ def handle_voice_turn(body: dict[str, Any] | None) -> dict[str, Any]:
                 }
             act = parse_player_speech(text)
             # Sticky freestyle in-game: talk/ask stays in world (look+IC), not Stickmin bathroom
-            if not act and re.search(
-                r"\b(why|what|who|how|tell|ask|hey|hello|mug|barkeep|polishing)\b",
-                text or "",
-                re.I,
-            ):
+            if not act:
                 act = {"type": "talk", "raw": (text or "").strip()[:240]}
             if act:
                 out_a = apply_action(str(camp["campaign_id"]), act)
@@ -977,7 +980,7 @@ def handle_voice_turn(body: dict[str, Any] | None) -> dict[str, Any]:
                         act.get("type") == "move"
                     )
                     # talk/mechanical: engine events are Sancho — do not LLM-overwrite
-                    if act.get("type") in ("talk", "help", "inventory", "status", "freeze"):
+                    if act.get("type") in ("talk", "help", "inventory", "status", "freeze", "take"):
                         speak = _tts_clip(
                             str(out_a.get("narrate") or " ".join(out_a.get("events") or []))
                         )
@@ -994,8 +997,7 @@ def handle_voice_turn(body: dict[str, Any] | None) -> dict[str, Any]:
                                 last_action=text,
                                 room_meta=room_meta_from_camp(camp2),
                                 full=bool(full),
-                                use_llm=act.get("type")
-                                not in ("help", "inventory", "status"),
+                                use_llm=False,
                             )
                             speak = _tts_clip(
                                 str(pas.get("text") or out_a.get("narrate") or "")
@@ -1005,7 +1007,7 @@ def handle_voice_turn(body: dict[str, Any] | None) -> dict[str, Any]:
                             narr = narrate_scene(
                                 out_a.get("scene_context"),
                                 events=out_a.get("events"),
-                                use_llm=True,
+                                use_llm=False,
                             )
                             speak = _tts_clip(
                                 str(narr.get("text") or out_a.get("narrate") or "")

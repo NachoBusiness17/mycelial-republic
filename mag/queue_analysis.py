@@ -169,6 +169,54 @@ def tokenomics(*, est_input_tokens: int = 3000, est_output_tokens: int = 800) ->
                     "authoritative = operator billing"}
 
 
+def apply(*, threshold: float = 0.55, drop_cache_hits: bool = True) -> dict[str, Any]:
+    """ACTUALLY clear the pile: delete dropped-duplicate + cache-hit task files, keep one canonical.
+    The analysis identifies them; this applies it. Guarded (never deletes a file that fails). Returns
+    how many were removed. Deterministic + $0.
+
+    This is the 'bones, not sacred cows' cull: the queue's 958 tasks collapse to ~123 unique groups
+    because an orphan-sense re-enqueue flood inflated ONE task to 522 copies. We delete the dups and
+    the cache-hits (already-known work — never re-run), keeping the canonical novel few.
+    """
+    tasks = _read_tasks()
+    n_before = len(tasks)
+    removed = 0
+    # 1) dedupe: keep the FIRST task per overlap group as canonical, mark the rest as dups
+    groups: list[dict[str, Any]] = []
+    dropped_ids: set[str] = set()
+    for t in tasks:
+        goal = str(t.get("goal") or "")
+        for g in groups:
+            if _overlap(g["goal"], goal) >= threshold:
+                dropped_ids.add(str(t.get("task_id")))
+                break
+        else:
+            groups.append({"goal": goal})
+    # 2) cache-hits (already known) are waste to re-run — drop them too
+    doomed: set[str] = set(dropped_ids)
+    if drop_cache_hits:
+        for t in tasks:
+            if _cache_hit(str(t.get("goal") or "")):
+                doomed.add(str(t.get("task_id")))
+    # 3) delete the doomed files, guarded
+    kept = 0
+    for t in tasks:
+        tid = str(t.get("task_id"))
+        if tid in doomed:
+            f = QUEUE_DIR / f"{tid}.json"
+            try:
+                if f.exists():
+                    f.unlink()
+                    removed += 1
+            except OSError:
+                pass
+        else:
+            kept += 1
+    return {"ok": True, "schema": SCHEMA, "n_before": n_before, "removed": removed,
+            "remaining": n_before - removed, "n_groups": len(groups),
+            "note": "deleted duplicate + cache-hit tasks; kept the canonical novel few"}
+
+
 def analyze() -> dict[str, Any]:
     """The full automated queue-analysis pass: inspect + dedupe + rightsize + value + tokenomics,
     producing a health report + recommended actions."""
@@ -203,10 +251,13 @@ def status() -> dict[str, Any]:
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="Automated swarm queue analysis: dedupe+rightsize+value+tokenomics")
     ap.add_argument("cmd", nargs="?", default="status",
-                    choices=["inspect", "analyze", "status"])
+                    choices=["inspect", "analyze", "apply", "status"])
+    ap.add_argument("--apply", action="store_true", help="actually delete dups/cache-hits (apply the analysis)")
     a = ap.parse_args()
     if a.cmd == "inspect":
         print(json.dumps(inspect(), ensure_ascii=False, indent=2))
+    elif a.cmd == "apply":
+        print(json.dumps(apply(), ensure_ascii=False, indent=2))
     elif a.cmd == "analyze":
         print(json.dumps(analyze(), ensure_ascii=False, indent=2))
     else:

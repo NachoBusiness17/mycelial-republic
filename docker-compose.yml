@@ -20,7 +20,13 @@ services:
       MAG_CONTAINER: "1"
       MAG_NO_MIRROR: "1"
       MAG_DRAINER: "1"
-      OLLAMA_HOST: "http://ollama:11434"
+      # OLLAMA_HOST: the test lane (--provider ollama) runs INSIDE this container but
+      # the working ollama lives on the HOST. The `ollama` sidecar service (profile)
+      # was Exited and would duplicate the 39GB store. host.docker.internal reaches the
+      # host's live ollama directly (verified 200 from inside this container, 2026-08-17).
+      # Must include /v1: providers.py builds "{base}/chat/completions", and Ollama's
+      # OpenAI-compat endpoint is /v1/chat/completions (a bare host gave HTTP 404).
+      OLLAMA_HOST: "http://host.docker.internal:11434/v1"
       REDIS_HOST: "redis"
       REDIS_PORT: "6379"
     depends_on:
@@ -71,6 +77,9 @@ services:
       - "127.0.0.1:11434:11434"
     volumes:
       - mag_ollama_data:/root/.ollama
+      # Reuse the existing native ollama model store (39GB) instead of re-downloading.
+      # Docker ollama = the single source of truth ("ollama is usually in docker").
+      - C:/Users/foste/.ollama/models:/root/.ollama/models
     networks:
       - mag_net
 

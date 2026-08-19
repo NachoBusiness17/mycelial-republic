@@ -1,0 +1,10 @@
+﻿from pathlib import Path
+t = Path("mag/game_campaign.py").read_text(encoding="utf-8")
+i = t.find("def people_in_room")
+print(t[i:i+1100])
+print("==== MOVE BUILDING ====")
+j = t.find("a building appears")
+print(t[j-250:j+350])
+print("==== TALK CALCIFER TAIL ====")
+k = t.find("def _talk_calcifer")
+print(t[k:k+900])

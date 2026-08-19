@@ -32,6 +32,29 @@ sys.path.insert(0, str(ROOT))
 
 SCHEMA = "orphan_sense.v1"
 
+# ── RE-ENQUEUE FLOOD GUARD (2026-08-15, operator "giddy up"): the same orphan was routed to the
+# swarm 522 times because novel_orphans() re-detected + re-enqueued it EVERY pass and never marked
+# it handled. Persist a HANDLED ledger (surface+id) so once an orphan is routed it is SKIPPED next
+# pass — the queue stays clear. Idempotent, deterministic, $0. ──
+HANDLED = ROOT / "memory" / "runs" / "orphan_sense" / "handled.json"
+
+
+def _load_handled() -> set[str]:
+    try:
+        if HANDLED.is_file():
+            return set(json.loads(HANDLED.read_text(encoding="utf-8")))
+    except Exception:
+        pass
+    return set()
+
+
+def _save_handled(keys: set[str]) -> None:
+    try:
+        HANDLED.parent.mkdir(parents=True, exist_ok=True)
+        HANDLED.write_text(json.dumps(sorted(keys)), encoding="utf-8")
+    except Exception:
+        pass
+
 
 def _now() -> str:
     from datetime import datetime, timezone
@@ -103,11 +126,20 @@ def novel_orphans(*, enqueue: bool = True) -> dict[str, Any]:
     # ── CLOSE THE LOOP: route each NOVEL orphan to the swarm research queue (dedupe + drain) so
     # the swarm shades the neglected novel work, not just detects it. ──
     routed = 0
+    deduped = 0
     if enqueue:
         try:
             from mag import swarm_surface
+            handled = _load_handled()
             for f in found:
                 if not f.get("novel") or not f.get("id"):
+                    continue
+                # FLOOD GUARD: stable identity key = (surface, id). If we already routed THIS orphan,
+                # skip it — do not re-enqueue the same task every pass (the 522-copy flood).
+                key = f"{f.get('surface','orphan')}::{f.get('id','')}"
+                if key in handled:
+                    deduped += 1
+                    f["deduped"] = True
                     continue
                 goal = (f"SHADE NOVEL ORPHAN [{f.get('surface','orphan')}] {f.get('id','')}: "
                         f"{f.get('text','')[:180]} — novel + orphaned (neglected); fold it into an "
@@ -117,17 +149,20 @@ def novel_orphans(*, enqueue: bool = True) -> dict[str, Any]:
                 f["task_id"] = q.get("task_id", ""); f["enqueued"] = q.get("ok", False)
                 if q.get("ok"):
                     routed += 1
+                    handled.add(key)
+            _save_handled(handled)
         except Exception as e:
             found.append({"surface": "routing", "error": str(e)[:80]})
 
     return {"ok": True, "schema": SCHEMA, "ts": _now(),
             "n_novel_orphans": len([f for f in found if f.get("novel")]),
-            "n_routed_to_swarm": routed,
+            "n_routed_to_swarm": routed, "n_deduped_handled": deduped,
             "by_surface": {s: sum(1 for f in found if f.get("surface") == s)
                            for s in {f.get("surface") for f in found}},
             "novel_orphans": found,
             "note": "SENSE TEST: ghost swept all orphan/novel surfaces, detected every novel orphan, "
-                    "AND routed the novel ones to the swarm research queue (the loop closes)"}
+                    "AND routed the novel ones to the swarm research queue (the loop closes); "
+                    "handled-orphan ledger prevents re-enqueue floods"}
 
 
 def sense_test() -> dict[str, Any]:

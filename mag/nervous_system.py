@@ -240,6 +240,31 @@ def write_face(glance: dict[str, Any]) -> Path:
     return FACE_MD
 
 
+def glance_cached(*, max_age_s: float = 30.0) -> dict[str, Any]:
+    """Return a cached glance if fresh (< max_age_s), else build a fresh one (writes cache).
+
+    HOT-PATH BOUND (2026-08-16): build_glance runs a live probe suite (health.sanity,
+    seat_registry live seats, multi_smoke, port probes) that takes ~4.4s. A dashboard /
+    status page should NOT re-run that on every request — it made /api/v1/status hang ~8s.
+    This returns the last-written face (presence data ≤ max_age_s stale, fine for a status
+    read) and only re-probes when the cache has expired.
+    """
+    import time
+    try:
+        if FACE_JSON.is_file():
+            age_s = time.time() - os.path.getmtime(FACE_JSON)
+            if age_s < max_age_s:
+                g = json.loads(FACE_JSON.read_text(encoding="utf-8"))
+                g["_cached"] = True
+                g["_cache_age_s"] = round(age_s, 1)
+                return g
+    except Exception:
+        pass
+    g = build_glance(write=True)
+    g["_cached"] = False
+    return g
+
+
 def build_glance(*, write: bool = True) -> dict[str, Any]:
     """Full nervous glance. Optionally write face files."""
     tip = _read_json(ROOT / "memory" / "biography" / "verkle_tip.json")

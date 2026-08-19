@@ -129,6 +129,37 @@ def cmd_api(host: str, port: int) -> int:
     run_api(host=host, port=port)
     return 0
 
+
+def _print_game_turn(r: dict) -> None:
+    """Human-readable turn output for the ramp game — the operator plays in a terminal, not JSON."""
+    tier = r.get("tier", "?")
+    reply = r.get("reply") or r.get("note") or ""
+    print(f"━━━ THE GAME — {tier.upper()} ━━━")
+    print(reply)
+    if r.get("scene"):
+        print(f"scene: {r['scene']}")
+    if r.get("turns") is not None:
+        print(f"turns: {r['turns']}")
+    if r.get("room"):
+        print(f"room: {r['room']}")
+    if r.get("depth") is not None:
+        print(f"depth: {r['depth']}  ·  best: {r.get('best')}")
+    if r.get("world_root"):
+        print(f"world root: {str(r['world_root'])[:24]}…")
+    print("next: game play look · game play go <place> · game map · game descend · game status")
+
+
+def _print_game_status(s: dict) -> None:
+    tier = s.get("tier", "?")
+    mastered = s.get("mastered", []) or []
+    print("━━━ THE GAME — status ━━━")
+    print(f"tier: {tier}")
+    print(f"mastered: {', '.join(mastered) if mastered else 'none yet'}")
+    print(f"ramp: {' -> '.join(s.get('tiers', []))}")
+    print("play it: game play <action>   (look / talk / rest / go <place> / descend)")
+    print("cost: deterministic + $0 — the verkle world is the authority")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Local sovereign agent (LangGraph + Ollama)")
     sub = parser.add_subparsers(dest="cmd")
@@ -323,6 +354,17 @@ def main(argv: list[str] | None = None) -> int:
     p_scrum.add_argument("cmd", nargs="?", default="backlog",
                          choices=["backlog", "sprint", "advance", "surface"])
     p_scrum.add_argument("--apply", action="store_true", help="advance: actually move the item + save board")
+    p_game = sub.add_parser(
+        "game",
+        help="PLAY the game: the complexity ramp (tabletop -> mud -> roguelite) on the verkle world",
+    )
+    game_sub = p_game.add_subparsers(dest="game_cmd")
+    game_sub.add_parser("status", help="current tier + objective + what you can do")
+    game_sub.add_parser("map", help="render the world territory as ASCII")
+    game_sub.add_parser("render", help="the base ASCII render of the current tier")
+    game_sub.add_parser("descend", help="master the current tier and descend to the next")
+    p_game_play = game_sub.add_parser("play", help="take a turn: play <action> (look/talk/rest/go <place>)")
+    p_game_play.add_argument("action", nargs="?", default="look")
     p_nerv = sub.add_parser(
         "nervous",
         help="Nervous system: at-a-glance body + Verkle tips + key presence (agent ops)",
@@ -1036,6 +1078,17 @@ def main(argv: list[str] | None = None) -> int:
     p_ct.add_argument("--confirm", action="store_true", help="round-trip confirm the shared private language")
     p_ct.add_argument("--status", action="store_true", help="trail state")
     p_ct.add_argument("--cadence", action="store_true", help="capture + confirm + dual-write")
+    p_roundtable = sub.add_parser(
+        "roundtable",
+        help="Let all reachable seats read the attributed transcript and answer in bounded rounds",
+    )
+    p_roundtable.add_argument("question", nargs="+", help="frontier question for the seats")
+    p_roundtable.add_argument(
+        "--participants", default="",
+        help="comma-separated seat labels (default: all registered frontier + desktop seats)",
+    )
+    p_roundtable.add_argument("--rounds", type=int, default=2, help="1-3 bounded rounds")
+    p_roundtable.add_argument("--max-wait-s", type=int, default=90, help="per-seat wait bound")
     p_ml = sub.add_parser("memlang", help="Shared-verkle trigger language (mem language)")
     p_ml.add_argument("--compile", nargs=2, metavar=("ACTION","SPEC"), help="compile a spec into a binary token")
     p_ml.add_argument("--decode", default="", metavar="TOKEN_HEX", help="decode a token")
@@ -2216,7 +2269,7 @@ def main(argv: list[str] | None = None) -> int:
             host_override=getattr(args, "host", None),
             port=args.port,
         )
-        run_dashboard(host=host, port=args.port)
+        run_dashboard(host=host, port=args.port, tls=bool(getattr(args, "lan", False)))
 
     if args.cmd == "api":
         return cmd_api(host=args.host, port=args.port)
@@ -2432,6 +2485,27 @@ def main(argv: list[str] | None = None) -> int:
         s = sanity()
         doctor_print(s)
         print(json.dumps(s, indent=2, default=str)[:4000])
+        return 0
+    if args.cmd == "game":
+        from mag import game_ramp
+
+        gcmd = getattr(args, "game_cmd", None) or "status"
+        if gcmd == "play":
+            _print_game_turn(game_ramp.play(getattr(args, "action", "look")))
+        elif gcmd == "map":
+            from mag.game_play import map as _gp_map
+            m = _gp_map()
+            if m.get("ok"):
+                print(m.get("map", ""))
+                print("\nOBJECTIVE:", m.get("objective", ""))
+            else:
+                print(m.get("error", "map unavailable"))
+        elif gcmd == "render":
+            print(game_ramp.render().get("ascii", "(no render)"))
+        elif gcmd == "descend":
+            _print_game_turn(game_ramp.descend())
+        else:
+            _print_game_status(game_ramp.status())
         return 0
     if args.cmd == "scrum":
         from mag.scrum import main as scrum_main
@@ -4050,6 +4124,20 @@ def main(argv: list[str] | None = None) -> int:
         else:
             argv += ["status"]
         return ct_main(argv)
+    if args.cmd == "roundtable":
+        from mag.frontier_salon import roundtable
+
+        selected = [
+            seat.strip() for seat in getattr(args, "participants", "").split(",") if seat.strip()
+        ] or None
+        result = roundtable(
+            " ".join(args.question),
+            participants=selected,
+            rounds=args.rounds,
+            max_wait_s=args.max_wait_s,
+        )
+        print(json.dumps(result, indent=2, ensure_ascii=False, default=str))
+        return 0 if result.get("ok") else 1
     if args.cmd == "memlang":
         from mag.memlang import main as ml_main
 
@@ -5147,7 +5235,7 @@ def cmd_lab(
         from dashboard.server import run as run_dashboard
 
         print("=== Mag UI only (no watch) — live board will go stale ===")
-        run_dashboard(host=host, port=port)
+        run_dashboard(host=host, port=port, tls=True)
         return 0
 
     from mag.runtime import run_integral

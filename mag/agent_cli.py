@@ -1770,7 +1770,15 @@ def _run_tool_with_heartbeat(
     rnd: int,
     last_tool: str,
 ) -> dict[str, Any]:
-    """Run tool with periodic SSE heartbeats so long shell/search does not look dead."""
+    """Run tool with periodic SSE heartbeats so long shell/search does not look dead.
+
+    Note (2026-08-16): tools are ALREADY hard-bounded at BACKEND_TIMEOUT (300s) by
+    _run_tool_http's httpx.Client(timeout=BACKEND_TIMEOUT) -> every tool call is a backend
+    HTTP request that cannot block forever. The heartbeats keep legitimate long tools looking
+    alive; the httpx timeout is the real bound. (An earlier ThreadPoolExecutor belt was added
+    then removed: Python threads can't be killed, so it couldn't enforce a tight bound, and the
+    300s httpx timeout already does — over-engineering on the sovereign tool path.)
+    """
     tool_t0 = time.time()
     stop = threading.Event()
 

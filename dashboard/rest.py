@@ -168,6 +168,16 @@ def h_tokens_saved(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, 
     return 200, saved_vs_projected()
 
 
+def h_game_score(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """GWAP scoreboard — the world-built score (real folded work, never fake points).
+    GET /api/v1/game/score — the game's real-work total, surfaced on the desk (Foldit leaderboard).
+    Grounded: reads agreement_loot (game_mud convergence) + rooms_conquered (dungeon tasks) +
+    world_changes (verkle ledger). Deterministic + $0."""
+    from mag.game_score import score
+
+    return 200, score()
+
+
 def h_ghost_control(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
     """GHOST CONTROL HARNESS — the human-facing surface. Ghost's live view of the whole
     machine (scrum, press, loop state, token savings, skills, emergency).
@@ -1542,14 +1552,18 @@ def h_router_status(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int,
         pass
 
     # --- nervous keys (presence only) ---
+    # HOT-PATH BOUND (2026-08-16): build_glance runs a ~4.4s live probe suite; a dashboard
+    # read should NOT re-probe every request (made /api/v1/status hang ~8s). Use the TTL
+    # cached glance (≤30s stale presence — fine for a status read).
     try:
-        from mag.nervous_system import build_glance
-        g = build_glance(write=False)
+        from mag.nervous_system import glance_cached
+        g = glance_cached(max_age_s=30)
         out["body"] = {
             "ollama": bool((g.get("body") or {}).get("ollama") or g.get("body_alive")),
             "ok": g.get("ok"),
             "keys": g.get("keys") or [],
             "open_loops": (g.get("open_loops") or [])[:5],
+            "_cached": bool(g.get("_cached")),
         }
     except Exception as e:
         out["body_error"] = str(e)[:120]
@@ -2501,7 +2515,9 @@ def h_extension_deploy(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[i
 
 def h_seat_steer(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
     """POST /api/v1/seat/steer — the architecture path for live seat actions: send a message into
-    a surface (chatgpt/grok/grok_x/deepseek) headless. Body {surface, message, enqueue?:bool}.
+    one surface, or run the bounded shared-transcript roundtable. Body:
+    {surface, message, enqueue?:bool} or
+    {mode:"roundtable", message, participants?:[...], rounds?:1..3}.
     Mirrors h_extension_deploy (the path precedent) — the agent never reaches for a shell."""
     from mag.seat_steer import send, enqueue
 
@@ -2509,6 +2525,18 @@ def h_seat_steer(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, 
     surface = str(body.get("surface") or "chatgpt")
     message = str(body.get("message") or "")
     try:
+        if str(body.get("mode") or "").strip().lower() == "roundtable":
+            from mag.frontier_salon import roundtable
+
+            participants = body.get("participants")
+            if participants is not None and not isinstance(participants, list):
+                return 400, {"ok": False, "error": "participants must be a list of seat labels"}
+            return 200, roundtable(
+                message,
+                participants=participants,
+                rounds=int(body.get("rounds") or 2),
+                max_wait_s=int(body.get("max_wait_s") or 90),
+            )
         if body.get("enqueue"):
             return 200, enqueue(surface, message)
         return 200, send(surface, message)
@@ -2840,6 +2868,13 @@ def h_chain(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
         "evolution": _read_json(BIO / "topic_evolution.json"),
         "timeline": _read_jsonl(BIO / "knot_timeline.jsonl"),
     }
+
+
+def h_wave(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """GET /api/v1/wave — standing-wave snapshot. One JSON, many faces."""
+    from mag.wave import snapshot
+    sid = str((_p or {}).get("session_id") or "")
+    return 200, snapshot(session_id=sid)
 
 
 def h_ingest(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
@@ -3242,6 +3277,31 @@ def h_table_view(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, 
         return 200, out
     except Exception as exc:
         return 500, {"ok": False, "error": f"table_view crash: {exc!s}"[:240]}
+
+
+def h_frontier_game(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """THE GAME LOOP ON :8765 — the frontier party plays, and the play BUILDS the world.
+
+    POST/GET /api/v1/game/frontier — the relational merge chamber made reachable:
+      action=play&region=…&rounds=…  -> run the frontier game (DM + party act + every advancing
+                                        move folds a verkle knot into game_world). The world grows.
+      action=status                   -> world entity count + root (the game built by the play).
+    This is the loop the operator/grok's been reaching for: not a page, the shared spec the seats
+    actually play against — real verkle world, real seats as players, sourced from live state.
+    """
+    try:
+        from mag import frontier_game
+
+        action = str((body or {}).get("action") or _p.get("action") or "status").lower()
+        if action == "play":
+            region = str((body or {}).get("region") or _p.get("region") or "the_mirror_sea")
+            rounds = max(1, int((body or {}).get("rounds") or _p.get("rounds") or 1))
+            out = frontier_game.play(region=region, rounds=rounds)
+            return 200, out
+        out = frontier_game.status()
+        return 200, out
+    except Exception as exc:
+        return 500, {"ok": False, "error": f"frontier_game crash: {exc!s}"[:240]}
 
 
 def h_table_tileset(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
@@ -4760,6 +4820,7 @@ ROUTES: list[tuple[str, str, HandlerFn]] = [
     ("GET", "/api/v1/test-run", h_test_run),
     ("POST", "/api/v1/test-run", h_test_run),
     ("GET", "/api/v1/tokens/saved", h_tokens_saved),
+    ("GET", "/api/v1/game/score", h_game_score),
     ("GET", "/api/v1/ghost/control", h_ghost_control),
     ("GET", "/api/v1/sovereign", h_sovereign),
     ("GET", "/api/v1/solved", h_solved),
@@ -4782,6 +4843,8 @@ ROUTES: list[tuple[str, str, HandlerFn]] = [
     ("GET", "/api/v1/sessions/{id}/visual", h_visual),
     ("GET", "/api/v1/board", h_board),
     ("GET", "/api/v1/chain", h_chain),
+    ("GET", "/api/v1/wave", h_wave),
+    ("GET", "/api/v1/desk", h_wave),
     ("GET", "/api/v1/ingest", h_ingest),
     ("GET", "/api/v1/overview", h_overview),
     ("GET", "/api/v1/nervous", h_nervous),
@@ -4853,6 +4916,10 @@ ROUTES: list[tuple[str, str, HandlerFn]] = [
     ("POST", "/api/v1/game", h_game),
     ("GET", "/api/game", h_game),
     ("POST", "/api/game", h_game),
+    ("GET", "/api/v1/game/frontier", h_frontier_game),
+    ("POST", "/api/v1/game/frontier", h_frontier_game),
+    ("GET", "/api/game/frontier", h_frontier_game),
+    ("POST", "/api/game/frontier", h_frontier_game),
     ("GET", "/api/v1/table/view", h_table_view),
     ("POST", "/api/v1/table/view", h_table_view),
     ("GET", "/api/table/view", h_table_view),

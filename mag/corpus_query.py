@@ -96,6 +96,51 @@ _CRAFT_LEAVES: list[dict[str, Any]] = [
         ],
     },
     {
+        "id": "craft_temple_box",
+        "source": "craft_leaf",
+        "tags": ["temple", "puzzle", "dragon", "necromancer", "troll", "ward", "campbell", "dungeon"],
+        "license": "structure",
+        "text": (
+            "The keep is a temple. The crate is a puzzle box. Each ward is a beast: "
+            "troll army, necromancer, dragon. Slaying is how the work gets done. "
+            "The hoard is shared. No one keeps the eye."
+        ),
+        "quotes": [
+            "Open the box. Name the beast. Share the hoard.",
+            "A temple is a dungeon that remembers why you came.",
+        ],
+    },
+    {
+        "id": "craft_vonnegut",
+        "source": "craft_leaf",
+        "tags": ["vonnegut", "pace", "want", "end", "cruelty", "so_it_goes"],
+        "license": "notes_not_novels",
+        "text": (
+            "Start as close to the end as possible. Every character wants something, "
+            "even a glass of water. Be a sadist: put them in trouble, then more trouble. "
+            "Cut every sentence that does not work. Pity is allowed; apology is not."
+        ),
+        "quotes": [
+            "Start as close to the end as possible.",
+            "Every character should want something, even if it is only a glass of water.",
+        ],
+    },
+    {
+        "id": "craft_legend_sim",
+        "source": "craft_leaf",
+        "tags": ["dwarf_fortress", "rimworld", "legend", "emergence", "history", "roguelike"],
+        "license": "structure",
+        "text": (
+            "Do not invent the plot. The sim already happened: a fight, a bound merchant, "
+            "a crate with a seal, a fire that followed. The narrator only names what the "
+            "world already did, in the voice of a history that does not flinch."
+        ),
+        "quotes": [
+            "The world writes. You only read it aloud.",
+            "A legend is a log that learned to breathe.",
+        ],
+    },
+    {
         "id": "craft_time_tangent",
         "source": "craft_leaf",
         "tags": ["time", "titor", "tangent", "research", "scifi", "wells"],
@@ -364,7 +409,12 @@ def inspire_for_scene(
     if "failed_hunt" in (flags or []) or "failed" in (story or "").lower():
         bits.append("blame shadow threshold party")
     if "tavern" in (room or "").lower() or "lantern" in (room or "").lower():
-        bits.append("tavern hub ale environment concrete place")
+        bits.append("tavern hub ale environment concrete place leguin")
+    rl = (room or "").lower() + " " + (story or "").lower()
+    if any(w in rl for w in ("keep", "gate", "claw", "hall", "cave", "merchant", "goblin")):
+        bits.append("threshold campbell concrete place leguin vonnegut legend emergence")
+    if any(w in rl for w in ("dead", "down", "captive", "bound", "crate")):
+        bits.append("vonnegut want end legend dwarf_fortress")
     q = " ".join(b for b in bits if b)
     return query(q, mode="topic", limit=limit)
 

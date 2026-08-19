@@ -73,6 +73,24 @@ DEFAULT_LAWS: list[dict[str, Any]] = [
         "trigger": "model_spawn", "condition": "skill_exists",
         "action": "append_manifest", "guardrail": "no_destructive",
     },
+    {
+        "id": "LAW-7", "name": "graduated_sanctions", "tier": "T0",
+        "source": "Ostrom principle 5 (republic_governance, 2026-08-15): offenses escalate warn->restrict->suspend->expel; capability only narrows",
+        "trigger": "governance_cycle", "condition": "governance_engine_ready",
+        "action": "apply_sanctions", "guardrail": "narrow_only_no_grant",
+    },
+    {
+        "id": "LAW-8", "name": "collective_choice", "tier": "T0",
+        "source": "Ostrom principle 3 (republic_governance, 2026-08-15): the affected consent to rule changes (consent_first, true majority)",
+        "trigger": "governance_cycle", "condition": "governance_engine_ready",
+        "action": "apply_collective_choice", "guardrail": "consent_first_no_throne",
+    },
+    {
+        "id": "LAW-9", "name": "clear_boundaries", "tier": "T0",
+        "source": "Ostrom principle 1 (republic_governance, 2026-08-15): shared resources have a who-may-withdraw boundary",
+        "trigger": "governance_cycle", "condition": "governance_engine_ready",
+        "action": "apply_boundaries", "guardrail": "no_destructive",
+    },
 ]
 
 
@@ -154,6 +172,13 @@ def _condition_met(law: dict[str, Any]) -> bool:
         if cond == "skill_exists":
             sk = ROOT / "memory" / "skill_ledger"
             return any(sk.glob("*.json")) or sk.is_dir()
+        if cond == "governance_engine_ready":
+            try:
+                from mag import republic_governance
+                a = republic_governance.audit()
+                return a.get("governance_score", "0/8") != "0/8"
+            except Exception:
+                return True
         return True
     except Exception:
         return True
@@ -177,6 +202,24 @@ def _apply_action(law: dict[str, Any]) -> dict[str, Any]:
             return {"applied": True, "note": "ghost self-window folded", "ok": bool(ghost.self_window(commit=False).get("window"))}
         if action == "append_manifest":
             return {"applied": True, "note": "manifest/expectations available to spawned models"}
+        if action == "apply_sanctions":
+            from mag import republic_governance as gov
+            a = gov.audit()
+            return {"applied": True, "note": "Ostrom-5 graduated-sanctions engine live (report_offense hook fed by detection)",
+                    "governance_score": a.get("governance_score")}
+        if action == "apply_collective_choice":
+            from mag import republic_governance as gov
+            a = gov.audit()
+            return {"applied": True, "note": "Ostrom-3 collective-choice (propose/consent/amend) available, consent_first",
+                    "governance_score": a.get("governance_score")}
+        if action == "apply_boundaries":
+            from mag import republic_governance as gov
+            try:
+                r = gov.roster()
+                n = len(r.get("roster", []))
+            except Exception:
+                n = 0
+            return {"applied": True, "note": "Ostrom-1 boundaries roster present", "boundaries": n}
         return {"applied": False, "note": f"no executor for {action!r}"}
     except Exception as e:
         return {"applied": False, "error": str(e)[:160]}

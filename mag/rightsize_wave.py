@@ -47,7 +47,8 @@ _SURFACE_ORDER = {s: i for i, s in enumerate(SURFACES)}  # k3s=0 .. ocean=3 (sca
 
 # deterministic ask-shape signals (each lowers/highers the wave's center of mass)
 _DETERMINISTIC = ["just do it", "write", "edit", "create file", "deterministic", "$0", "janitor",
-                  "run cadence", "refactor", "rename", "search", "read", "list", "verify"]
+                  "run cadence", "refactor", "rename", "search", "read", "list", "verify",
+                  "rib", "bare metal", "baremetal", "compile", "compiler", "invariant", "frozen spec"]
 _INFERENCE = ["generate", "draft", "creative", "write a scene", "image", "voice", "inference",
               "compose", "design", "render", "roleplay"]
 _RESEARCH = ["research", "mine", "steal", "survey", "explore", "cold", "unknown", "frontier",

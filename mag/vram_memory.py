@@ -75,7 +75,8 @@ def hot_region() -> dict[str, Any]:
             "hot_documents": n_docs, "gpu": {"source": gpu.get("source"),
                                              "vram_used_pct": gpu.get("vram_used_pct")},
             "ollama": res,
-            "note": "the hot corpus is the VRAM lattice — keep it resident so reads hit VRAM speed"}
+            "note": ("hot corpus VRAM-confirmed" if gpu.get("vram_used_pct") is not None else
+                     "hot corpus in RAM — VRAM unconfirmed (gpu source=" + str(gpu.get("source")) + ")")}
 
 
 def warm_in_vram(*, data: str | None = None) -> dict[str, Any]:
@@ -99,17 +100,31 @@ def warm_in_vram(*, data: str | None = None) -> dict[str, Any]:
 
 
 def cook() -> dict[str, Any]:
-    """The 'make it cook' entry: keep the hot memory in VRAM so lensing/novelty/swarm context reads
-    at VRAM speed, and report the VRAM pressure (the GPU bar should move when it's working)."""
+    """Keep hot memory resident when VRAM is proven. Never claim VRAM when the probe is blind."""
     gpu = _gpu_state()
     hot = hot_region()
-    return {"ok": True, "schema": SCHEMA, "gpu": {"source": gpu.get("source"),
-                                                  "vram_used_pct": gpu.get("vram_used_pct")},
-            "hot_lattice": hot,
-            "note": ("VRAM-resident hot lattice: the GPU cooks the lensing/corpus reads at VRAM "
-                     "speed" if gpu.get("vram_used_pct") is not None else
-                     "GPU telemetry blind (source:none) — the hot lattice is staged in RAM until "
-                     "VRAM telemetry resolves; the GPU bar will move when it's cooking")}
+    ollama = hot.get("ollama") or {}
+    n_res = int(ollama.get("n_resident") or 0)
+    pct = gpu.get("vram_used_pct")
+    proven = pct is not None or n_res > 0
+    if pct is not None:
+        stage = "vram"
+        note = "VRAM-resident hot lattice"
+    elif n_res > 0:
+        stage = "ollama"
+        note = "ollama resident=" + str(n_res) + " (VRAM pct unknown)"
+    else:
+        stage = "ram"
+        note = "GPU telemetry blind; ollama resident=0 — lattice staged in RAM, not VRAM"
+    return {
+        "ok": proven,
+        "schema": SCHEMA,
+        "gpu": {"source": gpu.get("source"), "vram_used_pct": pct},
+        "hot_lattice": hot,
+        "stage": stage,
+        "note": note,
+    }
+
 
 
 def main(argv: list[str] | None = None) -> int:

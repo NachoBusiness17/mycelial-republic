@@ -869,6 +869,18 @@ def autorun_loop(interval_s: float = 5.0, *, once: bool = False) -> None:
     grok_bookmarks_every = int(os.environ.get("MAG_GROK_BOOKMARKS_EVERY", "3600") or "3600")
     meta_percolate_every = int(os.environ.get("MAG_META_PERC_EVERY", "1800") or "1800")
     deep_research_every = int(os.environ.get("MAG_DEEP_RESEARCH_EVERY", "3600") or "3600")
+    # grok-seat drive cadence (2026-08-17, operator "i just want it to work" + "why hourly?"):
+    # drive the two grok seats (nacho+sd) on deep tasks, fold every accepted output as training
+    # data, and learn — so the machine runs continuously. We are STATELESS with usage available;
+    # a tight cadence (default 120s) keeps the loop hot instead of idling an hour. The drive is
+    # bounded per tick (2 tasks) so consecutive ticks don't overlap destructively.
+    # MAG_GROK_DRIVE_EVERY overrides. Note: each drive round itself takes ~30-90s, so 120s is the
+    # practical floor — tight but not overlapping.
+    grok_drive_every = int(os.environ.get("MAG_GROK_DRIVE_EVERY", "120") or "120")
+    # game-flow cadence (2026-08-17, operator "just do it for a while"): the async test->fix flow.
+    # For each piece in the build image, enqueue a DEEPSEEK test (drains async), witness breaks,
+    # enqueue a GROK fix. Non-blocking, self-directing, ad infinitum. MAG_GAME_FLOW_EVERY.
+    game_flow_every = int(os.environ.get("MAG_GAME_FLOW_EVERY", "300") or "300")
     # compute-rightsize cadence (2026-08-13, operator: 46% mem / 9% disk / 1% GPU / 50% CPU + "fix
     # this automatically"): self-healing compute reconciler — bring up the free GPU tier when it is
     # idle + local inference is down, surface the dead swarm drain as the one system-imperative item.
@@ -889,6 +901,15 @@ def autorun_loop(interval_s: float = 5.0, *, once: bool = False) -> None:
     # autonomous build mode'): the loop works THROUGH the game — game_ramp.work() descends the dungeon
     # and folds real open tasks as knots (the game IS the work; Enders Game).
     game_work_every = int(os.environ.get("MAG_GAME_WORK_EVERY", "900") or "900")
+    # CAMPAIGN-RUNS cadence (2026-08-14, operator 'play a swarm for tonight and generate data'):
+    # the swarm plays a campaign session through the creative DM + saga and records it to
+    # memory/game/campaign_runs/ — so by morning we have a corpus of what a successful campaign looks
+    # like (which turns landed, which running gags formed).
+    campaign_runs_every = int(os.environ.get("MAG_CAMPAIGN_RUNS_EVERY", "3600") or "3600")
+    # HERO-JOURNEY cadence (2026-08-14, operator 'make it so'): once the night's corpus exists, weave
+    # the 5k+ word C.S. Lewis-meets-Cervantes epic from the swarm data + saga + egregore roster, and
+    # write it to memory/game/hero_journey.md for the operator to wake up to.
+    hero_journey_every = int(os.environ.get("MAG_HERO_JOURNEY_EVERY", "21600") or "21600")
     # LIQUID-INTELLIGENCE cadence (2026-08-13, sw59-63): the loop PERFORMS the many-to-one — boil the
     # game's real work through the lattice (the tons of invariants), trace through the maze, converge
     # toward one. The machine RUNS the doctrine, on the loop.
@@ -1287,6 +1308,81 @@ def autorun_loop(interval_s: float = 5.0, *, once: bool = False) -> None:
             except Exception as e:
                 print(_dim(f"  [grok-free] error: {e}"), flush=True)
 
+        # GROK SEAT DRIVE (2026-08-17): autonomously drive both grok seats on deep tasks, fold
+        # accepted output as training data, learn. The machine runs itself — no hand start needed.
+        if grok_drive_every > 0 and tick > 0 and tick % grok_drive_every == 0:
+            try:
+                from mag.grok_seat_burner import drive_watched_parallel
+                from mag import ghost_experimenter as ge
+                from pathlib import Path as _P
+                card = _P(ROOT / "memory" / "runs" / "SEAT_CARD.md")
+                card_txt = card.read_text(encoding="utf-8") if card.is_file() else ""
+                _tasks = [
+                    {"deliverable": "Write a deep synthesis: what invariant should a cheap agent-swarm learn from a sovereign frontier seat, and how do we capture it as training data? 3-5 paragraphs, concrete.", "scene": "agent swarm", "word_limit": 600, "context": card_txt, "max_turns": 8, "timeout": 400},
+                    {"deliverable": "Write a deep design analysis: how should the Mirror Sea game fold real frontier work into loot so the game IS the data-collection mechanism? 3-5 paragraphs, concrete.", "scene": "Mirror Sea game", "word_limit": 600, "context": card_txt, "max_turns": 8, "timeout": 400},
+                ]
+                dr = drive_watched_parallel(_tasks, model_tiers={"nacho": "", "sd": ""})
+                _folded = 0
+                for _s, _rl in (dr.get("results") or {}).items():
+                    for _it in _rl:
+                        _acc = _it.get("accepted")
+                        if _acc and _acc.get("ok"):
+                            try:
+                                ge.record_training({"ok": True, "tool": f"grok-seat-{_s}",
+                                    "seed": "cadence deep drive", "outcome": (_acc.get("output") or "")[:600],
+                                    "row": {"seat": _s, "source": "governor_cadence", "verdict": "ok", "corrected": _it.get("n_corrections", 0)}})
+                                _folded += 1
+                            except Exception:
+                                pass
+                print(_dim(f"  [grok-seat-drive] folded {_folded} training row(s)"), flush=True)
+                try:
+                    print(_dim(f"  [grok-seat-drive] learn: {json.dumps(ge.learn_steer_protocol(), default=str)[:160]}"), flush=True)
+                except Exception:
+                    pass
+            except Exception as e:
+                print(_dim(f"  [grok-seat-drive] error: {e}"), flush=True)
+
+        # GAME FLOW (2026-08-17, operator "just do it for a while"): the async test->fix loop.
+        # Enqueue a DEEPSEEK test for each game piece (drains async via the governor's own drain),
+        # witness what breaks, enqueue a GROK fix. Non-blocking, self-directing, ad infinitum.
+        if game_flow_every > 0 and tick > 0 and tick % game_flow_every == 0:
+            try:
+                from mag import game_flow as gflow
+                from mag import orchestrator as _orch
+                img = gflow.image().get("image") or {}
+                pieces = img.get("pieces") or {}
+                # only step pieces not marked done; cap per tick to avoid a stampede
+                _pending = [p for p in pieces.values() if p.get("status") != "done"][:2]
+                if _pending:
+                    for _p in _pending:
+                        _mod = str(_p.get("module") or _p.get("landing") or "")
+                        if _mod:
+                            _s = gflow.step(_p["name"], module=_mod)
+                            print(_dim(f"  [game-flow] step {_p['name']} -> test {_mod} "
+                                       f"(enq {_s.get('test_enqueued') or 'deduped'})"), flush=True)
+                else:
+                    print(_dim("  [game-flow] no pending pieces — all done"), flush=True)
+            except Exception as e:
+                print(_dim(f"  [game-flow] error: {e}"), flush=True)
+
+        # SWARM->GROK LANE WATCH (2026-08-16, dogfood audit): deterministically watch the
+        # harness grok lane; when failures dominate (framework-loading burned turns -> max turns),
+        # PAUSE the lane so we don't keep burning scarce grok turns on a broken prompt. Pause-first
+        # law, made cadence. $0 (reads result files only).
+        try:
+            from mag.swarm_grok_watch import run_cadence as sgw_run
+            sgw = sgw_run()
+            if sgw.get("watch", {}).get("pause"):
+                print(_dim(f"  [swarm-grok-watch] PAUSE: {sgw['watch']['verdict']} "
+                           f"({sgw['watch']['fail_rate']} fail, dominant "
+                           f"{sgw['watch']['dominant_failure']}) — lane corrected, not burning turns"),
+                      flush=True)
+            else:
+                print(_dim(f"  [swarm-grok-watch] {sgw['watch']['verdict']} "
+                           f"({sgw['watch']['n_fail']}/{sgw['watch']['n']} fail)"), flush=True)
+        except Exception as e:
+            print(_dim(f"  [swarm-grok-watch] error: {e}"), flush=True)
+
         # mycelium cadence: boot + decay + dual-write the unified graph (republic OS core).
         if mycelium_every > 0 and tick > 0 and tick % mycelium_every == 0:
             try:
@@ -1542,6 +1638,42 @@ def autorun_loop(interval_s: float = 5.0, *, once: bool = False) -> None:
             except Exception as e:
                 print(_dim(f"  [game-work] error: {e}"), flush=True)
 
+        # CAMPAIGN-RUNS cadence (2026-08-14): the swarm plays a campaign session + records it, so
+        # the morning corpus shows what a successful campaign looks like (turns landed, gags formed).
+        if campaign_runs_every > 0 and tick > 0 and tick % campaign_runs_every == 0:
+            try:
+                from mag import campaign_runs as _cr
+                rr = _cr.run_session(n_turns=6, tag="overnight")
+                if rr.get("ok"):
+                    print(_dim(f"  [campaign-runs] {rr.get('turns')} turns -> {rr.get('file')} "
+                               f"gags={rr.get('gags')}"), flush=True)
+                # TWO-SURFACE LIVE CORRECTION (2026-08-15): immediately watch the session we just
+                # recorded, score it, write a steer for the next one, and fold failures to the
+                # failure-KB so they never recur. The second surface corrects the live run.
+                try:
+                    from mag import game_observer as _go
+                    _obs = _go.observe(heal=True)
+                    if _obs.get("watch", {}).get("problem_rows"):
+                        print(_dim(f"  [game-observer] problems={_obs['watch']['problem_rows']} "
+                                   f"steer={_obs.get('steer_target')} folded={_obs.get('heal_folded')}"),
+                              flush=True)
+                except Exception as _eo:
+                    print(_dim(f"  [game-observer] error: {_eo}"), flush=True)
+            except Exception as e:
+                print(_dim(f"  [campaign-runs] error: {e}"), flush=True)
+
+        # HERO-JOURNEY cadence (2026-08-14): weave the overnight corpus into the epic once data exists.
+        if hero_journey_every > 0 and tick > 0 and tick % hero_journey_every == 0:
+            try:
+                from mag import hero_journey as _hj
+                if _hj.status().get("corpus_runs", 0) >= 1:
+                    hr = _hj.compose(polish=True)
+                    print(_dim(f"  [hero-journey] {hr.get('words')} words -> {hr.get('file')}"), flush=True)
+                else:
+                    print(_dim("  [hero-journey] waiting for overnight corpus"), flush=True)
+            except Exception as e:
+                print(_dim(f"  [hero-journey] error: {e}"), flush=True)
+
         # LIQUID-INTELLIGENCE cadence (2026-08-13, sw59-63): the loop PERFORMS the many-to-one —
         # boil the game's real work through the lattice (the tons of invariants), trace through the
         # maze, feed the ONE back to the bottom. The machine runs the doctrine, on the loop.
@@ -1584,7 +1716,8 @@ def autorun_loop(interval_s: float = 5.0, *, once: bool = False) -> None:
             except Exception as e:
                 print(_dim(f"  [law] error: {e}"), flush=True)
 
-        # steer cadence: consume [STEER] markers from transcripts + control trail -> memlang.
+        # steer cadence: consume [STEER] markers from transcripts + control trail -> memlang,
+        # and FOLD the shared operator steer bus into the relation (RIB + subchain + drainer route).
         steer_every = int(os.environ.get("MAG_STEER_EVERY", "120") or "120")
         if steer_every > 0 and tick > 0 and tick % steer_every == 0:
             try:
@@ -1594,6 +1727,14 @@ def autorun_loop(interval_s: float = 5.0, *, once: bool = False) -> None:
                 print(_dim(f"  [steer] found {sc.get('steers_found')} | compiled {len(sc.get('compiled') or [])}"), flush=True)
             except Exception as e:
                 print(_dim(f"  [steer] error: {e}"), flush=True)
+            try:
+                from mag.bus_cadence import cadence as bus_cadence
+
+                bc = bus_cadence()
+                print(_dim(f"  [bus→seat] folded {bc.get('n_folded')} | "
+                           f"surfaces={bc.get('surfaces')}"), flush=True)
+            except Exception as e:
+                print(_dim(f"  [bus→seat] error: {e}"), flush=True)
 
         # Corpus-lens cadence: if a fresh corpus harvest landed, diff it and enqueue
         # the bard + swarm-protocol lens tasks automatically.

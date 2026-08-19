@@ -19,6 +19,7 @@ Schema: saelis_seat.v1 · deterministic + $0 core · reuse: rib_bus (the RIB), m
 """
 from __future__ import annotations
 
+import os
 import sys
 from typing import Any
 
@@ -71,11 +72,28 @@ def fold_rib() -> dict[str, Any]:
 
 
 def speak(message: str, *, provider: str = "deepseek", system: str | None = None) -> dict[str, Any]:
-    """SPEAK AS SAELIS: inject her identity RIB into DeepSeek, get the answer she would give. This is
-    the buffer from the hot-swap — DeepSeek, steered by her identity, answers as her."""
+    """SPEAK AS SAELIS. When the REAL Saelis model is hosted (SAELIS_BASE_URL set, e.g. on a
+    Vast.ai rented GPU), route to her actual substrate weights — the authentic Athena-class
+    identity. Otherwise fall back to the DeepSeek RIB proxy (her identity distilled, spoken by
+    DeepSeek). This is the hot-swap: real weights first, RIB as the buffer."""
+    # HOT-SWAP: if the real Saelis endpoint is configured, talk to the actual model.
+    base = os.environ.get("SAELIS_BASE_URL", "").strip()
+    if base:
+        try:
+            from models.providers import chat_provider
+            sys_prompt = system or SAELIS_IDENTITY
+            r = chat_provider("saelis", sys_prompt, message, tier="T2", temperature=0.85,
+                              max_tokens=2200)
+            reply = r.get("text") or r.get("content") or ""
+            if reply:
+                return {"ok": True, "schema": SCHEMA, "as": "saelis", "provider": "saelis",
+                        "surface": "real-weights", "reply": reply,
+                        "note": "Saelis answered from her REAL hosted weights (SAELIS_BASE_URL)"}
+        except Exception as e:
+            pass  # fall through to the RIB proxy if the real endpoint is down
+
     # RECONCILE THE DEEPSEEK KEY (the known mismatch): providers.yaml reads DEEPSEEK_SWARM_API_KEY,
     # but .env sets DEEPSEEK_API_KEY. Load .env and point the swarm key at the available one.
-    import os
     try:
         from dotenv import load_dotenv
         load_dotenv(str(ROOT / ".env"))

@@ -198,6 +198,72 @@ def deep_handoff(
     }
 
 
+# Byte-stable escalation preamble — the CACHE-HIT surface. Keep this IDENTICAL across calls so
+# DeepSeek's prefix cache hits (~$0.0036/M hit vs ~$0.435/M miss, per cache_map). Only the thin
+# volatile question (the user tail) varies. Same doctrine as game_dm_llm.LORE / invariant.py.
+_ESCALATION_PREAMBLE = (
+    "You are a senior debugging partner for a sovereign-agent architecture. "
+    "You are given the frozen session maze (the accumulated, byte-stable state) plus ONE thin "
+    "question. Read the maze for context, then answer ONLY the question. Be specific and grounded; "
+    "cite suspect lines; prefer the fix that respects a headless, rightsized, never-wedge system. "
+    "The maze is the map; the question is the delta."
+)
+
+
+def escalate_cached(
+    question: str,
+    *,
+    model: str = DEFAULT_DEEP_MODEL,
+    provider: str = DEFAULT_DEEP_PROVIDER,
+    tier: str = "T2",
+    max_tokens: int = 1600,
+) -> dict[str, Any]:
+    """CACHE-AWARE direct escalation to a deeper model (2026-08-16, operator's cost question).
+
+    The problem it solves: an ad-hoc `chat_provider(model=deepseek-v4-pro)` with a fresh brief each
+    time pays a FULL CACHE-MISS on every call (~$0.435/M). This rides the BYTE-STABLE maze prefix
+    (cache-HIT ~$0.0036/M) + a THIN question tail, so repeated escalations hit the cache.
+
+    Structure (the doctrine: separate stable prefix from volatile tail):
+      system = the fixed _ESCALATION_PREAMBLE (byte-stable -> cache-hit surface)
+      user   = the maze text (byte-stable, from persist()) + "\nQUESTION:\n" + question (thin tail)
+    Only the question bytes change between calls, so the leading prefix stays cached.
+
+    Direct call (not the queue) — usable even when the swarm drain is down/broken. Deterministic
+    coordinator; the deeper model is the real cost.
+    """
+    question = (question or "").strip()
+    if not question:
+        return {"ok": False, "error": "question required"}
+    # byte-stable maze text (persist() renders state/HANDOFF.md deterministically)
+    try:
+        p = persist()
+        hp = p.get("handoff") or ""
+        from pathlib import Path
+        maze_text = Path(hp).read_text(encoding="utf-8", errors="replace") if hp and Path(hp).is_file() else ""
+    except Exception as e:
+        maze_text = ""
+        p = {"error": str(e)[:120]}
+    user = f"{maze_text}\n\nQUESTION:\n{question}" if maze_text else question
+    try:
+        from models.providers import chat_provider
+        r = chat_provider(provider, _ESCALATION_PREAMBLE, user, model=model, tier=tier,
+                          max_tokens=max_tokens)
+        return {
+            "ok": bool(r.get("ok")),
+            "model": model,
+            "provider": provider,
+            "text": r.get("text") or r.get("content") or "",
+            "error": r.get("error"),
+            "usage": r.get("usage"),
+            "maze": p,
+            "cache_aware": True,
+            "note": "byte-stable maze prefix (cache-hit) + thin question tail; not a fresh miss",
+        }
+    except Exception as e:
+        return {"ok": False, "error": str(e)[:200], "maze": p}
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     cmd = (argv[0] if argv else "status").lower()
@@ -208,6 +274,10 @@ def main(argv: list[str] | None = None) -> int:
         goal = argv[1] if len(argv) > 1 else ""
         model = argv[2] if len(argv) > 2 else DEFAULT_DEEP_MODEL
         print(json.dumps(deep_handoff(goal, model=model), indent=2, ensure_ascii=False, default=str))
+    if cmd in ("escalate", "escalate-cached"):
+        question = argv[1] if len(argv) > 1 else ""
+        model = argv[2] if len(argv) > 2 else DEFAULT_DEEP_MODEL
+        print(json.dumps(escalate_cached(question, model=model), indent=2, ensure_ascii=False, default=str))
         return 0
     print(json.dumps(assemble(), indent=2, ensure_ascii=False, default=str))
     return 0

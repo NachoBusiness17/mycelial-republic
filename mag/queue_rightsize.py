@@ -53,6 +53,10 @@ TAG_TIER: dict[str, str] = {
     "research-pack": "deepseek-v4-flash",
     "refine-fix": "deepseek-v4-flash",
     "handoff-HANDOFF-2026": "deepseek-v4-flash",
+    "code": "deepseek-v4-flash",
+    "pytest": "deepseek-v4-flash",
+    "refactor": "deepseek-v4-flash",
+    "implement": "deepseek-v4-flash",
     # frontier synthesis — keep grok, but these should be merged (overlap)
     "grok-batch-buffer_2_memory_handoff": "grok-4.5",
     "grok-batch-buffer_3_system_architecture": "grok-4.5",

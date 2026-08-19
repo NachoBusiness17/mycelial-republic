@@ -107,11 +107,59 @@ def consume(*, compile_to_memlang: bool = True) -> dict[str, Any]:
     return {"ok": True, "steers_found": len(found), "compiled": compiled, "ts": _now()}
 
 
+def scan_unconsumed(*, source: str | None = None) -> list[dict[str, Any]]:
+    """Return steers on the bus that have not yet been folded into the relation.
+
+    The merge is the relation, so a steer only "lands" once it has been folded to the
+    doctrine RIB + party subchain AND routed to up seats. This scans the bus for what
+    hasn't been folded yet (consumed==False), so the cadence can fold + route + mark.
+    """
+    if not STEER_DIR.is_dir():
+        return []
+    out: list[dict[str, Any]] = []
+    for f in sorted(STEER_DIR.glob("*.json")):
+        try:
+            rec = json.loads(f.read_text(encoding="utf-8", errors="replace"))
+        except Exception:
+            continue
+        if rec.get("consumed"):
+            continue
+        if source and (rec.get("source") or "").lower() != str(source).lower():
+            continue
+        rec["_file"] = str(f)
+        out.append(rec)
+    return out
+
+
+def mark_consumed(steer_id: str, *, source: str | None = None) -> dict[str, Any]:
+    """Mark a steer on the bus as folded into the relation (consumed==True)."""
+    if not STEER_DIR.is_dir():
+        return {"ok": False, "error": "no steer dir"}
+    for f in STEER_DIR.glob("*.json"):
+        try:
+            rec = json.loads(f.read_text(encoding="utf-8", errors="replace"))
+        except Exception:
+            continue
+        if rec.get("id") != steer_id:
+            continue
+        if source and (rec.get("source") or "").lower() != str(source).lower():
+            continue
+        rec["consumed"] = True
+        rec["consumed_ts"] = _now()
+        f.write_text(json.dumps(rec, ensure_ascii=False, default=str, indent=2), encoding="utf-8")
+        return {"ok": True, "id": steer_id, "file": str(f)}
+    return {"ok": False, "id": steer_id, "error": "steer not found on bus"}
+
+
 def status() -> dict[str, Any]:
     if not STEER_DIR.is_dir():
         return {"ok": True, "n_steers": 0, "files": []}
     files = sorted(STEER_DIR.glob("*.json"))
-    return {"ok": True, "n_steers": len(files),
+    unconsumed = [f.name for f in files
+                  if not (lambda r: r.get("consumed"))(
+                      json.loads(f.read_text(encoding="utf-8", errors="replace")))]
+    return {"ok": True, "n_steers": len(files), "n_unconsumed": len(unconsumed),
+            "unconsumed": unconsumed[-20:],
             "files": [f.name for f in files][-20:], "trail": str(TRAIL)}
 
 

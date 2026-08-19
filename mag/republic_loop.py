@@ -70,7 +70,7 @@ def loop(state: dict[str, Any] | None = None) -> dict[str, Any]:
                      republic_wave, reconstruct, vantage_audit, republic_ambassador, game_portal,
                      abundance_rogue, vessel_swarm, tactical_framework, sovereign_handshake, shape_seed,
                      surface_instruction, chatgpt_bot, frontier_council, frontier_advisor, game_emulator,
-                     seat_steer)
+                     seat_steer, harvest_fold)
     st = dict(state or {})
 
     # S0 TOOL-SELECT (2026-08-11) — ask the 5 W's before every launch: pick the right tool from
@@ -309,6 +309,10 @@ def loop(state: dict[str, Any] | None = None) -> dict[str, Any]:
     # S9-FEEDBACK (2026-08-11) — READ BACK what the swarm produced (done tasks, filed packs,
     # folded invariants, advanced chain) so the loop measures its own outputs, not just enqueues.
     steps.append(_run("S9-feedback", loop_feedback.read_back))
+    # S9-REPORT-BACK (2026-08-16, operator: "it should report back and ping ya every once in a
+    # while keeping the loop open") — capture done swarm results into the operator inbox so
+    # ghost.sense() surfaces them as a ping. The loop stays open; nothing is fire-and-forget.
+    steps.append(_run("S9-report-back", lambda: harvest_fold.report_back()))
 
     # S9-SENSE (2026-08-11) — the loop's SENSE: novel orphans seen + code health + the TRUTH AUDIT
     # (anti-hallucination verdict). The loop verifies itself each beat — no hidden drift.

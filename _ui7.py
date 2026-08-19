@@ -1,0 +1,13 @@
+﻿from pathlib import Path
+w = Path("mag/wave.py").read_text(encoding="utf-8")
+i = w.find("def _bar(")
+print(w[i:i+900])
+print("==== APPLY LOOK/TALK ====")
+g = Path("mag/game_campaign.py").read_text(encoding="utf-8")
+i = g.find('if atype in ("look"')
+print(g[i:i+1800])
+print("==== TALK BRANCH ====")
+i = g.find('if atype == "talk"')
+if i<0: i = g.find('atype in ("talk"')
+print("idx", i)
+print(g[i:i+1600] if i>=0 else "none")

@@ -223,7 +223,7 @@ def classify_curveball(text: str) -> str:
     # explicit comedy divert only
     if re.search(r"\b(surprise me|do something stupid|curveball|stickmin)\b", t, re.I):
         return "color"
-    return "color"  # residual freestyle: still fail-forward, but voice_turn prefers talk first
+    return "inworld_talk"  # residual is IC speech, not Stickmin
 
 
 def resolve_curveball(campaign_id: str, text: str) -> dict[str, Any]:

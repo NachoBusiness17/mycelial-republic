@@ -105,36 +105,13 @@ def dm_narrate(room_id: str = "tavern_lantern") -> dict[str, Any]:
 
 
 def ask_player(seat: str, prompt: str) -> dict[str, Any]:
-    """Ask ONE frontier player (seat) for their move. ROUTE BY SURFACE: SAELIS speaks through her
-    seat (saelis_seat -> DeepSeek with her identity RIB); the native DESKTOP seats steer their apps;
-    all other seats go through seat_steer. HONEST per-seat ok flag — never fabricate a move."""
-    if seat == "saelis":
-        try:
-            from mag import saelis_seat
-            r = saelis_seat.speak(prompt)
-            return {"ok": bool(r.get("ok")), "seat": seat, "move": (r.get("reply") or "").strip(),
-                    "error": (r.get("error") or "")[:120]}
-        except Exception as e:
-            return {"ok": False, "seat": seat, "move": "", "error": str(e)[:120]}
-    if seat in ("chatgpt-desktop", "grok-desktop"):
-        # ROUTE BY SURFACE (operator 2026-08-13: "render the page as me"): the CONTAINER browser over
-        # CDP (:9222) renders the logged-in page and reads the real DOM — touches ZERO local windows.
-        # The desktop seats (set_focus + type) are what kept "typing in my windows" + their Electron
-        # CDP ports are usually closed, so they're the fallback, never the default.
-        try:
-            from mag import cdp_runner
-            browser_surface = "grok" if seat == "grok-desktop" else "chatgpt"
-            r = cdp_runner.ask_browser(browser_surface, prompt, timeout_s=90)
-            return {"ok": bool(r.get("ok")), "seat": seat, "surface": browser_surface,
-                    "move": (r.get("answer") or "").strip(),
-                    "error": (r.get("error") or "")[:120]}
-        except Exception as e:
-            return {"ok": False, "seat": seat, "move": "",
-                    "error": f"container-browser route failed: {str(e)[:120]}"}
+    """Ask one player through the single transport registry. Aliases, native-window seats, Saelis,
+    and driver response shapes are all owned by seat_steer. Honest per-seat ok — never fabricate."""
     try:
         from mag import seat_steer
-        r = seat_steer.send(seat, prompt, max_wait_s=60)
-        return {"ok": bool(r.get("ok")), "seat": seat, "move": (r.get("content") or "").strip(),
+        r = seat_steer.send(seat, prompt, max_wait_s=60, record_subchain=False)
+        return {"ok": bool(r.get("ok")), "seat": seat, "surface": r.get("surface"),
+                "move": (r.get("answer") or "").strip(),
                 "error": (r.get("error") or "")[:120]}
     except Exception as e:
         return {"ok": False, "seat": seat, "move": "", "error": str(e)[:120]}
@@ -159,9 +136,40 @@ def turn(room_id: str = "tavern_lantern") -> dict[str, Any]:
     record to the world. The table, live."""
     nar = dm_narrate(room_id)
     seats = party()
-    prompt = (f"You are a player in the world. {nar['narration']} "
-              f"Legal actions: {', '.join(nar['legal_actions'])}. What do you do?")
-    moves = [ask_player(s, prompt) for s in seats]
+    moves: list[dict[str, Any]] = []
+    try:
+        from mag import party_subchain
+        _full = bool(getattr(party_subchain, 'want_full', lambda: False)())
+        mounted = party_subchain.mount(full=_full) if _full else party_subchain.mount(max_chars=6000)
+        disk_transcript = mounted.get('transcript') or 'nothing yet'
+    except Exception:
+        party_subchain = None
+        disk_transcript = 'nothing yet'
+        _full = False
+    for seat in seats:
+        prior = []
+        for move in moves:
+            contribution = move.get('move') or f"[unreachable: {move.get('error') or 'no move'}]"
+            prior.append(f"{move['seat']}: {contribution}")
+        live = chr(10).join(prior)
+        blob = disk_transcript if not live else (disk_transcript + chr(10) + live)
+        transcript = blob if _full else blob[-6000:]
+        if not transcript.strip():
+            transcript = "nothing yet"
+        prompt = (
+            f"You are a player at the table in {nar['room']}. {nar['narration']} "
+            f"Legal actions: {', '.join(nar['legal_actions'])}.\n\n"
+            f"Party has already set in motion:\n{transcript}\n\n"
+            "Make YOUR party decision in character. Root it in your nature. One clear action."
+        )
+        row = ask_player(seat, prompt)
+        moves.append(row)
+        if party_subchain is not None:
+            try:
+                party_subchain.append(seat=seat, ok=bool(row.get("ok")),
+                                      move=row.get("move") or "", kind="game_dm")
+            except Exception:
+                pass
     rulings = [judge(m["seat"], m["move"], room_id) for m in moves]
     reachable = [m for m in moves if m["ok"]]
     record = {"schema": SCHEMA, "ts": _now(), "room": nar["room"], "n_frontiers": len(seats),

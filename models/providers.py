@@ -257,11 +257,17 @@ def chat_provider(
     max_tokens: int = 1024,
     tier: str = "T1",
     session_id: str = "",
+    thinking: bool | None = None,
 ) -> dict[str, Any]:
     """Chat a named provider; records quota usage.
 
     Callers must explicitly label public remote-safe work T2. The private T1
     default makes omitted classification fail closed for non-local providers.
+
+    ``thinking`` overrides the provider's disable_thinking flag per call:
+      None -> respect provider config (default),
+      True  -> keep thinking ON (creative/DM turns need coherence),
+      False -> force thinking OFF (cheap scut).
     """
     from models.quota import pick_provider, provider_budget, record_usage
 
@@ -319,7 +325,11 @@ def chat_provider(
             "temperature": temperature,
             max_tok_key: max_tokens,
         }
-        payload = _thinking_off(pcfg, payload)
+        if thinking is None:
+            payload = _thinking_off(pcfg, payload)
+        elif thinking is False:
+            payload["thinking"] = {"type": "disabled"}
+        # thinking True -> leave DeepSeek v4's default thinking ON (coherence)
         body = json.dumps(payload).encode("utf-8")
         headers = {
             "Content-Type": "application/json",

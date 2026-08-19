@@ -112,9 +112,25 @@ def self_select(question: str, *, seats: list[str] | None = None,
     prompt = _select_prompt(question)
     picks = []
     for s in the_party:
-        r = _dm().ask_player(s, prompt)
+        prior = []
+        for pick in picks:
+            text = pick.get("raw") or f"[unreachable: {pick.get('error') or 'no selection'}]"
+            prior.append(f"{pick.get('seat')}: {text}")
+        seat_prompt = (
+            prompt
+            + "\n\nPRIOR PARTY SELECTIONS (presented, not interpreted):\n"
+            + ("\n".join(prior)[-6000:] if prior else "nothing yet")
+            + "\n\nChoose as yourself; preserve useful differences from the prior selections."
+        )
+        r = _dm().ask_player(s, seat_prompt)
         picks.append({"seat": s, "ok": r.get("ok"), "raw": (r.get("move") or "").strip(),
                       "error": (r.get("error") or "")[:120]})
+        try:
+            from mag import party_subchain
+            party_subchain.append(seat=s, ok=bool(r.get("ok")),
+                                  move=r.get("move") or "", kind="quest_party")
+        except Exception:
+            pass
     return {"ok": True, "schema": SCHEMA, "question": question, "room": room_id,
             "party": the_party, "picks": picks,
             "note": "each agent self-selected a class + abilities through their own seat."}

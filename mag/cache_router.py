@@ -90,32 +90,50 @@ def _prefix_stable() -> bool | None:
 
 
 def _row_cost(r: dict[str, Any], rates: dict[str, dict[str, float]]) -> dict[str, Any]:
-    """Cost of one usage row using per-model hit/miss/out rates. Returns hit/miss tokens + cost."""
+    """Cost of one usage row using per-model hit/miss/out rates. Returns hit/miss tokens + cost.
+
+    FIX (2026-08-16): rows WITHOUT a recorded cache split (cache_hit_tokens / cache_miss_tokens
+    absent — local, openrouter, gemini, early deepseek rows) were treated as 100% cache MISS
+    (miss = prompt_tokens), inflating the miss count ~500x and tanking hit_ratio to ~6.6% when the
+    real DeepSeek bill is ~98% hit. Now only rows that RECORD the split contribute hit/miss; the
+    rest are unpriced for input (billing is authoritative, matching cache_map.row_split)."""
     model = str(r.get("model") or r.get("provider") or "deepseek-chat")
     rt = rates.get(model) or rates.get("deepseek-chat") or {"hit": 0.14, "miss": 0.14, "out": 0.28}
-    hit = int(r.get("cache_hit_tokens") or 0)
-    miss = int(r.get("cache_miss_tokens") or 0)
-    if not (hit or miss):
-        miss = int(r.get("prompt_tokens") or 0)
+    has_split = (r.get("cache_hit_tokens") is not None) or (r.get("cache_miss_tokens") is not None)
+    if has_split:
+        hit = int(r.get("cache_hit_tokens") or 0)
+        miss = int(r.get("cache_miss_tokens") or 0)
+    else:
+        hit = miss = 0  # no recorded split -> do NOT fabricate a miss
     out = int(r.get("completion_tokens") or 0)
     cost = hit / 1e6 * rt["hit"] + miss / 1e6 * rt["miss"] + out / 1e6 * rt["out"]
     return {"hit": hit, "miss": miss, "out": out, "cost": round(cost, 6),
-            "hit_rate": rt["hit"], "miss_rate": rt["miss"]}
+            "hit_rate": rt["hit"], "miss_rate": rt["miss"], "has_split": has_split}
 
 
 def audit() -> dict[str, Any]:
-    """Real cost + cache-waste on provider_usage.jsonl. Proves where the 50x region is."""
+    """Real cost + cache-waste on provider_usage.jsonl. Proves where the 50x region is.
+
+    Honest split (FIX 2026-08-16): hit_ratio is computed ONLY on rows that RECORD a cache split.
+    Rows without cache_hit/miss fields are unpriced for input (billing is authoritative), so they
+    can no longer fake a ~500x miss that buried the real ~98% DeepSeek hit rate."""
     rows = _read_usage()
     rates = _rates()
     remote = [r for r in rows if _is_remote(r)]
     tot_hit = tot_miss = tot_out = 0
+    split_rows = 0
+    unpriced_input = 0
     cost_actual = cost_if_hit = 0.0
     by_model: dict[str, dict[str, Any]] = {}
     for r in remote:
         c = _row_cost(r, rates)
         tot_hit += c["hit"]; tot_miss += c["miss"]; tot_out += c["out"]
+        if c["has_split"]:
+            split_rows += 1
+        else:
+            unpriced_input += int(r.get("prompt_tokens") or 0)
         cost_actual += c["cost"]
-        cost_if_hit += (c["hit"] + c["miss"]) / 1e6 * c["hit_rate"] + c["out"] / 1e6 * (c.get("out") and 0.28)
+        cost_if_hit += (c["hit"] + c["miss"]) / 1e6 * c["hit_rate"] + c["out"] / 1e6 * 0.28
         b = by_model.setdefault(str(r.get("model") or r.get("provider")), {"hit": 0, "miss": 0, "cost": 0.0})
         b["hit"] += c["hit"]; b["miss"] += c["miss"]; b["cost"] += c["cost"]
     hit_ratio = round(tot_hit / max(1, tot_hit + tot_miss), 4)
@@ -125,13 +143,15 @@ def audit() -> dict[str, Any]:
         rt = rates.get(m) or rates.get("deepseek-chat") or {"hit": 0.14, "miss": 0.14, "out": 0.28}
         waste += b["miss"] / 1e6 * (rt["miss"] - rt["hit"])
     return {"ok": True, "schema": SCHEMA, "ts": _now(), "remote_rows": len(remote),
+            "split_rows": split_rows,
             "hit_tokens": tot_hit, "miss_tokens": tot_miss, "output_tokens": tot_out,
             "hit_ratio": hit_ratio,
+            "unpriced_input_tokens": unpriced_input,
             "cost_actual_usd": round(cost_actual, 6),
             "cost_if_all_hit_usd": round(cost_if_hit, 6),
             "fifty_x_waste_usd": round(waste, 6),
             "by_model": {m: {"hit": b["hit"], "miss": b["miss"], "cost": round(b["cost"], 6)} for m, b in by_model.items()},
-            "note": "fifty_x_waste = extra paid because cache-miss tokens billed at miss rate vs hit rate"}
+            "note": "hit_ratio computed ONLY on rows that record a cache split (split_rows); rows without a split are unpriced for input (billing authoritative). fifty_x_waste = extra paid because cache-miss tokens billed at miss rate vs hit rate."}
 
 
 def route(goal: str = "", *, edit: str = "append", tail_tokens: int = 0,

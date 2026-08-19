@@ -29,7 +29,16 @@ def test_status_witnesses_and_honest_gate():
     assert "CDP" in st["honest_gate"] or "login" in st["honest_gate"]
 
 
-def test_salon_reports_honest_witnesses_never_fabricates():
+def test_salon_reports_honest_witnesses_never_fabricates(tmp_path, monkeypatch):
+    monkeypatch.setattr(fs, "OUT", tmp_path)
+    monkeypatch.setattr(
+        fs,
+        "_query_witness",
+        lambda label, surface, question: {
+            "surface": label, "seat": surface, "ok": False, "answer": "",
+            "error": f"{label} intentionally down",
+        },
+    )
     r = fs.salon("salon this project", surface_filter=["chatgpt"])
     # n_witnesses matches the filter; ok reflects reachability (may be False if the seat is down)
     assert r["n_witnesses"] == 1
@@ -46,7 +55,16 @@ def test_salon_reports_honest_witnesses_never_fabricates():
     assert "new_version" in r and "consensus_invariant" in r
 
 
-def test_salon_project_is_the_self_test():
+def test_salon_project_is_the_self_test(tmp_path, monkeypatch):
+    monkeypatch.setattr(fs, "OUT", tmp_path)
+    monkeypatch.setattr(
+        fs,
+        "_query_witness",
+        lambda label, surface, question: {
+            "surface": label, "seat": surface, "ok": True,
+            "answer": f"{label} says build the shared transcript", "error": "",
+        },
+    )
     r = fs.salon_project()
     assert "consensus_invariant" in r and "new_version" in r
     assert "n_witnesses" in r
@@ -59,3 +77,95 @@ def test_salon_consensus_deterministic():
         {"ok": True, "answer": "the chain evolves with the swarm toward the wave"},
     ])
     assert "evolve" in a or "chain" in a or "swarm" in a
+
+
+def test_roundtable_shares_prior_turns_preserves_provenance_and_files(
+        tmp_path, monkeypatch):
+    from mag import agent_corpus, party_subchain, seat_steer
+
+    out = tmp_path / "roundtables"
+    corpus = tmp_path / "corpus"
+    monkeypatch.setattr(fs, "OUT", out)
+    monkeypatch.setattr(agent_corpus, "CORPUS_DIR", corpus)
+    monkeypatch.setattr(agent_corpus, "AGENT_INDEX", corpus / "agents.json")
+    monkeypatch.setattr(agent_corpus, "LEDGERS", corpus / "ledgers")
+    monkeypatch.setattr(
+        party_subchain, "mount", lambda **_kwargs: {"ok": True, "transcript": "nothing yet"}
+    )
+    monkeypatch.setattr(party_subchain, "append", lambda **_kwargs: {"ok": True})
+    prompts = []
+
+    def fake_send(surface, message, *, max_wait_s=90, record_subchain=True):
+        prompts.append((surface, message, max_wait_s))
+        assert record_subchain is False
+        n = len(prompts)
+        return {
+            "ok": True,
+            "requested_surface": surface,
+            "surface": seat_steer.resolve_surface(surface),
+            "driver": "fake-driver",
+            "answer": (
+                f"POSITION: position {n}\n"
+                f"CHALLENGE: challenge {n}\n"
+                f"NOVEL DELTA: mechanism {n}\n"
+                f"TEST: falsify mechanism {n}"
+            ),
+            "report": f"fake-{n}.json",
+        }
+
+    monkeypatch.setattr(seat_steer, "send", fake_send)
+    r = fs.roundtable(
+        "How should the seats communicate?",
+        participants=["chatgpt", "supergrok", "v4-pro"],
+        rounds=2,
+    )
+
+    assert r["ok"] is True
+    assert r["n_contributions"] == 6
+    assert r["n_available"] == 6 and r["n_down"] == 0
+    assert [row["label"] for row in r["contributions"][:3]] == [
+        "chatgpt", "supergrok", "v4-pro"
+    ]
+    assert len({row["message_id"] for row in r["contributions"]}) == 6
+    assert {row["context_id"] for row in r["contributions"]} == {r["roundtable_id"]}
+    assert r["contributions"][1]["surface"] == "grok"
+    assert "POSITION: position 1" in prompts[1][1]
+    assert "POSITION: position 3" in prompts[3][1]
+    assert len(r["novel_deltas"]) == 6 and len(r["tests"]) == 6
+    assert Path(r["artifact"]).is_file()
+    assert (corpus / "ledgers" / "gpt.jsonl").is_file()
+    assert (corpus / "ledgers" / "grokbot.jsonl").is_file()
+    assert (corpus / "ledgers" / "deepseek.jsonl").is_file()
+
+
+def test_roundtable_keeps_down_seat_and_continues(tmp_path, monkeypatch):
+    from mag import party_subchain, seat_steer
+
+    monkeypatch.setattr(fs, "OUT", tmp_path)
+    monkeypatch.setattr(
+        party_subchain, "mount", lambda **_kwargs: {"ok": True, "transcript": "nothing yet"}
+    )
+    monkeypatch.setattr(party_subchain, "append", lambda **_kwargs: {"ok": True})
+
+    def fake_send(surface, message, *, max_wait_s=90, record_subchain=True):
+        assert record_subchain is False
+        if surface == "grok":
+            return {"ok": False, "surface": "grok", "error": "window unavailable"}
+        return {"ok": True, "surface": seat_steer.resolve_surface(surface),
+                "answer": "POSITION: proceed\nNOVEL DELTA: relay\nTEST: visible prior turn"}
+
+    monkeypatch.setattr(seat_steer, "send", fake_send)
+    monkeypatch.setattr("mag.agent_corpus.log_chat", lambda *_args, **_kwargs: {"ok": True})
+    r = fs.roundtable("Keep dissent", participants=["chatgpt", "supergrok", "v4-pro"],
+                      rounds=1)
+    assert r["ok"] is True
+    assert r["n_available"] == 2 and r["n_down"] == 1
+    down = r["contributions"][1]
+    assert down["label"] == "supergrok" and down["ok"] is False
+    assert down["error"] == "window unavailable"
+    assert "supergrok | grok | round 1 | down" in r["contributions"][2]["prompt"]
+
+
+def test_roundtable_is_bounded():
+    r = fs.roundtable("x", participants=[], rounds=99, record=False)
+    assert r["ok"] is False and "participant" in r["error"]

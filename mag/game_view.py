@@ -5,6 +5,8 @@ Law: glyphs only from campaign/scene — never LLM geometry.
 """
 from __future__ import annotations
 
+import os
+
 from typing import Any
 
 SCHEMA = "mag_table_view.v1"
@@ -92,7 +94,7 @@ def build_view_from_scene(
         for y in range(H):
             for x in range(W):
                 g[y][x] = "." if 0 < y < H - 1 and 0 < x < W - 1 else "#"
-        msg = "no campaign — classic one"
+        msg = "no campaign — walk in"
         mid = H // 2
         start = max(1, (W - len(msg)) // 2)
         for i, ch in enumerate(msg[: W - 2]):
@@ -133,14 +135,18 @@ def build_view_from_scene(
 
     grid = _rows(g)
     title = str(sc.get("room_name") or room_id or "Room")
+    # Room grid only. World-rib overlay and training emit were hanging the
+    # dashboard thread (HTTP /api/v1/table/view never returned).
+    world_meta: dict[str, Any] = {}
     out = {
         "ok": True,
         "schema": SCHEMA,
         "skin": "ascii",
-        "w": W,
-        "h": H,
+        "w": len(grid[0]) if grid else W,
+        "h": len(grid) if grid else H,
         "grid": grid,
         "grid_text": "\n".join(grid),
+        "world": world_meta,
         "legend": LEGEND,
         "scene": {
             "room_name": sc.get("room_name"),
@@ -157,20 +163,6 @@ def build_view_from_scene(
         "status": status or "active",
         "title": title,
     }
-    try:
-        from mag.training_events import emit
-
-        emit(
-            "table_view",
-            join={"campaign_id": campaign_id or "", "room_id": room_id or ""},
-            action={"skin": "ascii", "title": title[:80]},
-            outcome={"has_encounter": bool(enc and int(enc.get("hp") or 0) > 0)},
-            pattern_tags=["game", "table", "ascii", "rest"],
-            tier_max="T1",
-            exportable=False,
-        )
-    except Exception:
-        pass
     return out
 
 
@@ -221,7 +213,7 @@ def build_view(
     campaign_id: str = "",
 ) -> dict[str, Any]:
     """LOAD campaign for session and project ASCII view."""
-    from mag.game_campaign import latest_for_session, list_legal_actions, load_campaign, scene_context
+    from mag.game_campaign import latest_any, latest_for_session, list_legal_actions, load_campaign, scene_context
 
     camp = None
     if campaign_id:
@@ -232,9 +224,12 @@ def build_view(
             if camp:
                 break
     if not camp:
+        camp = latest_any()
+    if not camp:
         return build_view_from_scene(None, status="void")
 
-    sc = scene_context(camp) if camp.get("player") else {}
+    # Campaign-without-player is still a room. Void only if there is no campaign.
+    sc = scene_context(camp)
     legal = list_legal_actions(camp) if camp.get("player") else []
     return build_view_from_scene(
         sc,
@@ -246,8 +241,73 @@ def build_view(
 
 
 def handle_table_view(body: dict[str, Any] | None = None, params: dict[str, str] | None = None) -> dict[str, Any]:
+    """Newest campaign file only. Never scan the pile on the desk thread."""
+    import json
+    from pathlib import Path as _P
+
     body = body or {}
     params = params or {}
-    sid = str(body.get("session_id") or params.get("session_id") or "")
-    cid = str(body.get("campaign_id") or params.get("campaign_id") or "")
-    return build_view(session_id=sid, campaign_id=cid)
+    cid = str(body.get("campaign_id") or params.get("campaign_id") or "").strip()
+    camp_dir = _P("/app/memory/working/game_campaigns")
+    camp: dict[str, Any] | None = None
+    try:
+        picked = camp_dir / f"{cid}.json" if cid else None
+        if picked is None or not picked.is_file():
+            newest = None
+            newest_m = -1.0
+            with os.scandir(camp_dir) as it:
+                for ent in it:
+                    if not ent.name.startswith("gc-") or not ent.name.endswith(".json"):
+                        continue
+                    try:
+                        m = ent.stat().st_mtime
+                    except OSError:
+                        continue
+                    if m > newest_m:
+                        newest_m = m
+                        newest = _P(ent.path)
+            picked = newest
+        if picked is not None:
+            camp = json.loads(picked.read_text(encoding="utf-8"))
+    except Exception:
+        camp = None
+
+    if not camp:
+        return build_view_from_scene(None, status="void")
+
+    rooms = ((camp.get("module_snapshot") or {}).get("rooms") or {})
+    rid = str(camp.get("room_id") or "")
+    room = rooms.get(rid) or {}
+    hooks = room.get("hooks") or []
+    hook = hooks[0] if isinstance(hooks, list) and hooks else room.get("hook")
+    exits = room.get("exits") or {}
+    sc = {
+        "room_name": room.get("name") or rid or "Room",
+        "room_desc": room.get("desc") or "",
+        "hook": hook,
+        "exits": list(exits.keys()) if isinstance(exits, dict) else list(exits or []),
+        "player": camp.get("player") or {},
+        "encounter": camp.get("encounter") or {},
+        "flags": camp.get("flags") or {},
+    }
+    legal: list[dict[str, Any]] = [{"type": "look"}, {"type": "help"}]
+    for ex in sc["exits"]:
+        legal.append({"type": "move", "direction": str(ex)})
+    if sc["player"]:
+        legal.append({"type": "inventory"})
+    enc = sc.get("encounter") or {}
+    try:
+        fighting = bool(enc and int(enc.get("hp") or 0) > 0)
+    except (TypeError, ValueError):
+        fighting = False
+    if fighting:
+        legal.extend([{"type": "attack"}, {"type": "flee"}])
+    else:
+        legal.append({"type": "rest"})
+    return build_view_from_scene(
+        sc,
+        legal=legal,
+        campaign_id=str(camp.get("campaign_id") or ""),
+        room_id=rid,
+        status=str(camp.get("status") or ""),
+    )

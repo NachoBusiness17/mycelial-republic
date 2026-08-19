@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Viz Lab — the Republic's visualizations</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;background:#0a0e14;color:#e6edf3;font-family:system-ui;display:flex;flex-direction:column}
+  header{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;padding:12px 20px;border-bottom:1px solid #1b2430}
+  header h1{font-size:1.1rem;color:#e6c07a;letter-spacing:.5px}
+  header .sub{color:#8b949e;font-size:.78rem;font-style:italic}
+  nav{display:flex;gap:6px;padding:10px 20px;border-bottom:1px solid #1b2430;flex-wrap:wrap;background:#0d1117}
+  nav button{background:#161b22;color:#c9d1d9;border:1px solid #30363d;padding:8px 14px;border-radius:8px;
+    cursor:pointer;font-size:.85rem;transition:all .15s}
+  nav button:hover{background:#21262d}
+  nav button.active{background:#1f6feb;border-color:#1f6feb;color:#fff}
+  main{flex:1;position:relative}
+  iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#0a0e14}
+  footer{padding:8px 20px;color:#5b6b7a;font-size:.72rem;font-style:italic;border-top:1px solid #1b2430}
+</style>
+</head>
+<body>
+  <header>
+    <h1>🧬 Viz Lab</h1>
+    <div class="sub">every way we've tried to see the Republic — one tab each, a lab to keep building in</div>
+  </header>
+  <nav id="tabs"></nav>
+  <main id="stage"></main>
+  <footer>The point: the deterministic shape to the stochastic — a DF-hack x-ray into the living sim, cast as a HOT lattice (live, real-time, beating at the pulse) so the organism stays legible enough to correct. · Reuse: mag/verkle_render · the shape is never stored, only the chain.</footer>
+
+<script>
+// ── THE GALLERY — every visualization attempt as a tab (old + new) ──
+const TABS = [
+  { id:'3d',     name:'3D Verkle',     src:'viz_3d_verkle.html',    note:'three.js · real knots on a 3D helix · orbit/hover' },
+  { id:'wave2d', name:'Knot Wave 2D',  src:'verkle_knot_wave.html', note:'the standing wave · hover reads each knot' },
+  { id:'swarm',  name:'The Swarm',     src:'game.html',             note:'Necromancer\'s Swarm game arena' },
+  { id:'fish',   name:'Spore (fish)',  src:'viz_spore_fish.html',   note:'attempt 1 — beautiful, wrong, kept as the record' },
+  { id:'armory', name:'The Armory',    src:'steal_tools.html',      note:'116 steal tools — the corpus as a wall' },
+  { id:'memmap', name:'Memory Map',    src:'memory_map.html',       note:'1,572 knowledge-graph nodes — the Republic\'s mind as a map' },
+  { id:'modmap', name:'Module Map',    src:'module_map.html',        note:'694 mag modules — each surfaced with the purpose it states about itself' },
+  { id:'tesuji', name:'Grab & Write',  src:'grab_write.html',        note:'THE TESUJI — hallucination is the write with no reach' },
+];
+const nav = document.getElementById('tabs');
+const stage = document.getElementById('stage');
+let current = null;
+function activate(id){
+  const tab = TABS.find(t=>t.id===id); if(!tab) return;
+  current = tab.id;
+  nav.querySelectorAll('button').forEach(b=>b.classList.toggle('active', b.dataset.id===id));
+  stage.innerHTML = '';
+  const f = document.createElement('iframe');
+  f.src = tab.src; f.setAttribute('title', tab.name);
+  stage.appendChild(f);
+  document.querySelector('header .sub').textContent = tab.note;
+}
+TABS.forEach(t=>{
+  const b = document.createElement('button');
+  b.textContent = t.name; b.dataset.id = t.id;
+  b.onclick = ()=>activate(t.id);
+  nav.appendChild(b);
+});
+activate('3d');
+</script>
+</body>
+</html>

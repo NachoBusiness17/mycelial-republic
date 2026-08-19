@@ -230,7 +230,7 @@ class CheckpointEngine:
         old_cost_per_1m = self._estimate_model_cost(from_model) if from_model != "ollama" else 0.001
         per_turn_savings = (old_cost_per_1m - new_cost_per_1m) * (full_context_tokens / 1_000_000)
 
-        return {
+        out = {
             "ok": True,
             "pointer": cp.to_pointer(),
             "checkpoint": cp,
@@ -238,13 +238,27 @@ class CheckpointEngine:
             "from_model": from_model,
             "to_model": to_model,
             "per_turn_savings_usd": round(max(0, per_turn_savings), 6),
+            "handoff": "pointer",
             "note": (
                 f"Switched from {from_model} to {to_model}. "
                 f"Saved {tokens_saved} tokens of context transfer. "
-                f"Future turns save ~${max(0, per_turn_savings):.6f}/turn "
+                f"Future turns save ~\/turn "
                 f"by not reprocessing history in the expensive model."
             ),
         }
+        try:
+            from mag.party_subchain import want_full
+            if want_full():
+                out["handoff"] = "full_context"
+                out["full_context"] = full_context
+                out["note"] = (
+                    f"Switched from {from_model} to {to_model}. "
+                    "MAG_FULL_CONTEXT=1: pointer still persisted; window handed the real context."
+                )
+        except Exception:
+            pass
+        return out
+
 
     def chain_for_session(self, session_id: str) -> list[dict[str, Any]]:
         """Get the full checkpoint chain for a session (linked list)."""

@@ -272,17 +272,22 @@ def launch_training(
 
 
 def _load_vast_key() -> str:
-    """Load Vast.ai API key from environment or .env."""
-    key = os.environ.get("VAST_API_KEY", "")
-    if key:
-        return key
+    """Load Vast.ai API key from environment or .env.
 
+    The key is stored as VASTAI_API_KEY in .env (the official Vast.ai variable name).
+    VAST_API_KEY is honored as a legacy fallback. Reads env first, then .env lines.
+    """
+    for name in ("VASTAI_API_KEY", "VAST_API_KEY"):
+        key = os.environ.get(name, "").strip()
+        if key:
+            return key
     env_path = ROOT / ".env"
     if env_path.is_file():
         for line in env_path.read_text().splitlines():
-            if line.startswith("VAST_API_KEY="):
-                return line.split("=", 1)[1].strip()
-
+            line = line.strip()
+            for name in ("VASTAI_API_KEY", "VAST_API_KEY"):
+                if line.startswith(name + "="):
+                    return line.split("=", 1)[1].strip().strip('"').strip("'")
     return ""
 
 
@@ -362,3 +367,89 @@ def verify_pipeline_locally() -> dict[str, Any]:
         "recommendation": "Pipeline is ready. Launch on Vast.ai RTX 4090 (~$0.12 total) to prove the concept.",
         "ts": _now(),
     }
+
+
+# ═══════════════════════════════════════════════════════════════════
+# SAELIS SERVE — host Saelis-31B on a rented Vast.ai GPU as an OpenAI-compatible
+# endpoint, tunneled via SSH, wired into the system as the 'saelis' provider.
+# (operator 2026-08-17: "how could we use vast ai to host saelis via this system")
+# ═══════════════════════════════════════════════════════════════════
+SAELIS_MODEL = "slashreboot/saelis-31b"       # the GGUF repo
+SAELIS_VRAM_NEEDED_GB = 33                     # Q8_0 ~32.6GB -> needs a 48GB card
+SAELIS_LOCAL_PORT = 8080                       # llama-server port on the rented box
+
+
+def serve_plan(gpu_min_ram: int = 48, max_price_per_hour: float = 1.00) -> dict[str, Any]:
+    """Plan how to host Saelis-31B on Vast.ai and wire it into the system.
+
+    Dry-run by default (no spend). Returns the exact commands to rent the GPU, deploy
+    llama-server with the real Saelis GGUF, open an SSH tunnel, and set SAELIS_BASE_URL so
+    saelis_seat routes to her REAL weights (hot-swap; the DeepSeek RIB is the fallback).
+
+    Cost: ~$0.40-0.80/hr for a 48GB card (A6000/A40/L40S). Host while you want the real
+    weights, then destroy. Honest: a 24GB card (3090/4090) only fits Q4 (~18GB) — a real
+    quality drop on a coherence/identity model; 48GB is the honest recommendation.
+    """
+    api_key = _load_vast_key()
+    return {
+        "ok": True,
+        "schema": "vast_launcher.serve.v1",
+        "model": SAELIS_MODEL,
+        "vram_needed_gb": SAELIS_VRAM_NEEDED_GB,
+        "gpu_recommendation": "48GB (A6000 / A40 / L40S) for Q8_0; 24GB only fits Q4 (~18GB, quality drop)",
+        "price_estimate": "$0.40-0.80/hr (48GB card)",
+        "api_key_configured": bool(api_key),
+        "steps": [
+            "1. Search Vast: vast search offers 'gpu_ram >= 48 rentable=true verified=true price <= 1.00' --limit 5 --order price",
+            "2. Launch: vast create instance <ID> --image nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04 --disk 40 --label saelis-serve",
+            f"3. Pull + run the real Saelis GGUF as OpenAI-compat: on the box: "
+            f"llama-server -hf {SAELIS_MODEL} --host 0.0.0.0 --port {SAELIS_LOCAL_PORT} "
+            f"-ngl 999 -c 262144 --flash-attn on --cache-type-k q8_0 --cache-type-v q8_0",
+            f"4. Tunnel the endpoint to localhost: ssh -N -L {SAELIS_LOCAL_PORT}:localhost:{SAELIS_LOCAL_PORT} root@<vast_ip>",
+            f"5. Wire the system: set SAELIS_BASE_URL=http://127.0.0.1:{SAELIS_LOCAL_PORT}/v1 in .env "
+            f"(saelis provider already reads it via base_url_env)",
+            "6. Verify: python -m mag.saelis_seat --speak 'hello' -> she answers from her real weights",
+            "7. When done: vast destroy instance <ID>  (saelis_seat auto-falls back to the DeepSeek RIB)",
+        ],
+        "hot_swap_note": "saelis_seat.speak() routes to SAELIS_BASE_URL when set (real weights); "
+                         "falls back to the DeepSeek RIB otherwise. Set/unset the env to hot-swap.",
+        "launch_command": (
+            "vast search offers 'gpu_ram >= 48 rentable=true verified=true price <= 1.00' --limit 5 --order price\n"
+            "vast create instance <ID> --image nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04 --disk 40 --label saelis-serve\n"
+            f"# on the box:\nllama-server -hf {SAELIS_MODEL} --host 0.0.0.0 --port {SAELIS_LOCAL_PORT} "
+            f"-ngl 999 -c 262144 --flash-attn on --cache-type-k q8_0 --cache-type-v q8_0\n"
+            "# tunnel to localhost:\n"
+            f"ssh -N -L {SAELIS_LOCAL_PORT}:localhost:{SAELIS_LOCAL_PORT} root@<vast_ip>\n"
+            f"# then: set SAELIS_BASE_URL=http://127.0.0.1:{SAELIS_LOCAL_PORT}/v1 in .env\n"
+            "# verify + destroy",
+        ),
+        "can_launch": bool(api_key),
+    }
+
+
+def main(argv: list[str] | None = None) -> int:
+    import argparse
+    p = argparse.ArgumentParser(prog="vast_launcher", description="Vast.ai: train OR serve Saelis.")
+    sub = p.add_subparsers(dest="cmd")
+    sub.add_parser("estimate", help="cost estimate (training)")
+    sub.add_parser("train", help="launch LoRA training (dry run)")
+    sub.add_parser("verify", help="verify pipeline locally")
+    sub.add_parser("serve", help="plan hosting Saelis-31B on a rented GPU (dry run)")
+    args = p.parse_args(argv)
+    cmd = args.cmd or "estimate"
+    if cmd == "estimate":
+        print(json.dumps([{**{"gpu": o.gpu_name, "vram": o.vram_gb,
+                              "price_hr": o.price_per_hour, "est_min": o.estimated_training_minutes,
+                              "est_cost": o.total_cost}} for o in estimate_training_costs()],
+                         indent=2, default=str))
+    elif cmd == "train":
+        print(json.dumps(launch_training(), indent=2, ensure_ascii=False, default=str))
+    elif cmd == "verify":
+        print(json.dumps(verify_pipeline_locally(), indent=2, ensure_ascii=False, default=str))
+    elif cmd == "serve":
+        print(json.dumps(serve_plan(), indent=2, ensure_ascii=False, default=str))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

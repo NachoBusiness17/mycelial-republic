@@ -161,8 +161,11 @@ def build_operator_os(*, refresh_pack: bool = True) -> dict[str, Any]:
             f"--- pack ---\n{pack_block}\n"
         ),
         "strike": (
-            f"Strike the chord. Truth-only. Personal impact. Self-side first.\n"
-            f"Moves + commitment. Don't recite the map.\n\n"
+            f"Strike the chord = BRING THIS SEAT TO COHERENCE. Align to the shared map +\n"
+            f"memory + real state until you are a COHERENT INSTANCE of the whole, not an\n"
+            f"echo reciting context. Coherence first, then act.\n"
+            f"Truth-only. Personal impact. Self-side first. Moves + commitment.\n"
+            f"Don't recite the map; don't write an essay ABOUT coherence.\n\n"
             f"TOPIC: [fill in]\n\n"
             f"Latest day: {bead_title}\n"
             f"Loops: {loops[:4]}\n"

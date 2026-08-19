@@ -67,16 +67,37 @@ def _now() -> str:
 
 def key_reconcile() -> dict[str, Any]:
     """Reconcile the key env: the provider reads PROVIDER_KEY_ENV, but the local .env sets
-    LOCAL_KEY_ENV. Copy the present key into the provider's env var (in-process) so deepseek resolves.
-    Logs the KEY NAME only, never the value. Honest about what resolves."""
-    provider_key = os.environ.get(PROVIDER_KEY_ENV, "")
-    local_key = os.environ.get(LOCAL_KEY_ENV, "")
-    action = "noop"
-    if not provider_key and local_key:
-        os.environ[PROVIDER_KEY_ENV] = local_key
-        action = "aliased-local-key-into-provider-env"
+    LOCAL_KEY_ENV. Load .env + read the key straight from the file (the saelis_seat proven pattern)
+    and point the provider's env var at the available one (in-process) so deepseek resolves.
+    Logs the KEY NAME only, never the value. Honest about what resolves.
+    SELF-STEAL (2026-08-16): this was a weaker reinvention of mag/saelis_seat.py's resolution —
+    it only aliased from PROCESS env, so if .env wasn't loaded the key was absent and it returned
+    False (queue never drained, 0 drain-ledger files). Reuse the proven pattern: load .env, read
+    from file, then alias."""
+    # 1) load .env into process env (the loop's kernel may not have it)
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(str(ROOT / ".env"))
+    except Exception:
+        pass
+    # 2) if the provider key is still absent, read the local key straight from the .env FILE
+    if not os.environ.get(PROVIDER_KEY_ENV):
+        try:
+            env_file = ROOT / ".env"
+            if env_file.is_file():
+                import re as _re
+                _m = _re.search(r"^\s*" + LOCAL_KEY_ENV + r"\s*=\s*(.+?)\s*$",
+                                env_file.read_text(encoding="utf-8", errors="replace"),
+                                _re.MULTILINE)
+                if _m:
+                    os.environ[PROVIDER_KEY_ENV] = _m.group(1).strip().strip('"').strip("'")
+        except Exception:
+            pass
+    # 3) alias process-env local key into the provider var if present
+    if not os.environ.get(PROVIDER_KEY_ENV) and os.environ.get(LOCAL_KEY_ENV):
+        os.environ[PROVIDER_KEY_ENV] = os.environ[LOCAL_KEY_ENV]
     resolved = bool(os.environ.get(PROVIDER_KEY_ENV))
-    return {"ok": True, "schema": SCHEMA, "action": action,
+    return {"ok": True, "schema": SCHEMA, "action": "loaded-dotenv-and-aliased",
             "resolved_provider_key": resolved,
             "note": f"provider reads {PROVIDER_KEY_ENV}; resolved={resolved} (key VALUE never logged)"}
 

@@ -168,6 +168,9 @@ def reinforce(src: str, dst: str, *, etype: str = "related", reward: float = 1.0
         if not lk.get("ok"):
             return lk
         target = lk["edge"]
+        # link() appends to the file but not to the in-memory list; add it so the
+        # subsequent _rewrite_edges() doesn't erase the freshly-created edge.
+        edges.append(target)
     if consumed:
         target["type"] = "consumption"
         target["refs_in"] = int(target.get("refs_in") or 0) + 1

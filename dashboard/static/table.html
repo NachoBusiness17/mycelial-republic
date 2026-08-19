@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Mag Table — system test</title>
+  <title>Mag Table — the lantern</title>
   <style>
     :root {
       color-scheme: dark;
@@ -530,7 +530,7 @@
       localStorage.setItem("magTableSession", sessionId);
       $("mSid").textContent = sessionId;
       logEl.innerHTML = "";
-      canvasBody.innerHTML = `<p class="empty">New watch. Say <b>classic one</b>.</p>`;
+      canvasBody.innerHTML = `<p class="empty">New watch. The lantern is the world.</p>`;
       setStatus("New session " + sessionId);
     };
 
@@ -609,9 +609,31 @@
       setStatus("Listening… pause ~2s or I'm done");
     };
 
-    // boot
-    addBubble("mag", "Table online. This is the system test surface — engine map, chat, guest advice. Type classic one or use presets.", "table");
-    refreshGameStatus();
+    // boot — small: walk in. Module player_start seats you. No ritual phrase required.
+    async function bootTable() {
+      addBubble("mag", "The Guttered Lantern. You are already seated. Look, go north, help.", "table");
+      await refreshTableView();
+      const ascii = (asciiMap && asciiMap.textContent) || "";
+      const voidish = ascii.indexOf("no campaign") >= 0 || ascii.indexOf("classic one") >= 0;
+      if (voidish) {
+        try {
+          const r = await fetch("/api/v1/game", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "start", module: "classic", session_id: sessionId })
+          });
+          const j = await r.json();
+          if (j && j.campaign_id) {
+            try { localStorage.setItem("magTableCampaign", j.campaign_id); } catch (_) {}
+          }
+          if (j && (j.speak || j.answer)) addBubble("mag", (j.speak || j.answer).slice(0, 800), "start");
+        } catch (e) {
+          addBubble("mag", "Could not start: " + (e.message || e), "table");
+        }
+        await refreshTableView();
+      }
+    }
+    bootTable();
   </script>
 </body>
 </html>

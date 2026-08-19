@@ -35,15 +35,55 @@ def test_judge_rules():
     assert gd.judge("supergrok", "", "tavern_lantern")["verdict"] == "no_move"
 
 
-def test_turn_runs_and_records():
+def test_turn_runs_and_records(monkeypatch):
+    from mag import party_subchain
+
+    prompts = []
+
+    def fake_player(seat, prompt):
+        prompts.append(prompt)
+        return {"ok": True, "seat": seat, "surface": seat, "move": f"{seat} searches", "error": ""}
+
+    class FakeWorld:
+        @staticmethod
+        def set_state(*_args, **_kwargs):
+            return {"ok": True}
+
+    monkeypatch.setattr(gd, "party", lambda: ["chatgpt", "supergrok", "v4-pro"])
+    monkeypatch.setattr(gd, "ask_player", fake_player)
+    monkeypatch.setattr(gd, "_world", lambda: FakeWorld)
+    monkeypatch.setattr(
+        party_subchain, "mount", lambda **_kwargs: {"ok": True, "transcript": "nothing yet"}
+    )
+    monkeypatch.setattr(party_subchain, "append", lambda **_kwargs: {"ok": True})
     t = gd.turn("tavern_lantern")
     assert t["ok"] is True
     assert len(t["frontiers"]) == len(gd.party())
     # honest: reachable <= total, never more
     assert t["n_reachable"] <= len(t["frontiers"])
+    assert "nothing yet" in prompts[0]
+    assert "chatgpt: chatgpt searches" in prompts[1]
+    assert "supergrok: supergrok searches" in prompts[2]
 
 
-def test_play_table():
+def test_play_table(monkeypatch):
+    from mag import party_subchain
+
+    monkeypatch.setattr(gd, "party", lambda: ["chatgpt", "supergrok", "v4-pro"])
+    monkeypatch.setattr(
+        gd,
+        "ask_player",
+        lambda seat, prompt: {"ok": True, "seat": seat, "move": "search", "error": ""},
+    )
+    monkeypatch.setattr(
+        gd,
+        "_world",
+        lambda: type("FakeWorld", (), {"set_state": staticmethod(lambda *_a, **_k: {"ok": True})}),
+    )
+    monkeypatch.setattr(
+        party_subchain, "mount", lambda **_kwargs: {"ok": True, "transcript": "nothing yet"}
+    )
+    monkeypatch.setattr(party_subchain, "append", lambda **_kwargs: {"ok": True})
     r = gd.play("tavern_lantern", n=2)
     assert r["ok"] is True and r["n_turns"] == 2
     assert "reachable" in r

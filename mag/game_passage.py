@@ -147,19 +147,24 @@ def narrate_passage(
     try:
         from models.providers import chat_provider
 
-        model = (os.environ.get("MAG_GAME_NARRATE_MODEL") or "gemma:2b").strip()
+        # FAST ROUTE BY DEFAULT (2026-08-15): the deterministic template above is 0ms/$0 and is
+        # the "known route." When a live brain IS wanted, route to DeepSeek (fast remote) — NOT the
+        # slow local GPU (ollama gemma:2b took ~56s and fell back to template anyway). Tier T2 so
+        # remote is allowed (T0/T1 fail closed for non-local providers). Override via env.
+        provider = (os.environ.get("MAG_GAME_NARRATE_PROVIDER") or "deepseek").strip()
+        model = (os.environ.get("MAG_GAME_NARRATE_MODEL") or "deepseek-v4-flash").strip()
+        tier = (os.environ.get("MAG_GAME_NARRATE_TIER") or "T2").strip()
         user = (
             f"STATE:\n{state}\n\n"
             f"Write the passage card. full={full}. "
             "If events exist, weave them into Interior/Narrator without inventing new places."
         )
-        # Prefer slightly better desk model only if set
         res = chat_provider(
-            "ollama",
+            provider,
             SYSTEM,
             user,
             model=model,
-            tier="T1",
+            tier=tier,
             max_tokens=280 if full else 160,
             temperature=0.45,
         )

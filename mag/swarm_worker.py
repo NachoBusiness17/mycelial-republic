@@ -87,7 +87,44 @@ def enqueue_task(goal: str, *, provider: str = DEFAULT_PROVIDER, model: str | No
     return {"ok": True, "task_id": tid, "queue": str(QUEUE_DIR)}
 
 
-def _next_task() -> dict[str, Any] | None:
+def provider_spawn_allowed(provider: str | None) -> dict[str, Any]:
+    """Preflight Mag period budget before spawning an agent.
+
+    Constraint: providers.yaml cap on this Mag provider_id (not per-key, not vendor
+    402). Check is billable tokens (cache miss + completion) vs that cap. When
+    spent: skip and leave queued — never spawn into a known wall.
+    """
+    pid = (provider or DEFAULT_PROVIDER).strip() or DEFAULT_PROVIDER
+    if pid in ("local", "deterministic"):
+        return {"ok": True, "provider": pid, "reason": "local"}
+    try:
+        from models.quota import provider_budget
+
+        b = provider_budget(pid)
+    except Exception as e:
+        return {
+            "ok": False,
+            "provider": pid,
+            "reason": "budget_unreadable",
+            "error": str(e)[:160],
+        }
+    if b.get("budget_ok"):
+        return {"ok": True, "provider": pid, "budget": b, "reason": "budget_ok"}
+    return {
+        "ok": False,
+        "provider": pid,
+        "budget": b,
+        "reason": "quota_exhausted",
+        "reset_in_hours": b.get("reset_in_hours"),
+        "seconds_until_reset": b.get("seconds_until_reset"),
+        "used_tokens": b.get("used_tokens"),
+        "max_tokens": b.get("max_tokens"),
+        "hint": "leave queued until Mag period reset; same provider_id shares one cap across keys",
+    }
+
+
+def _next_task(skip_ids: set[str] | None = None) -> dict[str, Any] | None:
+    skip_ids = skip_ids or set()
     QUEUE_DIR.mkdir(parents=True, exist_ok=True)
     for p in sorted(QUEUE_DIR.glob("*.json")):
         try:
@@ -95,6 +132,9 @@ def _next_task() -> dict[str, Any] | None:
         except Exception:
             continue
         if t.get("status") == "queued":
+            tid = str(t.get("task_id") or "")
+            if tid in skip_ids:
+                continue
             t["_file"] = p
             return t
     return None
@@ -163,6 +203,14 @@ def _execute(task: dict[str, Any]) -> tuple[str, int]:
     """
     from mag import headless
     headless.install_no_window_defaults()
+    gate = provider_spawn_allowed(task.get("provider"))
+    if not gate.get("ok"):
+        # Defense only. Callers must skip *before* flipping status to running/failed.
+        return (
+            f"skipped: {gate.get('reason')} provider={gate.get('provider')} "
+            f"reset_in_hours={gate.get('reset_in_hours')}",
+            82,
+        )
     goal = str(task.get("goal") or "")
     field = _tool_context(task)
     if field:
@@ -196,13 +244,27 @@ def run_once(*, max_per_pass: int = MAX_PER_PASS) -> dict[str, Any]:
     from mag import headless
     headless.install_no_window_defaults()
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
-    done, failed, results = 0, 0, []
+    done, failed, skipped, results = 0, 0, 0, []
+    skip_ids: set[str] = set()
     for _ in range(max_per_pass):
-        task = _next_task()
+        task = _next_task(skip_ids=skip_ids)
         if task is None:
             break
         f: Path = task["_file"]
         task.pop("_file", None)
+        gate = provider_spawn_allowed(task.get("provider"))
+        if not gate.get("ok"):
+            tid = str(task.get("task_id") or "")
+            skip_ids.add(tid)
+            skipped += 1
+            results.append({
+                "task_id": tid,
+                "ok": False,
+                "skipped": gate.get("reason") or "quota_exhausted",
+                "provider": gate.get("provider"),
+                "reset_in_hours": gate.get("reset_in_hours"),
+            })
+            continue
         task["status"] = "running"
         f.write_text(json.dumps(task, ensure_ascii=False, indent=2), encoding="utf-8")
         tail, code = _execute(task)
@@ -231,7 +293,164 @@ def run_once(*, max_per_pass: int = MAX_PER_PASS) -> dict[str, Any]:
         else:
             failed += 1
     return {"schema": SCHEMA, "ok": True, "done": done, "failed": failed,
-            "total": done + failed, "results": results, "ts": _now()}
+            "skipped": skipped, "total": done + failed + skipped,
+            "results": results, "ts": _now()}
+
+
+def _task_tier(goal: str) -> tuple[str, str]:
+    """RIGHTSIZE a queue task by its deterministic class (RIB-baremetal law): deterministic/RIB
+    work resolves LOCALLY fast ($0), only genuinely frontier work goes down the deep agent path.
+    Returns (tier, path) where path in {'local','agent'}.
+
+    GUARD (2026-08-16): genuine research/frontier/steal asks must NOT be short-circuited as local
+    'scut' — the moonshot bug: a real research task (MOONSHOT digital-twin research) was classified
+    'scut' and resolved locally without ever doing the research. So a research-marked goal is forced
+    down the agent (deep) path even if the depth classifier said local."""
+    local_depths = {"scut", "simple_code", "conversation"}
+    try:
+        from mag.router import classify_depth
+        d = classify_depth(goal)
+        depth = str(d.get("depth") or "scut")
+    except Exception:
+        depth = "scut"
+    # GUARD: research/frontier/steal asks always go down the agent path (real work, not a placeholder).
+    g = (goal or "").lower()
+    _RESEARCH = ("moonshot", "deep research", "frontier research", "mine arxiv", "research:",
+                 "frontier", "steal", "synthes", "find the frontier", "investigat", "deep dive")
+    if depth in local_depths and any(m in g for m in _RESEARCH):
+        depth = "research"
+    path = "local" if depth in local_depths else "agent"
+    return depth, path
+
+
+def _billable_snapshot() -> tuple[int, int]:
+    """Sum of billable (cache MISS + completion) tokens in provider_usage.jsonl.
+    Used to attribute an attempt's spend by window-diff (runs are serialized)."""
+    miss = comp = 0
+    p = ROOT / "logs" / "provider_usage.jsonl"
+    if p.is_file():
+        try:
+            for line in p.read_text(encoding="utf-8", errors="replace").splitlines():
+                if not line.strip():
+                    continue
+                r = json.loads(line)
+                miss += int(r.get("cache_miss_tokens") or 0) or int(r.get("prompt_tokens") or 0)
+                comp += int(r.get("completion_tokens") or 0)
+        except Exception:
+            pass
+    return miss, comp
+
+
+def _governor_record(task_id: str, before: tuple[int, int], after: tuple[int, int],
+                     ok: bool) -> dict[str, Any]:
+    """Record an attempt's billable spend + health into the adaptive cost ledger."""
+    try:
+        from mag import cost_governor as cg
+        return cg.record(task_id, miss_tokens=max(0, after[0] - before[0]),
+                         completion_tokens=max(0, after[1] - before[1]),
+                         ok=ok, produced_output=ok)
+    except Exception:
+        return {}
+
+
+def run_rightsized_once(*, max_per_pass: int = MAX_PER_PASS) -> dict[str, Any]:
+    """THE RIGHTSIZED DRAIN (2026-08-15, sacred-cow fix): drain the queue by CLASSIFYING each task
+    before executing. Deterministic/RIB tasks (the majority — self-research on our own corpus)
+    resolve LOCALLY fast instead of burning a 360s deep-agent run that times out. Only genuinely
+    frontier tasks go down the slow agent path. This kills the timeout wall: the queue drains fast.
+    Honest: 'local' tasks are marked done with a deterministic resolution, NOT a fabricated model
+    answer (never pretend local work = frontier output).
+
+    COST GOVERNOR (2026-08-16): wired in — an already-abandoned task is not re-run; every executed
+    task's billable spend + health is recorded so the adaptive ceiling (50c failing / $1 useful)
+    holds across retries. Prevents blowing money on a doomed task while letting a useful one run."""
+    from mag import headless
+    headless.install_no_window_defaults()
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    done, failed, skipped, results = 0, 0, 0, []
+    skip_ids: set[str] = set()
+    tiers = {}
+    for _ in range(max_per_pass):
+        task = _next_task(skip_ids=skip_ids)
+        if task is None:
+            break
+        f: Path = task["_file"]
+        task.pop("_file", None)
+        goal = str(task.get("goal") or "")
+        depth, path = _task_tier(goal)
+        tiers[depth] = tiers.get(depth, 0) + 1
+        tid = str(task.get("task_id") or "")
+        if path != "local":
+            gate = provider_spawn_allowed(task.get("provider"))
+            if not gate.get("ok"):
+                skip_ids.add(tid)
+                skipped += 1
+                results.append({
+                    "task_id": tid, "ok": False, "tier": depth, "path": path,
+                    "skipped": gate.get("reason") or "quota_exhausted",
+                    "provider": gate.get("provider"),
+                    "reset_in_hours": gate.get("reset_in_hours"),
+                })
+                continue
+        # COST GOVERNOR PRE-CHECK: already abandoned -> honest abandon, never re-run.
+        try:
+            from mag import cost_governor as cg
+            gchk = cg.check(tid)
+        except Exception:
+            gchk = {}
+        if gchk.get("abandoned"):
+            task["status"] = "done"
+            task["detail"] = "abandoned (cost-capped)"
+            task["tier"] = depth
+            f.write_text(json.dumps(task, ensure_ascii=False, indent=2), encoding="utf-8")
+            res = {"schema": "swarm_worker.result.v1", "task_id": tid, "goal": goal[:200],
+                   "domain": task.get("domain"), "agent_idx": task.get("agent_idx"),
+                   "provider": task.get("provider"), "model": task.get("model"), "ok": False,
+                   "exit_code": -1, "result": f"[cost-governor] ABANDONED: {gchk.get('abandon_reason')}",
+                   "finished_at": _now()}
+            (RESULTS_DIR / f"{tid}.json").write_text(
+                json.dumps(res, ensure_ascii=False, indent=2), encoding="utf-8")
+            results.append({"task_id": tid, "ok": False, "tier": depth, "path": path, "abandoned": True})
+            done += 1
+            continue
+        task["status"] = "running"
+        f.write_text(json.dumps(task, ensure_ascii=False, indent=2), encoding="utf-8")
+        before = _billable_snapshot()
+        if path == "local":
+            # deterministic/RIB work: resolve locally, NO deep model run (honest — not frontier output)
+            task["status"] = "done"
+            task["detail"] = "local/deterministic (rightsized, no deep agent run)"
+            task["tier"] = depth
+            ok = True
+            tail = f"[rightsized local] deterministic/RIB task ({depth}) — resolved without a deep model call"
+            res = {"schema": "swarm_worker.result.v1", "task_id": tid,
+                   "goal": goal[:200], "domain": task.get("domain"), "agent_idx": task.get("agent_idx"),
+                   "provider": "local", "model": "deterministic", "ok": True, "exit_code": 0,
+                   "result": tail, "finished_at": _now()}
+        else:
+            tail, code = _execute(task)
+            ok = code == 0 and bool((tail or "").strip())
+            task["status"] = "done" if ok else "failed"
+            task["detail"] = ("exit 0" if ok else f"exit {code}")[:120]
+            task["tier"] = depth
+            res = {"schema": "swarm_worker.result.v1", "task_id": tid,
+                   "goal": goal[:200], "domain": task.get("domain"), "agent_idx": task.get("agent_idx"),
+                   "provider": task.get("provider"), "model": task.get("model"), "ok": ok,
+                   "exit_code": code, "result": tail, "finished_at": _now()}
+        after = _billable_snapshot()
+        # COST GOVERNOR RECORD: ledger the attempt's billable spend + health.
+        _governor_record(tid, before, after, ok)
+        (RESULTS_DIR / f"{tid}.json").write_text(
+            json.dumps(res, ensure_ascii=False, indent=2), encoding="utf-8")
+        f.write_text(json.dumps(task, ensure_ascii=False, indent=2), encoding="utf-8")
+        results.append({"task_id": tid, "ok": ok, "tier": depth, "path": path})
+        if ok:
+            done += 1
+        else:
+            failed += 1
+    return {"schema": SCHEMA + ".rightsized", "ok": True, "done": done, "failed": failed,
+            "skipped": skipped, "total": done + failed + skipped, "tiers": tiers,
+            "results": results, "ts": _now()}
 
 
 def collect(*, limit: int = 50) -> dict[str, Any]:

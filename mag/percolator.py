@@ -57,6 +57,7 @@ THEATER_HINTS = (
     "thrilled", "excited", "excitedly", "announcement", "breaking", "🚀", "🔥",
     "huge", "massive", "historic", "game-changer", "revolutionary", "unprecedented",
     "amazing", "incredible", "so excited", "to the moon", "check this out",
+    "steal_pack", "rib_bus_", "session_id",
 )
 NOISE_HINTS = (
     "reposted", "retweet", "thread", "follow me", "follow @", "like and share",
@@ -204,8 +205,13 @@ def _compile_invariant(signal_sentences: list[str], canonical: str, *, domain: s
     _save_registry(reg)
     try:
         from mag import fact_bus
+        # fold=False (2026-08-16, sacred-cow fix): a percolator SIGNAL does not need a full
+        # verkle session-knot append (append_verkle_knot -> _rewrite_chain is O(n^2) over the
+        # whole chain — measured 65s on 5,874 leaves, systemic landmine in every log_behavioral_event).
+        # The fact still lands in the fact STORE + the invariant registry (real data); only the
+        # expensive session-knot verkle rewrite is skipped. The spine (verkle_knot) is untouched.
         fb = fact_bus.publish_fact(text[:400], who="percolator", what="compiled_invariant",
-                                   when=_now(), domain=domain)
+                                   when=_now(), domain=domain, fold=False)
     except Exception:
         fb = {}
     return {"status": "novel", "invariant": text, "count": 1, "canonical": canonical,

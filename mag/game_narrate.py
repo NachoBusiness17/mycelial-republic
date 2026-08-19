@@ -56,7 +56,11 @@ def narrate_scene(
     try:
         from models.providers import chat_provider
 
-        model = (os.environ.get("MAG_GAME_NARRATE_MODEL") or "gemma:2b").strip()
+        # FAST ROUTE (2026-08-15): DeepSeek by default, NOT the slow local GPU (ollama gemma:2b).
+        # Tier T2 so remote is allowed (T0/T1 fail closed for non-local). Override via env.
+        provider = (os.environ.get("MAG_GAME_NARRATE_PROVIDER") or "deepseek").strip()
+        model = (os.environ.get("MAG_GAME_NARRATE_MODEL") or "deepseek-v4-flash").strip()
+        tier = (os.environ.get("MAG_GAME_NARRATE_TIER") or "T2").strip()
         user = (
             "Rewrite as 2 short spoken adventure sentences for voice TTS. "
             "Use ONLY these facts — invent nothing new (no new monsters, rooms, deserts, or treasure).\n\n"
@@ -66,11 +70,11 @@ def narrate_scene(
             "If you cannot stay faithful, repeat the FACTS almost verbatim."
         )
         res = chat_provider(
-            "ollama",
+            provider,
             "You are a tight RPG narrator. No markdown. No RAM/BIOS/settings. Facts only. Two short sentences.",
             user,
             model=model,
-            tier="T1",
+            tier=tier,
             max_tokens=80,
             temperature=0.25,
         )

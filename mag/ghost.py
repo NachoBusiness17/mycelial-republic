@@ -726,45 +726,18 @@ def sense() -> dict[str, Any]:
     state["has_mid_model"] = any("7b" in m.lower() or "8b" in m.lower() for m in state["available_models"])
     state["has_large_model"] = any("32b" in m.lower() or "14b" in m.lower() or "70b" in m.lower() or "9b" in m.lower() or "gemma4" in m.lower() for m in state["available_models"])
 
-    # ── GPU telemetry (AMD ROCm / NVIDIA / fallback) ──
-    state["gpu"] = {"vram_used_pct": None, "temp_c": None, "util_pct": None, "source": "none"}
-    try:
-        import subprocess as _sp
-        # Try rocm-smi first (AMD)
-        r = _sp.run(
-            ["rocm-smi", "--showmeminfo", "vram", "--showuse", "--showtemp", "--json"],
-            capture_output=True, text=True, timeout=8,
-        )
-        if r.returncode == 0 and r.stdout.strip():
-            cards = json.loads(r.stdout)
-            if cards:
-                c = list(cards.values())[0] if isinstance(cards, dict) else cards[0]
-                state["gpu"] = {
-                    "vram_used_pct": round(float(c.get("VRAM", c).get("Used", 0)) / max(float(c.get("VRAM", c).get("Total", 1)), 1) * 100, 1) if isinstance(c, dict) else None,
-                    "temp_c": float(c.get("Temperature", c.get("temp", -1))) if isinstance(c, dict) else None,
-                    "util_pct": float(c.get("GPU", c).get("Use", 0)) if isinstance(c, dict) else None,
-                    "source": "rocm-smi",
-                }
-    except Exception:
-        try:
-            # Fallback: nvidia-smi
-            import subprocess as _sp2
-            r = _sp2.run(
-                ["nvidia-smi", "--query-gpu=memory.used,memory.total,temperature.gpu,utilization.gpu",
-                 "--format=csv,noheader,nounits"],
-                capture_output=True, text=True, timeout=5,
-            )
-            if r.returncode == 0 and r.stdout.strip():
-                parts = r.stdout.strip().split(",")
-                if len(parts) >= 4:
-                    state["gpu"] = {
-                        "vram_used_pct": round(float(parts[0]) / max(float(parts[1]), 1) * 100, 1),
-                        "temp_c": float(parts[2]),
-                        "util_pct": float(parts[3]),
-                        "source": "nvidia-smi",
-                    }
-        except Exception:
-            pass
+    # ── GPU telemetry ──
+    # DEDUP (2026-08-16): state["gpu"] used to shell out to rocm-smi/nvidia-smi a SECOND time every
+    # cadence, duplicating state["gpu_surface"] (which already reads the GPU via gpu_lifecycle — the
+    # canonical source every other module uses). Derive the legacy key from gpu_surface instead, so
+    # sense() does ONE GPU read, not two. Same keys, no consumer break (no external reader of state["gpu"]).
+    _gs = state.get("gpu_surface") or {}
+    state["gpu"] = {
+        "vram_used_pct": _gs.get("vram_used_pct"),
+        "temp_c": _gs.get("temp_c"),
+        "util_pct": _gs.get("util_pct"),
+        "source": _gs.get("source", "none"),
+    }
 
     # ── Ollama model load timing (track switch cost) ──
     state["model_switch_ms"] = None
@@ -975,6 +948,29 @@ def sense_session() -> dict[str, Any]:
             session["has_coding_session"] = False
     else:
         session["has_coding_session"] = False
+
+    # ── ATTENTION — operator focus thread + TODO (folded from retired mag/sense.py, 2026-08-16) ──
+    # The old sense->judge->act loop read assigned/open todos + locus to decide "what next". That
+    # signal is valuable; preserve it in the live session sense so the ghost sees the operator's
+    # focus thread, not just session files. Deterministic $0, fully guarded.
+    try:
+        from mag.policy import load_policy as _load_pol, resolve as _resolve
+        _pol = _load_pol()
+        _todo_path = _resolve(_pol.get("todo_path"))
+        _todo_text = _todo_path.read_text(encoding="utf-8", errors="replace") if _todo_path.is_file() else ""
+        _markers = _pol.get("assigned_markers") or ["[mag]"]
+        _assigned = [ln for ln in _todo_text.splitlines()
+                     if ln.strip().startswith("- [ ]") and any(m in ln for m in _markers)]
+        _open = [ln for ln in _todo_text.splitlines() if ln.strip().startswith("- [ ]")]
+        session["attention"] = {
+            "assigned_n": len(_assigned),
+            "assigned": [ln[5:].strip()[:160] for ln in _assigned][:10],
+            "open_todos_n": len(_open),
+            "locus_exists": (ROOT / "memory" / "locus.md").is_file(),
+            "focus_anchor_exists": (ROOT / "memory" / "attention.md").is_file(),
+        }
+    except Exception as e:
+        session["attention"] = {"ok": False, "error": str(e)[:120]}
 
     # ── Build session keyword signature for vector matching ──
     keywords: list[str] = []

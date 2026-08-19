@@ -68,7 +68,24 @@ ROOMS = {
             "The air is cool and still, the way it is in a crypt that has never been robbed — "
             "everything here is signed, sealed, certain. The floor is the ledger; your every "
             "step is already written. A faint hum rises from below, patient as a heartbeat."),
-        "exits": {"east": "the Mycelial Library", "south": "the Forge-Hive"},
+        "exits": {"east": "the Mycelial Library", "south": "the Forge-Hive",
+                  "west": "the Hall of Shared Supper"},
+    },
+    "the Hall of Shared Supper": {
+        "role": "the one-room slice — the player's first test, the empty chairs",
+        "question": ("What is the single sharpest invariant about how a player chooses to see "
+                     "(or not see) the empty chairs — the thing the hall files about them?"),
+        "prose": (
+            "Six chairs stand empty at a long supper table, and the stew is too kind — "
+            "warm as bread, and Vellum's grant waits unsigned beside each place. Brother "
+            "Vellum, of the Open Hand, smiles a 'Grant of Belonging' and says the counting "
+            "is handled. But if you count the empty chairs, Virtue Marks appear in the "
+            "margin of the ledger. Eat past them and identical tears track the mural. In "
+            "the salt-cellar is a scrap with three names, in the same hand as the roll. "
+            "Hear a phrase twice and the bard's smile thins. Speak the count aloud and "
+            "they come. The hall files which you chose — the world observes what you "
+            "notice, or refuse to notice, and that becomes the record."),
+        "exits": {"east": "the World-Memory"},
     },
     "the Mycelial Library": {
         "role": "where the laws live as readable lore",

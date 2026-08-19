@@ -26,6 +26,10 @@ so I never lose track of it again. THIS IS THE THING TO CODE.
   roguelite on the server-authoritative verkle world (game_world). tier()/tabletop()/mud()/
   roguelite()/descend()/play()/render()/work(). get_errors clean. RIB-debugged: tests caught a real
   `_get()` wrapper bug (get_state returns {value:...}, not the scalar) — FIXED 2026-08-13.
+- PLAYABLE SEAM (2026-08-14): `python main.py game ...` — the human entry point the ramp was
+  missing. status / play <action> / map / render / descend, human-readable (not JSON), routes to
+  game_ramp.play(). Uses the venv python (numpy for the map). Fixed mud movement UX: `go hall`
+  reaches `the hall` (article-flexible) + room display now reflects the current room after a move.
 - THE DFHACK OVERLAY (mag/game_dfhack.py, 2026-08-13): I sit OVERTOP the game like DFHack over
   Dwarf Fortress (operator: "as df hack to dwarf fortress you sit overtop"). status()/force()/
   script()/autoplay()/edit() — deep control, I DRIVE the game not just play it. get_errors clean.
@@ -77,6 +81,8 @@ playable end-to-end, not just a gate.
 - mag/persona_recall.py (stone 1), mag/game_entry.py (stone 2), mag/game_play.py, mag/game_world.py,
   mag/world_rib.py (the render), mag/game_dm_voice.py, docs/PLAN_THE_GAME_VERTICAL_ADOPTION.md.
 - Reuse: world_rib (deterministic field), flock_shader (iMouse attractors), gpu_lifecycle (GPU render).
+- DRIVER RIB (2026-08-14): handoff/GAME_DRIVER_RIB_20260814.md — the heat+leash layer. Any agent
+  drives the game from THIS (loads the corpus + operational law + proof gate). Read it before driving.
 
 ## THE FIRST USER (the beta tester in the wings, now named)
 - @emilmoller4 — the operator's first known future user (post 2026-08-13: "you'll be the first to know

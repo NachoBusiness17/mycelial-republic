@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import json
+import time
 import mimetypes
 import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -411,6 +412,7 @@ def safe_file(rel: str) -> Path | None:
 
 class Handler(BaseHTTPRequestHandler):
     server_version = "MagDashboard/1.0"
+    timeout = 20
 
     def log_message(self, fmt: str, *args) -> None:
         # quieter
@@ -429,6 +431,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(code)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(data)))
+        if "html" in content_type:
+            self.send_header("Cache-Control", "no-store")
         if "pdf" in content_type:
             self.send_header("Content-Disposition", "inline")
         self.end_headers()
@@ -437,6 +441,12 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
         path = parsed.path
+
+        if path in ("/wave", "/wave.html", "/desk", "/desk.html"):
+            wf = STATIC / "wave.html"
+            if not wf.is_file():
+                return self._json(404, {"error": "wave.html missing"})
+            return self._bytes(200, wf.read_bytes(), "text/html; charset=utf-8")
 
         if path in ("/", "/index.html"):
             index = STATIC / "index.html"
@@ -449,12 +459,12 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(404, {"error": "sovereign shell not found"})
             return self._bytes(200, sh.read_bytes(), "text/html; charset=utf-8")
 
-        # Mag Table — system-test dogfood (chat + canvas + voice); Battle Room
-        if path in ("/table", "/table.html", "/play", "/play.html"):
-            tf = STATIC / "table.html"
-            if not tf.is_file():
-                return self._json(404, {"error": "table.html missing"})
-            return self._bytes(200, tf.read_bytes(), "text/html; charset=utf-8")
+        # Text adventure. /table is /wave — not the ASCII board.
+        if path in ("/table", "/table.html", "/play", "/play.html", "/game", "/game.html"):
+            wf = STATIC / "wave.html"
+            if not wf.is_file():
+                return self._json(404, {"error": "wave.html missing"})
+            return self._bytes(200, wf.read_bytes(), "text/html; charset=utf-8")
 
         # Mag Voice — same UI as cast :8766/voice (API on this server too)
         if path in ("/voice", "/voice.html", "/cast-voice.html"):
@@ -487,6 +497,35 @@ class Handler(BaseHTTPRequestHandler):
         # SSE live fleet stream (real-time dashboard, no polling)
         if path == "/api/v1/stream":
             return self._stream_fleet()
+
+        # Table view: file cache only. Importing Mag here wedges the desk (4GB / 39 threads).
+        if path in ("/api/v1/table/view", "/api/table/view"):
+            import subprocess
+            import sys as _sys
+            q = {k: (v[0] if v else "") for k, v in parse_qs(parsed.query).items()}
+            cache = ROOT / "memory" / "working" / "table_view.json"
+            out = None
+            try:
+                if cache.is_file() and (time.time() - cache.stat().st_mtime) < 8:
+                    out = json.loads(cache.read_text(encoding="utf-8"))
+            except Exception:
+                out = None
+            if out is None:
+                try:
+                    blob = subprocess.check_output(
+                        [_sys.executable, "-m", "mag.table_view_cache", str(q.get("campaign_id") or "")],
+                        cwd=str(ROOT),
+                        timeout=4,
+                    )
+                    out = json.loads(blob.decode("utf-8") or "{}")
+                except Exception as exc:
+                    try:
+                        out = json.loads(cache.read_text(encoding="utf-8")) if cache.is_file() else None
+                    except Exception:
+                        out = None
+                    if out is None:
+                        out = {"ok": True, "title": "table", "grid_text": "#\n@\n#", "error": str(exc)[:160]}
+            return self._json(200, out if isinstance(out, dict) else {"ok": True})
 
         # Prefer RESTful dispatch table (v1 + legacy aliases)
         if path.startswith("/api/"):
@@ -765,12 +804,50 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
 
-def run(host: str = DEFAULT_HOST, port: int = DEFAULT_PORT) -> None:
-    from config import print_bind_banner
+class _TLSServer(ThreadingHTTPServer):
+    """Wrap each accept, not the listen socket. Android RST on listen-wrap."""
+
+    def __init__(self, addr, handler, ctx):
+        super().__init__(addr, handler)
+        self._tls_ctx = ctx
+
+    def get_request(self):
+        import ssl as _ssl
+        sock, addr = self.socket.accept()
+        try:
+            return self._tls_ctx.wrap_socket(sock, server_side=True), addr
+        except _ssl.SSLError:
+            try:
+                sock.close()
+            except Exception:
+                pass
+            raise
+
+
+def run(host: str = DEFAULT_HOST, port: int = DEFAULT_PORT, *, tls: bool = False) -> None:
+    """Serve the desk. tls=True so a phone mic is a secure context."""
+    import ssl
+    from config import ROOT, print_bind_banner
 
     STATIC.mkdir(parents=True, exist_ok=True)
-    httpd = ThreadingHTTPServer((host, port), Handler)
+    # tls only when asked. LAN HTTP must load on a phone; HTTPS via tunnel.
+    scheme = "http"
+    ctx = None
+    if tls:
+        crt = ROOT / "memory" / "tls" / "lan.crt"
+        key = ROOT / "memory" / "tls" / "lan.key"
+        if not crt.is_file() or not key.is_file():
+            raise SystemExit("tls requested but memory/tls/lan.crt missing")
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ctx.minimum_version = ssl.TLSVersion.TLSv1_2
+        ctx.load_cert_chain(str(crt), str(key))
+        httpd = _TLSServer((host, port), Handler, ctx)
+        scheme = "https"
+    else:
+        httpd = ThreadingHTTPServer((host, port), Handler)
+    httpd.daemon_threads = True
     print_bind_banner(host=host, port=port)
+    print(f"  scheme:    {scheme}")
     print(f"  biography: {BIO}")
     print(f"  ingest:    {INGEST}")
     print("Ctrl+C to stop.")

@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-store" />
+  <title>Mag — standing wave</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #111111;
+      --ink: #f2f2f2;
+      --mute: #8a8a8a;
+      --rule: #3a3a3a;
+      --accent: #e10600;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin:0; background:var(--bg); color:var(--ink);
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      font-size: 22px; line-height: 1.45; font-weight: 400; }
+    footer { display:flex; align-items: baseline; gap: 1.25rem;
+      padding: 0.35rem 1.5rem; border-top: 1px solid var(--rule); }
+    footer h1 { margin:0; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.18em;
+      text-transform: uppercase; }
+    footer .inv { margin:0; font-size: 0.7rem; color:var(--mute); flex:1;
+      overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+    nav { font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; }
+    nav a { color:var(--ink); text-decoration:none; margin-left: 0.75rem; }
+    nav a:hover { text-decoration: underline; }
+    .hud { display:grid; grid-template-columns: 1fr 18rem;
+      grid-template-rows: auto auto 1fr auto;
+      min-height: calc(100vh - 2.2rem); column-gap: 1.5rem; padding: 0 1.5rem; }
+    @media (max-width: 900px) { .hud { grid-template-columns: 1fr; } }
+    .frame { background: transparent; border: 0; border-bottom: 1px solid var(--rule);
+      padding: 1rem 0 1.1rem; }
+    .k { color:var(--mute); font-size: 0.65rem; letter-spacing: 0.16em;
+      text-transform: uppercase; font-weight: 700; margin: 0 0 0.45rem; }
+    #stage { grid-column:1; grid-row:1; display:flex; flex-direction:column;
+      border-right: 1px solid var(--rule);
+      padding: 0.75rem 1.5rem 1rem 0; min-height: 0; }
+    #quest { grid-column:2; grid-row:1; }
+    #who { grid-column:2; grid-row:2; }
+    #chat { grid-column:1; grid-row:2 / span 2; display:flex; flex-direction:column; min-height: 0; }
+    #bags { grid-column:2; grid-row:3; display:flex; flex-direction:column; min-height: 0; }
+    #bar { grid-column:1 / span 2; grid-row:4; border-top: 1px solid var(--rule);
+      border-bottom: 0; display:flex; flex-wrap:wrap; align-items:center;
+      gap: 0.75rem 1.2rem; padding: 0.45rem 0 0.7rem; }
+    #bar .k { display:none; }
+    #unit { border:0; padding:0; display:flex; align-items:baseline; gap: 0.55rem; }
+    #unit .name { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; }
+    #unit .hpbar { width: 5.5rem; margin: 0; height: 3px; }
+    #unit .hptext { font-size: 0.7rem; }
+    #seats { border:0; padding:0; }
+    #seatlist { display:flex; gap: 0.7rem; align-items:center; }
+    .party-light { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink); }
+    .party-light::before { content:""; display:inline-block; width:0.4rem; height:0.4rem;
+      background: var(--ink); margin-right: 0.3rem; vertical-align: middle; }
+    .name { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.02em; }
+    .hpbar { height: 4px; background: var(--rule); margin: 0.5rem 0 0.35rem; }
+    .hpfill { height: 100%; background: var(--ink); }
+    .hptext { font-size: 0.8rem; color: var(--mute); letter-spacing: 0.04em; }
+    .title { font-size: 2.4rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1.05; margin: 0 0 0.75rem; }
+    #graph { background: transparent; border: 0; min-height: 8rem; overflow: hidden; cursor: default; } #gpu { display:none; width:100%; height:8rem; } body.gpu #gpu { display:block; } body.gpu #graph { display:none; }
+    #graph text.exit { cursor: pointer; }
+    .passage { font-size: 1.45rem; line-height: 1.5; max-width: 44rem; }
+    .hook { color: var(--mute); margin-top: 0.5rem; }
+    .compass { display:grid; grid-template-columns: 2.2rem 2.2rem 2.2rem auto; gap: 0; margin: 0.6rem 0 0.9rem; width: max-content; }
+    .compass button { background: transparent; border: 0; border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+      color: var(--mute); padding: 0.45rem 0; cursor: default; font: 0.7rem/1 Helvetica, Arial, sans-serif;
+      letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; min-width: 2.2rem; }
+    .compass button.live { color: var(--ink); cursor: pointer; }
+    .compass button.live:hover { text-decoration: underline; }
+    .compass .ud { border-right: 0; padding-left: 0.8rem; color: var(--mute); }
+    .log { flex:1; overflow: auto; font-size: 1.4rem; line-height: 1.5; min-height: 12rem; }
+    .you { margin: 0.35rem 0; } .mag { margin: 0.35rem 0; color: var(--mute); }
+    .sys { margin: 0.35rem 0; color: var(--mute); font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; }
+    form { display:flex; gap: 0; margin-top: 0.75rem; border-top: 1px solid var(--rule); padding-top: 0.6rem; }
+    input { flex:1; background: transparent; border: 0; color: var(--ink); padding: 0.9rem 0; font-size: 1.45rem; font-family: inherit; }
+    input:focus { outline: none; }
+    button.send.on { color: var(--accent); }
+    button.send { background: transparent; border: 0; border-left: 1px solid var(--rule);
+      color: var(--ink); padding: 0.35rem 0.8rem; cursor: pointer; font: 0.7rem/1 Helvetica, Arial, sans-serif;
+      letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; }
+    .bar-row { display:flex; flex-wrap: wrap; gap: 0; }
+    .act { background: transparent; border: 0; border-right: 1px solid var(--rule); color: var(--ink);
+      padding: 0.55rem 0.9rem; cursor: pointer; font: 0.7rem/1 Helvetica, Arial, sans-serif;
+      letter-spacing: 0.06em; text-transform: uppercase; font-weight: 700; }
+    .act:hover { text-decoration: underline; }
+    .who-row { display:flex; justify-content: space-between; gap: 0.5rem; padding: 0.2rem 0;
+      font-size: 0.9rem; border-bottom: 1px solid var(--rule); }
+    button.who-row { background:transparent; border:0; border-bottom:1px solid var(--rule);
+      color:inherit; width:100%; text-align:left; cursor:pointer; font:inherit; padding:0.35rem 0; }
+    button.who-row:hover span:first-child { text-decoration: underline; }
+    .down { color: var(--accent); } .up { color: var(--mute); }
+    #baglist { display:grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--rule); }
+    .bag { display:block; padding: 1rem 0.75rem; margin: 0; border: 0;
+      border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+      font-size: 1.2rem; cursor: pointer; background: transparent; color: inherit;
+      font-family: inherit; text-align: left; }
+    .bag:hover { text-decoration: underline; }
+    .bag + .bag::before { content: none; }
+    .hot { background:transparent; border:0; padding:0; color:inherit; font:inherit;
+      cursor:pointer; text-decoration: underline; text-underline-offset: 0.18em; }
+    .paths { display:flex; flex-wrap:wrap; gap: 0.55rem 1.1rem; margin: 0.35rem 0 0.85rem; max-width: 44rem; }
+    .paths button { background:transparent; border:0; padding:0; color:var(--ink); font:inherit;
+      cursor:pointer; text-decoration: underline; text-underline-offset: 0.18em; font-size: 1.2rem; }
+    .paths button:hover { color: var(--mute); }
+    .compass { display:flex; flex-wrap:wrap; gap: 0; margin: 0.6rem 0 0.9rem; }
+    .story { display:flex; flex-direction:column; min-height:0; flex:1; overflow:auto; }
+    .saga { color: var(--mute); font-size: 1.05rem; line-height: 1.45; margin: 0 0 0.85rem; max-width: 44rem; }
+    button.send { touch-action: manipulation; }
+    .act { touch-action: manipulation; min-height: 2.4rem; }
+    @media (max-width: 900px) {
+      html, body { height: 100dvh; overflow: hidden; }
+      .hud {
+        display: flex; flex-direction: column;
+        height: 100dvh; min-height: 0; padding: 0 0.85rem;
+        overflow: hidden; column-gap: 0;
+      }
+      footer { display: none; }
+      #quest, #who, #bags { display: none; }
+      #graph, #gpu { display: none !important; }
+      #stage {
+        flex: 0 0 auto; border: 0; border-right: 0;
+        padding: 0.5rem 0 0; min-height: 0;
+      }
+      .title { font-size: 1.25rem; margin: 0 0 0.25rem; }
+      .compass { margin: 0.25rem 0 0.4rem; }
+      #chat {
+        flex: 1 1 auto; min-height: 0; overflow: hidden;
+        display: flex; flex-direction: column;
+        padding: 0; border: 0;
+      }
+      #chat > .k { display: none; }
+      .story {
+        flex: 1 1 auto; min-height: 0; overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        touch-action: pan-y;
+      }
+      .passage { font-size: 1.15rem; max-width: none; }
+      .log { flex: none; min-height: 0; overflow: visible; font-size: 1.1rem; }
+      form { flex: 0 0 auto; margin-top: 0.4rem; padding-top: 0.4rem; }
+      input { font-size: 1.15rem; padding: 0.7rem 0; }
+      #bar {
+        flex: 0 0 auto; position: sticky; bottom: 0;
+        background: var(--bg); z-index: 3;
+        padding: 0.3rem 0 calc(0.45rem + env(safe-area-inset-bottom));
+        gap: 0.4rem 0.6rem;
+      }
+      .act { min-height: 2.75rem; padding: 0.7rem 0.75rem; font-size: 0.72rem; }
+      #ptt { min-width: 4.2rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="hud">
+    <section class="frame" id="stage">
+      <h2 class="title" id="room">lantern</h2>
+      <div id="graph"></div><canvas id="gpu" aria-label="webgl room"></canvas>
+      <div class="compass" id="compass" aria-label="exits"></div>
+    </section>
+    <section class="frame" id="quest"><div class="k">quest</div><div id="qtext">—</div></section>
+    <section class="frame" id="who"><div class="k">room</div><div id="wholist"></div></section>
+    <section class="frame" id="chat">
+      <div class="k">story so far</div>
+      <div class="story" id="story">
+        <div class="saga" id="saga"></div>
+        <div class="passage" id="passage"></div>
+        <div class="log" id="log"></div>
+      </div>
+      <form id="talk"><input id="line" autocomplete="off" placeholder="look · talk · take" enterkeyhint="send" /><button class="send" type="button" id="ptt">talk</button><button class="send" type="submit">send</button></form>
+    </section>
+    <section class="frame" id="bags"><div class="k">bags</div><div id="baglist"></div></section>
+    <section class="frame" id="bar">
+      <section id="unit"><div class="k">vitals</div><div class="name" id="uname">—</div><div class="hpbar"><div class="hpfill" id="hpfill" style="width:0%"></div></div><div class="hptext" id="hptext"></div></section>
+      <div id="seats"><div class="k">party</div><div id="seatlist"></div></div>
+      <div class="bar-row" id="barrow"></div>
+    </section>
+  </div>
+  <footer>
+    <h1>standing wave</h1>
+    <nav><a href="/wave">wave</a><a href="/table">lantern</a><a href="/">chat</a><a href="/voice">voice</a><a href="/seat">seat</a></nav>
+    <div class="inv" id="doctrine">the relation persists · the model is interchangeable · the chain is the ground truth</div>
+  </footer>
+  <script src="/static/wave_scene.js"></script>
+  <script>
+    const sid = (function () {
+      try {
+        const k = "mag-wave-sid";
+        let v = sessionStorage.getItem(k);
+        if (!v) { v = "wave-" + Math.random().toString(36).slice(2, 10); sessionStorage.setItem(k, v); }
+        return v;
+      } catch (_) { return "wave-" + Math.random().toString(36).slice(2, 10); }
+    })();
+    const hist = [];
+    let histI = -1;
+    const liveExits = new Set();
+    let lastSpeak = "";
+
+    function add(who, text) {
+      if (!text) return;
+      const d = document.createElement("div");
+      d.className = who;
+      d.textContent = (who === "sys" ? text : who + ": " + text);
+      log.appendChild(d);
+      while (log.childNodes.length > 200) log.removeChild(log.firstChild);
+      const storyEl = document.getElementById("story");
+      if (storyEl) storyEl.scrollTop = storyEl.scrollHeight;
+      else log.scrollTop = log.scrollHeight;
+    }
+    function goDir(d) {
+      const x = (d || "").toLowerCase();
+      if (x === "look" || x === "here") return sendLine("look");
+      return sendLine("go " + x);
+    }
+    function sendLine(text) {
+      if (!text) return;
+      hist.push(text);
+      histI = hist.length;
+      add("you", text);
+      return fetch("/api/v1/voice/turn", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, session_id: sid, channel: "table", lane: "voice", conversation: true })
+      }).then(r => r.json()).then(j => {
+        const beat = (j.answer || j.speak_text || j.error || "").toString().trim();
+        lastSpeak = beat;
+        add("mag", beat.slice(0, 480));
+        paintPaths(j.choices || []);
+        return refresh();
+      });
+    }
+    function paintPaths(choices) {
+      document.querySelectorAll(".paths").forEach(el => el.remove());
+      const rows = Array.isArray(choices) ? choices.slice(0, 4) : [];
+      if (!rows.length) return;
+      const row = document.createElement("div");
+      row.className = "paths";
+      rows.forEach(c => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = c.label || c.text || "";
+        b.addEventListener("click", () => sendLine(c.text || c.label || ""));
+        row.appendChild(b);
+      });
+      log.appendChild(row);
+      const storyEl = document.getElementById("story");
+      if (storyEl) storyEl.scrollTop = storyEl.scrollHeight;
+      else log.scrollTop = log.scrollHeight;
+    }
+    function paintCompass(exits) {
+      liveExits.clear();
+      compass.innerHTML = "";
+      (exits || []).forEach(e => {
+        const x = String(e).toLowerCase();
+        liveExits.add(x);
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "live";
+        b.textContent = x;
+        b.addEventListener("click", () => goDir(x));
+        compass.appendChild(b);
+      });
+    }
+    function paintPassage(text, spotsIn) {
+      const raw = text || "";
+      const spots = (spotsIn && spotsIn.length) ? spotsIn.map(s => [s.word, s.act]) : [
+        ["stranger", "talk to stranger"], ["barkeep", "talk to barkeep"],
+        ["fire", "look fire"], ["keep", "look keep"], ["cart", "look cart"]
+      ];
+      let html = raw.replace(/[&<>]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[ch]));
+      spots.forEach(([word, act]) => {
+        const re = new RegExp("\\b(" + word.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&") + ")\\b");
+        html = html.replace(re, (m) => '<button type="button" class="hot" data-act="' + act + '">' + m + "</button>");
+      });
+      passage.innerHTML = html;
+    }
+    function paintSaga(text) {
+      const el = document.getElementById("saga");
+      if (!el) return;
+      el.textContent = text || "";
+    }
+    let inflight = false;
+    let voiceUnlocked = false;
+    function unlockVoice() {
+      if (voiceUnlocked) return;
+      voiceUnlocked = true;
+      try { window.speechSynthesis && window.speechSynthesis.speak(new SpeechSynthesisUtterance(" ")); } catch (_) {}
+    }
+    document.addEventListener("pointerdown", unlockVoice);
+    async function refresh() {
+      if (inflight) return;
+      inflight = true;
+      try {
+      const r = await fetch("/api/v1/wave?session_id=" + encodeURIComponent(sid));
+      const j = await r.json();
+      if (j.doctrine) doctrine.textContent = j.doctrine;
+      const t = j.table || {};
+      room.textContent = t.title || "lantern";
+      const rend = j.render || {};
+      if (rend.room_svg) {
+        graph.style.display = "";
+        (window.mountRoomSvg ? window.mountRoomSvg(rend.room_svg) : (graph.innerHTML = rend.room_svg));
+      } else {
+        graph.innerHTML = "";
+        graph.style.display = "none";
+      }
+      const n = j.narrative || {};
+      const f = j.frames || {};
+      paintSaga(n.story_so_far || "");
+      paintPassage(n.interior || "", f.hotspots);
+      paintCompass(n.exits || []);
+      const u = f.unit || {};
+      uname.textContent = (u.name || "unseated") + (u.archetype ? " · " + u.archetype : "");
+      if (u.hp == null || u.name === "unseated") {
+        hpfill.style.width = "0%";
+        hptext.textContent = "unseated";
+      } else {
+        hpfill.style.width = (u.hp_pct || 0) + "%";
+        hptext.textContent = u.hp + " / " + u.hp_max + " HP";
+      }
+      qtext.textContent = f.quest || "—";
+      baglist.innerHTML = "";
+      (f.bags || []).forEach(item => {
+        const s = document.createElement("button");
+        s.type = "button";
+        s.className = "bag";
+        s.textContent = item;
+        s.addEventListener("click", () => sendLine("look " + item));
+        baglist.appendChild(s);
+      });
+      wholist.innerHTML = "";
+      (f.who || []).forEach(w => {
+        const row = document.createElement(w.talkable ? "button" : "div");
+        if (w.talkable) row.type = "button";
+        row.className = "who-row";
+        const a = document.createElement("span");
+        a.textContent = w.name || "?";
+        const b = document.createElement("span");
+        b.className = "up";
+        b.textContent = w.talkable ? "talk" : (w.role || "here");
+        row.appendChild(a); row.appendChild(b);
+        if (w.talkable) {
+          const nm = w.name || "them";
+          row.addEventListener("click", () => sendLine("talk to " + nm));
+        }
+        wholist.appendChild(row);
+      });
+      seatlist.innerHTML = "";
+      (f.seats || []).filter(w => w.ok).forEach(w => {
+        const row = document.createElement("span");
+        row.className = "party-light";
+        row.textContent = w.seat || "?";
+        seatlist.appendChild(row);
+      });
+      barrow.innerHTML = "";
+      (f.bar || []).forEach(act => {
+        const b = document.createElement("button");
+        b.className = "act";
+        b.type = "button";
+        b.textContent = act.label;
+        b.addEventListener("click", () => sendLine(act.text));
+        barrow.appendChild(b);
+      });
+      /* Room lives in the passage. Log is action beats only. */
+      } finally { inflight = false; }
+    }
+    function onRoomClick(e) {
+      const el = e.target && e.target.closest ? e.target.closest("[data-talk],[data-look],[data-exit]") : null;
+      if (!el) return;
+      e.preventDefault();
+      if (el.getAttribute("data-talk")) return sendLine("talk to " + el.getAttribute("data-talk"));
+      if (el.getAttribute("data-look")) return sendLine("look " + el.getAttribute("data-look"));
+      const d = el.getAttribute("data-exit");
+      if (d) goDir(d);
+    }
+    graph.addEventListener("click", onRoomClick);
+    const stageEl = document.getElementById("stage");
+    if (stageEl) stageEl.addEventListener("click", onRoomClick);
+    passage.addEventListener("click", (e) => {
+      const el = e.target && e.target.closest ? e.target.closest("[data-act]") : null;
+      if (el) sendLine(el.getAttribute("data-act"));
+    });
+    talk.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const text = line.value.trim();
+      line.value = "";
+      histI = hist.length;
+      sendLine(text);
+    });
+    line.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        if (!hist.length) return;
+        histI = Math.max(0, histI - 1);
+        line.value = hist[histI] || "";
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        histI = Math.min(hist.length, histI + 1);
+        line.value = histI >= hist.length ? "" : (hist[histI] || "");
+      }
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.target === line && line.value) return;
+      if (e.target && e.target.tagName === "INPUT") return;
+      const map = { n:"north", s:"south", e:"east", w:"west", u:"up", d:"down" };
+      const dir = map[e.key];
+      if (!dir) return;
+      if (!liveExits.has(dir) && !liveExits.has(e.key)) return;
+      e.preventDefault();
+      goDir(liveExits.has(dir) ? dir : e.key);
+    });
+
+        const ptt = document.getElementById("ptt");
+    function blobToBase64(blob) {
+      return new Promise((resolve, reject) => {
+        const fr = new FileReader();
+        fr.onload = () => resolve(String(fr.result || ""));
+        fr.onerror = () => reject(fr.error || new Error("read failed"));
+        fr.readAsDataURL(blob);
+      });
+    }
+    let mediaStream = null, mediaRec = null, mediaChunks = [];
+    const canMic = !!(window.isSecureContext && navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+    async function pttStart() {
+      if (mediaRec) return;
+      try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+      } catch (err) {
+        add("sys", "mic blocked — tap a verb, or type. " + (err && err.message ? err.message : "no mic"));
+        return;
+      }
+      mediaChunks = [];
+      const mime = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm"
+        : (MediaRecorder.isTypeSupported("audio/mp4") ? "audio/mp4" : "");
+      mediaRec = mime ? new MediaRecorder(mediaStream, { mimeType: mime }) : new MediaRecorder(mediaStream);
+      mediaRec.ondataavailable = ev => { if (ev.data && ev.data.size) mediaChunks.push(ev.data); };
+      mediaRec.start();
+      ptt.classList.add("on");
+      ptt.textContent = "stop";
+    }
+    async function pttStop() {
+      if (!mediaRec) return;
+      const rec = mediaRec;
+      mediaRec = null;
+      await new Promise(res => { rec.onstop = res; try { rec.stop(); } catch (_) { res(); } });
+      (mediaStream && mediaStream.getTracks() || []).forEach(tr => tr.stop());
+      mediaStream = null;
+      ptt.classList.remove("on");
+      ptt.textContent = "talk";
+      if (!mediaChunks.length) return;
+      const blob = new Blob(mediaChunks, { type: rec.mimeType || "audio/webm" });
+      const ext = (blob.type || "").includes("mp4") ? "m4a" : "webm";
+      try {
+        const b64 = await blobToBase64(blob);
+        const r = await fetch("/api/v1/voice/stt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ data: b64, filename: "clip." + ext, language: "en" })
+        });
+        const j = await r.json();
+        const text = (j.text || "").trim();
+        if (text) sendLine(text);
+        else add("sys", "heard nothing");
+      } catch (err) {
+        add("sys", "stt failed");
+      }
+    }
+    async function pttToggle(e) {
+      e.preventDefault();
+      if (mediaRec) return pttStop();
+      if (!canMic) {
+        add("sys", "mic needs HTTPS — tap a verb, or type");
+        return;
+      }
+      return pttStart();
+    }
+    if (ptt) {
+      ptt.addEventListener("click", pttToggle);
+      if (!canMic) {
+        ptt.textContent = "type";
+        ptt.title = "mic needs HTTPS";
+      }
+    }
+    async function boot() {
+      add("sys", "story so far · tap a verb");
+      await refresh();
+      if (!(passage.textContent || "").trim() || (room.textContent || "").indexOf("Void") >= 0) {
+        try {
+          await fetch("/api/v1/game", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "start", module: "classic", session_id: sid })
+          });
+        } catch (_) {}
+        await refresh();
+      }
+    }
+    boot(); /* gpu module below */
+    setInterval(refresh, 4000);
+  </script>
+</body>
+</html>

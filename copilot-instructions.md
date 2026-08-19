@@ -33,3 +33,29 @@ Then dispatch per the route.
   reading artifacts, integration checks, dry runs). Route via ghost, never a terminal spawn.
 - Honesty: if it doesn't match its RIB, fix it or flag it — never claim "done" if unverified.
 - This is the module-level false-success guard: every "done" is checked against its spec.
+
+## STEER-FIRST, NOT PATCH-FIRST (standing law, 2026-08-16 — the operator's recurring correction)
+The operator has had to re-teach this class repeatedly: an agent reaches for a WORKAROUND
+(failover, retry, fallback, band-aid) when the right move is to NAME THE REAL CONSTRAINT first.
+It "lands on deaf ears" because it lives in memory/conversation, not in this standing default.
+THE LAW — before adding ANY workaround / failover / retry / fallback / graceful-degradation, STOP and:
+  1. NAME THE REAL CONSTRAINT — what is the actual thing being hit (a hard cap? a scope? a cost?
+     a fragility?), and is this fix addressing THAT or papering over a symptom?
+  2. CHECK SCOPE — is the constraint global (all of X) or per-resource (per-key/per-account)? A
+     global cap defeats failover-within-the-same-resource; a per-resource cap is exactly what
+     failover solves. Confirm which BEFORE touching failover.
+  3. PREFER THE ROOT FIX — rightsize / gate / route around the real constraint, not a band-aid
+     that stops the work or hides the failure.
+  4. IF IT'S A RECURRENCE OF A KNOWN CORRECTION — do NOT re-derive it; route it through
+     recurrence_gate so the loop auto-opens the guard instead of costing the operator a third
+     correction.
+This is the steering law: point at the real constraint and let the fix derive from it.
+
+## Jupyter / kernel (standing law, 2026-08-14)
+- Interpreter is ONLY ${workspaceFolder}/.venv/Scripts/python.exe. Never the uv cpython on PATH, never Hermes venv.
+- NEVER 
+ib_bus.publish_rib(..., fold=True) or sync Playwright/connect_over_cdp **inside an ipykernel cell**. The kernel is already in asyncio; fold walks the verkle chain and hangs the notebook. Use old=False in-cell, or python -m mag.cdp_runner / python -m mag.rib_bus as a **subprocess** (cdp_runner exists for this).
+- If a notebook hangs: do not spawn a second kernel against the same runtime json. Interrupt/restart the one kernel. Duplicate ipykernel on one kernel-v3*.json is the hang.
+- Ghost custom agent tools are 
+ead, search, execute Mag modules. Do not reach for generic terminal/python main.py/host CDP into the operator native ChatGPT/Grok windows.
+

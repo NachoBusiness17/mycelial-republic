@@ -21,7 +21,9 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from fastapi import FastAPI, HTTPException  # noqa: E402
+from fastapi import FastAPI, HTTPException, Request  # noqa: E402
+from fastapi.responses import FileResponse, JSONResponse  # noqa: E402
+from fastapi.staticfiles import StaticFiles  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
 
 from config import bind_host  # noqa: E402
@@ -105,6 +107,41 @@ def run_task(req: RunTaskRequest) -> RunTaskResponse:
             result={"exception": True},
         )
 
+
+
+WAVE_HTML = ROOT / "dashboard" / "static" / "wave.html"
+STATIC_DIR = ROOT / "dashboard" / "static"
+
+
+@app.get("/wave")
+def wave_page():
+    """Desk face. Same bytes the ThreadingHTTPServer served. One FastAPI process."""
+    if not WAVE_HTML.is_file():
+        raise HTTPException(404, "wave.html missing")
+    return FileResponse(WAVE_HTML, headers={"Cache-Control": "no-store"})
+
+
+@app.get("/api/v1/wave")
+def wave_get(session_id: str = ""):
+    from mag.wave import snapshot
+    return snapshot(session_id=session_id)
+
+
+@app.post("/api/v1/voice/turn")
+async def voice_turn(request: Request):
+    from mag.table_turn import handle
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    if not isinstance(body, dict):
+        body = {}
+    return handle(body)
+
+
+
+if STATIC_DIR.is_dir() and not any(getattr(r, "path", "") == "/static" for r in app.routes):
+    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 def main(argv: list[str] | None = None) -> int:
     # Windows detached spawn uses cp1252 stderr; startup print must not crash.

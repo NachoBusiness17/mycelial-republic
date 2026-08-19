@@ -20,6 +20,8 @@ from config import ROOT
 
 STATE_PATH = ROOT / "logs" / "quota_state.json"
 USAGE_DETAIL = ROOT / "logs" / "provider_usage.jsonl"
+# (provider, period_start, period_end, mtime_ns, size) -> (billable_tokens, calls)
+_BILLABLE_CACHE: dict[tuple, tuple[int, int]] = {}
 
 
 def _now() -> datetime:
@@ -84,7 +86,18 @@ def record_usage(
     latency_ms: int = 0,
     meta: dict | None = None,
 ) -> None:
-    total_tok = int(prompt_tokens or 0) + int(completion_tokens or 0)
+    # Billable tokens: count only cache MISS + completion against quota caps.
+    # Cache HIT tokens cost ~$0.0028/M (near free) vs $0.14/M miss — counting
+    # hits as full spend tripped the daily cap at 00:25 on ~96%-hit traffic
+    # and falsely blocked the whole research lane (quota_state 1,009,217 tok
+    # on the moonshot run = cache hits, not real cost). The guardrail must
+    # measure dollars, and hit tokens are ~0 dollars. Safe default: when no
+    # cache split is provided, count the full prompt as billable (miss=prompt).
+    has_split = bool(cache_hit_tokens) or bool(cache_miss_tokens)
+    if has_split:
+        total_tok = int(cache_miss_tokens or 0) + int(completion_tokens or 0)
+    else:
+        total_tok = int(prompt_tokens or 0) + int(completion_tokens or 0)
     # estimate if missing
     if total_tok <= 0 and meta and meta.get("chars"):
         total_tok = max(1, int(meta["chars"]) // 4)
@@ -151,6 +164,7 @@ def record_usage(
     with USAGE_DETAIL.open("a", encoding="utf-8") as f:
         f.write(json.dumps(row, default=str) + "\n")
 
+    _BILLABLE_CACHE.clear()
     try:
         from mag.lanes import log_usage
 
@@ -163,6 +177,66 @@ def record_usage(
         )
     except Exception:
         pass
+
+
+def _row_billable_tokens(row: dict[str, Any]) -> int:
+    """Billable tokens for one usage row: cache MISS + completion.
+
+    Cache hits are near-free and must not trip the Mag cap. Rows without a
+    hit/miss split fall back to the recorded tokens field (legacy).
+    """
+    hits = int(row.get("cache_hit_tokens") or 0)
+    miss = int(row.get("cache_miss_tokens") or 0)
+    comp = int(row.get("completion_tokens") or 0)
+    if hits or miss:
+        return max(0, miss) + max(0, comp)
+    return int(row.get("tokens") or 0) or (
+        int(row.get("prompt_tokens") or 0) + max(0, comp)
+    )
+
+
+def period_billable(provider_id: str, start: datetime, end: datetime) -> dict[str, Any] | None:
+    """Sum billable spend for a provider in [start, end) from usage jsonl."""
+    if not USAGE_DETAIL.is_file():
+        return None
+    try:
+        st = USAGE_DETAIL.stat()
+        key = (provider_id, start.isoformat(), end.isoformat(), st.st_mtime_ns, st.st_size)
+    except OSError:
+        return None
+    cached = _BILLABLE_CACHE.get(key)
+    if cached is not None:
+        return {"tokens": cached[0], "calls": cached[1], "source": "usage_billable"}
+    billable = calls = 0
+    try:
+        with USAGE_DETAIL.open(encoding="utf-8", errors="replace") as fh:
+            for line in fh:
+                if not line.strip():
+                    continue
+                try:
+                    row = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if row.get("provider") != provider_id:
+                    continue
+                ts = row.get("ts")
+                if not ts:
+                    continue
+                try:
+                    dt = datetime.fromisoformat(str(ts).replace("Z", "+00:00"))
+                except ValueError:
+                    continue
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                if dt < start or dt >= end:
+                    continue
+                calls += int(row.get("calls") or 1)
+                billable += _row_billable_tokens(row)
+    except OSError:
+        return None
+    _BILLABLE_CACHE.clear()
+    _BILLABLE_CACHE[key] = (billable, calls)
+    return {"tokens": billable, "calls": calls, "source": "usage_billable"}
 
 
 def provider_budget(provider_id: str) -> dict[str, Any]:
@@ -184,8 +258,18 @@ def provider_budget(provider_id: str) -> dict[str, Any]:
                     prov = {"calls": 0, "tokens": 0}
             except ValueError:
                 pass
-    used_c = int(prov.get("calls") or 0)
-    used_t = int(prov.get("tokens") or 0)
+    ledger_c = int(prov.get("calls") or 0)
+    ledger_t = int(prov.get("tokens") or 0)
+    # Constraint: Mag period cap in providers.yaml. Check billable spend
+    # (usage jsonl), not the dirty quota_state token total that mixed cache hits.
+    billed = period_billable(provider_id, start, end)
+    if billed is not None:
+        used_c = int(billed["calls"])
+        used_t = int(billed["tokens"])
+        usage_source = "usage_billable"
+    else:
+        used_c, used_t = ledger_c, ledger_t
+        usage_source = "quota_state"
     max_c = q.get("max_calls")
     max_t = q.get("max_tokens")
     unlimited = period in ("none", "unlimited") or (max_c is None and max_t is None)
@@ -210,6 +294,9 @@ def provider_budget(provider_id: str) -> dict[str, Any]:
         "reset_in_hours": round(seconds_left / 3600, 1),
         "used_calls": used_c,
         "used_tokens": used_t,
+        "ledger_calls": ledger_c,
+        "ledger_tokens": ledger_t,
+        "usage_source": usage_source,
         "max_calls": max_c,
         "max_tokens": max_t,
         "remaining_calls": rem_c,

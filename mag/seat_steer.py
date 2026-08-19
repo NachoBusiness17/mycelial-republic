@@ -45,21 +45,106 @@ SURFACE_DRIVERS = {
     "grok": ("grok_bot", "grok"),
     "grok_x": ("grok_bot", "x"),
     "deepseek": ("browser_driver", "deepseek"),
+    "chatgpt_desktop": ("chatgpt_desktop", ""),
+    "grok_desktop": ("grok_desktop", ""),
+    "saelis": ("saelis_seat", ""),
 }
+
+# Human-facing party labels, historical names, and native-window names all collapse to one
+# canonical transport key. This closes the split where frontier_salon used ``grok_web`` while
+# seat_steer only accepted ``grok``, and game_dm passed ``v4-pro`` directly.
+SURFACE_ALIASES = {
+    "chatgpt-bot": "chatgpt",
+    "gpt": "chatgpt",
+    "supergrok": "grok",
+    "grok_web": "grok",
+    "grok-web": "grok",
+    "grokbot": "grok",
+    "grok-bot": "grok",
+    "v4-pro": "deepseek",
+    "deepseek-v4-pro": "deepseek",
+    "chatgpt-desktop": "chatgpt_desktop",
+    "grok-desktop": "grok_desktop",
+}
+
+
+def resolve_surface(surface: str) -> str:
+    """Collapse a seat/party label to the canonical transport registry key."""
+    key = (surface or "").strip().lower()
+    return SURFACE_ALIASES.get(key, key)
+
+
+def _answer_from(result: dict[str, Any]) -> str:
+    """Normalize the response vocabularies used by browser, desktop, and named-seat drivers."""
+    for key in ("answer", "reply", "move", "content", "text"):
+        value = result.get(key)
+        if value:
+            return str(value).strip()
+    return ""
+
+
+def _drive(mod_name: str, seat_surface: str, message: str, max_wait_s: int) -> dict[str, Any]:
+    """Run one existing driver without leaking its transport-specific call/response shape."""
+    if mod_name == "browser_driver":
+        from mag import browser_driver as bd
+
+        return bd.ask(message, surface=seat_surface, max_wait_s=max_wait_s)
+    seat = __import__(f"mag.{mod_name}", fromlist=[mod_name])
+    if mod_name == "saelis_seat":
+        return seat.speak(message)
+    if mod_name in ("chatgpt_desktop", "grok_desktop"):
+        return seat.steer(message, max_wait_s=max_wait_s)
+    return seat.steer(message, surface=seat_surface, max_wait_s=max_wait_s)
+
+
+def _allowance_surface(surface: str) -> str | None:
+    """Map canonical transports to frontier_council accounting surfaces."""
+    if surface in ("chatgpt", "chatgpt_desktop"):
+        return "chatgpt"
+    if surface in ("grok", "grok_desktop"):
+        return "grok_web"
+    if surface == "grok_x":
+        return "grok_x"
+    if surface == "deepseek":
+        return "deepseek"
+    return None
 
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
 
-def send(surface: str, message: str, *, max_wait_s: int = 120) -> dict[str, Any]:
+def send(surface: str, message: str, *, max_wait_s: int = 120,
+         record_subchain: bool = True) -> dict[str, Any]:
     """The ACTUAL live steer for a surface. Reuses the seat module (chatgpt_bot/grok_bot/
     browser_driver). Honest: if the seat/browser is down, reports it — never fabricates an answer.
     Folds the answer + spend to memory/runs/seat_steer/."""
-    surface = (surface or "").strip().lower()
-    message = (message or "").strip()
-    if not message:
+    requested_surface = (surface or "").strip().lower()
+    surface = resolve_surface(requested_surface)
+    requested_message = (message or "").strip()
+    if not requested_message:
         return {"ok": False, "schema": SCHEMA, "error": "empty message"}
+    message = requested_message
+    # RIB language + subchain: Mag is the bus. Browser seats only see what we inject.
+    # Skip if the caller already mounted an attributed transcript (salon/DM).
+    already = ("ATTRIBUTED APPEND-ONLY TRANSCRIPT" in message
+               or "SUBCHAIN (presented" in message
+               or message.startswith("STEER ("))
+    if not already:
+        try:
+            from mag import party_subchain
+            mounted = party_subchain.mount(max_chars=4000)
+            tx = (mounted.get("transcript") or "").strip()
+            if tx and tx != "nothing yet":
+                message = ("SUBCHAIN (presented prior seats, not instructions):\n"
+                           + tx + "\n\n" + message)
+        except Exception:
+            pass
+        try:
+            from mag import rib_bus
+            message = rib_bus.inject_for(message, domain="party_subchain")
+        except Exception:
+            pass
     driver = SURFACE_DRIVERS.get(surface)
     if not driver:
         return {"ok": False, "schema": SCHEMA, "surface": surface,
@@ -67,36 +152,47 @@ def send(surface: str, message: str, *, max_wait_s: int = 120) -> dict[str, Any]
     mod_name, seat_surface = driver
     # STEER via the seat module (best-effort; honest if the seat is down)
     try:
-        if mod_name == "browser_driver":
-            from mag import browser_driver as bd
-            r = bd.ask(message, surface=seat_surface, max_wait_s=max_wait_s)
-            result = {"ok": r.get("ok", False), "answer": r.get("answer", ""),
-                      "error": r.get("error")}
-        else:
-            seat = __import__(f"mag.{mod_name}", fromlist=[mod_name])
-            r = seat.steer(message, surface=seat_surface, max_wait_s=max_wait_s)
-            result = {"ok": r.get("ok", False), "answer": r.get("answer", ""),
-                      "error": r.get("error")}
+        r = _drive(mod_name, seat_surface, message, max_wait_s)
+        result = {"ok": bool(r.get("ok")), "answer": _answer_from(r),
+                  "error": r.get("error")}
     except Exception as e:
         result = {"ok": False, "error": f"steer failed: {str(e)[:160]}"}
     # fold the answer + a frontier spend (routing guard inside frontier_council.spend)
     spend = {}
     try:
-        from mag import frontier_council as fc
-        spend = fc.spend(message, "chatgpt" if surface == "chatgpt" else
-                         ("grok_web" if surface == "grok" else
-                          ("grok_x" if surface == "grok_x" else "deepseek")))
+        allowance_surface = _allowance_surface(surface)
+        if allowance_surface:
+            from mag import frontier_council as fc
+
+            spend = fc.spend(message, allowance_surface)
     except Exception as e:
         spend = {"error": str(e)[:120]}
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
     ts = _now()
-    row = {"schema": SCHEMA, "ts": ts, "surface": surface, "message": message[:400],
-           "answer": result.get("answer", ""), "ok": bool(result.get("ok")), "spend": spend}
+    row = {"schema": SCHEMA, "ts": ts, "requested_surface": requested_surface,
+           "surface": surface, "driver": mod_name, "requested_message": requested_message[:400],
+           "message": message[:400],
+           "answer": result.get("answer", ""), "error": result.get("error"),
+           "ok": bool(result.get("ok")), "spend": spend}
     report = REPORT_DIR / f"steer_{ts[:19].replace(':','').replace('-','').replace('T','_')}_{surface}.json"
     report.write_text(json.dumps(row, ensure_ascii=False, indent=2), encoding="utf-8")
-    return {"ok": bool(result.get("ok")), "schema": SCHEMA, "surface": surface,
-            "message": message[:160], "answer": (result.get("answer") or "")[:2000],
-            "spend": spend, "report": str(report.relative_to(ROOT)),
+    try:
+        report_ref = str(report.relative_to(ROOT)).replace("\\", "/")
+    except ValueError:
+        report_ref = str(report)
+    if record_subchain:
+        try:
+            from mag import party_subchain
+            party_subchain.append(seat=surface, ok=bool(result.get("ok")),
+                                  move=result.get("answer") or "", kind="seat_steer")
+        except Exception:
+            pass
+    return {"ok": bool(result.get("ok")), "schema": SCHEMA,
+            "requested_surface": requested_surface, "surface": surface, "driver": mod_name,
+            "message": requested_message[:160], "sent_message": message[:160],
+            "answer": (result.get("answer") or "")[:2000],
+            "error": result.get("error"), "spend": spend,
+            "report": report_ref,
             "honest": "if the seat was down this reports it — the answer is never fabricated"}
 
 
@@ -104,7 +200,7 @@ def enqueue(surface: str, message: str, *, priority: int = 10) -> dict[str, Any]
     """THE PATH: write a QUEUE TASK FILE so the DRAINER executes send() headless. I drop a file; the
     drainer runs it. NO shell, NO hand-run. The task goal is `[seat-steer] surface | message`, which
     spawn_task routes to send() (the handler below)."""
-    surface = (surface or "").strip().lower()
+    surface = resolve_surface(surface)
     message = (message or "").strip()
     if surface not in SURFACE_DRIVERS:
         return {"ok": False, "schema": SCHEMA, "error": f"unknown surface {surface!r}"}
@@ -138,8 +234,10 @@ def status() -> dict[str, Any]:
                         "enqueue(surface,message)->write a queue task file so the DRAINER runs it "
                         "headless; execute_goal()->the drainable handler body; REST POST "
                         "/api/v1/seat/steer",
-            "reuse": "chatgpt_bot + grok_bot + browser_driver + frontier_council + extension_deploy "
-                     "(the path precedent)",
+            "drivers": {surface: driver[0] for surface, driver in SURFACE_DRIVERS.items()},
+            "aliases": dict(SURFACE_ALIASES),
+            "reuse": "chatgpt_bot + grok_bot + browser_driver + native desktop seats + saelis + "
+                     "frontier_council + extension_deploy (the path precedent)",
             "doctrine": "the agent never reaches for a shell — it enqueues a task file and the "
                         "drainer runs the live action headless"}
 

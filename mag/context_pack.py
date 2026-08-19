@@ -658,6 +658,9 @@ def build_context_pack(
         "attention_tail": att[:400] if att else "",
         "directives": directives or "",
         "doctrine": _rib_doctrine(),
+        "subchain_full": "",
+        "world_state": "",
+        "full_context": False,
         "todo_open": [
             ln.strip()
             for ln in todo.splitlines()
@@ -673,6 +676,24 @@ def build_context_pack(
             "smoke": "mag.cmd multi-smoke",
         },
     }
+    if _env_on("MAG_FULL_CONTEXT") and mode == "full":
+        pack["full_context"] = True
+        pack["pack_max_chars"] = None
+        try:
+            from mag.party_subchain import mount as _ps_mount
+            _m = _ps_mount(full=True)
+            pack["subchain_full"] = _m.get("transcript") or ""
+            pack["subchain_n"] = _m.get("n")
+            pack["subchain_full_flag"] = bool(_m.get("full"))
+        except Exception as exc:
+            pack["subchain_full"] = f"(mount failed: {exc})"
+        pack["doctrine"] = _rib_doctrine(max_chars=10_000_000)
+        try:
+            from mag import game_world as _gw
+            st = getattr(_gw, "status", None) or getattr(_gw, "world_status", None)
+            pack["world_state"] = st() if callable(st) else str(st or "")
+        except Exception:
+            pack["world_state"] = ""
     return pack
 
 
@@ -703,7 +724,10 @@ def format_context_pack_text(
     p = pack or build_context_pack()
     mode = _normalize_mode(mode or p.get("mode"))
     cfg = MODE_CONFIG[mode]
-    max_chars = max_chars if max_chars is not None else int(cfg.get("max_chars") or 4500)
+    if _env_on("MAG_FULL_CONTEXT") and mode == "full":
+        max_chars = None
+    elif max_chars is None:
+        max_chars = int(cfg.get("max_chars") or 4500)
     compact_ns = bool(cfg.get("compact_nervous"))
     tip = p.get("tip") or {}
     tip_line = (
@@ -761,6 +785,15 @@ def format_context_pack_text(
         policy.extend([
             "### L0d RIB Doctrine (the system's understanding — memweave)",
             p.get("doctrine") or "(none — memory/rib/)",
+            "",
+        ])
+    if p.get("full_context") and mode == "full":
+        policy.extend([
+            "### L0f Full mounted subchain (reasoning surface; chain is still the record)",
+            p.get("subchain_full") or "(empty)",
+            "",
+            "### L0f World state",
+            str(p.get("world_state") or "(none)"),
             "",
         ])
     if p.get("proven_moves") and mode in ("plan", "full", "build", "audit"):
@@ -891,12 +924,12 @@ def format_context_pack_text(
         ]
     parts = [policy, bonds, skills, build_block, scope_block, trail, task, heat]
     text = "\n".join("\n".join(x) for x in parts)
-    if len(text) > max_chars:
+    if max_chars is not None and len(text) > max_chars:
         # The frozen BUILD and scope are the worker's actual contract; never
         # discard them while retaining contextual history.
         parts = [policy, build_block, scope_block, bonds, skills, trail, task]  # drop L4 heat
         text = "\n".join("\n".join(x) for x in parts)
-    if len(text) > max_chars:
+    if max_chars is not None and len(text) > max_chars:
         brief = (p.get("brief") or "")[:800]
         task_small = [
             "",
@@ -910,7 +943,7 @@ def format_context_pack_text(
         text = "\n".join(
             "\n".join(x) for x in [policy, build_block, scope_block, bonds, skills, trail, task_small]
         )
-    if len(text) > max_chars:
+    if max_chars is not None and len(text) > max_chars:
         text = text[: max_chars - 20] + "\n…(pack clipped)"
     return text
 
@@ -993,6 +1026,6 @@ def format_agent_preamble(
         "_Worker: complete task from tools + this preamble. Empty findings only after real inspection._",
     ]
     text = "\n".join(lines)
-    if len(text) > max_chars:
+    if max_chars is not None and len(text) > max_chars:
         text = text[: max_chars - 20] + "\n…(preamble clipped)"
     return text

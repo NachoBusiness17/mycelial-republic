@@ -42,22 +42,22 @@ def test_key_reconcile_never_logs_value():
         assert secret_marker not in blob
 
 
-def test_drain_pass_honest_when_no_key():
-    # force no resolved key -> honest ok:False (never silently queue-fail)
-    import os
-    saved_provider = os.environ.get(sld.PROVIDER_KEY_ENV)
-    saved_local = os.environ.get(sld.LOCAL_KEY_ENV)
-    try:
-        os.environ.pop(sld.PROVIDER_KEY_ENV, None)
-        os.environ.pop(sld.LOCAL_KEY_ENV, None)
-        r = sld.drain_pass(limit=1)
-        assert r["ok"] is False
-        assert "no deepseek key resolves" in r["error"]
-    finally:
-        if saved_provider is not None:
-            os.environ[sld.PROVIDER_KEY_ENV] = saved_provider
-        if saved_local is not None:
-            os.environ[sld.LOCAL_KEY_ENV] = saved_local
+def test_drain_pass_honest_when_no_key(monkeypatch):
+    # force no resolved key -> honest ok:False (never silently queue-fail).
+    # Must stub key_reconcile: it also reads .env from disk, so popping process
+    # env is not enough and used to spawn a live drain.
+    monkeypatch.setattr(
+        sld, "key_reconcile",
+        lambda: {"ok": True, "resolved_provider_key": False, "note": "test"},
+    )
+
+    def _boom(**kwargs):
+        raise AssertionError("run_once must not spawn when no key resolves")
+
+    monkeypatch.setattr("mag.swarm_worker.run_once", _boom)
+    r = sld.drain_pass(limit=1)
+    assert r["ok"] is False
+    assert "no deepseek key resolves" in r["error"]
 
 
 def test_run_cadence_daily_cap_guard():

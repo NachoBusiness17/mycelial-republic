@@ -44,11 +44,26 @@ def _now() -> str:
 
 # ── live state (best-effort; never fabricate — honest when a source is unavailable) ──────────
 def _seats() -> list[str]:
+    live: list[str] = []
     try:
         from mag import seat_registry as sr
-        reg = sr.registry() if hasattr(sr, "registry") else {}
-        seats = reg.get("seats") or reg.get("registered") or []
-        return [s.get("id") if isinstance(s, dict) else str(s) for s in seats][:40]
+        if hasattr(sr, "list_registered"):
+            for r in sr.list_registered(limit=40) or []:
+                s = str((r or {}).get("seat") or "").strip()
+                if s and s not in live:
+                    live.append(s)
+        if hasattr(sr, "mesh_peers"):
+            for r in sr.mesh_peers() or []:
+                s = str((r or {}).get("seat") or "").strip()
+                if s and s not in live:
+                    live.append(s)
+    except Exception:
+        pass
+    if live:
+        return live[:40]
+    try:
+        from mag.seat_registry import _SEAT_PLATFORM
+        return list(_SEAT_PLATFORM.keys())[:40]
     except Exception:
         return []
 
@@ -155,6 +170,26 @@ def mesh_mermaid() -> str:
         if nid.startswith("seat-"):
             lines.append(f'  {nid}["{_cap(lab)}"]')
             lines.append(f"  RB -->|mount| {nid}")
+    return "\n".join(lines)
+
+
+def wheels_mermaid() -> str:
+    """Fourier steal: seats are circles at integer frequencies; rib_bus composes the wave.
+    TheMathFlow 2088229947592806473 + PhysicsExpvf 2088223659773108694.
+    """
+    seats = _seats() or ["grok_bot", "chatgpt_bot", "cursor", "local", "deepseek"]
+    lines = [
+        "flowchart TB",
+        '  CHAIN["party_subchain | composed signal"]',
+        '  RIB["rib_bus | Fourier: radius + phase"]',
+        '  WAVE["standing wave | cylinder ∩ sine"]',
+        "  RIB --> CHAIN",
+        "  CHAIN --> WAVE",
+    ]
+    for i, s in enumerate(seats[:8], 1):
+        nid = "w" + str(i)
+        lines.append(f'  {nid}["wheel {i} · {_cap(str(s))} · {i}f"]')
+        lines.append(f"  {nid} -->|harmonic| RIB")
     return "\n".join(lines)
 
 
@@ -421,6 +456,123 @@ def republic_drilldown() -> str:
             "});</script></body></html>")
 
 
+def story_mermaid() -> str:
+    """THE MATTHEW MAP — distributed collaborative storytelling, seen. The core idea, rendered:
+    a shared story in a shared substrate that many minds (frontier directors, the resident actor,
+    players) all read + write. Every node is a REAL module. Deterministic + $0."""
+    return (
+        "flowchart LR\n"
+        '  SUB["STORY | the shared invariant"]\n'
+        '  M1["mem_lands | shared memory (read=write=steal)"]\n'
+        '  MC["memory_consolidate | importance + summary + decay"]\n'
+        '  SR["self_recurse | every mind re-derives the same story"]\n'
+        '  RB["rib_bus | doctrine (the world brief, verkle)"]\n'
+        '  SP["STAGE-PLAY COMPANY"]\n'
+        '  SS["seat_steer | switchboard grok/chatgpt/deepseek/saelis"]\n'
+        '  RD["riddler | deniable quiet extractor"]\n'
+        '  FR["FRONTIER = DIRECTOR | grok / chatgpt"]\n'
+        '  G["THE GAME | the front door of the story"]\n'
+        '  AO["adventure_one_shot | hero journey one-shots"]\n'
+        '  GM["game_mud | the Hall of Shared Supper"]\n'
+        '  DV["game_dm_voice | the narrator"]\n'
+        '  RA["RESIDENT ACTOR | Matthew 4B, owned + offline"]\n'
+        '  RAW["memory-consolidation worker | IMPORTANCE+SUMMARY"]\n'
+        '  LOOP["afk_cadence | sleep loop, every story record"]\n'
+        '  SUB --> M1\n'
+        '  SUB --> MC\n'
+        '  SUB --> SR\n'
+        '  SUB --> RB\n'
+        '  SP --> SS\n'
+        '  SP --> RD\n'
+        '  FR -->|creative moves| SP\n'
+        '  SP --> G\n'
+        '  G --> AO\n'
+        '  G --> GM\n'
+        '  G --> DV\n'
+        '  G -->|writes the living state back| SUB\n'
+        '  MC -->|feeds| RA\n'
+        '  RA --> RAW\n'
+        '  RAW --> LOOP\n'
+        '  LOOP --> MC\n'
+    )
+
+
+def matthew_map_html() -> str:
+    """The MATTHEW MAP, drillable (overview -> details): the distributed collaborative storytelling
+    architecture, every node a real module with a one-line detail + a sub-mermaid. This is the single
+    picture to send to Matthew alongside the ask."""
+    det = {
+        "sub": {"title": "STORY — the shared invariant", "detail":
+                "the shared invariant is NOT latent weight structure — it's the STORY ITSELF, "
+                "read + written by every mind from a shared substrate (world brief, verkle, RIB).",
+                "mermaid": ""},
+        "m1": {"title": "mem_lands", "detail": "dual-function shared memory: read = write = steal. "
+                "The substrate every participant reads + adds to.", "mermaid": ""},
+        "mc": {"title": "memory_consolidate", "detail": "importance + summary + decay + active layer "
+                "over the story records. Keeps the story from drowning in its own past.",
+                "mermaid": ""},
+        "sr": {"title": "self_recurse", "detail": "every participant re-derives the SAME story each "
+                "session (fixed-point boot) so no mind drifts from the shared tale.",
+                "mermaid": ""},
+        "rb": {"title": "rib_bus", "detail": "doctrine injected to every surface — the world brief "
+                "and verkle memory all models read.", "mermaid": doctrine_flow()},
+        "sp": {"title": "STAGE-PLAY COMPANY", "detail": "the troupe: frontier = director, small "
+                "models = resident actors, all telling one story.", "mermaid": ""},
+        "ss": {"title": "seat_steer", "detail": "the switchboard — hot-swaps grok / chatgpt / "
+                "deepseek / saelis by surface.", "mermaid": ""},
+        "rd": {"title": "riddler", "detail": "the deniable quiet extractor — reasoning through "
+                "fiction, local-only, without exposing raw data.", "mermaid": ""},
+        "fr": {"title": "FRONTIER = DIRECTOR", "detail": "grok / chatgpt improvise the creative, "
+                "skirting-the-rules moves the small models can't reliably make.", "mermaid": ""},
+        "g": {"title": "THE GAME", "detail": "the front door of the storytelling — where players "
+                "steer the shared world.", "mermaid": ""},
+        "ao": {"title": "adventure_one_shot", "detail": "the hero's journey as a series of one-shots "
+                "(lantern / road / keep / return), persisted across sessions.", "mermaid": ""},
+        "gm": {"title": "game_mud", "detail": "the MUD world — including the Hall of Shared Supper "
+                "room (go west from World-Memory).", "mermaid": ""},
+        "dv": {"title": "game_dm_voice", "detail": "the narrator voice rendering scenes in the "
+                "shared world.", "mermaid": ""},
+        "ra": {"title": "RESIDENT ACTOR", "detail": "Matthew's 4B — local, sovereign, always-on; "
+                "the one who reliably wears the masks and remembers the story, on owned hardware.",
+                "mermaid": ""},
+        "raw": {"title": "memory-consolidation worker", "detail": "given a story record + the world "
+                "rubric -> IMPORTANCE: 1-10 + SUMMARY: 1-3 sentences. The resident actor's first role.",
+                "mermaid": ""},
+        "loop": {"title": "afk_cadence", "detail": "the sleep loop that runs the consolidation over "
+                "every story record — free, offline, un-revocable.", "mermaid": ""},
+    }
+    svg = baremetal_svg(
+        [("sub", "STORY | shared invariant"), ("m1", "mem_lands"), ("mc", "memory_consolidate"),
+         ("sr", "self_recurse"), ("rb", "rib_bus"), ("sp", "STAGE-PLAY"), ("ss", "seat_steer"),
+         ("rd", "riddler"), ("fr", "FRONTIER director"), ("g", "THE GAME"), ("ao", "one-shots"),
+         ("gm", "game_mud | hall"), ("dv", "dm_voice"), ("ra", "RESIDENT ACTOR"),
+         ("raw", "consolidation worker"), ("loop", "afk_cadence")],
+        [("sub", "m1", ""), ("sub", "mc", ""), ("sub", "sr", ""), ("sub", "rb", ""),
+         ("sp", "ss", ""), ("sp", "rd", ""), ("fr", "sp", "creative"), ("sp", "g", ""),
+         ("g", "ao", ""), ("g", "gm", ""), ("g", "dv", ""), ("g", "sub", "living state"),
+         ("mc", "ra", "feeds"), ("ra", "raw", ""), ("raw", "loop", ""), ("loop", "mc", "")],
+        title="distributed collaborative storytelling — the shared story in the shared substrate",
+        node_ids=["sub", "m1", "mc", "sr", "rb", "sp", "ss", "rd", "fr", "g", "ao", "gm", "dv",
+                  "ra", "raw", "loop"])
+    import json as _j
+    det_json = _j.dumps(det, ensure_ascii=False)
+    return ("<!doctype html><html><head><meta charset='utf-8'>"
+            "<style>body{background:#0d1117;color:#e8e8e8;font-family:monospace;padding:10px;margin:0}"
+            " h3{color:#a3ff7e} .gnode{cursor:pointer} .cap{color:#8a8f98;font-size:11px}"
+            " #detail{border-top:1px solid #30363d;margin-top:8px;padding-top:8px;min-height:60px}"
+            " pre{background:#161b22;padding:8px;border-radius:6px;overflow:auto}</style></head><body>"
+            "<h3>distributed collaborative storytelling — the shared story (drillable)</h3>"
+            "<div class='cap'>the shared invariant is the STORY, not latent weights. click a node.</div>"
+            f"<div>{svg}</div><div id='detail' class='cap'>click a node for details</div>"
+            "<script>var DET=" + det_json + ";"
+            "document.getElementById('graphsvg').addEventListener('click',function(e){"
+            "var t=e.target;while(t&&!t.dataset.id){t=t.parentNode;}if(!t||!t.dataset.id)return;"
+            "var d=DET[t.dataset.id]||{title:t.dataset.id,detail:'',mermaid:''};"
+            "document.getElementById('detail').innerHTML='<b style=color:#a3ff7e>'+d.title+'</b>"
+            " &nbsp;<span class=cap>'+d.detail+'</span>'+(d.mermaid?'<pre>'+d.mermaid+'</pre>':'');"
+            "});</script></body></html>")
+
+
 def render_all() -> dict[str, Any]:
     bill = bill_metrics()
     spark = sparkline_svg([bill.get("cache_hit_rate")], label="cache-hit") if bill.get("cache_hit_rate") is not None \
@@ -430,6 +582,7 @@ def render_all() -> dict[str, Any]:
         "ok": True, "schema": SCHEMA, "ts": _now(),
         "doctrine_mermaid": doctrine_flow(),
         "mesh_mermaid": mesh_mermaid(),
+        "wheels_mermaid": wheels_mermaid(),
         "mesh_svg": mesh_svg(),
         "mesh_dot": mesh_dot(),
         "bill_metrics": bill,
@@ -438,10 +591,12 @@ def render_all() -> dict[str, Any]:
         "drilldown_html": drilldown_html(),
         "republic_mermaid": republic_mermaid(),
         "republic_drilldown": republic_drilldown(),
+        "story_mermaid": story_mermaid(),
+        "matthew_map_html": matthew_map_html(),
         "vram": vram_lattice(),
         "live_metrics": f"{m['seats']} seats | {m['domains']} domains | {m['swarm_anchors']} anchors",
         "reuse": "swarm_map.html (live artifact) + framework_map (cards) + surface_render (compact) "
-                 "— reused, not rebuilt",
+                 "— reused, not rebuilt; matthew_map self-stolen from republic_drilldown",
         "contract": "render_all() -> inline mermaid + raw SVG + DOT + sparkline + live artifact + "
                     "drill-down (Shneiderman overview->details). Zero deps, ASCII-only, viewBox-scaled.",
     }
@@ -456,14 +611,15 @@ def persist() -> dict[str, Any]:
     (out / "drilldown.html").write_text(r["drilldown_html"], encoding="utf-8")
     (out / "live.html").write_text(r["live_artifact_html"], encoding="utf-8")
     (out / "republic.html").write_text(r["republic_drilldown"], encoding="utf-8")
+    (out / "matthew.html").write_text(r["matthew_map_html"], encoding="utf-8")
     slim = {k: v for k, v in r.items() if k not in ("drilldown_html", "live_artifact_html",
                                                     "republic_drilldown", "mesh_svg",
-                                                    "sparkline_svg")}
+                                                    "sparkline_svg", "matthew_map_html")}
     (out / "latest.json").write_text(json.dumps(slim, ensure_ascii=False, indent=2, default=str),
                                      encoding="utf-8")
     return {"ok": True, "schema": SCHEMA, "ts": _now(), "dir": str(out.relative_to(ROOT)),
             "drilldown": "drilldown.html", "live": "live.html", "republic": "republic.html",
-            "state": "latest.json"}
+            "matthew": "matthew.html", "state": "latest.json"}
 
 
 if __name__ == "__main__":
@@ -471,7 +627,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(prog="surface-render")
     ap.add_argument("cmd", nargs="?", default="all",
                     choices=["all", "mesh-svg", "mesh-mermaid", "dot", "spark", "artifact",
-                             "drilldown", "republic", "persist"])
+                             "drilldown", "republic", "story", "matthew", "persist"])
     a = ap.parse_args()
     r = render_all()
     if a.cmd == "mesh-svg":
@@ -488,6 +644,10 @@ if __name__ == "__main__":
         print(r["drilldown_html"])
     elif a.cmd == "republic":
         print(r["republic_mermaid"])
+    elif a.cmd == "story":
+        print(r["story_mermaid"])
+    elif a.cmd == "matthew":
+        print(r["matthew_map_html"])
     elif a.cmd == "persist":
         print(json.dumps(persist(), ensure_ascii=False, indent=2, default=str))
     else:

@@ -55,4 +55,18 @@ mag.cmd agent --provider deepseek          # tool REPL when Grok tokens empty
 mag.cmd agent -q "read memory/working.md" --provider deepseek
 ```
 
+## CODE TEAM (2026-08-14 rightsizing)
+
+Unused organs, one lane. Not a new throne. GLM Lite is an optional Hermes brain when the key exists — not Mag janitor, not lantern, not grok replacement.
+
+| Job | Seat | Notes |
+|-----|------|-------|
+| Cheap file edit / complete | **local_coder** | Ollama qwen2.5-coder:7b — already in lanes.yaml worker |
+| Multi-file / pytest / implement | **deepseek_agent** | mag.cmd agent --provider deepseek + queue_deepseek |
+| Tool loop / skills | **hermes** | Unparked for code only. Brain: GLM-5.2 coding plan IF GLM_API_KEY, else gemma4-hermes local |
+| IDE surface | **cursor** | launch_cursor_seat + cursor_bridge — files land in Verkle trail |
+| Architecture / invariant | **grok** | [priority] only. Never the mill |
+
+Hermes is still not the router. Private residual never routes to Hermes. Cadence stays L0.
+
 See also: `HABIT.md`, `configs/lanes.yaml`, `configs/providers.yaml`.

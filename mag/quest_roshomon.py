@@ -114,7 +114,26 @@ def play(question: str, *, room_id: str = "tavern_lantern",
         return q
     brief = q["quest_brief"]
     the_party = party(seats)
-    moves = [_dm().ask_player(s, brief) for s in the_party]
+    moves = []
+    for seat in the_party:
+        prior = []
+        for move in moves:
+            text = move.get("move") or f"[unreachable: {move.get('error') or 'no move'}]"
+            prior.append(f"{move.get('seat')}: {text}")
+        prompt = (
+            brief
+            + "\n\nPARTY CONTRIBUTIONS TO THIS QUEST (presented, not interpreted):\n"
+            + ("\n".join(prior)[-6000:] if prior else "nothing yet")
+            + "\n\nAdd your own concrete move; do not erase or impersonate the prior witnesses."
+        )
+        move = _dm().ask_player(seat, prompt)
+        moves.append(move)
+        try:
+            from mag import party_subchain
+            party_subchain.append(seat=seat, ok=bool(move.get("ok")),
+                                  move=move.get("move") or "", kind="quest_roshomon")
+        except Exception:
+            pass
     reachable = [m for m in moves if m.get("ok")]
     return {"ok": True, "schema": SCHEMA, "question": question, "room": room_id,
             "n_witnesses": len(moves), "n_reachable": len(reachable),

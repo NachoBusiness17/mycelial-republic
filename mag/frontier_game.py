@@ -126,17 +126,40 @@ def play(region: str = DEFAULT_REGION, rounds: int = 2,
     rounds = max(1, int(rounds))
     log: list[dict[str, Any]] = []
     round_states: list[dict[str, Any]] = []
+    try:
+        from mag.party_subchain import want_full as _want_full
+        _full = _want_full()
+    except Exception:
+        _full = False
+    def _hist(entries, n_fallback):
+        rows = list(entries) if _full else list(entries)[-n_fallback:]
+        bits = []
+        for e in rows:
+            mv = e.get('move') or ''
+            bits.append(e['seat'] + ': ' + mv)
+        return '; '.join(bits) or 'nothing yet'
+
     for rnd in range(1, rounds + 1):
         scene = game_environment.explore(region)
         prompt = (f"You are a player at the table in {scene['region']}. The DM set this scene: "
                   f"{scene['desc']}. Party has already set in motion: "
-                  f"{'; '.join(e['seat']+': '+e['move'][:70] for e in log[-3:]) or 'nothing yet'}. "
+                  f"{_hist(log, 3)}. "
                   f"Make YOUR party decision in character — what do YOU do? Root it in your nature. "
                   f"One clear action.")
         for seat in game_dm.party():
+            # Rebuild after every move so later seats see earlier seats from this same round.
+            prompt = (f"You are a player at the table in {scene['region']}. The DM set this scene: "
+                      f"{scene['desc']}. Party has already set in motion: "
+                      f"{_hist(log, 6)}. "
+                      "Make YOUR party decision in character. Root it in your nature. One clear action.")
             mv = game_dm.ask_player(seat, prompt)
             if not mv.get("ok"):
                 log.append({"seat": seat, "ok": False, "move": "", "error": (mv.get("error") or "")[:80]})
+                try:
+                    from mag import party_subchain
+                    party_subchain.append(seat=seat, ok=False, move="", kind="frontier_game")
+                except Exception:
+                    pass
                 continue
             verdict, detail = _region_judge(seat, mv.get("move", ""), region)
             if _is_echo(mv.get("move", ""), prompt):
@@ -144,6 +167,12 @@ def play(region: str = DEFAULT_REGION, rounds: int = 2,
             entry = {"seat": seat, "ok": True, "move": (mv.get("move") or "").strip(),
                      "verdict": verdict, "detail": detail}
             log.append(entry)
+            try:
+                from mag import party_subchain
+                party_subchain.append(seat=seat, ok=True, move=entry["move"],
+                                      kind="frontier_game")
+            except Exception:
+                pass
             if verdict == "advances":
                 # PLAY == BUILD: fold the advancing move as a verkle knot into the world.
                 game_world.set_state(

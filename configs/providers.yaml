@@ -8,9 +8,9 @@
 defaults:
   never_remote_tiers: [T0, T1]
   prefer_order:
-    - ollama
     - deepseek
     - deepseek_overmind
+    - ollama
     - openrouter
     - groq
     - z_ai
@@ -30,9 +30,34 @@ defaults:
     - together
 
 providers:
+  saelis:
+    name: Saelis (Athena-class, Vast-hosted)
+    kind: openai_compat
+    # base_url_env points SAELIS_BASE_URL at the real hosted Saelis endpoint (a Vast.ai
+    # rented GPU running llama-server, tunneled via SSH). When unset, saelis_seat falls back
+    # to the DeepSeek RIB proxy (her identity distilled, not her weights). See vast_launcher serve.
+    base_url_env: SAELIS_BASE_URL
+    base_url: http://127.0.0.1:8080/v1
+    api_key_env: null
+    api_key_default: saelis
+    models:
+      - saelis
+    default_model: saelis
+    timeout_seconds: 120
+    quota:
+      period: none
+      max_calls: null
+      max_tokens: null
+
   ollama:
     name: Ollama (local)
     kind: openai_compat
+    # base_url_env lets OLLAMA_HOST point at the right ollama wherever the code runs.
+    # On the host it's unset -> falls back to 127.0.0.1. In the governor container the
+    # compose file sets OLLAMA_HOST=http://host.docker.internal:11434 so the test lane
+    # reaches the host's live ollama (FIXED 2026-08-17; the code was hardcoding localhost
+    # and ignoring OLLAMA_HOST, so container-spawned --provider ollama got Connection refused).
+    base_url_env: OLLAMA_HOST
     base_url: http://127.0.0.1:11434/v1
     api_key_env: null          # Ollama ignores key; send "ollama"
     api_key_default: ollama
@@ -135,9 +160,10 @@ providers:
     name: DeepSeek
     kind: openai_compat
     base_url: https://api.deepseek.com/v1
-    api_key_env: DEEPSEEK_SWARM_API_KEY
-    # 2026-08-10: Mag + Overmind keys were wiped; ONLY the Swarm key remains.
-    api_key_envs: [DEEPSEEK_SWARM_API_KEY]
+    api_key_env: DEEPSEEK_API_KEY
+    # 2026-08-14: .env carries DEEPSEEK_API_KEY (the Swarm key env was wiped 08-10).
+    # Accept both so deepseek actually routes (was silently falling back to ollama).
+    api_key_envs: [DEEPSEEK_API_KEY, DEEPSEEK_SWARM_API_KEY]
     # DeepSeek v4 defaults thinking ON; reasoning tokens eat max_tokens and
     # small budgets return EMPTY content (the 'agent hallucinating / empty
     # reply' bug). Top-level thinking:{type:disabled} is ~10-15x cheaper and
@@ -439,10 +465,10 @@ providers:
 
 # Routing preferences by job class (first with budget + key wins after ollama)
 routing:
-  scut: [ollama, deepseek, deepseek_overmind, groq, openrouter, vast]
+  scut: [deepseek, deepseek_overmind, ollama, groq, openrouter, vast]
   recall: [ollama]
   public_summarize: [deepseek, deepseek_overmind, openrouter, groq, z_ai, github_models, mistral, cerebras, nvidia, cohere, hf_router, vast, gemini, openai]
   hard_code: [deepseek, deepseek_overmind, openrouter, groq, anthropic, openai, xai, vast]
   hard_reason: [deepseek, deepseek_overmind, openrouter, groq, anthropic, xai, openai, vast]
   # Interactive Grok TUI is still L2 "specialist seat" — API providers for headless
-  default: [ollama, deepseek, deepseek_overmind, openrouter, groq, z_ai, github_models, mistral, moonshot, fireworks, cerebras, nvidia, cohere, hf_router, dashscope, anthropic, gemini, openai, xai]
+  default: [deepseek, deepseek_overmind, ollama, openrouter, groq, z_ai, github_models, mistral, moonshot, fireworks, cerebras, nvidia, cohere, hf_router, dashscope, anthropic, gemini, openai, xai]

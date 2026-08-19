@@ -92,6 +92,16 @@ def _append_jsonl(path: Path, entry: dict[str, Any]) -> None:
         f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 
 
+def _fold_verkle(dossier: dict[str, Any]) -> str:
+    """Commit a Q/swarm/freeze dossier. Return verkle_root. Empty is failure, not silence."""
+    from mag.verkle_knot import append_verkle_knot
+    rec = append_verkle_knot(dossier) or {}
+    root = str(rec.get("verkle_root") or rec.get("leaf_hash") or "").strip()
+    if not root:
+        raise RuntimeError("verkle append returned no root")
+    return root
+
+
 def _read_jsonl(path: Path, tail: int = 200) -> list[dict[str, Any]]:
     if not path.is_file():
         return []
@@ -285,21 +295,22 @@ def emit_q_knot(
         previous_q_knot=previous_verkle_root,
         ttl_knots=session.total_knots - sequence - 1,
         agent_assignments=session.agent_assignments,
-        verkle_root="",  # filled after Verkle append
+        verkle_root="",  # filled from append_verkle_knot return, never simulated
         ts=_now(),
         status="active",
     )
 
-    # Log locally
-    _append_jsonl(Q_KNOT_LOG, knot.to_envelope())
-
-    # Append to Verkle chain
+    # Fold first. The log is a copy of the proof, not a stand-in for it.
     try:
-        from mag.verkle_knot import append_verkle_knot
-        dossier = knot.to_verkle_dossier()
-        append_verkle_knot(dossier)
-    except Exception:
-        pass  # Verkle append is best-effort for Q persistence
+        knot.verkle_root = _fold_verkle(knot.to_verkle_dossier())
+        knot.status = "active"
+    except Exception as e:
+        knot.status = "unproven"
+        knot.verkle_root = ""
+        _append_jsonl(Q_KNOT_LOG, {**knot.to_envelope(), "fold_error": str(e)[:200]})
+        return knot
+
+    _append_jsonl(Q_KNOT_LOG, knot.to_envelope())
 
     # Publish to event bus so agents react
     try:
@@ -559,14 +570,18 @@ def q_status() -> dict[str, Any]:
     """Report holographic Q status."""
     sessions = get_active_q_sessions()
     q_knots = reconstitute_q()
+    proven = [k for k in q_knots if (k.verkle_root or "").strip()]
+    pool = proven or q_knots
+    latest = max(pool, key=lambda k: k.ts or "") if pool else None
 
     return {
         "schema": "holographic_q.v1",
         "ts": _now(),
         "active_sessions": len(sessions),
         "total_q_knots": len(q_knots),
+        "n_proven": len(proven),
         "sessions": sessions,
-        "latest_q_knot": q_knots[-1].to_envelope() if q_knots else None,
+        "latest_q_knot": latest.to_envelope() if latest else None,
         "reconstitution_available": len(q_knots) > 0,
         "crash_survivability": "Q persists across crashes — state is in the Verkle lattice, not in process memory",
     }
@@ -648,8 +663,7 @@ class SwarmSession:
                     "content_commit": {"hex": _hash(knot["steer_vector"])[:40]},
                     "_swarm_knot": knot,
                 }
-                append_verkle_knot(dossier)
-                knot["verkle_root"] = dossier.get("verkle_root", "")
+                knot["verkle_root"] = _fold_verkle(dossier)
 
             _append_jsonl(Q_KNOT_LOG, knot)
             knots_emitted.append(knot)
@@ -696,8 +710,7 @@ class SwarmSession:
                 "content_commit": {"hex": _hash(synth_knot["steer_vector"])[:40]},
                 "_swarm_knot": synth_knot,
             }
-            append_verkle_knot(dossier)
-            synth_knot["verkle_root"] = dossier.get("verkle_root", "")
+            synth_knot["verkle_root"] = _fold_verkle(dossier)
 
         _append_jsonl(Q_KNOT_LOG, synth_knot)
         knots_emitted.append(synth_knot)
@@ -785,37 +798,37 @@ def freeze_context(label: str = "") -> dict[str, Any]:
         "previous_q_knot": roots[-1] if roots else "",
         "ttl_knots": 0,
         "agent_assignments": [],
-        "verkle_root": freeze_hash,
+        "verkle_root": "",
         "ts": _now(),
         "status": "frozen",
     }
 
-    _append_jsonl(Q_KNOT_LOG, freeze_knot)
-
+    freeze_dossier = {
+        "session_id": freeze_knot["session_id"],
+        "time": {
+            "created_at": {"iso_minute": _now(), "unix_minute": None, "date": None},
+            "updated_at": {"iso_minute": _now(), "unix_minute": None, "date": None},
+        },
+        "scalar_knot": {
+            "duration_minutes": 0.01,
+            "tension_index": "freeze",
+            "residual_weight": 1.0,
+            "theme_vector": {
+                "dominant": "context_freeze",
+                "basis": ["freeze", "grok", "context", "verkle"],
+                "raw": [1.0, 0.8, 1.0, 1.0],
+                "normalized": [0.33, 0.27, 0.33, 0.33],
+            },
+        },
+        "content_commit": {"hex": freeze_hash[:40]},
+        "_freeze": freeze_knot,
+    }
     try:
-        from mag.verkle_knot import append_verkle_knot
-        append_verkle_knot({
-            "session_id": freeze_knot["session_id"],
-            "time": {
-                "created_at": {"iso_minute": _now(), "unix_minute": None, "date": None},
-                "updated_at": {"iso_minute": _now(), "unix_minute": None, "date": None},
-            },
-            "scalar_knot": {
-                "duration_minutes": 0.01,
-                "tension_index": "freeze",
-                "residual_weight": 1.0,
-                "theme_vector": {
-                    "dominant": "context_freeze",
-                    "basis": ["freeze", "grok", "context", "verkle"],
-                    "raw": [1.0, 0.8, 1.0, 1.0],
-                    "normalized": [0.33, 0.27, 0.33, 0.33],
-                },
-            },
-            "content_commit": {"hex": freeze_hash[:40]},
-            "_freeze": freeze_knot,
-        })
-    except Exception:
-        pass
+        freeze_knot["verkle_root"] = _fold_verkle(freeze_dossier)
+    except Exception as e:
+        freeze_knot["status"] = "unproven"
+        freeze_knot["fold_error"] = str(e)[:200]
+    _append_jsonl(Q_KNOT_LOG, freeze_knot)
 
     return {
         "freeze_hash": freeze_hash,

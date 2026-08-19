@@ -69,6 +69,9 @@ def escalate_via_harness(
 
 ## Rules
 - One job. Substance. No flattery theater.
+- DO NOT load any framework, tool, skill, compass, or file as a preamble. Do NOT narrate your
+  process. Answer the goal DIRECTLY. (ROOT-CAUSE FIX 2026-08-16: framework-loading burned the
+  turn budget and never answered — the swarm->grok lane was failing 83%. Forbidden.)
 - Prefer writing concrete files under the cwd when useful.
 - Respect private data: do not exfiltrate secrets.
 - End with a short SUMMARY of what you did or what is blocked.

@@ -119,9 +119,13 @@ def mud(action: str = "look") -> dict[str, Any]:
         reply = f"You are in {room}. Exits: {', '.join(exits.get(room, [])) or 'none'}."
     elif action.startswith("go ") or action.startswith("move "):
         dest = action.split(" ", 1)[1].strip()
-        if dest in exits.get(room, []):
-            _set("game.mud.room", dest)
-            reply = f"You walk to {dest}."
+        # Flexible exit match: "go hall" should reach "the hall" (drop/keep the article).
+        norm = dest if dest.startswith("the ") else "the " + dest
+        target = norm if norm in exits.get(room, []) else dest
+        if target in exits.get(room, []):
+            _set("game.mud.room", target)
+            room = target
+            reply = f"You walk to {target}."
         else:
             reply = f"You cannot go {dest} from {room}."
     elif action == "map":

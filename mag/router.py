@@ -50,6 +50,25 @@ _RESEARCH_MARKERS = (
     "compare sources",
 )
 
+# RIBs are BARE METAL (2026-08-15, operator): frozen deterministic specs compiled by our OWN
+# close-to-compiler machinery (rib_struct / rib_bus / invariant lattice / compiler_lang). This is
+# deterministic + $0 work — it must route to the cheapest local tier, NEVER up to plan/overview (Grok).
+_RIB_MARKERS = (
+    "rib",
+    "rib_struct",
+    "rib_bus",
+    "rib_action",
+    "bare metal",
+    "baremetal",
+    "own compiler",
+    "compile",
+    "compiler",
+    "invariant",
+    "frozen spec",
+    "declare rib",
+    "knot invariant",
+)
+
 
 def gather_signals() -> dict[str, Any]:
     """Runtime probes used for routing (no network unless bridge env set)."""
@@ -93,6 +112,7 @@ def _detect_markers(goal: str) -> dict[str, bool]:
         "hermes": any(m in g for m in _HERMES_MARKERS),
         "secret": any(m in g for m in _SECRET_MARKERS),
         "research": any(m in g for m in _RESEARCH_MARKERS),
+        "rib": any(m in g for m in _RIB_MARKERS),
         "priority": any(m in g for m in ("[priority]", "[l2]", "[grok]")),
     }
 
@@ -115,6 +135,10 @@ def classify_depth(goal: str, *, depth: str | None = None) -> dict[str, Any]:
     n = len(goal or "")
 
     if markers["secret"]:
+        depth = "scut"
+    elif markers["rib"]:
+        # RIBs are bare metal — compiled by our own close-to-compiler machinery, deterministic + $0.
+        # Never route RIB work up to plan/overview (Grok TUI, frontier $); keep it local L0.
         depth = "scut"
     elif markers["research"]:
         depth = "simple_code"
@@ -417,7 +441,7 @@ def route(
     # --- local janitor ---
     if seat == "local" or (not force_seat and d in ("scut", "simple_code")):
         seat = "local"
-        prefer = ["ollama", "groq", "openrouter", "deepseek"]
+        prefer = ["deepseek", "deepseek_overmind", "ollama", "groq", "openrouter"]
         pick = pick_provider(job=job if job != "default" else "scut", tier=tier, prefer=prefer)
         if pick.get("ok"):
             if not force_provider:

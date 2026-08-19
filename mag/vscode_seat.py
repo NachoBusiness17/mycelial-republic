@@ -55,11 +55,24 @@ def task_spec(*, task: str, skill: str = "default", steer: bool = True,
         "schema": SCHEMA, "id": tid, "task": task, "skill": skill,
         "steering": steer_lines,
         "directives": _DIRECTIVES,
+        "routing": _grounded_routing(task),
         "acceptance": acc,
         "report_back": str(TASK_DIR / tid / "report.md"),
         "note": "Execute EXACTLY this. Write report.md, fold the invariant, then stop.",
     }
     return spec
+
+
+def _grounded_routing(task: str) -> dict[str, Any]:
+    """The provenance-grounded routing decision for this seat task: the deterministic lens fed to
+    deepseek. Frontier ONLY when a real seat is live AND verkle frontier provenance exists — never
+    route/label a DeepSeek result as frontier (provenance_router)."""
+    try:
+        from mag import provenance_router
+        return provenance_router.route(task)
+    except Exception as e:
+        return {"tier": "flash", "provider": "deepseek", "provenance": "deepseek",
+                "error": str(e)[:120]}
 
 
 def generate(*, task: str, skill: str = "default", steer: bool = True,

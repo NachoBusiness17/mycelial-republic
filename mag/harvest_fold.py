@@ -100,14 +100,47 @@ def cadence(*, limit: int = 10) -> dict[str, Any]:
     return fold(limit=limit)
 
 
+def report_back(*, limit: int = 20, source: str = "harvest-fold") -> dict[str, Any]:
+    """REPORT BACK + PING (the operator's law: keep the loop open, don't fire-and-forget).
+
+    The swarm result must not just land on the PVC and fold into a RIB — it must reach the OPERATOR.
+    This captures each freshly-done result into the operator inbox (operator_inbox.capture_mention),
+    which ghost.sense() reads as inbox_pending and surfaces as a ping. Grounded: only reports results
+    that are actually done (status=done or have a result), never invents a completion.
+    """
+    h = harvest(limit=limit)
+    done = h.get("done") or []
+    reported: list[dict[str, Any]] = []
+    for r in done:
+        goal = (r.get("goal") or r.get("task_id") or "swarm task")[:120]
+        result = (r.get("result") or r.get("answer") or r.get("output") or "")[:400]
+        line = f"[swarm report] {goal}" + (f": {result}" if result else " — completed (result pending)")
+        try:
+            from mag import operator_inbox
+            # log_event=False: a swarm RESULT ping only needs the inbox line ghost reads —
+            # NOT the full behavioral-event + percolator signal pipeline (65s measured wedge).
+            # The percolator is the sacred cow here; the ping is the law.
+            cap = operator_inbox.capture_mention(line, source=source, log_event=False)
+            reported.append({"goal": goal[:60], "captured": cap.get("ok")})
+        except Exception:
+            continue
+    return {"ok": True, "schema": SCHEMA, "n_done": len(done), "n_reported": len(reported),
+            "reported": reported,
+            "note": "reported the harvested done results to the operator inbox (ghost.sense surfaces "
+                    "them as a ping) — the loop stays open, nothing fire-and-forgot"}
+
+
 def status() -> dict[str, Any]:
     return {"ok": True, "schema": SCHEMA,
             "contract": "harvest(limit)->collect the swarm's done results (read_back + collect off "
                         "the shared PVC); fold(limit)->publish each harvested reply as a RIB "
                         "(rib_bus.publish_rib, deduped by hash); cadence(limit)->the loop step: "
-                        "enqueue -> wait till they stop -> harvest -> fold into RIB language.",
+                        "enqueue -> wait till they stop -> harvest -> fold into RIB language; "
+                        "report_back(limit)->capture done results into the operator inbox so "
+                        "ghost.sense surfaces them as a ping (the loop stays open, no fire-and-forget).",
             "cost": "deterministic $0",
-            "reuse": "swarm_worker.collect, loop_feedback.read_back, rib_bus.publish_rib"}
+            "reuse": "swarm_worker.collect, loop_feedback.read_back, rib_bus.publish_rib, "
+                     "operator_inbox.capture_mention"}
 
 
 def main(argv: list[str] | None = None) -> int:

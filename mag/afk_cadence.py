@@ -73,6 +73,12 @@ def run_once() -> dict[str, Any]:
     # MID-STEER HEAL: see errors, mint the mem solution, patch for the future
     # BEFORE running, so past errors never recur while the loop advances.
     steps.append(_safe("error_healer", lambda: _import_run("error_healer", "heal", None)))
+    # FRONTIER REACH BY DEFAULT (operator 2026-08-15: "how do we do that by default"): ensure the
+    # host-loopback CDP seat (mag.host_browser on 127.0.0.1:9222 — the PROVEN transport that
+    # browser_driver connects to by default, bypassing the broken Docker CDP forwarding) is up
+    # every cycle, so the operator-safe frontier surfaces (grok/chatgpt/deepseek via browser_driver)
+    # are reachable without a manual step and without ever touching the desktop keyboard.
+    steps.append(_safe("frontier_reach", lambda: _import_run("host_browser", "ensure", None)))
     # FREE-COMPUTE HUNT (legacy afk_loop) — always: scan free tiers for running/more freebies, $0.
     steps.append(_safe("freebie_scan", lambda: _import_run("afk_loop", "freebie_scan", None)))
     # DOGFOOD SENTINEL (this is why we dogfood): probe the real systems every cycle so failures
@@ -107,6 +113,11 @@ def run_once() -> dict[str, Any]:
     # DOCTRINE DEDUPE: consolidate structural-template doctrine families (template = invariant,
     # instances = data) so the graph never bloats. $0.
     steps.append(_safe("doctrine_dedupe", lambda: _import_run("template_invariant", "consolidate_all", None)))
+    # MEMORY CONSOLIDATE (2026-08-18, the missing half of persistence): fold the shared mem_lands
+    # layer — importance + recursive summary + decayed retrieval + active layer — so retrieval
+    # stays sharp and long sessions don't bloat. Deterministic $0; the 4B/frontier scorer is a
+    # pluggable hook. The republic's memory sleeps here.
+    steps.append(_safe("memory_consolidate", lambda: _import_run("memory_consolidate", "run_sleep_step", None)))
     # CORPUS MINE: mine the leaked-prompt corpus for invariants (expand the knowledge corpus). $0.
     steps.append(_safe("corpus_mine", lambda: _import_run("leaked_prompt_mine", "mine", None)))
     # GHOST PLAY: the ghost experiments on the swarms/tools -> training rows + steer-protocol learning.

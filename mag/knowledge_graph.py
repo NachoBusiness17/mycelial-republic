@@ -102,7 +102,8 @@ def _nodes_verkle() -> list[dict[str, Any]]:
             nodes.append({"id": f"knot:{str(r.get('leaf_hash') or r.get('hash') or '')[:16]}",
                           "kind": "knot", "label": r.get("theme") or "knot",
                           "summary": str(r.get("summary") or "")[:200],
-                          "tension": r.get("tension_index"), "source": str(p)})
+                          "tension": r.get("tension_index"),
+                          "ts": r.get("ts") or r.get("t") or r.get("time") or "", "source": str(p)})
     return nodes[-400:]  # recent, bounded
 
 
@@ -266,19 +267,127 @@ def local_search(query: str) -> dict[str, Any]:
     return {"ok": True, "schema": SCHEMA, "mode": "local", "seeds": len(seeds), "results": results}
 
 
-def _score_node(n: dict[str, Any], qwords: set[str]) -> float:
-    """Multi-signal (Mem0): relevance (keyword) x importance (kind weight), + recency."""
-    hay = _norm(f"{n['label']} {n.get('purpose','')} {n.get('summary','')} "
-                f"{' '.join(n.get('invariants',[]))} {' '.join(n.get('we_have',[]))} {n.get('delta','')}")
-    rel = sum(1 for w in qwords if w in hay)
-    if not rel:
+def _node_text(n: dict[str, Any]) -> str:
+    """The searchable haystack for a node (all text signals we index over)."""
+    return _norm(f"{n['label']} {n.get('purpose','')} {n.get('summary','')} "
+                 f"{' '.join(n.get('invariants',[]))} {' '.join(n.get('we_have',[]))} "
+                 f"{n.get('delta','')} {n.get('maps_to','')}")
+
+
+def _tokenize(text: str) -> list[str]:
+    """Deterministic tokenizer: lowercase alnum runs, drop stopwords + 1-2 char tokens."""
+    _STOP = {"the", "and", "for", "with", "our", "that", "this", "from", "into", "over",
+             "how", "can", "you", "your", "what", "have", "has", "are", "was", "its", "not",
+             "all", "any", "one", "but", "per", "via", "mag"}
+    return [w for w in _norm(text).split()
+            if len(w) > 2 and w not in _STOP]
+
+
+def _bm25_index(nodes: list[dict[str, Any]]) -> dict[str, Any]:
+    """Build a deterministic BM25 index over the node corpus (no external deps).
+    BM25 = sum over query terms of IDF * (tf*(k1+1)) / (tf + k1*(1 - b + b*dl/avgdl))."""
+    k1, b = 1.2, 0.75
+    docs = [_tokenize(_node_text(n)) for n in nodes]
+    n_docs = len(docs)
+    df: dict[str, int] = {}
+    for d in docs:
+        for w in set(d):
+            df[w] = df.get(w, 0) + 1
+    avgdl = sum(len(d) for d in docs) / max(n_docs, 1)
+    idf = {w: max(0.1, ((n_docs - f + 0.5) / (f + 0.5)) + 1.0) for w, f in df.items()}
+    return {"docs": docs, "idf": idf, "avgdl": avgdl, "k1": k1, "b": b}
+
+
+def _bm25_score(idx: dict[str, Any], qwords: list[str], doc: list[str]) -> float:
+    """Score one document against the BM25 index."""
+    dl = len(doc)
+    tf: dict[str, int] = {}
+    for w in doc:
+        tf[w] = tf.get(w, 0) + 1
+    s = 0.0
+    for w in qwords:
+        if w not in tf:
+            continue
+        idf = idx["idf"].get(w, 0.0)
+        f = tf[w]
+        s += idf * (f * (idx["k1"] + 1)) / (f + idx["k1"] * (1 - idx["b"] + idx["b"] * dl / max(idx["avgdl"], 1)))
+    return s
+
+
+def _entity_overlap(qwords: set[str], n: dict[str, Any]) -> int:
+    """Entity fusion (mem0): overlap between query tokens and the node's KEY identifiers
+    (label / maps_to / we_have / invariants) — links facts that share entities, not just raw text."""
+    hay = _tokenize(f"{n['label']} {n.get('maps_to','')} {' '.join(n.get('we_have',[]))} "
+                    f"{' '.join(n.get('invariants',[]))}")
+    return sum(1 for w in qwords if w in set(hay))
+
+
+def _temporal_score(n: dict[str, Any], max_i: int) -> float:
+    """Temporal ranker (mem0 time-aware): later knots/case-law are 'now-er' -> ranked for the
+    current state, not just date-filtered. Deterministic by chain index."""
+    if n["kind"] not in ("knot", "case_law"):
         return 0.0
+    i = n.get("_i", 0)
+    return 0.15 * (i / max(max_i, 1))  # recency weight scales 0..0.15 with chain position
+
+
+def _score_node(n: dict[str, Any], qwords: set[str], idx: dict[str, Any]) -> dict[str, Any]:
+    """True multi-signal (mem0): BM25 relevance + entity overlap + kind importance + temporal.
+    Returns a BREAKDOWN so retrieval can say WHY a node won (honest provenance on the X-ray)."""
+    doc = idx["docs"][n.get("_i", 0)] if 0 <= n.get("_i", 0) < len(idx["docs"]) else _tokenize(_node_text(n))
+    bm25 = _bm25_score(idx, list(qwords), doc)
+    entity = _entity_overlap(qwords, n)
     w = _KIND_WEIGHT.get(n["kind"], 1)
-    # recency bump: knots/law later in the list are newer
-    recency = 0.0
-    if n["kind"] in ("knot", "case_law"):
-        recency = 0.05 * min(n.get("_i", 0), 20) / 20.0
-    return rel * w + recency
+    temp = _temporal_score(n, max(len(idx["docs"]) - 1, 1))
+    total = bm25 * w + entity * 0.5 + temp
+    return {"total": total, "bm25": round(bm25, 3), "entity": entity,
+            "temporal": round(temp, 3), "kind_weight": w}
+
+
+def _rank_known(query: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Shared multi-signal ranker for known()/context(). Builds the corpus once, scores all nodes,
+    returns (top nodes w/ why, diagnostics)."""
+    q = _norm(query)
+    qwords = set(_tokenize(query))
+    nodes = build()["nodes"]
+    for i, n in enumerate(nodes):
+        n["_i"] = i
+    idx = _bm25_index(nodes)
+    scored = []
+    for n in nodes:
+        sc = _score_node(n, qwords, idx)
+        if sc["total"] > 0:
+            scored.append((sc["total"], sc, n))
+    scored.sort(key=lambda t: -t[0])
+    top = [dict(n, _why=sc, _score=round(tot, 3)) for tot, sc, n in scored[:12]]
+    return top, {"nodes": len(nodes), "qwords": sorted(qwords)[:12]}
+
+
+def capability_atom(*, domain: str = "general") -> dict[str, Any]:
+    """MAG'S BPE SURFACE — the ONE atomic handle for this capability (operator law: new capabilities
+    are addressable as atoms in our tokenizer; FACTS are NOT steered, only CAPABILITIES are).
+
+    SELF-STEAL correction (2026-08-15, sacred-cow audit): mint_ribs() folded every retrieval hit
+    into a `KNOWN[...]` steer atom — WRONG. RIBs are INSTRUCTIONS; a retrieval hit is a FACT. Seats
+    should not carry per-hit facts in compiled steer. The honest surface is ONE capability handle the
+    steering can reference ("consult multi-signal retrieval"), not N injected facts.
+
+    This mints a single RIB atom advertising the multi-signal retrieval CAPABILITY so a seat can be
+    steered to it — deterministic, deduped by content hash, $0."""
+    atom = ("CAPABILITY: consult knowledge_graph.known()/context() for source-backed multi-signal "
+            "retrieval (BM25 relevance + entity overlap + temporal ranker), each hit annotated with "
+            "a _why breakdown; facts live in the knowledge layer, instructions in the atom layer.")
+    try:
+        from mag import rib_bus
+        r = rib_bus.publish_rib(atom, domain=domain, source="knowledge_graph.capability",
+                                target_rank="T2", fold=True, publish=True)
+        return {"ok": True, "schema": SCHEMA, "mode": "capability_atom", "domain": domain,
+                "key": r.get("key", ""), "verkle": bool(r.get("verkle", {}).get("ok", r.get("verkle"))),
+                "published": r.get("published", False),
+                "note": "ONE capability atom minted (not per-hit facts) — seats are steered TO the "
+                        "retrieval capability; facts stay in the knowledge layer"}
+    except Exception as e:
+        return {"ok": False, "schema": SCHEMA, "mode": "capability_atom", "error": str(e)[:120]}
 
 
 def dream(prune: bool = True) -> dict[str, Any]:
@@ -351,14 +460,9 @@ def _counts(nodes: list[dict[str, Any]]) -> dict[str, int]:
 # ─────────────────────────────────────────────── auto-consult (the 'spookily known') ──
 def known(query: str) -> dict[str, Any]:
     """Pull the relevant subgraph for any ask — what we ALREADY know, source-backed.
-    v2: multi-signal retrieval (Mem0) — relevance x importance (+ recency)."""
-    q = _norm(query)
-    qwords = set(w for w in q.split() if len(w) > 2)
-    nodes = build()["nodes"]
-    scored = [(_score_node(n, qwords), n) for n in nodes]
-    scored.sort(key=lambda t: -t[0])
-    top = [n for s, n in scored if s > 0][:12]
-    # lens/archetype reading of the concept (the 'eyes to see' layer)
+    v2 multi-signal (mem0): BM25 relevance + entity overlap + kind importance + temporal ranker,
+    each node annotated with a _why breakdown so the answer is honest about WHY it won."""
+    top, diag = _rank_known(query)
     lens: dict[str, Any] = {}
     try:
         from mag.archetype_image import classify, ARCHETYPES
@@ -369,9 +473,10 @@ def known(query: str) -> dict[str, Any]:
     except Exception:
         pass
     return {"ok": True, "schema": SCHEMA, "query": query, "hits": len(top),
-            "mode": "multi-signal", "known": top, "lens": lens,
+            "mode": "multi-signal-v2", "known": top, "lens": lens, "diagnostics": diag,
             "summary": f"already know {len(top)} source-backed node(s) about this; nothing to re-derive",
-            "accuracy": "every node carries a source (verkle/code/ledger/steal/landscape)"}
+            "accuracy": "every node carries a source (verkle/code/ledger/steal/landscape); each hit "
+                        "carries a _why breakdown (bm25/entity/temporal/kind_weight)"}
 
 
 def context(query: str, max_chars: int = 2400) -> str:

@@ -93,6 +93,13 @@ REGISTRY: list[dict[str, Any]] = [
         "note": "Ad-hoc host ghost cycle loop; prefer the supervised ghost daemon.",
     },
     {
+        "name": "legacy_mag_loop",
+        "pattern": "from mag.daemon import run_loop",
+        "newer": "ghost daemon sense family (sense/sense_context/sense_surfaces/sense_session/sense_copilot)",
+        "default_action": "retire",
+        "note": "Legacy mag sense->judge->act loop (main.py mag -> mag.daemon -> mag.sense). Not in mag_launch slots; superseded by the ghost daemon control plane (:9000).",
+    },
+    {
         "name": "pytest_runner",
         "pattern": "run_pytest_script.py",
         "newer": "(test tooling — do not retire)",

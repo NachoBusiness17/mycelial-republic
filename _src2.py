@@ -1,0 +1,11 @@
+﻿from pathlib import Path
+t = Path("mag/game_campaign.py").read_text(encoding="utf-8")
+i = t.find("def people_in_room")
+print(t[i:i+1800])
+print("==== CALCIFER REST ====")
+k = t.find("def _talk_calcifer")
+print(t[k:k+1600])
+w = Path("mag/wave.py").read_text(encoding="utf-8")
+print("==== IDLE PERSIST ====")
+j = w.find("chasm_persist")
+print(w[j-400:j+500])

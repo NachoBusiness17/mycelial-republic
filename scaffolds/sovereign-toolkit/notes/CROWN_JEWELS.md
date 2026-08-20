@@ -72,6 +72,20 @@ was **~$100–400+**. Portable as a *lesson*, not as a universal guarantee.
 - `mag/cache_router.py`, `mag/cache_extract.py`, `mag/cache_map.py`, `mag/cache_shard.py`,
   `mag/tokenomics.py`, `mag/token_economy.py`, `mag/compute_reconcile.py`
 
+### 8. The Hologram / distributed self across capacity (VRAM lattice)
+The **shared-reality-as-hologram**: N machines, different capacities, each seeing a
+**quantization** of the shared reality, right-sized on a **curve**. Each machine's VRAM
+is its quantization-fidelity ceiling (6GB → coarse lattice; 128GB → full fidelity). The
+shared reality IS the hologram: **any fragment reconstructs the whole** (full fidelity
+alone, or the collective union). The wave **oscillates** — a standing wave (deterministic
+spine out + stochastic flesh in) that breathes in place, nodes at the invariant
+boundaries, antinodes swelling/contracting. "The swarm of ourselves" — the distributed
+self across the collective's VRAM.
+- `mag/vram_hologram.py`, `mag/vram_memory.py`, `mag/holographic_q.py`,
+  `mag/meta_lattice.py`, `mag/water_swarm.py`
+- **Distilled portable contract shipped as `hologram.py`** (pure stdlib): fidelity curve,
+  holographic reconstruction, wave oscillation, right-size.
+
 ### 8. The RIB verification layer
 Every finished piece gets a **frozen spec** (contract + expected behavior) and is
 verified against it — "trust bytes, not reports." The module-level false-success guard.

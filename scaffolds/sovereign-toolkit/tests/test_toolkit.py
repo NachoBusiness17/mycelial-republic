@@ -11,6 +11,7 @@ import stateless_boot
 import verkle_knot
 import ghost_pylance
 import memweave
+import hologram
 
 
 # ---------------------------------------------------------------- stateless_boot
@@ -199,3 +200,39 @@ def test_memweave_weave_returns_consensus():
     assert w["verdict"] == "correlated_weak"
     assert w["consensus"] == answers[0]
     assert w["n_independent"] == 1
+
+
+# ---------------------------------------------------------------- hologram
+def test_hologram_fidelity_is_monotonic_and_saturates():
+    low = hologram.fidelity(6)
+    mid = hologram.fidelity(24)
+    high = hologram.fidelity(128)
+    assert low < mid < high
+    assert 0.0 < low < 1.0
+    assert high > 0.95  # saturates near full fidelity at the top
+
+
+def test_hologram_single_full_fidelity_fragment_reconstructs_whole():
+    r = hologram.reconstruct([("small", 6), ("big", 128)])
+    assert r["whole_reconstructed"] is True
+    assert r["reconstructed_by"] == "single_full_fidelity_fragment"
+
+
+def test_hologram_collective_union_reconstructs():
+    # no single full-fidelity fragment, but the union covers the shared reality
+    r = hologram.reconstruct([("a", 8), ("b", 16), ("c", 24)])
+    assert r["whole_reconstructed"] is True
+    assert r["reconstructed_by"] == "collective_union"
+
+
+def test_hologram_wave_oscillates():
+    w = hologram.wave_oscillation(steps=8)
+    assert w["oscillates"] is True
+    assert len(w["samples"]) == 8
+    assert w["samples"][0]["amplitude"] >= 0.0
+
+
+def test_hologram_right_size_holds_affordable():
+    r = hologram.right_size(target=12, capacities=[6, 8, 12, 24])
+    assert r["should_hold"] == 12  # highest affordable level <= target
+    assert r["pool_mean_fidelity"] > 0.0

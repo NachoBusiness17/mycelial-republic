@@ -16,6 +16,7 @@ machinery, made portable. Take it. Steal it. Make it yours.
 | **Stateless Boot** | `stateless_boot.py` | Render a fresh worker's *frozen prefix* from current tools/interfaces/live-truth | A worker is born fresh — no persona, no history. It holds the machine, not the person. Workers die; the wave persists. |
 | **MemLance** | `memlance.py` | Index real memory bytes, *select* the relevant grounded states, with a deterministic verified/derived verdict | Don't load everything — lance only the relevant leaves. Anti-hallucination by construction: only real bytes, flagged when ungrounded. |
 | **Verkle Knot** | `verkle_knot.py` | A content-addressed, append-only, hash-linked chain of commits | Every commit references its parent root; state is replayable and verifiable. "Disk is law" made structural. |
+| **Ghost / Ghostlance** | `ghost_pylance.py` | Deterministic AST code-intelligence: diagnose undefined names, unused imports, syntax errors; symbol map; self-check | The execution surface. The agent does work through a deterministic tool surface and **checks itself against actual bytes** — never a blind terminal spawn. |
 
 ---
 
@@ -32,6 +33,7 @@ Each module also has a `__main__` so you can run it directly:
 python stateless_boot.py
 python memlance.py
 python verkle_knot.py
+python ghost_pylance.py
 ```
 
 ---
@@ -56,10 +58,15 @@ python verkle_knot.py
 3. **Verkle Knot** — this is the substrate. Append your own state as knots; the hash
    chain gives you verifiable, replayable, append-only memory for free. Point it at any
    directory.
+4. **Ghost / Ghostlance** — point it at *your* code. `diagnose` grounds the agent against
+   actual bytes (undefined names, unused imports, syntax errors); `self_check` gives the
+   "N/N modules syntax-clean" bead. Wire it into your agent's tool surface so it verifies
+   its own work instead of trusting recall.
 
-The three compose: **stateless boot** spawns a fresh worker, **memlance** selects what
-it should remember (grounded only), and **verkle knot** commits what it learned so the
-wave persists even though the worker died.
+The four compose: **stateless boot** spawns a fresh worker, **memlance** selects what
+it should remember (grounded only), **verkle knot** commits what it learned so the wave
+persists even though the worker died, and **ghost** verifies the worker's work against
+real bytes before it ever claims "done".
 
 ---
 

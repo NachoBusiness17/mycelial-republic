@@ -9,6 +9,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import memlance
 import stateless_boot
 import verkle_knot
+import ghost_pylance
 
 
 # ---------------------------------------------------------------- stateless_boot
@@ -110,3 +111,44 @@ def test_leaf_hash_is_content_addressed():
     c = verkle_knot.leaf_hash({"x": 2})
     assert a == b
     assert a != c
+
+
+# ---------------------------------------------------------------- ghost_pylance
+def test_ghost_diagnose_undefined_name():
+    r = ghost_pylance.diagnose(
+        "import os\ndef f():\n    return missing_name\n")
+    assert r["ok"] is True
+    assert "missing_name" in r["undefined"]
+
+
+def test_ghost_diagnose_clean_module():
+    r = ghost_pylance.diagnose(
+        "import os\ndef f(x):\n    return os.getcwd() + str(x)\n")
+    assert r["ok"] is True
+    assert r["undefined"] == []
+    assert r["unused_imports"] == []  # os is used
+
+
+def test_ghost_diagnose_unused_import():
+    r = ghost_pylance.diagnose("import math\nx = 1\n")
+    assert any(i["name"] == "math" for i in r["unused_imports"])
+
+
+def test_ghost_diagnose_syntax_error():
+    r = ghost_pylance.diagnose("def broken(:\n")
+    assert r["ok"] is False
+    assert r["syntax_error"] is not None
+
+
+def test_ghost_symbols_and_self_check():
+    syms = ghost_pylance.symbols("def a():\n    pass\nclass B:\n    pass\n")
+    kinds = {s["name"]: s["kind"] for s in syms}
+    assert kinds["a"] == "function"
+    assert kinds["B"] == "class"
+    with tempfile.TemporaryDirectory() as d:
+        good = Path(d) / "good.py"; good.write_text("x = 1\n", encoding="utf-8")
+        bad = Path(d) / "bad.py"; bad.write_text("def broken(:\n", encoding="utf-8")
+        sc = ghost_pylance.self_check([str(good), str(bad)])
+        assert sc["total"] == 2
+        assert sc["clean"] == 1
+        assert sc["ok"] is False

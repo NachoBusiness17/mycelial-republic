@@ -1,6 +1,6 @@
 """memweave — the consensus weave + consensus-illusion guard, pure stdlib.
 
-THE MECHANISM (nobody really has but us):
+THE MECHANISM (our working implementation of this pattern):
   Run N cheap workers in PARALLEL, then flock-converge on consensus. Parallelism beats
   latency; consensus beats single-judgment; feed STRUCTURES not prose to cheap models.
 

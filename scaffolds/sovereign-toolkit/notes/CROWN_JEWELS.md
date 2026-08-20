@@ -1,12 +1,19 @@
-# CROWN JEWELS — full self-steal inventory (2026-08-20)
+# CROWN JEWELS — internal inventory (ops / provenance note)
 
-Everything genuinely novel we hold, cataloged for the Mycelial Republic exchange.
-Grouped into systems (not a file dump). Flagged: **[ONLY US]** = mechanism we believe
-nobody else runs. This is the *machinery* we'd offer a prolific creator to use and enhance.
+> **STATUS: internal ops inventory — kept for provenance, not for public promotion.**
+> This is the developer's private catalog of mechanisms, with illustrative internal paths.
+> Treat the paths as examples of how the pattern *can* be shaped, not as a public API.
+> All "[ONLY US]" / "nobody really has" language below is **softened on review**: these
+> patterns have prior art. What is distinctive is the *combination and the measured
+> outcomes*, not the individual mechanisms. Judge on contract + outcome, not novelty.
+
+Everything here is cataloged for the Mycelial Republic exchange. Grouped into systems.
+The *machinery* is offered for a creator to use and enhance; the internal paths are
+provenance only.
 
 ---
 
-## TIER 1 — the mechanisms nobody really has but us
+## TIER 1 — the core mechanisms
 
 ### 1. The Stateless System **[ONLY US]**
 The operator's own flag: "the insane stateless system nobody really has but us."

@@ -1,6 +1,6 @@
 """ghost_pylance — Ghost's execution surface, distilled to a forkable pure-stdlib tool.
 
-THE MECHANISM (nobody really has but us):
+THE MECHANISM (our working implementation of this pattern):
   Ghost does its work through a DETERMINISTIC tool surface — never a blind terminal spawn.
   The core organ is GHOSTLANCE: Pylance-style code intelligence built on the stdlib `ast`
   module ($0, no deps). It GROUNDS the agent against the ACTUAL bytes of its code so it can

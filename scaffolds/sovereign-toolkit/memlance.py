@@ -1,6 +1,6 @@
 """memlance — selective GROUNDED memory, distilled to a forkable pure-stdlib tool.
 
-THE MECHANISM (nobody really has but us):
+THE MECHANISM (our working implementation of this pattern):
   Don't "load everything." SELECT the memory to surface per-task (Quicksort-style
   selection), then lance only the relevant leaves. A memory economy: the right bytes at
   the right moment — not the whole chain.

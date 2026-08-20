@@ -1,7 +1,7 @@
 # THE STEAL KIT — how to build a self-running sovereign system
 
-> **For:** AdventureNLearn — Objective Thinking is the Process, Growth is the Goal.
-> **From:** Nacho's sovereign build (shared 2026-08-20).
+> **For:** anyone building a self-running system.
+> **Source:** the sovereign-build pattern library (shared 2026-08-20).
 > **The point:** You don't need our info or our secrets. You need the *method* —
 > how to steal mechanisms from other systems and adapt them to your own, the same
 > way we had to for ours. This is the how-to. Nothing here is private; everything

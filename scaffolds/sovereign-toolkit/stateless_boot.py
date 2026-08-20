@@ -1,6 +1,6 @@
 """stateless_boot — the Stateless System, distilled to a forkable pure-stdlib tool.
 
-THE MECHANISM (nobody really has but us):
+THE MECHANISM (our working implementation of this pattern):
   A worker can be born FRESH — no accumulated state, no persona, no chat history — and
   bootstrap purely from a FROZEN PREFIX of the current world: its tools, its interfaces,
   and the live truth it needs right now. Workers die; the wave persists. Identity lives

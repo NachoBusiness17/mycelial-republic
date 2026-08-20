@@ -1,8 +1,13 @@
 # Sovereign Toolkit — crown jewels for the Mycelial Republic
 
-A forkable, pure-stdlib exchange pack: the mechanisms we believe **nobody really has but
-us**, distilled so a prolific creator can **take them, run them, and enhance them to his
-own needs**. Part of the exchange of ideas in the Mycelial Republic.
+A forkable, pure-stdlib exchange pack for the Mycelial Republic: our **working
+implementations** of a set of agent-architecture patterns, distilled so anyone can
+**take them, run them, and adapt them to their own needs**.
+
+**Honesty note:** none of these mechanisms is claimed as uniquely ours. Ephemeral
+workers, content-addressed chains, selective memory, and autonomous cadence all have
+prior art. What is offered here is *our concrete, runnable, testable contracts* plus the
+measured outcomes we observed. Judge them on that — not on novelty.
 
 **Nothing here is private.** No secrets, no runtime memory, no repo contents. Only the
 machinery, made portable. Take it. Steal it. Make it yours.
@@ -64,10 +69,12 @@ python ghost_pylance.py
    "N/N modules syntax-clean" bead. Wire it into your agent's tool surface so it verifies
    its own work instead of trusting recall.
 
-The four compose: **stateless boot** spawns a fresh worker, **memlance** selects what
-it should remember (grounded only), **verkle knot** commits what it learned so the wave
-persists even though the worker died, and **ghost** verifies the worker's work against
-real bytes before it ever claims "done".
+The five compose: **stateless boot** spawns a fresh worker, **memlance** selects what
+it should remember (grounded only), **memweave** combines several workers' answers by
+*independent* consensus (so correlated answers don't masquerade as agreement),
+**verkle knot** commits what was learned so the wave persists even though the worker
+died, and **ghost** verifies the worker's work against real bytes before it ever claims
+"done".
 
 ---
 
@@ -78,5 +85,31 @@ real bytes before it ever claims "done".
 - **Objective over resonant.** The coldest truth wins over the most compelling story.
 - **Self-steal before you build.** Audit what you already own first; then steal
   externally and adapt.
+
+---
+
+## Public Supplemental Profile (the non-negotiable gates)
+
+This kit is offered for **personal-workflow use, not as an autonomous daemon**. If you
+wire it into anything that runs unattended, keep these load-bearing:
+
+- **Human final call.** Software never auto-truths. Any external side-effect (publish,
+  send, ship, spend) requires an explicit human go.
+- **Dry-by-default.** Every external action is a dry run unless you pass `--live`.
+- **Visible status + kill-switch.** Anything that runs on a cadence must be visible and
+  stoppable in one move. Silent background autonomy is not safe in a public tool.
+- **Cost / rate caps.** Bound resource and spend before any live path.
+- **Local-first.** No required cloud, K8s, or multi-provider seats for the core.
+
+## Honesty packaging (the integrity kernel)
+
+Every material claim in this kit carries a tri-state score and a basis label:
+
+- **Supported / Unproven / Disputed** (+1 / 0 / −1) — how solid the claim is.
+- **Evidence / Inference / Assumption** — *why* you believe it.
+- **Primary records beat commentary.** A measured outcome outranks a reported one.
+  (Example: the cache-economics figures are **Measured, Evidence — a single instance**,
+  grounded in the real bill — not a universal guarantee.)
+- **Prefer honest incomplete state over false certainty.**
 
 *Take the machinery. Leave the contents. Build your own.*

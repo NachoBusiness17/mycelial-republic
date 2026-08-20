@@ -1,6 +1,6 @@
 """verkle_knot — content-addressed hash-linked memory chain, pure stdlib.
 
-THE MECHANISM (nobody really has but us):
+THE MECHANISM (our working implementation of this pattern):
   A content-addressed, append-only, hash-linked chain of KNOTS — the durable substrate.
   Every commit references its parent root; state is replayable and verifiable. The
   filename is the address; the chain tip is a succinct Merkle root. "Disk is law" made

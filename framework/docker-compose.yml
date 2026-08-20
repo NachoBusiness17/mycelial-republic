@@ -1,0 +1,125 @@
+# Mag runs in a container — agent subprocesses never get your full desktop.
+# Host only: localhost ports + explicit volume mounts (memory, watch, logs, state, queue).
+#
+#   docker compose up -d --build
+#   http://127.0.0.1:8765/
+#
+# Optional local LLM sidecar:
+#   docker compose --profile ollama up -d --build
+
+services:
+  mag:
+    build: .
+    image: mag-sovereign:local
+    container_name: mag-sovereign
+    env_file:
+      - .env
+    environment:
+      PYTHONUTF8: "1"
+      MAG_BIND_HOST: "0.0.0.0"
+      MAG_CONTAINER: "1"
+      MAG_NO_MIRROR: "1"
+      MAG_DRAINER: "1"
+      # OLLAMA_HOST: the test lane (--provider ollama) runs INSIDE this container but
+      # the working ollama lives on the HOST. The `ollama` sidecar service (profile)
+      # was Exited and would duplicate the 39GB store. host.docker.internal reaches the
+      # host's live ollama directly (verified 200 from inside this container, 2026-08-17).
+      # Must include /v1: providers.py builds "{base}/chat/completions", and Ollama's
+      # OpenAI-compat endpoint is /v1/chat/completions (a bare host gave HTTP 404).
+      OLLAMA_HOST: "http://host.docker.internal:11434/v1"
+      REDIS_HOST: "redis"
+      REDIS_PORT: "6379"
+    depends_on:
+      - redis
+    ports:
+      - "127.0.0.1:8765:8765"
+      - "127.0.0.1:8000:8000"
+      - "127.0.0.1:9000:9000"
+    volumes:
+      - ./memory:/app/memory
+      - ./watch:/app/watch
+      - ./logs:/app/logs
+      - ./state:/app/state
+      - ./queue:/app/queue
+      - ./configs:/app/configs:ro
+      - ./mag:/app/mag
+      - ./tests:/app/tests:ro
+      - ./main.py:/app/main.py:ro
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    restart: unless-stopped
+    networks:
+      - mag_net
+
+  redis:
+    image: redis:7-alpine
+    container_name: mag-redis
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - mag_redis_data:/data
+    restart: unless-stopped
+    networks:
+      - mag_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  ollama:
+    profiles: ["ollama"]
+    image: ollama/ollama:latest
+    container_name: mag-ollama
+    ports:
+      - "127.0.0.1:11434:11434"
+    volumes:
+      - mag_ollama_data:/root/.ollama
+      # Reuse the existing native ollama model store (39GB) instead of re-downloading.
+      # Docker ollama = the single source of truth ("ollama is usually in docker").
+      - C:/Users/foste/.ollama/models:/root/.ollama/models
+    networks:
+      - mag_net
+
+  # Browser / computer-use seat — runs as a CONTAINER driver (not the desktop).
+  # Headless Chromium under xvfb, CDP over localhost only. Drives FREE web frontends
+  # (Perplexity, DeepSeek, Grok, ChatGPT, Claude) instead of paying their APIs.
+  # Sandboxed: cap_drop ALL + no-new-privileges, no desktop access.
+  #   docker compose --profile browser up -d   (then Mag connects to ws://127.0.0.1:9222)
+  browser:
+    profiles: ["browser"]
+    # PINNED 2026-08-14: image must MATCH the host playwright version (1.62.0) — the old
+    # v1.48.0 image vs host 1.62.0 was a CDP protocol mismatch => connect_over_cdp "socket
+    # hang up" / flaky. Keep these two in lockstep (steal: playwright version mismatch).
+    image: mcr.microsoft.com/playwright:v1.62.0-jammy
+    container_name: mag-browser
+    # BRIDGE networking + published port (FIXED 2026-08-13): `network_mode: host` does NOT expose
+    # the port to the Windows host on Docker Desktop (host net maps to the Docker VM, not your
+    # Windows loopback) — that's why the host got ECONNREFUSED on 9222. Chrome already binds
+    # 0.0.0.0 (--remote-debugging-address=0.0.0.0), so a published port mapping forwards cleanly
+    # to Windows localhost. Docker Desktop forwards published ports to 127.0.0.1 on Windows.
+    ports:
+      - "9222:9222"
+    command: >
+      bash -c "CHROME=$$(ls -d /ms-playwright/chromium-*/chrome-linux64/chrome /ms-playwright/chromium-*/chrome-linux/chrome 2>/dev/null | head -1) &&
+      rm -rf /tmp/mag-chrome-profile && mkdir -p /tmp/mag-chrome-profile &&
+      exec \"$$CHROME\" --headless=new --remote-debugging-address=0.0.0.0
+      --remote-debugging-port=9222 --remote-allow-origins=* --no-sandbox
+      --disable-dev-shm-usage --disable-gpu
+      --user-data-dir=/tmp/mag-chrome-profile"
+    shm_size: "2gb"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    restart: unless-stopped
+
+networks:
+  mag_net:
+    driver: bridge
+
+volumes:
+  mag_ollama_data:
+  mag_redis_data:

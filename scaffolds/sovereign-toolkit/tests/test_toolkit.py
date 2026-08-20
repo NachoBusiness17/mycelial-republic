@@ -10,6 +10,7 @@ import memlance
 import stateless_boot
 import verkle_knot
 import ghost_pylance
+import memweave
 
 
 # ---------------------------------------------------------------- stateless_boot
@@ -152,3 +153,49 @@ def test_ghost_symbols_and_self_check():
         assert sc["total"] == 2
         assert sc["clean"] == 1
         assert sc["ok"] is False
+
+
+# ---------------------------------------------------------------- memweave
+def test_memweave_decompose_is_deterministic():
+    a = memweave.decompose("route the heavy reasoning to the frontier", 3)
+    b = memweave.decompose("route the heavy reasoning to the frontier", 3)
+    assert a == b
+    assert len(a) == 3
+
+
+def test_memweave_independent_agreement_is_strong():
+    # two genuinely different phrasings -> independent, strong consensus
+    q = memweave.consensus_quality([
+        "send the heavy reasoning to the frontier model and keep routine local",
+        "expensive frontier reasoning goes remote while cheap routine work stays local",
+    ])
+    assert q["n_independent"] == 2
+    assert q["verdict"] == "strong"
+
+
+def test_memweave_correlated_answers_collapse_to_one():
+    # a near-copy of the first answer is NOT an independent witness
+    q = memweave.consensus_quality([
+        "route heavy reasoning to the frontier model and keep the routine load local",
+        "route heavy reasoning to the frontier model and keep the routine load local",
+        "keep the heavy reasoning on the frontier and run the routine load locally",
+    ])
+    # two independent, but the duplicate is correlated -> n_independent == 2
+    assert q["n_independent"] == 2
+    assert q["n_answers"] == 3
+
+
+def test_memweave_consensus_illusion_flagged():
+    # THREE identical answers: one opinion masquerading as three -> correlated_weak
+    q = memweave.consensus_quality(["alpha beta gamma"] * 3)
+    assert q["n_independent"] == 1
+    assert q["verdict"] == "correlated_weak"
+    assert q["correlated"] is True
+
+
+def test_memweave_weave_returns_consensus():
+    answers = ["keep heavy reasoning on the frontier and routine local"] * 2
+    w = memweave.weave(answers)
+    assert w["verdict"] == "correlated_weak"
+    assert w["consensus"] == answers[0]
+    assert w["n_independent"] == 1

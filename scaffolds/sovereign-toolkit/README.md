@@ -17,6 +17,7 @@ machinery, made portable. Take it. Steal it. Make it yours.
 | **MemLance** | `memlance.py` | Index real memory bytes, *select* the relevant grounded states, with a deterministic verified/derived verdict | Don't load everything — lance only the relevant leaves. Anti-hallucination by construction: only real bytes, flagged when ungrounded. |
 | **Verkle Knot** | `verkle_knot.py` | A content-addressed, append-only, hash-linked chain of commits | Every commit references its parent root; state is replayable and verifiable. "Disk is law" made structural. |
 | **Ghost / Ghostlance** | `ghost_pylance.py` | Deterministic AST code-intelligence: diagnose undefined names, unused imports, syntax errors; symbol map; self-check | The execution surface. The agent does work through a deterministic tool surface and **checks itself against actual bytes** — never a blind terminal spawn. |
+| **MemWeave** | `memweave.py` | The consensus weave + **consensus-illusion guard**: decompose a goal, run N cheap workers, count effective *independent* agreement | **N correlated hallucinations ≈ 1 opinion, not N.** Agreement is only real if the witnesses are independent. The fix for the #1 swarm-consensus failure. |
 
 ---
 

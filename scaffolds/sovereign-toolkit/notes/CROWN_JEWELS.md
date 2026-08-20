@@ -15,8 +15,7 @@ provenance only.
 
 ## TIER 1 — the core mechanisms
 
-### 1. The Stateless System **[ONLY US]**
-The operator's own flag: "the insane stateless system nobody really has but us."
+### 1. The Stateless System
 A worker can be born fresh — no accumulated state, no persona, no history — and
 bootstrap purely from a **frozen prefix** of current state (tools + interfaces + live
 truth). Workers die; the **wave persists**. Identity lives in the invariant, not a
@@ -25,7 +24,7 @@ mutable blob.
   (`fresh_context_pack` mode), `mag/state_quantizer.py`, `mag/state_snapshot.py`
 - The doctrine that makes the clean-slate launch possible at all.
 
-### 2. MemWeave **[ONLY US]**
+### 2. MemWeave
 The memory doctrine: **memlang × RIB × weave** — memory written in a compact language,
 frozen into specs (RIBs), woven into a standing wave across sessions. Memory isn't
 stored-and-queried; it's *resonated*. Crosswalked with source truth, never interpreted
@@ -33,14 +32,14 @@ loose.
 - `mag/memweave.py`, `mag/memlang.py`, `mag/rib_bus.py`, `mag/shader_bus.py`,
   `mag/mem_weave_distributor.py`, `mag/standing_wave.py`, `mag/gpu_memweave.py`
 
-### 3. MemLance / VerkleLance — selective memory **[ONLY US]**
+### 3. MemLance / VerkleLance — selective memory
 Not "load everything." **Select** the memory to surface per-task (Quicksort-style
 selection), then lance only the relevant leaves. A memory economy: the right bytes at
 the right moment, not the whole chain.
 - `mag/ghost_memlance.py`, `mag/verkle_lance.py`, `mag/mem_lands.py`,
   `mag/attention_ranker.py`, `mag/mem_state_feed.py`
 
-### 4. The Verkle Knot / hash-linked memory chain **[ONLY US]**
+### 4. The Verkle Knot / hash-linked memory chain
 A content-addressed, append-only, hash-linked chain of **knots** — the sovereign's
 durable substrate (6k+ leaves, ~20-min cadence). Every commit references its parent
 root; state is replayable and verifiable. This is the "disk is law" made structural.
@@ -67,9 +66,9 @@ watches. This is "sovereign" operationally — the system keeps itself alive.
   `mag/orchestrator.py`, `mag/resume_order.py`, `mag/drainer_stats.py`, `mag/process_supervisor.py`
 
 ### 7. The cache-mining economics
-The technique that made the cheap/owned side carry the load: measured **~98% cache
-hit** → low-single-digit dollars for a workload whose frontier-equivalent was
-**~$100–400+**. A portable economics lesson, not just a number.
+**Measured, Evidence — a single instance** (grounded in the real bill, not estimated):
+**~98% cache hit** → low-single-digit dollars for one workload whose frontier-equivalent
+was **~$100–400+**. Portable as a *lesson*, not as a universal guarantee.
 - `mag/cache_router.py`, `mag/cache_extract.py`, `mag/cache_map.py`, `mag/cache_shard.py`,
   `mag/tokenomics.py`, `mag/token_economy.py`, `mag/compute_reconcile.py`
 

@@ -91,10 +91,11 @@ These are the mechanisms that let a system run itself instead of waiting on you:
 
 The technique: make the cheap/owned side carry the routine load and cache aggressively.
 
-A measured instance: tens of thousands of remote calls through a cache-mining router
-ran at **~98% cache hit** — real spend in the **low single digits of dollars** for a
-workload whose uncached, frontier-equivalent path would have been **~$100–400+**.
-Same workload, one order of magnitude apart, purely from routing + caching discipline.
+A measured instance (Evidence, single environment — grounded in the real bill, not
+estimated): tens of thousands of remote calls through a cache-mining router ran at
+**~98% cache hit** — real spend in the **low single digits of dollars** for a workload
+whose uncached, frontier-equivalent path would have been **~$100–400+**. Same workload,
+one order of magnitude apart, purely from routing + caching discipline.
 
 The takeaway is portable: **it's not about which model you use, it's about how you
 shape the ask and where you let it execute.** The cheap side can carry almost all of

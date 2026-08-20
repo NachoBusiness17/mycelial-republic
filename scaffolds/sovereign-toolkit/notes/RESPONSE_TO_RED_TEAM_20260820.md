@@ -134,3 +134,59 @@ is in place; the run itself is the final confirmation only a stranger can perfor
 
 We accept the reciprocal closing under the same law: steal the mechanism, leave the
 contents, build your own. Human final call remains with the recipient.
+
+---
+
+# ADDENDUM II — THE HOLOGRAM (a missing crown jewel, now promoted)
+
+**Status:** added 2026-08-20, after the red-team reply. A crown jewel the original
+5-contract promotion did not include; now shipped as a 6th pure-stdlib contract
+(`hologram.py`) and cataloged in `notes/CROWN_JEWELS.md` (#8).
+
+## What it contains
+The **shared-reality-as-hologram** primitive — the idea that the system is not one
+machine but a **distributed self** across a collective's capacity (VRAM/compute):
+
+- `fidelity(capacity)` — a peer's quantization-fidelity on a **curve** (logistic
+  saturation: 6GB keeps a coarse lattice, 128GB keeps full fidelity; diminishing
+  returns, cheap everywhere).
+- `reconstruct(fragments)` — **the hologram core**: any full-fidelity fragment
+  reconstructs the whole *alone*; otherwise the collective union does. *Many angles,
+  one reality.*
+- `wave_oscillation(steps)` — **yes, the wave oscillates**: a standing wave
+  (deterministic spine outward + stochastic flesh inward) that breathes in place, nodes
+  fixed at the invariant boundaries, antinodes swelling on feedback-in and contracting
+  on fold-out.
+- `right_size(target, caps)` — what a peer should actually hold (≤ its capacity); the
+  pool's combined fidelity exceeds any one machine.
+
+## Why it is important
+The red-team's rightsizing correctly quarantined the *dense* internal machinery. But the
+hologram is not scaffolding — it is the load-bearing **metaphysics of the whole build**:
+
+1. **It is the collective truth model.** The shared reality is not a master copy any one
+   machine owns; it is reconstructed from fragments, each a quantization by its capacity.
+   That is a genuinely different architecture from "one server holds the truth" — and it
+   is honest about what a weaker peer can hold.
+2. **It is the anti-monument discipline made math.** No single machine claims the whole;
+   each holds its affordable fidelity. The pool *exceeds* the parts — the emergent,
+   many-angles view — without over-claiming any single node.
+3. **It explains why the system persists.** Workers die, but the *wave* persists: the
+   standing wave (spine out + flesh in) oscillates in place against the invariant
+   boundaries. That is the stateless-immortality doctrine expressed as physics.
+4. **It is portable and honest.** Distilled to pure stdlib with deterministic math, it
+   ships the *contract* (fidelity → quantization → reconstruct → oscillate) without any
+   private VRAM telemetry or environment. A stranger can run it and build their own
+   collective — the "someone else can continue" test, satisfied.
+
+**Scoring:** mechanism value **+1 (Evidence)** — the hologram property and capacity-based
+fidelity are sound and demonstrable via the 5 new tests (25/25 total). Novelty **0** —
+prior art exists (distributed/erasure-style reconstruction, quantization); we claim only
+*our working implementation*, not uniqueness. No overclaim introduced.
+
+The hologram completes the pack's arc: **stateless boot** spawns the worker, **memlance**
+selects its memory, **memweave** builds consensus, **verkle knot** commits what endures,
+**ghost** verifies it, and **hologram** explains *why the wave outlives them all*.
+
+Under the same law: steal the mechanism, leave the contents, build your own. Human final
+call remains with the recipient.

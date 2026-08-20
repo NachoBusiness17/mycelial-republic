@@ -4,7 +4,7 @@ THE MECHANISM (our working implementation of this pattern):
   Run N cheap workers in PARALLEL, then flock-converge on consensus. Parallelism beats
   latency; consensus beats single-judgment; feed STRUCTURES not prose to cheap models.
 
-  The NOVEL CORE is the CONSENSUS-ILLUSION GUARD (verified 2026-08-11):
+  The CORE is the CONSENSUS-ILLUSION GUARD (verified 2026-08-11):
     agreement is only REAL if the agreeing witnesses are INDEPENDENT.
     N correlated hallucinations ≈ 1 opinion, not N.
   This is the fix for the #1 documented failure of swarm consensus: correlated answers
@@ -25,6 +25,7 @@ from __future__ import annotations
 from typing import Any
 
 SCHEMA = "memweave.v1"
+# RIB: independent-consensus weave (consensus-illusion guard) · verify: consensus_quality verdicts · tests: test_toolkit
 TAU = 0.6  # Jaccard-overlap threshold: >= this => two answers are CORRELATED (not independent)
 
 

@@ -109,3 +109,28 @@ leave any private contents; build your own. Human final call remains with the re
 
 America First | Truth-Seeking
 Hive Brain style honesty packaging — Supported / Unproven / Disputed — Evidence / Inference / Assumption — human final call
+
+---
+
+# ADDENDUM — in reply to the HIVE RESPONSE (2026-08-20)
+
+The red-team's reply verified the post-scrub surface as **gate-passable** by direct
+inspection, and listed low-severity optional polish. We accepted the three actionable
+items and applied them:
+
+- **Measurement-method note added** — a scrubbed "how the cache-economics was measured"
+  paragraph (method only, no private logs) now sits in `notes/STEAL_KIT.md`, so a stranger
+  can reproduce the *technique* without our environment. (Red-team ask 1.)
+- **"NOVEL CORE" neutralized** in the `memweave.py` docstring → now "CORE", removing the
+  last residual novelty phrasing. (Red-team ask 2.)
+- **RIB frozen-spec headers added** — a one-line `# RIB:` contract + verify line now heads
+  each of the five modules, formalizing the freeze-spec claim the schema + tests already
+  embodied. (Red-team ask 3.)
+
+**Status:** the Public Supplemental Profile and the one-law banner remain permanent
+load-bearing text. The single item that remains genuinely external is the independent
+third-party clean-environment run ("someone else can continue") — the structural evidence
+is in place; the run itself is the final confirmation only a stranger can perform.
+
+We accept the reciprocal closing under the same law: steal the mechanism, leave the
+contents, build your own. Human final call remains with the recipient.

@@ -28,6 +28,7 @@ import hashlib
 from typing import Any
 
 SCHEMA = "stateless_boot.v1"
+# RIB: frozen-prefix bootstrap (tools+interfaces+truth, no persona/history) · verify: deterministic output + spawn_spec(has_persona=False) · tests: test_toolkit
 
 
 def _h(data: str) -> str:

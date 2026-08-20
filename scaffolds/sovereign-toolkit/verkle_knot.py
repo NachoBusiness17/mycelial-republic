@@ -25,6 +25,7 @@ from pathlib import Path
 from typing import Any
 
 SCHEMA = "verkle_knot.v1"
+# RIB: append-only content-addressed hash-linked chain · verify: replay/verify + tamper detection · tests: test_toolkit
 
 # Leaf filename: {date}_{HHmmUTC}_{theme}_{session8}_{commit8}.knot.json
 _FNAME_RE = re.compile(r"^(\d{4}-\d{2}-\d{2})_(\d{4})_([^_]+)_([0-9a-f]{8})_([0-9a-f]{8})\.knot\.json$")

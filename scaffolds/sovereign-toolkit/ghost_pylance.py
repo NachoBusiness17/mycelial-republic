@@ -27,6 +27,7 @@ from pathlib import Path
 from typing import Any
 
 SCHEMA = "ghost_pylance.v1"
+# RIB: deterministic AST code-intel against real bytes · verify: diagnose/imports/self_check · tests: test_toolkit
 _BUILTINS = set(dir(builtins))
 
 

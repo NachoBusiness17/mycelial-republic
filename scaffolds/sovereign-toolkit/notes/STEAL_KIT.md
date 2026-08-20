@@ -99,6 +99,13 @@ one order of magnitude apart, purely from routing + caching discipline.
 
 The takeaway is portable: **it's not about which model you use, it's about how you
 shape the ask and where you let it execute.** The cheap side can carry almost all of
+
+**How it was measured (method, no private logs):** the figure comes from routing a
+real workload through a cache-mining router and summing the actual billed rows for the
+calls that hit the cache vs. the frontier-equivalent price of the same uncached calls.
+The primary bill is not published (it contains account detail). This note is the method
+so a stranger can reproduce the *technique* — point the same discipline at their own
+workload and measure their own number.
 the load if you represent the work right.
 
 ---

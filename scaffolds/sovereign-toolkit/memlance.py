@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Any
 
 SCHEMA = "memlance.v1"
+# RIB: grounded selective memory (real bytes + verified/derived verdict) · verify: grounding_verdict tri-state + select relevance · tests: test_toolkit
 
 # A state is VERIFIED only if it carries a real-data / RIB / measured / frozen marker.
 # Absent one, it is DERIVED (unverified) — conservative, anti-hallucination.

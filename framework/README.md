@@ -41,6 +41,7 @@ real, full implementation those contracts distill.
 | **Swarm / seats** | `swarm_surface.py`, `swarm_worker.py`, `seat_steer.py` | Route novel research to the swarm; drive seats headless. |
 | **The hologram** | `vram_hologram.py`, `holographic_q.py`, `water_swarm.py` | Shared reality as a hologram; the standing wave. |
 | **Stateless** | `stateless_research.py`, `ghost_cold_boot.py`, `self_drive.py`, `context_pack.py` | Fresh workers bootstrap from a frozen prefix; no inherited state. |
+| **The game line** | `game_world.py`, `game_campaign.py`, `game_narrate.py`, `game_dice.py`, `game_dm.py`, `game_dm_voice.py`, `game_battle_cycle.py`, `game_saga.py`, `game_piece_tandem.py`, `game_score.py`, `game_ramp.py`, `game_observer.py`, `game_world_map.py`, `game_world_render.py` | **Distributed collaborative storytelling**: a verkle-committed persistent world, state-first/LLM-last engine, constrained narrator, saga accumulation (the pass-the-save model), honest scoreboard. |
 
 ## Running
 

@@ -39,6 +39,10 @@ A self-running agent system built on a few load-bearing ideas:
    cost/rate caps as first-class, load-bearing features (never afterthoughts).
 6. **Grounding** — every claim labeled Supported/Unproven/Disputed + Evidence/Inference/
    Assumption. Primary records beat commentary.
+7. **The game line** — the verkle-committed world + state-first engine + saga accumulation
+   (`framework/mag/game_*.py`). This is distributed collaborative storytelling: a shared
+   persistent world passed mind-to-mind. Help wanted on the narrator, the world model,
+   the pass-the-save saga, and the honest scoreboard.
 
 ## Non-negotiable rules
 

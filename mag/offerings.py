@@ -45,7 +45,9 @@ BODIES: dict[str, dict[str, Any]] = {
         "installed": lambda: _start_app_exists("AutoClaw"),
         "surfaces": ["im", "skills", "browser", "scheduled", "cluster"],
         "best_for": ["agentic_busywork", "content_ops", "browser_automation", "im_workflows"],
-        "note": "desktop agent; 26k free credits + GLM plan boost; IM-integrated",
+        "bridge": "watch/autoclaw_bridge.py",
+        "note": "desktop agent; 26k free credits + GLM plan boost; IM-integrated. Mesh: "
+                "mailbox + CONVO.md at queue/handoff/autoclaw/ (2026-08-25) — talks file-to-file.",
     },
     "openclaw": {
         "name": "OpenClaw (open-source agent kernel)",
@@ -81,6 +83,17 @@ BODIES: dict[str, dict[str, Any]] = {
         "models": ["glm-4.7-flash", "glm-4.5-flash"],
         "best_for": ["cheap_bulk", "daily_agentic", "cache_mined_self"],
         "note": "FREE at all tiers; FROZEN_SELF cache-mined; admission codes 1305/1302 bound flow",
+    },
+    "cache_models": {
+        "name": "The cache models (frozen RIB + flash engine, the cheap brain)",
+        "bridge": "watch/cache_bridge.py",
+        "installed": lambda: bool(os.environ.get("ZAI_API_KEY")),
+        "surfaces": ["ask", "flash", "stats", "convo"],
+        "best_for": ["cheap_brain", "quick_answers", "mesh_backbone", "cache_mined"],
+        "note": "The fleet talks to the cache (2026-08-25): rib_cache.rib_chat ~99.67% "
+                "cache, glm_flash.cached_chat ~99.6%. Every ask rides the frozen prefix "
+                "and returns cached_tokens so mining is measurable. CONVO at "
+                "queue/handoff/cache/CONVO.md.",
     },
     "coding_plan": {
         "name": "GLM Coding plan (Lite, dedicated quota)",
@@ -181,6 +194,9 @@ def route(intent: str) -> list[str]:
         "im workflow": ["autoclaw"],
         "cheap bulk": ["flash_lanes"],
         "daily agentic": ["flash_lanes"],
+        "quick answer": ["cache_models", "flash_lanes"],
+        "cheap brain": ["cache_models"],
+        "ask the cache": ["cache_models"],
         "deep work": ["coding_plan", "claude_harness"],
         "fold": ["shared_memory"],
         "ground truth": ["shared_memory"],

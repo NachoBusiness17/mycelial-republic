@@ -364,7 +364,8 @@ def main(argv: list[str] | None = None) -> int:
     game_sub.add_parser("render", help="the base ASCII render of the current tier")
     game_sub.add_parser("descend", help="master the current tier and descend to the next")
     p_game_play = game_sub.add_parser("play", help="take a turn: play <action> (look/talk/rest/go <place>)")
-    p_game_play.add_argument("action", nargs="?", default="look")
+    # nargs='*' so multi-word actions survive: 'go hall' -> ['go','hall'] -> 'go hall'
+    p_game_play.add_argument("action", nargs="*", default=["look"])
     p_nerv = sub.add_parser(
         "nervous",
         help="Nervous system: at-a-glance body + Verkle tips + key presence (agent ops)",
@@ -2491,7 +2492,7 @@ def main(argv: list[str] | None = None) -> int:
 
         gcmd = getattr(args, "game_cmd", None) or "status"
         if gcmd == "play":
-            _print_game_turn(game_ramp.play(getattr(args, "action", "look")))
+            _print_game_turn(game_ramp.play(" ".join(getattr(args, "action", ["look"]))))
         elif gcmd == "map":
             from mag.game_play import map as _gp_map
             m = _gp_map()

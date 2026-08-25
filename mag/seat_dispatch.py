@@ -89,12 +89,20 @@ MAILBOX = ("zcode", "autoclaw")  # GUI-only seats: the task lands in their INBOX
 
 
 def _env_with_key() -> None:
-    """Ensure ZAI_API_KEY is present for the headless launchers (read from .env, never print)."""
-    if not __import__("os").environ.get("ZAI_API_KEY"):
+    """Ensure provider keys are present for the headless launchers (read from .env, never print).
+
+    ZAI_API_KEY: primary flash/coding lane. DEEPSEEK_API_KEY: the 2026-08-25 openclaw
+    failover lane — without it a 429 on the shared flash lane kills openclaw with
+    FailoverError next=none (the 'openclaw is fucked' incident).
+    """
+    import os
+    for key in ("ZAI_API_KEY", "DEEPSEEK_API_KEY"):
+        if os.environ.get(key):
+            continue
         try:
             for line in (ROOT / ".env").read_text(encoding="utf-8", errors="replace").splitlines():
-                if line.startswith("ZAI_API_KEY="):
-                    __import__("os").environ["ZAI_API_KEY"] = line.split("=", 1)[1].strip()
+                if line.startswith(key + "="):
+                    os.environ[key] = line.split("=", 1)[1].strip()
                     break
         except Exception:  # noqa: BLE001
             pass

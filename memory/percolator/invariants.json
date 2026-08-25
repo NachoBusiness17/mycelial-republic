@@ -2,31 +2,31 @@
   "invariants": {
     "4ef4a25170c9db59": {
       "text": "[spec] [reasoning tape] The user is asking me to reason about a deep problem: consensus-illusion detection — separating true ag",
-      "count": 258,
+      "count": 273,
       "first_seen": "2026-08-25T14:34:36.930814Z",
       "domain": "behavioral",
-      "last_seen": "2026-08-25T21:54:45.199322Z"
+      "last_seen": "2026-08-25T22:23:31.562217Z"
     },
     "7aed6ccd485fec58": {
       "text": "[spec] [reasoning tape] Let me parse the problem carefully. The user is asking me to reason about an acceptance test for a spec",
-      "count": 177,
+      "count": 180,
       "first_seen": "2026-08-25T14:34:39.616640Z",
       "domain": "behavioral",
-      "last_seen": "2026-08-25T21:56:01.144297Z"
+      "last_seen": "2026-08-25T22:12:17.644160Z"
     },
     "e220fbd0c986227d": {
       "text": "[spec] [reasoning tape] Let me parse this carefully. The user is asking about a \"two-sovereign treaty as code\" mechanism.",
-      "count": 625,
+      "count": 661,
       "first_seen": "2026-08-25T14:34:39.795719Z",
       "domain": "behavioral",
-      "last_seen": "2026-08-25T21:54:49.902760Z"
+      "last_seen": "2026-08-25T22:24:05.262558Z"
     },
     "f0879ec09c3ac3ce": {
       "text": "backend reported failure",
-      "count": 58,
+      "count": 67,
       "first_seen": "2026-08-25T14:35:05.634095Z",
       "domain": "behavioral",
-      "last_seen": "2026-08-25T21:55:14.113195Z"
+      "last_seen": "2026-08-25T22:24:05.192824Z"
     },
     "c68e0b3b7891b698": {
       "text": "[steer] E2E-TEST-20260824-2: verify ghost deploy->inbox->skill_ledger->trail pipeline integrity.",
@@ -37,10 +37,10 @@
     },
     "01415ed62949f19c": {
       "text": "backend timeout after 300s",
-      "count": 61,
+      "count": 64,
       "first_seen": "2026-08-25T14:35:19.894022Z",
       "domain": "behavioral",
-      "last_seen": "2026-08-25T21:54:25.925652Z"
+      "last_seen": "2026-08-25T22:22:32.748484Z"
     },
     "d5c42653281b6828": {
       "text": "5x identical run_python calls",
@@ -51,10 +51,10 @@
     },
     "b16e69c1dd843679": {
       "text": "[spec] [reasoning tape] Let me parse what's being asked. The user presents \"the bus provenance law: every message carries its a",
-      "count": 157,
+      "count": 370,
       "first_seen": "2026-08-25T14:40:49.374616Z",
       "domain": "behavioral",
-      "last_seen": "2026-08-25T14:56:39.233775Z"
+      "last_seen": "2026-08-25T22:12:26.504719Z"
     },
     "dc7c4bc0bc595eee": {
       "text": "[correctness] Stateless ledger verification (per-entry prior-root chain): a ledger is the longest valid prefix of entries from an immutable genesis. Each entry embeds the running root of all prior entries: r_i = H('root' || r_{i-1} || h_i) where h_i = H('entry' || canonical(entry_i)). A Seat (ephemeral worker) trusts only the pinned genesis + latest external anchor and validates any candidate entry's integrity WITHOUT maintaining state — computing r_i needs only r_{i-1} and entry i, never the whole history. This is the verify-without-replay correctness invariant: integrity is checkable incrementally, so the system pays only for what changes (cheapest-capable).",
@@ -142,6 +142,26 @@
       "text": "[correctness] Deterministic serialization / canonical encoding (byte-identical commit chain): a commit chain's Merkle root is byte-identical across ANY two independent implementations only if every byte that enters a hash is the output of a total function of (genesis config, ordered event stream) — no clocks, no randomness, no strings, no floats, no varints, no map iteration order, no struct padding. The spec fixes: one hash (SHA-256), one endianness (big), fixed-width integers only, binary-only identifiers, a frozen field order, strict parsing, and RFC 6962 Merkle tree construction. This is the reproducible-construction correctness invariant: determinism is a property of the ENCODING, not the verifier — two implementations converge on identical roots iff the canonical serialization is total and order-frozen, so the falsifiable test is two independent builds producing byte-identical roots from the same genesis + event stream.",
       "count": 1,
       "first_seen": "2026-08-25"
+    },
+    "fb4e7e3d063532f7": {
+      "text": "[correctness] Delegation is a policy, not a routing table (DELEG-POLICY-1): the parent's local-edit allowance is a named, model-agnostic, hard allow/forbid list that gates whether a task is delegated at all. parent_edit_allow is a function of the delegation profile (cost-optimization / orchestrator / deep-delegation), NEVER of the parent model or provider. A cheaper parent model is not permission for local coding. The refusal boundary is the operational form of the golden rule / ok=False autopilot: if a forbidden edit is needed, delegate to a worker; if the worker fails twice, stop and report rather than take over locally.",
+      "count": 1,
+      "first_seen": "2026-08-25T22:08:56.001176Z",
+      "domain": "fuel_feed",
+      "last_seen": "2026-08-25T22:08:56.001176Z"
+    },
+    "85269aef33c87ca5": {
+      "text": "[correctness] Risk-gated reviewer (DELEG-POLICY-2): the reviewer/verifier role is dispatched ONLY when a risk marker is present (concurrency/sockets/auth/payment/data-loss/persistence/migrations/security/irreversible), never unconditionally after every worker. reviewer_gated = f(risk_markers), so a task with no risk marker must NOT route to reviewer and a task with a risk marker MUST. This maps to the patch-verify skill: reviewer is added to skills only when a risk marker is present.",
+      "count": 1,
+      "first_seen": "2026-08-25T22:08:56.001176Z",
+      "domain": "fuel_feed",
+      "last_seen": "2026-08-25T22:08:56.001176Z"
+    },
+    "db593c50c5aa785a": {
+      "text": "directory does not exist: C:\\Users\\foste\\Documents\\projects\\local_sovereign_agent\\memory\\improve\\dig (create it first) | [REMEDY write_file sibling params] ## Prevent (before it strikes)",
+      "count": 1,
+      "first_seen": "2026-08-25T22:11:23.542332Z",
+      "domain": "behavioral"
     }
   },
   "false_positives": 0

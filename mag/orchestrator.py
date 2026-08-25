@@ -67,7 +67,7 @@ TRAIL = ROOT / "memory" / "runs" / "orchestrator_trail.jsonl"
 DEFAULT_TIMEOUT = 900  # seconds — fallback if temperature stacks unavailable
 IMPROVE_TIMEOUT = 420  # shorter backstop for [improve] loops (7 min)
 EXTERNAL_STALE_S = 300  # external/desktop seats without pid — reap after stale heartbeat
-EXTERNAL_NO_REAP_SEATS = {"zcode", "notion"}  # mailbox seats: human-paced GUI/mailbox work, closed via `done`
+EXTERNAL_NO_REAP_SEATS = {"zcode", "notion", "autoclaw"}  # mailbox seats: human-paced GUI/mailbox work, closed via `done`
 
 TERMINAL = {"done", "failed", "timeout", "stalled", "killed", "died"}
 
@@ -1422,10 +1422,10 @@ def reap_stale() -> dict[str, Any]:
             fixed += 1
             continue
         # External/desktop seats: no pid — reap on stale pigeonhole heartbeat.
-        # MAILBOX seats (zcode, notion) are human/GUI-paced: no automated heartbeat,
-        # and auto-dying a task the operator is actively working (e.g. drafting in
-        # Notion) is a FALSE kill (2026-08-25: ext-26d39414f1 died while waiting on
-        # the operator). They close via `done`, never here.
+        # MAILBOX seats (zcode, notion, autoclaw) are human/GUI-paced: no automated
+        # heartbeat, and auto-dying a task the operator is actively working is a
+        # FALSE kill (2026-08-25: ext-26d39414f1 and ext-6bf4a1266d both died while
+        # waiting on human-paced work). They close via `done`, never here.
         if not pid and _is_external_task(t):
             if t.get("seat") in EXTERNAL_NO_REAP_SEATS:
                 continue

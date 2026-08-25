@@ -1128,6 +1128,19 @@ def autorun_loop(interval_s: float = 5.0, *, once: bool = False) -> None:
             except Exception as e:
                 print(_dim(f"  [janitor] error: {e}"), flush=True)
 
+            # cache_watch (2026-08-25): $0 mining monitor — A/B probe + drift audit
+            # + ledger floor; rides the janitor cadence, alarms land in
+            # memory/runs/cache_watch.jsonl (exit-1 semantics, never crashes the loop)
+            try:
+                from mag.cache_watch import run as cache_watch_run
+
+                cw = cache_watch_run()
+                print(_dim(f"  [cache-watch] healthy={cw.get('healthy')} "
+                           f"probe={cw.get('probe', {}).get('ratio')} "
+                           f"alarms={cw.get('alarms')}"), flush=True)
+            except Exception as cwe:
+                print(_dim(f"  [cache-watch] error: {cwe}"), flush=True)
+
         # Framework map cadence: keep the functional grouping + durable copy fresh.
         if map_every > 0 and tick > 0 and tick % map_every == 0:
             try:

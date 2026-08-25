@@ -69,6 +69,99 @@ _RIB_MARKERS = (
     "knot invariant",
 )
 
+# --- DELEGATION PROFILE (DELEG-POLICY, castle-foundation 2026-08-25) ---
+# A named, model-agnostic POLICY layer above routing: controls HOW MUCH the parent agent may do
+# locally and WHEN it must hand off / refuse. parent_edit_allow is a function of the PROFILE, never
+# of the parent model (DELEG-POLICY-1). The reviewer/verifier role is gated by RISK, not run after
+# every worker (DELEG-POLICY-2). This is the operational form of the "golden rule / ok=False
+# autopilot" refusal boundary.
+_DELEGATION_PROFILES: dict[str, dict[str, Any]] = {
+    # minimal coordinator: at most one cheap scope/marker scan, no broad local exploration,
+    # stop rather than take over after delegation failure.
+    "cost-optimization": {
+        "parent_edit_allow": {
+            "read": True,
+            "scope_scan": True,
+            "logic_change": False,
+            "concurrency_fix": False,
+            "security_hardening": False,
+            "new_tests": False,
+            "api_change": False,
+            "lifecycle_ownership_fix": False,
+            "persistence_migration": False,
+        },
+        "max_local_steps": 1,
+        "on_delegation_failure": "stop_and_report",
+    },
+    # primary orchestrator keeps architecture/task-decomposition/final-acceptance, delegates only
+    # bounded work.
+    "orchestrator": {
+        "parent_edit_allow": {
+            "read": True,
+            "scope_scan": True,
+            "logic_change": True,
+            "concurrency_fix": False,
+            "security_hardening": False,
+            "new_tests": True,
+            "api_change": False,
+            "lifecycle_ownership_fix": False,
+            "persistence_migration": False,
+        },
+        "max_local_steps": 3,
+        "on_delegation_failure": "delegate_then_stop",
+    },
+    # deep delegation: parent is a thin coordinator, most work handed to workers.
+    "deep-delegation": {
+        "parent_edit_allow": {
+            "read": True,
+            "scope_scan": True,
+            "logic_change": False,
+            "concurrency_fix": False,
+            "security_hardening": False,
+            "new_tests": False,
+            "api_change": False,
+            "lifecycle_ownership_fix": False,
+            "persistence_migration": False,
+        },
+        "max_local_steps": 0,
+        "on_delegation_failure": "stop_and_report",
+    },
+}
+
+# Risk markers that GATE the reviewer/verifier role (DELEG-POLICY-2). Reviewer is dispatched ONLY
+# when one of these is present, never unconditionally after every worker.
+_RISK_MARKERS = (
+    "concurrency", "thread", "async", "socket", "websocket", "auth", "login",
+    "payment", "billing", "data loss", "data-loss", "persistence", "migrat",
+    "security", "encrypt", "secret", "password", ".env", "delete", "archive",
+    "move", "rename", "migrate", "reset", "irreversible", "payment",
+)
+
+# depth -> default delegation profile (the standing policy rides the same hop as the seat).
+_DEPTH_PROFILE: dict[str, str] = {
+    "scut": "cost-optimization",
+    "conversation": "cost-optimization",
+    "simple_code": "cost-optimization",
+    "heavy_code": "orchestrator",
+    "plan": "orchestrator",
+    "overview": "orchestrator",
+}
+
+
+def _delegation_profile(depth: str, goal: str) -> dict[str, Any]:
+    """Resolve the delegation profile for a goal. Model-agnostic: depends only on depth + goal."""
+    name = _DEPTH_PROFILE.get(depth, "cost-optimization")
+    prof = dict(_DELEGATION_PROFILES.get(name, _DELEGATION_PROFILES["cost-optimization"]))
+    prof["name"] = name
+    prof["reviewer_gated"] = _risk_present(goal)
+    return prof
+
+
+def _risk_present(goal: str) -> bool:
+    """True when a risk marker is present -> reviewer/verifier role is gated ON (DELEG-POLICY-2)."""
+    g = (goal or "").lower()
+    return any(m in g for m in _RISK_MARKERS)
+
 
 def gather_signals() -> dict[str, Any]:
     """Runtime probes used for routing (no network unless bridge env set)."""
@@ -340,8 +433,15 @@ def route(
     force_seat: str | None = None,
     force_provider: str | None = None,
     signals: dict[str, Any] | None = None,
+    delegation_profile: str | None = None,
 ) -> dict[str, Any]:
-    """Single routing decision for a goal."""
+    """Single routing decision for a goal.
+
+    ``delegation_profile`` optionally overrides the depth-derived profile (cost-optimization /
+    orchestrator / deep-delegation). The resolved profile's ``parent_edit_allow`` is a function of
+    the profile, NOT the parent model (DELEG-POLICY-1); ``reviewer_gated`` is risk-driven
+    (DELEG-POLICY-2).
+    """
     from models.quota import pick_provider, provider_budget
 
     goal = (goal or "").strip()
@@ -355,6 +455,18 @@ def route(
     job = DEPTH_JOB_MAP.get(d, "default")
     tier = _tier_for_depth(d, secret=markers["secret"])
     why: list[str] = [f"depth={d}"]
+
+    # delegation profile: named policy layer (DELEG-POLICY). Model-agnostic by construction.
+    prof = _delegation_profile(d, goal)
+    if delegation_profile and delegation_profile in _DELEGATION_PROFILES:
+        prof = dict(_DELEGATION_PROFILES[delegation_profile])
+        prof["name"] = delegation_profile
+        prof["reviewer_gated"] = _risk_present(goal)
+        why.append(f"delegation_profile={delegation_profile}")
+    else:
+        why.append(f"delegation_profile={prof['name']}")
+    if prof["reviewer_gated"]:
+        why.append("reviewer=risk_gated")
 
     force_seat = force_seat.strip().lower() if force_seat else None
     force_provider = force_provider.strip().lower() if force_provider else None
@@ -421,6 +533,7 @@ def route(
         return _route_payload(
             goal, d, job, tier, seat, provider, mode, launch, executable, ok, error, hint,
             why, pick, classified, sig, markers, skills=_match_skills(goal, d, job),
+            delegation_profile=prof,
         )
 
     # --- defer seats ---
@@ -436,6 +549,7 @@ def route(
         return _route_payload(
             goal, d, job, tier, seat, provider, mode, launch, executable, ok, error, hint,
             why, pick, classified, sig, markers, skills=_match_skills(goal, d, job),
+            delegation_profile=prof,
         )
 
     # --- local janitor ---
@@ -463,6 +577,7 @@ def route(
         return _route_payload(
             goal, d, job, tier, seat, provider, mode, launch, executable, ok, error, hint,
             why, pick, classified, sig, markers, skills=_match_skills(goal, d, job),
+            delegation_profile=prof,
         )
 
     # --- heavy execution ---
@@ -511,6 +626,7 @@ def route(
         return _route_payload(
             goal, d, job, tier, seat, provider, mode, launch, executable, ok, error, hint,
             why, pick, classified, sig, markers, skills=_match_skills(goal, d, job),
+            delegation_profile=prof,
             rental=rental,
         )
 
@@ -533,6 +649,7 @@ def route(
     return _route_payload(
         goal, d, job, tier, seat, provider, mode, launch, executable, ok, error, hint,
         why, pick, classified, sig, markers, skills=_match_skills(goal, d, job),
+            delegation_profile=prof,
     )
 
 
@@ -604,6 +721,7 @@ def _route_payload(
     *,
     skills: list[str] | None = None,
     rental: bool = False,
+    delegation_profile: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     ctx = _context_plan(goal, depth, job, tier, mode, provider)
     return {
@@ -631,6 +749,7 @@ def _route_payload(
         "markers": markers,
         "skills": skills or [],
         "rental": rental,
+        "delegation_profile": delegation_profile or {},
     }
 
 

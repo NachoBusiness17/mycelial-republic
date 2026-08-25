@@ -49,7 +49,10 @@ SCHEMA = "swarm_worker.v1"
 SWARM_DIR = ROOT / "memory" / "runs" / "swarm_worker"
 QUEUE_DIR = SWARM_DIR / "queue"
 RESULTS_DIR = SWARM_DIR / "results"
-DEFAULT_PROVIDER = "deepseek"
+DEFAULT_PROVIDER = "z_ai"  # FREE CACHE LANE is the default carrier (2026-08-25, operator: "free tiers sit unused").
+# Bulk/agentic drains ride glm-4.7-flash (free at all tiers, ~97-99% cache on the frozen RIB),
+# concurrency-gated (flash=1). deepseek stays the PAID BRAKE: explicit provider only, for tasks
+# that truly need it. The bill was $4/day riding deepseek by default — that was the leak.
 MAX_PER_PASS = 8  # rightsized: how many tasks one CronJob pass may execute
 
 

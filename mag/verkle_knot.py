@@ -525,6 +525,15 @@ def _append_verkle_knot_unlocked(dossier: dict[str, Any], pdf_path: str | None =
         "amended": existing_i is not None,
     }
     if existing_i is not None:
+        # PRESERVE repair/custom fields across amend (2026-08-25): a flagged
+        # evidence_lost row being re-folded must NOT silently lose its flag.
+        # The canary (chain_guard) caught exactly this — flags dropped
+        # 1,039 -> 1,029 as normal folds amended flagged sessions. The fresh
+        # chain_row below is built from a fixed field set, so carry forward
+        # any repair fields present on the row being replaced.
+        for _k in ("evidence_lost", "repaired_from_pointer"):
+            if rows[existing_i].get(_k) is not None:
+                chain_row[_k] = rows[existing_i][_k]
         rows[existing_i] = chain_row
         amended = True
         # AMEND (2026-08-16): history changes -> full rewrite is correct (rare, on re-summarize).

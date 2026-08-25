@@ -87,3 +87,34 @@ and slightly doomed — that's the fun.
 2. Pick ONE gated beat (e.g. "wire the NPC memory stream into the tavern barkeep").
 3. Do it narrow, prove it (proof gate), then move.
 4. Do NOT fan out into 5 modules at once. That is how the last grok run went dumb.
+
+## RIB 10 — THE 2026-08-24/25 DESIGN EVOLUTION (the current shape; refined 2026-08-25)
+INVARIANT: the driver must carry the CURRENT game, not the 08-14 one. These layers landed
+after RIB 9 and change what "good" means at the run level. Read them INTO the drive:
+
+  * THE CLONE / REPRINT SPINE (Mickey 17, 2026-08-24 — DESIGN_CLONE_REPRINT_MICKEY17):
+    The clone dies. The run is lost. The person is reprinted WITH memory. Death is real,
+    costs the run, is never free. The self never ends, so it is safe to commit.
+    run -> die -> reprint -> run again, seeded from memory. Return-stronger becomes literal:
+    the reprint is DEEPER — it remembers every prior sitting. The memory is the treasure;
+    the death is the price. THE HALL IS THE REPRINT BAY. The player's clone is us
+    (stateless-immortality made literal).
+  * DEADZONE LOOP (steal 2026-08-24 — the market proof): 30+ weapons w/ elemental affixes,
+    augments, permanent upgrades, co-op, per-mission difficulty. GOLD status + 8,529 Very
+    Positive reviews. "You can dive in and worry about the numbers later" — the ACTION carries
+    the first runs; stats matter after. Power-increase is the loop. The game is a FEEDBACK
+    LOOP with players: ship, listen, fix, ship again.
+  * THE HIDDEN NETWORK OWNS THE REPRINT BAY (2026-08-24): the adventuring guild is secretly a
+    network of villains in plain sight. The tie-in: the villains own the reprint bay — the
+    guild isn't a front that runs adventures, it runs the CLONE. Nemesis: the thing that
+    killed you remembers (Shadow of Mordor).
+  * THE HALL OF SHARED SUPPER (2026-08-21): the shared meal / shared story as the binding
+    mechanic — the feast is where the saga is told. Fold with the republic-wide memory.
+  * PLAYTEST DOCTRINE (the standing question: "i love it but will other people?"): prove the
+    reprint loop with REAL players BEFORE building more rooms. Demo before full build.
+  * TRI-STATE AUDIT FLAG (2026-08-25): the reprint compounding was marked "SOLVED BY DESIGN"
+    — it is NOT. The architecture (verkle persistence) exists; the reprint MECHANIC that
+    composes it is one build + one playtest away from Supported. That is the next build.
+BUILD: the reprint mechanic is the NEXT build (a run seeded from prior-sitting state via the
+verkle world + hall_record — the compounding the Hall audit said was missing). Then playtest.
+MACHINE: game_world (verkle knots), the Hall (reprint bay), game_dm_llm (the narrator), persona_recall.

@@ -1,0 +1,49 @@
+# Session summary
+
+- **session:** `019f7780-02a5-7590-be7a-0ceffb4d99cb`
+- **ended:** 2026-07-21T12:53:53.270381+00:00
+- **source lines scanned:** 378
+- **themes:** local Mag / agent, mirror / chord, dashboard / instrument
+
+## What you were working on
+
+Operator prompts (sample, latest first):
+- <user_query> this is broken and not showing anything useful </user_query>
+- <user_query> this is also way too many useless tabs. we need to start with the visuals and the data within them and how its legibly displayed and what. without those core things nailed down everything on top is just stacking shit. we need to see this and reduce bloat redundancy links and clean up the ui to be more interactive and detailed while cle
+
+## What the agent did (sample)
+
+- Still up — health ok on :8743.
+- Dashboard was down again; it’s back at **http://127.0.0.1:8743/** — hard refresh if needed. Workspace is loading (POST 200).
+- **What was broken** 1. **Structure used the wrong graph** — sparse 40k synthesis (~26 nodes) instead of the dense knot map (~100–170 people/claims/docs). Looked empty and useless. 2. **Title garbage** — `# SOURCE core_rope` polluted the center. 3. **Canvas layout** — stage height could collapse to 0×0 so the map drew nothing. 4. **No default select
+- Root cause: Structure was only the sparse 40k synthesis (~26 nodes) instead of the dense knot graph (~164). Fixing the pack and making the desk show real content on first paint.
+- Investigating what's failing on the desk—API, map data, and render path.
+- Dashboard is still up — health reports `v3-desk` on **http://127.0.0.1:8743/**.
+
+## Reasoning snippets
+
+- Still up via the more recent process. No need to spam the user - just a quiet confirmation if they care. Actually the system reminder is just for me - user didn't ask anything. I shouldn't send a mess...
+- Another background process died. I should check if dashboard is still up and keep it running more robustly.
+- Server is up and user already loaded the page successfully. Brief note.
+- Quick health check
+- Dashboard is down. Restart it.
+
+## Paths touched (heuristic)
+
+- `5cfoste\019f7780-02a5-7590-be7a-0ceffb4d99cb\plan.md`
+- `\users\foste\.grok\skills\operator-quixote\skill.md`
+- `\users\foste\documents\projects\worktrees\sovereign-mirror-scaffold\src\sovereign_mirror\dashboard\api\workspace.py`
+- `workspace.py`
+
+## Open loops (heuristic)
+
+- Re-read this summary next session before inventing new epics.
+- Check `scrum/sprints/current/board.md` if republic work was in flight.
+- Full transcript still in `~/.grok/sessions/.../chat_history.jsonl`.
+
+## Intent (best guess)
+
+You were driving **local Mag / agent, mirror / chord, dashboard / instrument**. Latest ask flavor: “[system-reminder redacted]
+
+---
+_Written by Mag biographer (local). Not full chord mode._

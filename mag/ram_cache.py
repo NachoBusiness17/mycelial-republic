@@ -29,7 +29,31 @@ SCHEMA = "ram_cache.v1"
 MAX_CORPUS_CHARS = 2_000_000          # cap the in-memory corpus (RAM is bounded, don't OOM)
 
 # module-level cache: loaded once, served from RAM on repeated passes
-_CACHE: dict[str, Any] = {"loaded": False, "documents": [], "text": "", "counts": {}}
+_CACHE: dict[str, Any] = {"loaded": False, "documents": [], "text": "", "counts": {},
+                          "_fingerprint": 0.0}   # newest corpus-dir mtime at last load
+
+# the corpus dirs the cache watches for staleness (auto-refresh when disk is newer)
+_CORPUS_DIRS = ("memory/research_packs", "memory/steal", "memory/rib")
+
+
+def _fingerprint() -> float:
+    """Newest mtime across the watched corpus dirs. Cheap (one scandir per dir, no full re-read).
+    Used to auto-invalidate the cache: if disk is newer than the last load, the cache is stale."""
+    best = 0.0
+    for rel in _CORPUS_DIRS:
+        d = ROOT / rel
+        if not d.is_dir():
+            continue
+        try:
+            for e in d.iterdir():
+                if e.name.endswith(".md") and e.is_file():
+                    try:
+                        best = max(best, e.stat().st_mtime)
+                    except Exception:
+                        continue
+        except Exception:
+            continue
+    return best
 
 
 def _read_md_dir(d: Path, n: int = 200) -> list[dict[str, str]]:
@@ -50,7 +74,11 @@ def load_corpus(*, refresh: bool = False) -> dict[str, Any]:
     """Load the corpus (research packs + steals + chain tail) into MEMORY once, cached. Returns the
     cache state. Deterministic + $0. The in-memory fast-path for lensing/novelty/processing."""
     if _CACHE["loaded"] and not refresh:
-        return {"ok": True, "schema": SCHEMA, "cached": True, **_CACHE["counts"]}
+        # auto-invalidate: if the corpus dirs changed on disk since the last load, the cache is
+        # stale -> reload so lensing/novelty/processing never read a frozen snapshot. Cheap check.
+        if _fingerprint() <= _CACHE["_fingerprint"]:
+            return {"ok": True, "schema": SCHEMA, "cached": True, **_CACHE["counts"]}
+        refresh = True
 
     docs: list[dict[str, str]] = []
     docs += _read_md_dir(ROOT / "memory" / "research_packs", 200)
@@ -67,7 +95,8 @@ def load_corpus(*, refresh: bool = False) -> dict[str, Any]:
 
     _CACHE.update({"loaded": True, "documents": docs,
                    "text": "\n\n".join(text_parts),
-                   "counts": {"n_documents": len(docs), "n_chars": total}})
+                   "counts": {"n_documents": len(docs), "n_chars": total},
+                   "_fingerprint": _fingerprint()})
     return {"ok": True, "schema": SCHEMA, "cached": False, **_CACHE["counts"]}
 
 

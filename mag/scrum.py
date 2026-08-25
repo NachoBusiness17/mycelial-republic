@@ -72,10 +72,54 @@ def _now() -> str:
 def _load() -> dict[str, Any]:
     if BOARD.is_file():
         try:
-            return json.loads(BOARD.read_text(encoding="utf-8"))
+            d = json.loads(BOARD.read_text(encoding="utf-8"))
+            # FIX (2026-08-24, "system devolved into spinning plates / real resources idle"):
+            # the board file existed but with tickets=[] — never seeded, so sprint() returned null
+            # and NOTHING routed to the seats while the loop spun at 100% CPU. Seed from SEED
+            # whenever the board has no tickets so the fuel line is never empty.
+            if not d.get("tickets"):
+                d["tickets"] = [dict(t) for t in SEED]
+            return d
         except Exception:
             pass
     return {"schema": SCHEMA, "created": _now(), "tickets": [dict(t) for t in SEED]}
+
+
+TODO_PATH = ROOT / "queue" / "todo.md"
+
+
+def sync_from_todo(*, limit: int = 10) -> dict[str, Any]:
+    """SYNC REAL WORK (2026-08-24): pull OPEN (unchecked) items from queue/todo.md onto the scrum
+    board as tickets, so sprint() has current work to route to the seats. This is the missing fuel
+    line: todo.md (15 open items) -> board -> sprint() -> seats. Idempotent by title."""
+    b = _load()
+    existing = {t.get("title", "").strip() for t in b.get("tickets", [])}
+    added = 0
+    if TODO_PATH.is_file():
+        for line in TODO_PATH.read_text(encoding="utf-8", errors="replace").splitlines():
+            line = line.strip()
+            if not line.startswith("- [ ]"):
+                continue
+            title = line[5:].strip()
+            if not title or title in existing:
+                continue
+            b.setdefault("tickets", []).append({
+                "id": f"T{len(b['tickets'])+1:02d}",
+                "title": title[:160],
+                "epic": "todo-sync",
+                "role": "worker",
+                "tier": "flash",
+                "proof": "",
+                "status": "todo",
+                "note": "auto-synced from queue/todo.md",
+            })
+            existing.add(title)
+            added += 1
+            if added >= limit:
+                break
+    if added:
+        _save(b)
+    return {"ok": True, "schema": SCHEMA, "added": added, "board_tickets": len(b.get("tickets", []))}
 
 
 def _save(board: dict[str, Any]) -> None:
@@ -217,6 +261,8 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(sprint(), indent=2, ensure_ascii=False, default=str))
     elif cmd == "advance":
         print(json.dumps(advance(apply=do_apply), indent=2, ensure_ascii=False, default=str))
+    elif cmd == "sync":
+        print(json.dumps(sync_from_todo(), indent=2, ensure_ascii=False, default=str))
     else:
         print(json.dumps(backlog(), indent=2, ensure_ascii=False, default=str))
     return 0

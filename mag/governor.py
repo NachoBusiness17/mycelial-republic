@@ -36,6 +36,16 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+# FIX (2026-08-24, "system devolved into spinning plates / real resources idle"): _run_seat()
+# uses headless.PYTHON to spawn the agent seat but `headless` was NEVER imported — so every
+# governor run_cycle() that found real todo work crashed with NameError: name 'headless' is not
+# defined. The loop kept finding work, kept crashing, and never routed anything to the seats =
+# the disconnected fuel line. This import restores the connection.
+try:
+    from mag import headless
+except Exception:  # noqa: BLE001
+    headless = None  # degrade: caller guards on headless being set
+
 TRAIL = ROOT / "memory" / "runs" / "governor_trail.jsonl"
 TRAIL.parent.mkdir(parents=True, exist_ok=True)
 
@@ -253,8 +263,15 @@ def _run_seat(text: str, provider: str) -> tuple[int, str, str]:
            "--provider", provider]
     try:
         import os as _os
+        # SELF-STEAL (2026-08-24, operator "self steal you're being retarded"): the
+        # dogfood_audit "unknown provider deepseek" fix already exists — headless._spawn_env()
+        # injects PYTHONPATH = project root + venv site-packages so the spawned child resolves
+        # mag/config/yaml. We were spawning on the bare base interpreter with no deps. Pass the
+        # fixed env (exactly what dogfood_audit regression-guards).
+        _env = headless._spawn_env() if headless else None
         _flags = (getattr(subprocess, "CREATE_NO_WINDOW", 0) if _os.name == "nt" else 0)
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=1200, creationflags=_flags)
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=1200,
+                           creationflags=_flags, env=_env)
     except subprocess.TimeoutExpired:
         return -1, "seat timeout (1200s)", ""
     out = (r.stdout or "") + (r.stderr or "")

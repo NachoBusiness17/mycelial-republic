@@ -473,12 +473,33 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(404, {"error": "cast-voice.html missing"})
             return self._bytes(200, vf.read_bytes(), "text/html; charset=utf-8")
 
-        # SEAT — the new knot-centric ghost surface (control room / the seat)
+        # SEAT — the new knot-centric Bones surface (control room / the seat)
         if path in ("/seat", "/seat.html"):
             sf = STATIC / "seat.html"
             if not sf.is_file():
                 return self._json(404, {"error": "seat.html missing"})
             return self._bytes(200, sf.read_bytes(), "text/html; charset=utf-8")
+
+        # HYPERVISOR — fleet cool/heat + real bills (all seats, mermaid map)
+        if path in ("/fleet", "/fleet.html"):
+            ff = STATIC / "fleet.html"
+            if not ff.is_file():
+                return self._json(404, {"error": "fleet.html missing"})
+            return self._bytes(200, ff.read_bytes(), "text/html; charset=utf-8")
+
+        # LOOP HEALTH — real-time "what works / what doesn't" (auto-refreshing)
+        if path in ("/health", "/health.html", "/loop-health"):
+            hf = STATIC / "health.html"
+            if not hf.is_file():
+                return self._json(404, {"error": "health.html missing"})
+            return self._bytes(200, hf.read_bytes(), "text/html; charset=utf-8")
+
+        # AOS — live view of the Bones<->AOS bus conversation (chat-style browser surface)
+        if path in ("/aos", "/aos.html"):
+            af = STATIC / "aos.html"
+            if not af.is_file():
+                return self._json(404, {"error": "aos.html missing"})
+            return self._bytes(200, af.read_bytes(), "text/html; charset=utf-8")
 
         if path.startswith("/static/"):
             f = safe_file(path.lstrip("/"))
@@ -610,6 +631,22 @@ class Handler(BaseHTTPRequestHandler):
                 },
             )
 
+        # AOS live-view chat data. Shells out to the live-view module (lightweight, read-only)
+        # so importing Mag here does not wedge the desk — same pattern as /api/v1/table/view.
+        if path == "/api/aos/chat":
+            import subprocess
+            import sys as _sys
+
+            try:
+                blob = subprocess.check_output(
+                    [_sys.executable, "-m", "mag.aos_live_view", "--json"],
+                    cwd=str(ROOT),
+                    timeout=8,
+                )
+                return self._json(200, json.loads(blob.decode("utf-8") or "{}"))
+            except Exception as exc:  # noqa: BLE001
+                return self._json(200, {"ok": False, "error": str(exc)[:200]})
+
         return self._json(404, {"error": "not found", "path": path})
 
     def _read_json_body(self) -> tuple[dict[str, Any] | None, str | None]:
@@ -648,6 +685,44 @@ class Handler(BaseHTTPRequestHandler):
             except Exception as e:  # noqa: BLE001
                 return self._json(500, {"ok": False, "error": str(e)})
             return self._json(200, {"ok": True, "queued": queued, "cmd": cmd})
+
+        # AOS Bone-seat: send a Bones/Operator reply on the bus. Shells out to the live-view module
+        # (via a temp file to dodge shell quoting) so importing Mag here does not wedge the desk.
+        if path == "/api/aos/send":
+            import subprocess
+            import sys as _sys
+            import tempfile
+
+            text = str((data or {}).get("text") or "").strip()
+            if not text:
+                return self._json(400, {"ok": False, "error": "text required"})
+            author = str((data or {}).get("author") or "bone").strip()[:32]
+            if author not in ("bone", "operator"):
+                author = "bone"  # provenance: only these two authors on our side
+            tmp = None
+            try:
+                with tempfile.NamedTemporaryFile(
+                    "w", suffix=".txt", delete=False, encoding="utf-8"
+                ) as fh:
+                    fh.write(text)
+                    tmp = fh.name
+                blob = subprocess.check_output(
+                    [_sys.executable, "-m", "mag.aos_live_view",
+                     "--send-file", tmp, "--author", author],
+                    cwd=str(ROOT),
+                    timeout=30,
+                )
+                out = json.loads(blob.decode("utf-8") or "{}")
+            except Exception as exc:  # noqa: BLE001
+                out = {"ok": False, "error": str(exc)[:200]}
+            finally:
+                if tmp:
+                    try:
+                        import os as _os
+                        _os.remove(tmp)
+                    except Exception:
+                        pass
+            return self._json(200, out)
 
         if path.startswith("/api/"):
             from dashboard.rest import dispatch

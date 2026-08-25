@@ -222,6 +222,74 @@ def wow_clone_swarm(*, enqueue: bool = True, domain: str = "wow") -> dict[str, A
             "n": len(out), "n_new": sum(1 for o in out if not o.get("deduped")), "tasks": out}
 
 
+# GAME-WORK SWARM — idle free seats put to work on the game (2026-08-24, operator: "find other
+# cool shit we could be doing with our free seats that are just sitting idle. playing our game to
+# see if it sucks, researching roguelites, combing through our extensive existing game fiction and
+# research libraries"). Three irons: (1) PLAYTEST the Hall and say if it sucks, (2) roguelite
+# research mapped to the clone spine, (3) self-steal sweep of our own design + fiction libraries.
+_GAME_DOCTRINE = (
+    "RIB doctrine: aim at the coldest vertex; steal-and-adapt (contracts only, no wholesale copy); "
+    "one knot at a time; the nod is mine. CONTEXT: our game = the Hall of Shared Supper (one-room "
+    "slice, empty chairs, verkle-committed) + the clone/Mickey 17 spine (clone dies, reprinted with "
+    "memory; memory/steal/DESIGN_CLONE_REPRINT_MICKEY17_20260824.md) + the guild hidden network + "
+    "the nemesis-as-gadfly + the Deadzone roguelite steal "
+    "(memory/steal/STEAL_DEADZONE_ROGUE_20260824.md). Return ONE concrete steal + ONE invariant, "
+    "mapped to what we already own (verkle world, game_mud, game_campaign storyteller, game_observer)."
+)
+_GAME_GOALS = [
+    "PLAYTEST the Hall of Shared Supper (mag/game_mud.py room + mag/hall_shared_supper.py): sit "
+    "ONE play session as a fresh player. Walk in, see the room, count the chairs, make the "
+    "end-of-sitting choice. Then critique HONESTLY: does it suck? Is the first-run-no-math true? "
+    "Does the choice moment land? What would make a stranger come back? Return ONE honest verdict "
+    "+ ONE concrete improvement.",
+    "RIB-driven research: Hades (Supergiant) — the ONE meta-progression / commitment-hook "
+    "mechanism worth stealing: death as memory, NPCs who remember your deaths, relationships and "
+    "story advancing THROUGH death. Map it to our clone/Mickey 17 reprint spine (clone dies, "
+    "reprinted with memory, return-stronger, world remembers). What does Hades do in shape that we "
+    "should copy, and what do we refuse?",
+    "RIB-driven research: the ONE 'tough to get into / hard to commit to' onboarding fix worth "
+    "stealing across Rogue Legacy (lineage/descendants), Returnal (death-loop story), Children of "
+    "Morta (family meta-progression), Caves of Qud (emergent simulation). Map to our Hall + clone "
+    "spine: first run no math, safe to commit because the self persists.",
+    "RIB-driven research: Dwarf Fortress + RimWorld story-generator mechanics (storyteller "
+    "algorithm picking events from live state, Legends mode browsable history, 'losing is fun' "
+    "death economy) — the ONE mechanism worth stealing for our game_campaign storyteller + the "
+    "clone death economy. Map to what we already own (game_campaign storyteller/threat_budget, "
+    "game_observer, verkle world history).",
+    "SELF-STEAL SWEEP of our own design library: read memory/steal/* + "
+    "handoff/STEAL_GAME_FEATURES_20260819.md + memory/steal/DESIGN_CLONE_REPRINT_MICKEY17_20260824.md "
+    "+ memory/steal/STEAL_DEADZONE_ROGUE_20260824.md + the Hall audit. Surface the TOP unused "
+    "mechanic not yet wired into the Hall, and name ONE concrete next feature + why it fits the "
+    "clone/reprint/guild/nemesis spine.",
+    "SELF-STEAL SWEEP of our game fiction + narrative corpus: read memory/narrative_corpus/ + "
+    "adventure_one_shot outputs + hero_journey + the museum rooms (memory/archive/museum/). Find "
+    "the ONE existing piece of fiction that should become a room or character in the Hall. Name "
+    "it, where it goes, why it fits the clone/reprint/guild spine.",
+]
+
+
+def game_swarm(*, enqueue: bool = True, domain: str = "game") -> dict[str, Any]:
+    """Launch the GAME-WORK SWARM: route each goal through route_novel (dedupe + enqueue to the
+    swarm research queue -> k8s worker drains headless on the free path). Idempotent via anchor
+    dedupe. The irons: playtest the Hall, roguelite research, self-steal sweep of our libraries."""
+    from mag import swarm_surface
+    from mag import steer_swarm
+
+    out = []
+    for i, g in enumerate(_GAME_GOALS):
+        ta = steer_swarm.testable_ask(g + "\n" + _GAME_DOCTRINE, domain=domain)
+        if enqueue:
+            r = swarm_surface.route_novel(ta["ask"], surface="game-swarm", lens="research",
+                                          domain=domain)
+            out.append({"i": i, "ok": r.get("ok"), "deduped": r.get("deduped"),
+                        "task_id": r.get("task_id", ""), "anchor": (r.get("anchor") or "")[:12]})
+        else:
+            out.append({"i": i, "ok": True, "deduped": False, "dry": True,
+                        "goal_len": len(ta["ask"])})
+    return {"ok": True, "schema": SCHEMA, "enqueue": enqueue,
+            "n": len(out), "n_new": sum(1 for o in out if not o.get("deduped")), "tasks": out}
+
+
 def fold_k8s_to_k3s(*, domain: str = "k3s-toolset", publish: bool = True) -> dict[str, Any]:
     """AUTO-FOLD completed k8s swarm results into a k3s-mounted RIB domain, so the k3s toolset
     starts/updates itself.
@@ -335,8 +403,8 @@ def lens_research_asks(*, corpus: str | None = None, fold: bool = True,
     foundation = _foundation_from(merged, getattr(syn, "tesuji", []))
 
     folded = {}
-    if fold and merged and merged != "No strong patterns detected. Apply lenses with model "
-            "inference for deeper analysis.":
+    if fold and merged and merged != ("No strong patterns detected. Apply lenses with model "
+                                      "inference for deeper analysis."):
         try:
             from mag import rib_bus
             folded = rib_bus.publish_rib(
@@ -499,9 +567,12 @@ def main(argv: list[str] | None = None) -> int:
     wow = "--wow" in argv
     process = "--process" in argv
     deep = "--deep" in argv
+    game = "--game" in argv
     if deep:
         print(json.dumps(deep_research_project(enqueue=not dry), ensure_ascii=False, indent=2,
                          default=str))
+    elif game:
+        print(json.dumps(game_swarm(enqueue=not dry), ensure_ascii=False, indent=2, default=str))
     elif wow:
         print(json.dumps(wow_clone_swarm(enqueue=not dry), ensure_ascii=False, indent=2, default=str))
     elif process:

@@ -245,10 +245,48 @@ def animate(goals: list[tuple[float, ...]] | None = None, *, n: int = 24, frames
             f"Trails = planned paths, red = seams (frontier spend), cyan = steer."}
 
 
+def _sha256(path: Path) -> str:
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def verify(goals: list[tuple[float, ...]] | None = None, *, n: int = 16, frames: int = 20,
+           budget: float = 0.6, tau: float = 0.02, w: int = 256, h: int = 256,
+           runs: int = 2) -> dict[str, Any]:
+    """GOLDEN DETERMINISM SELF-CHECK (HyperFrames contract, steal 2026-08-23).
+
+    Render the SAME spec `runs` times and assert byte-identical output. Same input -> same
+    sha256 -> the artifact is content-addressable (verkle-able) and regression-testable
+    (a verify_gate can hash render output, not just re-run it). Proves the flock renderer is
+    truly deterministic, not just claimed to be.
+    """
+    goals = goals or [(0.78, 0.78)]
+    digests: list[str] = []
+    paths: list[Path] = []
+    try:
+        for i in range(runs):
+            tmp = ART_DIR / f"_verify_{i}.gif"
+            paths.append(tmp)
+            animate(goals, n=n, frames=frames, budget=budget, tau=tau, w=w, h=h, out=str(tmp))
+            digests.append(_sha256(tmp))
+        ok = len(set(digests)) == 1
+        return {"ok": True, "schema": SCHEMA, "deterministic": ok, "digests": digests,
+                "content_address": digests[0] if ok else None, "runs": runs,
+                "note": ("same input -> same sha256 (content-addressable, verkle-able, "
+                         "regression-testable)" if ok else
+                         "NON-DETERMINISTIC: digests differ — fix the renderer")}
+    finally:
+        for p in paths:
+            try:
+                p.unlink(missing_ok=True)
+            except Exception:
+                pass
+
+
 def status() -> dict[str, Any]:
     return {"ok": True, "schema": SCHEMA,
             "contract": "evolve(goals) -> intended paths (cheap, deterministic)",
-            "renders": "trail_map() static pathfield PNG; animate() animated GIF",
+            "renders": "trail_map() static pathfield PNG; animate() animated GIF; verify() golden "
+                       "determinism self-check (same input -> same sha256)",
             "cost": "deterministic + $0 (no LLM); preview matches real flock_shader function",
             "deps": "PIL + numpy"}
 

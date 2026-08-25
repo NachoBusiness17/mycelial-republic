@@ -45,6 +45,24 @@ def test_spider_tick_dry():
     assert "signals" in res
 
 
+def test_spider_detects_fkb_repeat():
+    """Regression: spider was blind to FKB patterns because it called
+    recurring_patterns(limit=5) which raises TypeError (no such kwarg),
+    silently swallowed by the except block. Now it must surface fkb_repeat
+    signals when the FKB index has recurring signatures."""
+    from mag.spider import _check_fkb_repeat
+
+    sigs = _check_fkb_repeat()
+    # FKB index has 44 recurring signatures (count>=3); spider must see them.
+    assert isinstance(sigs, list)
+    fkb = [s for s in sigs if s.get("kind") == "fkb_repeat"]
+    assert len(fkb) >= 1, "spider should surface FKB repeat signals"
+    # Each signal must carry a real signature (not None) and a count >= threshold.
+    for s in fkb:
+        assert s.get("signature"), "fkb_repeat signal must carry a signature"
+        assert int(s.get("count") or 0) >= 3
+
+
 def test_conductor_phase_detect():
     from mag.conductor import conduct, detect_phase
 

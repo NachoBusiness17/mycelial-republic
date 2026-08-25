@@ -120,5 +120,48 @@ The game is buildable-from **these** artifacts — they already exist, this is t
 
 ---
 
+## 8 · Containers / k8s / k3s (the cloud-resident deployment)
+
+> **READ THIS BEFORE CLAIMING ANY CLUSTER/CONTAINER STATE.** I mis-diagnosed the k8s cluster as
+> "down" (2026-08-22) because kubectl wasn't pointed at the cluster — it is UP and running the
+> cloud-resident swarm. Select the context first.
+
+### The 3-tier model (intended + real)
+| Tier | Primitive | Role | Live? |
+|------|-----------|------|-------|
+| docker-compose | `mag-sovereign` + redis/browser/ollama | Local sandbox/cage (single-controller boot) | ✅ compose up |
+| **kind k8s** cluster `mag` | Deployment/PVC/ConfigMap/Secret/CronJobs/CRD | **Cloud-resident cold-seam frontier swarm** (DeepSeek) | ✅ **UP** |
+| k3s | design-domain only (`fold_k8s_to_k3s`) | Local $0 deterministic toolset | ❌ not a real cluster |
+
+### kubectl GOTCHA (the thing I got wrong)
+- The kind-mag context EXISTS but is NOT selected by default → kubectl hits `localhost:8080` and
+  fails. **Always run `kubectl config use-context kind-mag` first** (Docker Desktop kubectl lives at
+  `C:\Users\foste\AppData\Local\Programs\DockerDesktop\resources\bin\kubectl.exe`).
+
+### Verified live (2026-08-22)
+- Node `mag-control-plane` Ready (12d). Cluster UP.
+- `cronjob mag-swarm` — `*/15 * * * *`, pods `Completed` (the 24/7 cloud-resident swarm IS running).
+- `cronjob mag-warnings` — `*/10 * * * *`, pods `Completed`.
+- ⚠️ `deployment mag` pod is `0/1 Ready` with **11 restarts** — the app deployment is Running but
+  NOT healthy. THIS is the real open issue.
+- compose stack: `mag-sovereign` healthy (0 restarts, 6 subprocesses caged), `mag-redis` healthy,
+  `mag-browser` up (CDP 9222), `mag-ollama` STOPPED (profile-only, 39GB store).
+
+### New real uses (no longer theory) → where they slot
+- **AOS comms-bus watcher** (`mag/aos_bus_watcher.py`) — needs cloud-resident to survive laptop
+  sleep → the k8s CronJob/swarm_worker pattern. Not yet deployed (needs AOS tree + creds + OR key
+  on cloud host, operator-authorized).
+- **Free frontier seat** (`stealth/ox-alpha`, $0) — `mag/ox_seat.py` bounded wrapper; L1 free-remote
+  lane. Slots into the k8s/frontier tier as the cold-seam brain.
+- **Provenance gate + reasoning ledger** — the deterministic local (k3s-tier) modules.
+- **Verkle grounding gap**: the container/k8s infra design is NOT verkle-committed (0 knots). Commit
+  it to close the gap.
+
+### Standing laws (repeat)
+- **Map precedes territory** — the floorplan is the loaded map. Keep it accurate; a wrong map makes
+  me re-derive and re-mistake (the k8s "down" error). Update it when state changes.
+
+---
+
 *This is the living floorplan. Update it as the system grows. When the map and the system
 disagree, trust the system — then fix the map.*

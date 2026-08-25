@@ -113,13 +113,13 @@ def _check_fkb_repeat() -> list[dict[str, Any]]:
     try:
         from mag.failure_kb import recurring_patterns
 
-        for pat in recurring_patterns(limit=5) or []:
+        for pat in (recurring_patterns() or [])[:5]:
             count = int(pat.get("count") or 0)
             if count >= FKB_REPEAT_THRESHOLD:
                 signals.append({
                     "kind": "fkb_repeat",
                     "severity": "warn",
-                    "signature": pat.get("signature") or pat.get("key"),
+                    "signature": pat.get("signature") or pat.get("key") or pat.get("sig"),
                     "count": count,
                     "action": "surface_remedy",
                     "message": f"FKB pattern repeated {count}x — remedy may exist",

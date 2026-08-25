@@ -55,6 +55,7 @@ except Exception:
 SCHEMA = "game_mud.v2"
 PLAYER = "game.mud.player"
 CLAIMED = "game.mud.claimed"   # rooms whose Roshomon core has been folded as doctrine
+HALL = "game.mud.hall_record"  # the Hall of Shared Supper — "the hall files which you chose"
 CORE_MIN_AGREE = 2
 
 # ── THE MAP: rooms = our systems, each a SCENE the party witnesses + a FRONTIER QUESTION ──
@@ -385,11 +386,88 @@ def claim(room: str | None = None) -> dict[str, Any]:
                       f"witnesses. That is why it is true enough to keep.")}
 
 
+# ---------------------------------------------------------------------------
+# THE HALL OF SHARED SUPPER — the noticing mechanic ("the hall files which you
+# chose"). The world observes what the player notices (or refuses to notice) and
+# that becomes the record — a verkle-committed fact, not flavor. Hint, never state.
+# ---------------------------------------------------------------------------
+def _hall_action(c: str) -> str | None:
+    rec = dict(_get(HALL, {}) or {})
+    # ── SPEAK — must precede the generic count check so "speak the count" isn't eaten ──
+    if c in ("speak the count", "say the count", "announce the count"):
+        if not rec.get("counted"):
+            return ("You open your mouth to speak the count — but you have not counted. The "
+                    "hall waits, patient, filing the silence.")
+        if rec.get("count_spoken"):
+            return ("You have spoken the count already. They came once. They remember.")
+        rec["count_spoken"] = True
+        _set(HALL, rec)
+        return ("'Six,' you say, aloud, to the room. The far door does not open; it is "
+                "opened. The Rashomon bards enter, smiling the thin smile of people who "
+                "file every word. 'The count,' one says, delighted. 'He counted. Write "
+                "that down.' They come.")
+    # ── COUNT ──
+    if c == "count" or c.startswith("count "):
+        if rec.get("counted"):
+            return ("You count them again — six, still six, the number held like a kept "
+                    "breath. The margin is already dense with Virtue Marks from the last "
+                    "count, and they do not multiply; they only wait. The hall has already "
+                    "filed what you chose.")
+        rec["counted"] = True
+        rec["ignored"] = False
+        rec["filed"] = True
+        _set(HALL, rec)
+        p = _player()
+        p.setdefault("loot", []).append("a Virtue Mark (earned by counting the empty chairs)")
+        _set(PLAYER, p)
+        return ("Six. You count them — six empty chairs at a table set for more than are "
+                "here. The moment the number leaves your lips, marks bloom in the margin "
+                "of the ledger like struck matches: one for each chair, six bright deposits "
+                "under your own name. Brother Vellum's smile does not move, but the hall "
+                "files which you chose.")
+    # ── EAT / IGNORE ──
+    if c in ("eat", "supper", "eat past them", "eat the stew", "ignore"):
+        if rec.get("ignored"):
+            return ("You eat again, and again the stew is too kind. The mural has been "
+                    "crying for a while now, identical tears in identical tracks, and no "
+                    "one else seems to notice. The hall has already filed this.")
+        rec["counted"] = False
+        rec["ignored"] = True
+        rec["filed"] = True
+        _set(HALL, rec)
+        return ("You eat. The stew is warm and good and you do not count the chairs — why "
+                "would you count chairs at a supper. Behind you the mural begins to weep, "
+                "and its tears are the same on every face, cloned and patient. Brother "
+                "Vellum beams. 'Belonging,' he says. The hall files which you chose.")
+    # ── SCRAP ──
+    if c in ("scrap", "salt-cellar", "cellar", "look in the salt-cellar", "find the scrap"):
+        if rec.get("scrap"):
+            return ("The salt-cellar is empty now, but you already hold what it kept: three "
+                    "names in a hand you have seen before, the same hand as the roll.")
+        rec["scrap"] = True
+        _set(HALL, rec)
+        p = _player()
+        p.setdefault("loot", []).append("a salt-cellar scrap: three names, same hand as the roll")
+        _set(PLAYER, p)
+        return ("In the salt-cellar, beneath the salt, your fingers close on a scrap of "
+                "ledger. Three names. The same hand as the roll. You do not know what it "
+                "means, but you know better than to show it to Vellum. You pocket it.")
+    return None
+
+
 def act(command: str = "look") -> dict[str, Any]:
     """Route a MUD command. Every state change commits to the verkle chain (the authority)."""
     c = (command or "").strip().lower()
     p = _player()
     room = p["room"]
+
+    # ── The Hall of Shared Supper: the noticing mechanic precedes generic dispatch ──
+    if room == "the Hall of Shared Supper":
+        hall_reply = _hall_action(c)
+        if hall_reply is not None:
+            return {"ok": True, "schema": SCHEMA, "command": command, "reply": hall_reply,
+                    "room": room, "invariants": len(_player().get("loot", [])),
+                    "note": "the hall files which you chose"}
 
     if c in ("help", "?"):
         p["help"] = True
@@ -420,7 +498,7 @@ def act(command: str = "look") -> dict[str, Any]:
             _set(PLAYER, p)
             reply = _desc(exits[d], entering=True)
         else:
-            reply = "There is no way {d} from here. The world has no door where you look."
+            reply = f"There is no way {d} from here. The world has no door where you look."
     elif c in ("survey", "witness", "listen", "scry"):
         s = survey(room)
         if not s.get("ok"):

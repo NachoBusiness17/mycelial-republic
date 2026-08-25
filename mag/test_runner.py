@@ -86,6 +86,11 @@ def run(
             encoding="utf-8",
             errors="replace",
             timeout=timeout,
+            # MUST pass the spawn env: headless.PYTHON is the BASE interpreter (by design, to
+            # avoid the venv-shim double-PID bug), so PYTHONPATH must point at the venv
+            # site-packages or `-m pytest` won't resolve (ROOT cause 2026-08-23: every test run
+            # silently returned empty "failed" in 0.1s because pytest was never found).
+            env=headless._spawn_env(),
             creationflags=__import__("mag.headless", fromlist=["no_window_flags"]).no_window_flags(),
         )
         timed_out = False

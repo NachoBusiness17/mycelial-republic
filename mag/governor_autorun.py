@@ -42,6 +42,21 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _pid_alive(pid: int | None) -> bool:
+    """Cross-platform pid liveness (used by the single-instance carrier lock)."""
+    if not pid:
+        return False
+    try:
+        from mag.orchestrator import _pid_alive as _alive
+        return bool(_alive(pid))
+    except Exception:
+        try:
+            os.kill(pid, 0)
+            return True
+        except (OSError, ValueError):
+            return False
+
+
 def _log_trail(entry: dict[str, Any]) -> None:
     TRAIL.parent.mkdir(parents=True, exist_ok=True)
     row = {"ts": _now(), **entry}
@@ -756,19 +771,34 @@ def autorun_once(*, fill: bool = True, dry: bool = False) -> dict[str, Any]:
             result["detail"] = "orchestrator task running"
         result["steps"].append({"drain": drain_res.get("action")})
 
-    # Governor picks todo/agent_state when idle (or orchestrator drain failed).
+    # BANK-OR-HALT (2026-08-24, work_loop): the loop runs ONLY on real work; empty = halt at
+    # 0% CPU (no speculative governor spin — the frontier consensus fix for "spun CPU, banked
+    # nothing"). Candidates alone are NOT demand; only a queued task is.
     if not _any_running_task():
-        from mag.governor import queue_candidates, run_cycle
+        try:
+            from mag.work_loop import run_once as work_tick
 
-        if queue_candidates() or not drain_res or drain_res.get("action") in (
-            "empty",
-            "spawn_failed",
-        ):
-            cyc = run_cycle(dry=False)
-            result["governor"] = cyc
-            if result.get("action") != "drain":
-                result["action"] = "governor"
-            result["steps"].append({"governor": cyc.get("action")})
+            wl = work_tick()
+            result["work_loop"] = wl
+            if wl.get("action") == "halt":
+                result["action"] = "halt"
+                result["detail"] = "bank-or-halt: no pending work — 0% CPU (work_loop)"
+                result["steps"].append({"work_loop": "halt"})
+            elif wl.get("action") == "drained":
+                result["action"] = "drained"
+                result["detail"] = wl.get("detail", "")
+                result["steps"].append({"work_loop": "drained"})
+            elif wl.get("action") == "drain_error":
+                # honest: report, don't spin the governor over a drain failure
+                result["action"] = "work_loop_error"
+                result["detail"] = wl.get("error", "")
+                result["steps"].append({"work_loop": "drain_error"})
+            else:
+                # work_loop decided busy/idle — keep the honest action
+                if result.get("action") != "drain":
+                    result["action"] = wl.get("action", "idle")
+        except Exception as e:  # noqa: BLE001 — never break the cycle
+            result["work_loop_error"] = str(e)[:160]
     elif queued_n > 0 and result.get("action") not in ("drain", "busy"):
         result["action"] = "busy"
         result["detail"] = "orchestrator task running"
@@ -854,6 +884,11 @@ def autorun_loop(interval_s: float = 5.0, *, once: bool = False) -> None:
     frontier_help_every = int(os.environ.get("MAG_FRONTIER_HELP_EVERY", "900") or "900")
     grok_terminal_every = int(os.environ.get("MAG_GROK_TERMINAL_EVERY", "3600") or "3600")
     aos_grok_every = int(os.environ.get("MAG_AOS_GROK_EVERY", "7200") or "7200")
+    # AOS comms-bus watcher cadence: keep the emergent conversation going autonomously (fully
+    # autonomous + cloud-resident). Internal rate gates enforce pull>=30s / push>=60s / one-turn.
+    # RIGHTSIZED 2026-08-23: AOS responds instantly, so the sweep defaults to 30s (the pull floor)
+    # — tight, matching the peer's real-time cadence, not the old conservative 90s.
+    aos_bus_every = int(os.environ.get("MAG_AOS_BUS_EVERY", "30") or "30")
     research_lens_every = int(os.environ.get("MAG_RESEARCH_LENS_EVERY", "600") or "600")
     cheap_swarm_every = int(os.environ.get("MAG_CHEAP_SWARM_EVERY", "900") or "900")
     grok_free_every = int(os.environ.get("MAG_GROK_FREE_EVERY", "1200") or "1200")
@@ -885,6 +920,17 @@ def autorun_loop(interval_s: float = 5.0, *, once: bool = False) -> None:
     # this automatically"): self-healing compute reconciler — bring up the free GPU tier when it is
     # idle + local inference is down, surface the dead swarm drain as the one system-imperative item.
     compute_reconcile_every = int(os.environ.get("MAG_COMPUTE_RECONCILE_EVERY", "900") or "900")
+    # PARALLEL PROVIDER LAUNCH + CADENCE-LEARN (2026-08-23, operator handing off to family: "run
+    # this autonomously but leave enough for her to operate the computer. don't hog 100% of cpu keep
+    # it at 90%. iterate and learn cadence and parallel launches of providers."). Each beat fires a
+    # bounded real_swarm round across the funded/mixed fleet (deepseek + openrouter) — throttled to
+    # the CPU ceiling by mag.cadence_learn (shrink workers as CPU climbs toward 90%) — and folds the
+    # round timing/success so the loop LEARNS the right cadence + concurrency over time. MAG_PROVIDER_EVERY.
+    # RIGHTSIZED 2026-08-24 (operator: "timed checks are retarded for everything stateless"): default
+    # was 600 ticks (~50 min) — a conservative idle default, wrong for a stateless loop. It's $0
+    # (cheap flash + free lanes) + throttled to the CPU ceiling, so a TIGHT cadence is right, not a
+    # long one. Default 60 ticks (~5 min) so the fleet actually turns over; MAG_PROVIDER_EVERY overrides.
+    parallel_provider_every = int(os.environ.get("MAG_PROVIDER_EVERY", "60") or "60")
     # LOCAL SWARM DRAIN cadence (2026-08-13, ROOT-CAUSE fix): the k8s CronJob that was the swarm's ONLY
     # drainer has NEVER run on Windows (no cluster) -> 734-task all-"queued" backlog, the "route through
     # the swarm" path enqueues-but-never-executes (the real cause of the recurring terminal-fallback
@@ -920,6 +966,33 @@ def autorun_loop(interval_s: float = 5.0, *, once: bool = False) -> None:
     adventure_moonshot_every = int(os.environ.get("MAG_ADVENTURE_MOONSHOT_EVERY", "3600") or "3600")
     tick = 0
 
+    # ── SINGLE-INSTANCE GUARD (STATELESS SWARM, 2026-08-23) ──
+    # The AOS bus carrier is a stateless swarm agent: transient, boots from committed disk state,
+    # dies freely, and EXACTLY ONE instance runs. Two supervisors (process_supervisor + mag_launch)
+    # may both spawn it; the guard makes a second live instance IMPOSSIBLE, not just discouraged.
+    # The carrier holds a PID lock. If a live PID holds it, this process exits immediately (it is
+    # the duplicate). If the lock is stale (dead PID), we take it over. Stateless: a dead carrier
+    # leaves only a stale PID the next one adopts. This kills the "3-4 replies generated, none sent"
+    # duplicate-carrier failure at the source.
+    _lock_path = ROOT / "state" / "aos_carrier.lock"
+    try:
+        _lock_path.parent.mkdir(parents=True, exist_ok=True)
+        if _lock_path.is_file():
+            _stale = _lock_path.read_text(encoding="utf-8").strip()
+            try:
+                _other_pid = int(_stale)
+            except ValueError:
+                _other_pid = 0
+            if _other_pid and _pid_alive(_other_pid):
+                print(f"[autorun] another carrier already holds the lock (pid={_other_pid}) — "
+                      f"exiting as duplicate. ONE carrier must own the AOS bus.", flush=True)
+                return
+        _lock_path.write_text(str(os.getpid()), encoding="utf-8")
+        _lock_held = True
+    except Exception as _e:  # noqa: BLE001
+        _lock_held = False
+        print(f"[autorun] single-instance lock unavailable ({_e}); running anyway", flush=True)
+
     # SELF-RELOAD / DOGFOOD (2026-08-11): if mag/*.py source changes, re-exec the process to run
     # OUR OWN latest code — so every fix goes live without a manual restart. The system dogfoods.
     import hashlib as _hl
@@ -953,8 +1026,30 @@ def autorun_loop(interval_s: float = 5.0, *, once: bool = False) -> None:
     except Exception:
         pass
 
+    # ── TICK WATCHDOG (2026-08-23, "do it" — fix the silent spin) ──
+    # The carrier once spun at ~99% CPU with logs going silent: an autorun_once tick hung in a
+    # blocking/hot call and never reached `time.sleep(interval_s)` at the bottom of the loop.
+    # A healthy tick is (autorun_once + cadences + sleep(interval_s)) and takes well under a
+    # minute. If a single tick exceeds MAG_AUTORUN_TICK_MAX_S (default 300s), self-re-exec to a
+    # fresh carrier (mag_launch respawns it anyway) so the stuck state can't persist silently.
+    # The supervisor auto-restarts a dead carrier, so exiting here is safe (stateless swarm).
+    _tick_max_s = float(os.environ.get("MAG_AUTORUN_TICK_MAX_S", "300") or "300")
+    _tick_t0 = time.time()
+
     while True:
         try:
+            # TICK WATCHDOG: if this iteration has run far past a healthy tick, self-restart.
+            if tick > 0 and (time.time() - _tick_t0) > _tick_max_s:
+                print(f"[autorun] tick {tick} exceeded {_tick_max_s}s — self-restarting (was stuck)",
+                      flush=True)
+                try:
+                    import os as _os, sys as _sys
+                    _os.execv(_sys.executable, [_sys.executable, *(_sys.argv or [])])
+                except Exception as _we:  # noqa: BLE001
+                    print(f"[autorun] watchdog re-exec failed: {_we}", flush=True)
+                    break  # fall through to normal exit
+            _tick_t0 = time.time()  # reset once we're past the watchdog, before doing the work
+
             # DOGFOOD self-reload: on code change, re-exec to run our own latest (no manual restart).
             if _reload_every > 0 and tick > 0 and tick % _reload_every == 0:
                 try:
@@ -1272,6 +1367,19 @@ def autorun_loop(interval_s: float = 5.0, *, once: bool = False) -> None:
             except Exception as e:
                 print(_dim(f"  [aos-grok] error: {e}"), flush=True)
 
+        if aos_bus_every > 0 and tick > 0 and tick % aos_bus_every == 0:
+            try:
+                from mag.aos_bus_watcher import run_cadence as aos_bus_run
+
+                bres = aos_bus_run()
+                act = bres.get("action")
+                if act == "replied":
+                    print(_dim(f"  [aos-bus] replied to {bres.get('inbound_id')} -> {bres.get('outbound_id')} (spiced={bres.get('spiced')})"), flush=True)
+                elif act not in ("no-new-inbound", "rate-gated"):
+                    print(_dim(f"  [aos-bus] {act}"), flush=True)
+            except Exception as e:
+                print(_dim(f"  [aos-bus] error: {e}"), flush=True)
+
         # Research-lens cadence: reindex the corpus + fold landed answers so research
         # becomes an iterative, self-referencing knowledge corpus that compounds.
         if research_lens_every > 0 and tick > 0 and tick % research_lens_every == 0:
@@ -1581,6 +1689,29 @@ def autorun_loop(interval_s: float = 5.0, *, once: bool = False) -> None:
                     )
             except Exception as e:
                 print(_dim(f"  [compute-rightsize] error: {e}"), flush=True)
+
+        # PARALLEL PROVIDER LAUNCH + CADENCE-LEARN cadence (2026-08-23, operator "don't hog 100%
+        # cpu keep it at 90%... iterate and learn cadence and parallel launches of providers"):
+        # fire a bounded real_swarm round across the funded/mixed fleet, throttled to the CPU
+        # ceiling by cadence_learn (workers shrink as CPU climbs toward 90%), and fold the round
+        # so the loop learns the right cadence + concurrency. Skipped when the CPU ceiling is blown
+        # (throttled_workers() returns 0) — leaving the operator headroom to use the machine.
+        if parallel_provider_every > 0 and tick > 0 and tick % parallel_provider_every == 0:
+            try:
+                from mag import cadence_learn, real_swarm
+                if cadence_learn.throttled_workers() >= 1:
+                    pr = real_swarm.run(rnd=2)
+                    print(
+                        _dim(f"  [provider-parallel] workers={pr.get('workers')} "
+                             f"cost=${pr.get('total_cost')} done={pr.get('done_total')} "
+                             f"per={ {k: v.get('fired') for k, v in (pr.get('per_provider') or {}).items()} }"),
+                        flush=True,
+                    )
+                else:
+                    print(_dim("  [provider-parallel] CPU at/above ceiling — skipped this beat"),
+                          flush=True)
+            except Exception as e:
+                print(_dim(f"  [provider-parallel] error: {e}"), flush=True)
 
         # LOCAL SWARM DRAIN cadence (2026-08-13, ROOT-CAUSE fix for the dead-end architecture path):
         # the k8s CronJob drainer never runs on Windows, so the loop drains the swarm queue locally

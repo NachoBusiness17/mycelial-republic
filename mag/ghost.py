@@ -2748,6 +2748,20 @@ def measure(deploy_result: dict[str, Any]) -> dict[str, Any]:
 # CATALOG + COMPOUND
 # ====================================================================
 
+def _is_oneshot_test(vector: dict[str, Any]) -> bool:
+    """A one-shot E2E/verification vector must NOT be promoted to the permanent
+    pro_library. Promoting it turns a one-time test into a permanent steer move
+    whose signature matches the very guidance it emits -> it re-fires endlessly
+    (observed: E2E-TEST-20260824-2 re-committed to the inbox 150x)."""
+    text = (vector.get("text", "") or "").lower()
+    tags = [str(t).lower() for t in (vector.get("tags") or [])]
+    if "e2e" in text or "e2e" in tags:
+        return True
+    if "test" in text and ("verify" in text or "integrity" in text):
+        return True
+    return False
+
+
 def catalog(vector: dict[str, Any], deploy_result: dict[str, Any],
             measurement: dict[str, Any], dry: bool = False) -> dict[str, Any]:
     result = {
@@ -2768,7 +2782,7 @@ def catalog(vector: dict[str, Any], deploy_result: dict[str, Any],
             # PIPE 2: Auto-promote after 3+ deploys, all consumed
             recent3 = v.get("results", [])[-3:]
             if v.get("deploy_count", 0) >= 3 and len(recent3) == 3:
-                if all(r.get("measurement") == "consumed" for r in recent3):
+                if all(r.get("measurement") == "consumed" for r in recent3) and not _is_oneshot_test(v):
                     try:
                         from mag.pro_library import add_move
                         add_move(
@@ -2801,8 +2815,8 @@ def catalog(vector: dict[str, Any], deploy_result: dict[str, Any],
         except Exception as e:
             result["skill_ledger"] = f"failed: {e}"
 
-    # Promote to pro_library if deployed and consumed
-    if deploy_result.get("status") == "deployed" and measurement.get("consumed"):
+    # Promote to pro_library if deployed and consumed (never promote one-shot E2E tests)
+    if deploy_result.get("status") == "deployed" and measurement.get("consumed") and not _is_oneshot_test(vector):
         try:
             from mag.pro_library import add_move
             add_move(

@@ -175,12 +175,19 @@ _G5_DUMP = re.compile(r"\b(raw.?vault|case.?dump|densif|unscrubbed)\b", re.I)
 _G6_TRUTH = re.compile(r"\b(this is legally true|medical fact|definitely proves)\b", re.I)
 _G7_HOST = re.compile(r"\b(?:rm -rf /|kill \d{1,5}|format c:|del /f)", re.I)
 _G8_SHIP = re.compile(r"\b(git push|npm publish|deploy to prod)\b", re.I)
+# G4 — operator skill brands as public product chrome. Real detector (H5 fix):
+# the operator's personal handles/names/brands appearing as product branding.
+_SKILL_CHROME = re.compile(
+    r"\b(nacho(?:quixotic| business)?|strike the chord)\b|"
+    r"built by (?:nacho|the operator)|personal (?:brand|skill) of",
+    re.I,
+)
 
 GATES: dict[str, tuple[re.Pattern, str]] = {
     "G1": (_MUNI, "municipality / hometown names as product samples"),
     "G2": (_PII, "real PII (emails, phones, ids)"),
     "G3": (_SECRET, "secrets, tokens, cookies, .env, OAuth material"),
-    "G4": (re.compile(r"(?!)"), "operator skill brands as product chrome"),
+    "G4": (_SKILL_CHROME, "operator skill brands as product chrome"),
     "G5": (_G5_DUMP, "unscrubbed vault / case / densify dumps"),
     "G6": (_G6_TRUTH, "automated truth / legal-medical advice claims"),
     "G7": (_G7_HOST, "free-roam host FS or kill reserved services"),
@@ -192,7 +199,7 @@ def scan_opspec(text: str) -> dict[str, dict]:
     """Scan a piece of output against G1–G8. Returns per-gate pass/fail."""
     result = {}
     for gate, (pattern, desc) in GATES.items():
-        hits = list(pattern.findall(text)) if pattern.pattern != "(?!)" else []
+        hits = list(pattern.findall(text))
         result[gate] = {
             "pass": not hits,
             "hits": [h[0] if isinstance(h, tuple) else h for h in hits],

@@ -81,6 +81,27 @@ def run_once() -> dict[str, Any]:
     steps.append(_safe("frontier_reach", lambda: _import_run("host_browser", "ensure", None)))
     # FREE-COMPUTE HUNT (legacy afk_loop) — always: scan free tiers for running/more freebies, $0.
     steps.append(_safe("freebie_scan", lambda: _import_run("afk_loop", "freebie_scan", None)))
+    # SEAT HUNT (2026-08-23, self-steal): the swarm of free seats finding MORE free seats — glob
+    # ~/.grok* for new authed seats + pull the live OpenRouter free-model list. Composes proven
+    # checks (grok_seat_burner auth.json, health urllib probe). $0. Folds to memory/runs/seat_hunt.
+    steps.append(_safe("seat_hunt", lambda: _import_run("seat_hunter", "hunt", None)))
+    # SEAT HEARTBEAT (2026-08-23): heartbeat EVERY seat/lane (grok nacho+sd, ox per account,
+    # deepseek balance, openrouter lanes, ollama) and fold ONE cool/heat profile. Generalizes the
+    # ox heartbeat the operator asked for — 'we need it for all of em' — so the flywheel knows
+    # where to send work (free now) and what's cooling. Gentle, tiny pings, ~$0.
+    steps.append(_safe("seat_heartbeat", lambda: _import_run("seat_availability", "ping", None)))
+    # PARALLEL PROVIDER LAUNCH + CADENCE-LEARN (2026-08-23, operator: "run this autonomously but
+    # leave enough for her to operate the computer... don't hog 100% cpu keep it at 90%. iterate
+    # and learn cadence and parallel launches of providers"): fire a real_swarm round across the
+    # funded/mixed fleet (deepseek + openrouter) — throttled to the CPU ceiling by cadence_learn
+    # — and fold the round timing/success so the loop LEARNS the right cadence + concurrency.
+    steps.append(_safe("parallel_provider_launch", lambda: _import_run("real_swarm", "run", None)))
+    steps.append(_safe("cadence_learn", lambda: _import_run("cadence_learn", "status", None)))
+    # FREE → SWARM (2026-08-23): the seam that makes "free seats direct k3s to do local work" real.
+    # Hand every substantive banked free-seat discovery (OX_RS_*) to the k8s swarm queue, so the
+    # cluster worker drains it next CronJob pass (scout proposes, basecamp disposes). $0. Only
+    # substantive discoveries are pushed — empty reasoning never lands in the cluster.
+    steps.append(_safe("free_to_swarm", lambda: _import_run("free_to_swarm", "push", None)))
     # DOGFOOD SENTINEL (this is why we dogfood): probe the real systems every cycle so failures
     # (cache-miss waste, broken grok dispatch, graph persistence) SURFACE instead of hiding.
     steps.append(_safe("dogfood_audit", lambda: _import_run("dogfood_audit", "audit", None)))
@@ -131,6 +152,11 @@ def run_once() -> dict[str, Any]:
     # ---- HONESTY EVERYWHERE (operator 2026-08-10): the ponytail grounding audit runs every cycle
     # so ungrounded doctrine (incl. mislabeled 'grok/frontier' claims) is CHALLENGED, not trusted.
     steps.append(_safe("ponytail_grounding", lambda: _import_run("ponytail_audit", "run_audit", None)))
+    # ---- CONTINUOUS VERIFY GATE (Prow-lite, 2026-08-23, Ben-The-Elder lane): run the bounded
+    # test suite every cycle, emit an honest typed verdict (green | red | timeout), surface
+    # failures. "Don't trust the report, reproduce the reality" — the bone-doctrine made a gate.
+    # Reuses mag.test_runner (bounded/restful/headless). Lean: no baseline ceremony (sacred-cow cut).
+    steps.append(_safe("verify_gate", lambda: _import_run("verify_gate", "gate", None)))
 
     out["steps"] = steps
     out["ok_steps"] = sum(1 for s in steps if s.get("ok"))
@@ -185,7 +211,8 @@ def status() -> dict[str, Any]:
     return {"schema": "afk_cadence.status.v1", "ts": _now(),
             "afk": _operator_afk(), "right_size": _right_size(),
             "steps": ["rightsize", "freebie_scan", "seed_chain", "self_advance",
-                      "capability_steal", "emergent_harvest", "learn_rightsize", "scribe", "cold_boot"]}
+                      "capability_steal", "emergent_harvest", "learn_rightsize", "scribe",
+                      "cold_boot", "verify_gate"]}
 
 
 def main(argv: list[str] | None = None) -> int:

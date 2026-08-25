@@ -41,8 +41,10 @@ HANDOFF_DIR = ROOT / "queue" / "handoff"
 STATE_DIR = ROOT / "memory" / "runs" / "cheap_swarm"
 DISPATCHED = STATE_DIR / "dispatched.jsonl"
 DEFAULT_MAX_PER_DAY = 6  # cheap but bounded — no runaway
-DEFAULT_MODEL = "deepseek-v4-flash"
-DEFAULT_PROVIDER = "deepseek"
+# FREE-FIRST (2026-08-24): the cheap swarm runs on the free NVIDIA build lane — same
+# flash model family (deepseek-ai/deepseek-v4-flash-0731), verified 3.4s, $0 build credits.
+DEFAULT_MODEL = "deepseek-ai/deepseek-v4-flash-0731"
+DEFAULT_PROVIDER = "nvidia"
 
 
 def _now() -> str:
@@ -156,7 +158,22 @@ def dispatch(pkg: dict[str, Any], *, max_per_day: int = DEFAULT_MAX_PER_DAY) -> 
 
 
 def run_cadence(*, max_per_day: int = DEFAULT_MAX_PER_DAY, max_new: int = 3) -> dict[str, Any]:
-    """Idempotent cadence: dispatch up to max_new pending packages to the cheap swarm."""
+    """Idempotent cadence: dispatch up to max_new pending packages to the cheap swarm.
+
+    PEAK-PRICE GUARD (2026-08-24): DeepSeek peak (weekday BJ 09-12/14-18) is 2x off-peak.
+    During peak, NEW dispatches defer to the next off-peak window (mag.offpeak) so heavy
+    rounds run at half price. MAG_ALLOW_PEAK=1 (or defer_peak=False) forces on.
+    """
+    try:
+        from mag.offpeak import defer_if_peak
+        d = defer_if_peak()
+        if d.get("defer"):
+            return {"ok": True, "action": "deferred_peak", "schema": SCHEMA,
+                    "multiplier": 2.0, "next_offpeak_utc": d.get("next_offpeak_utc"),
+                    "note": "peak pricing — new dispatches deferred to off-peak (MAG_ALLOW_PEAK=1 overrides)",
+                    "scan": scan()}
+    except Exception:  # noqa: BLE001 — pricing guard must never break the cadence
+        pass
     s = scan()
     dispatched, skipped = [], []
     for pkg in s.get("packages", [])[:max_new]:

@@ -102,10 +102,55 @@ def key_reconcile() -> dict[str, Any]:
             "note": f"provider reads {PROVIDER_KEY_ENV}; resolved={resolved} (key VALUE never logged)"}
 
 
+def unorphan_stale(*, ttl_minutes: int = 30) -> dict[str, Any]:
+    """SELF-HEAL (2026-08-25): reset tasks stuck in 'running' past a TTL back to 'queued'.
+
+    The failure mode this fixes: a consumer dies mid-task (or hangs past any sane timeout)
+    and the task file is left 'running' forever — _next_task skips non-queued tasks, so an
+    orphan blocks nothing alphabetically but permanently loses the task AND inflates the
+    running count (the double-consumer confusion). Longest known single-call timeout is ox
+    at 540s (9 min); a 30-min TTL is safely past any legitimate run.
+    """
+    from datetime import datetime, timezone
+    from pathlib import Path
+    from mag import swarm_worker as sw
+    qdir = Path(sw.QUEUE_DIR)
+    now = datetime.now(timezone.utc)
+    reset = []
+    for p in sorted(qdir.glob("sw-*.json")):
+        try:
+            t = json.loads(p.read_text(encoding="utf-8", errors="replace"))
+        except Exception:  # noqa: BLE001
+            continue
+        if t.get("status") != "running":
+            continue
+        # age from started_at (when this consumer began the run); fall back to created_at
+        mark = str(t.get("started_at") or t.get("created_at") or "")
+        try:
+            started = datetime.fromisoformat(mark.replace("Z", "+00:00"))
+        except Exception:  # noqa: BLE001
+            continue
+        age_min = (now - started).total_seconds() / 60
+        if age_min >= ttl_minutes:
+            t["status"] = "queued"
+            t["_unorphaned"] = f"reset from stale running ({int(age_min)}m old)"
+            p.write_text(json.dumps(t, ensure_ascii=False, indent=2), encoding="utf-8")
+            reset.append(str(t.get("task_id")))
+    return {"ok": True, "schema": SCHEMA, "action": "unorphan_stale",
+            "ttl_minutes": ttl_minutes, "reset": reset}
+
+
 def drain_pass(*, limit: int = DEFAULT_PER_BEAT) -> dict[str, Any]:
     """Run the EXISTING swarm_worker.run_once() LOCALLY (bounded), with the key reconciled, so the
     queue actually drains on this host. Self-steal: the drain logic already exists; we just invoke
-    it here because the k8s CronJob (its only other caller) never runs on Windows."""
+    it here because the k8s CronJob (its only other caller) never runs on Windows.
+
+    Runs the stale-running sweep FIRST (self-heal) so orphans don't clog the pass.
+    """
+    try:
+        unorphan_stale()
+    except Exception:  # noqa: BLE001
+        pass
     kr = key_reconcile()
     if not kr["resolved_provider_key"]:
         return {"ok": False, "schema": SCHEMA, "error": "no deepseek key resolves (see key_reconcile)",
@@ -166,17 +211,20 @@ def status() -> dict[str, Any]:
     return {"ok": True, "schema": SCHEMA,
             "contract": "key_reconcile()->alias the present deepseek key into the provider env (name "
                         "only, never value); drain_pass(limit)->run swarm_worker.run_once locally "
-                        "(bounded, headless); run_cadence()->bounded + daily-capped self-healing "
-                        "drain beat for the governor loop; status()->this",
+                        "(bounded, headless) after a stale-running sweep; unorphan_stale()->reset "
+                        "running tasks past TTL back to queued (self-heal); run_cadence()->bounded + "
+                        "daily-capped self-healing drain beat; status()->this",
             "cost": "deterministic coordinator + bounded swarm work (spawned agents are the real "
                     "deepseek spend; capped by default)",
-            "reuses": ["swarm_worker"], "fixes": ["dead k8s CronJob drain", "key env mismatch"]}
+            "reuses": ["swarm_worker"], "fixes": ["dead k8s CronJob drain", "key env mismatch",
+                                                "stuck running tasks (orphans)"]}
 
 
 if __name__ == "__main__":
     import argparse
     ap = argparse.ArgumentParser(prog="swarm-local-drain")
-    ap.add_argument("cmd", nargs="?", default="status", choices=["status", "key", "drain", "cadence"])
+    ap.add_argument("cmd", nargs="?", default="status",
+                    choices=["status", "key", "drain", "cadence", "unorphan"])
     ap.add_argument("--limit", type=int, default=DEFAULT_PER_BEAT)
     a = ap.parse_args()
     if a.cmd == "key":
@@ -185,5 +233,7 @@ if __name__ == "__main__":
         print(json.dumps(drain_pass(limit=a.limit), indent=2, default=str))
     elif a.cmd == "cadence":
         print(json.dumps(run_cadence(per_beat=a.limit), indent=2, default=str))
+    elif a.cmd == "unorphan":
+        print(json.dumps(unorphan_stale(), indent=2, default=str))
     else:
         print(json.dumps(status(), indent=2, default=str))

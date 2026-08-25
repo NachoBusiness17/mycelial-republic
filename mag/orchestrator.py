@@ -395,6 +395,7 @@ def _spawn_cmd(cmd: list[str], *, task_id: str, timeout: int,
         "tag": tag,
         "status": "running",
         "cmd": cmd,
+        "goal": _goal_from_cmd(cmd),  # persisted so same-goal dedupe works
         "created_at": _now(),
         "started_at": None,
         "ended_at": None,

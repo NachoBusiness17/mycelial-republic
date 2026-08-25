@@ -1,0 +1,56 @@
+# Kubernetes-native SCRIBE: the k3s meta-analysis over big-batch drain results (2026-08-24).
+#
+# Operator: "big batches ... shouldn't we have some sort of meta analysis by the k3's?"
+# YES. The cluster already runs mag-swarm + mag-warnings CronJobs over the shared state PVC.
+# This is the third: it reads every completed detached drain (batch_drain.collect()), classifies
+# the produced answers (what KIND of knowledge each batch created) with the LOCAL model ($0,
+# gemma4:latest), audits a sample with deepseek-v4-flash, and writes a meta-analysis report
+# (memory/runs/fuel_feed/scribe/latest.json) + folds labeled rows to the skill ledger.
+#
+# Runs every 15 minutes, all day — the scribe watches the batch harvest the way the swarm worker
+# watches the queue. Forbid concurrency (one scribe at a time). Bounded + burstable.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mag-scribe
+  namespace: mag
+  labels:
+    app: mag
+    kind: scribe
+  annotations:
+    mag.scribe/mode: "batch-meta-analysis"
+    mag.scribe/worker: "mag.batch_scribe.scribe (local classify + cheap audit)"
+    mag.scribe/provenance: "classify_corpus pattern (gemma4 bulk + deepseek sample audit)"
+spec:
+  schedule: "*/15 * * * *"   # every 15 minutes, all day, every day
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: scribe
+              image: mag-sovereign:local
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: MAG_SLOT
+                  value: "scribe-cron"
+                - name: MAG_SOURCE
+                  value: "mag-scribe-cronjob"
+              envFrom:
+                - configMapRef: { name: mag-config }
+                - secretRef: { name: mag-secrets }
+              volumeMounts:
+                - { name: state, mountPath: /app/logs, subPath: logs }
+                - { name: state, mountPath: /app/memory, subPath: memory }
+              # Bounded + burstable — the scribe is cheap (local classify), never crowds the
+              # controller. Same rightsizing as the swarm worker.
+              resources:
+                requests: { cpu: "100m", memory: "256Mi" }
+                limits: { cpu: "500m", memory: "1Gi" }
+              command: ["python", "-m", "mag.batch_scribe", "scribe"]
+          volumes:
+            - name: state
+              persistentVolumeClaim:
+                claimName: mag-state

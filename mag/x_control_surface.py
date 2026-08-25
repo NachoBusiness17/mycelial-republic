@@ -464,11 +464,20 @@ def parse_x_command(text: str, author: str = "", post_id: str = "") -> dict[str,
 def post_to_x(text: str, *, reply_to_id: str = "") -> dict[str, Any]:
     """Post a status update to Ghost's X account.
 
-    Uses X API v2: POST /2/tweets
-    Requires OAuth 2.0 with write access.
+    Uses X API v2: POST /2/tweets (OAuth 2.0 user context).
+    Requires write access — the operator's X Premium account + x_oauth token.
+
+    Deep-steal (2026-08-21): this existing X surface is the single posting entry
+    point. Token comes from mag.x_oauth (user-context OAuth2 + auto-refresh), with
+    fallback to a legacy X_ACCESS_TOKEN env token. POST /2/tweets needs a USER
+    token, not an app-only bearer — so we never send a bare app bearer here.
     """
-    if not X_ACCESS_TOKEN:
-        return {"ok": False, "error": "X_ACCESS_TOKEN not configured"}
+    from mag import x_oauth
+    token, err = x_oauth._access_token()
+    if not token:
+        token = X_ACCESS_TOKEN
+    if not token:
+        return {"ok": False, "error": "no X access token — run `python -m mag.x_oauth start` to authorize"}
 
     # X API v2 post
     import urllib.error
@@ -483,9 +492,9 @@ def post_to_x(text: str, *, reply_to_id: str = "") -> dict[str, Any]:
             "https://api.x.com/2/tweets",
             data=json.dumps(payload).encode("utf-8"),
             headers={
-                "Authorization": f"Bearer {X_ACCESS_TOKEN}",
+                "Authorization": f"Bearer {token}",
                 "Content-Type": "application/json",
-                "User-Agent": "GhostSovereign/0.1",
+                "User-Agent": f"{X_HANDLE or 'GhostSovereign'}/0.1",
             },
             method="POST",
         )

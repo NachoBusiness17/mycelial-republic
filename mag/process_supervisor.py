@@ -85,6 +85,36 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _mag_launch_active() -> bool:
+    """True when mag_launch.py is the live controller (its supervisor is up and healthy).
+
+    mag_launch owns every slot (backend/dashboard/lab/mirror/drainer) and spawns the governor
+    as `main.py autorun` — the CANONICAL carrier of the AOS bus. If mag_launch is up, it is the
+    ONE controller for the autorun loop; process_supervisor must NOT also reap/restart its own
+    `autorun_loop(5.0)` or we get DOUBLE-SUPERVISION (L8, 2026-08-10 / 2026-08-23): two
+    supervisors both respawn the governor carrier -> duplicate `autorun_loop` processes fight
+    the shared bus state -> 3-4 answers generated, none sent. Detected via mag_launch's state
+    file (its supervisor_pid alive) or its health ports.
+    """
+    try:
+        state = ROOT / "state" / "mag_launch.json"
+        if state.is_file():
+            import json as _json
+            data = _json.loads(state.read_text(encoding="utf-8")) or {}
+            sup = int(data.get("supervisor_pid") or 0)
+            if sup and _pid_alive(sup):
+                return True
+    except Exception:
+        pass
+    # fallback: mag_launch serves the dashboard/backend health ports
+    try:
+        if _health_ok("http://127.0.0.1:8765/") and _health_ok("http://127.0.0.1:8000/health"):
+            return True
+    except Exception:
+        pass
+    return False
+
+
 def _container_mode() -> bool:
     """Under MAG_CONTAINER=1, mag_launch.py + Docker restart policy are the ONE controller.
 
@@ -95,7 +125,8 @@ def _container_mode() -> bool:
     accumulates and the dashboard starves (~82% CPU). Gate ALL spawn/respawn off under the
     container; process_supervisor becomes a passive observer only.
     """
-    return os.environ.get("MAG_CONTAINER", "").strip().lower() in ("1", "true", "yes")
+    return os.environ.get("MAG_CONTAINER", "").strip().lower() in ("1", "true", "yes") \
+        or _mag_launch_active()
 
 
 def _load_state() -> dict[str, Any]:
@@ -121,6 +152,14 @@ def _log(event: str, **meta: Any) -> None:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
     except OSError:
         pass
+
+
+def _health_ok(url: str, timeout: float = 1.5) -> bool:
+    try:
+        with urllib.request.urlopen(url, timeout=timeout) as resp:
+            return 200 <= resp.status < 300
+    except Exception:
+        return False
 
 
 def _pid_alive(pid: int | None) -> bool:

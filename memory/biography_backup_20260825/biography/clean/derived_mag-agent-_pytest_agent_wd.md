@@ -1,0 +1,29 @@
+# Session summary
+
+- **session:** `mag-agent-_pytest_agent_wd`
+- **seat:** `Mag agent seat (provider-agnostic tool loop)` · provider `ollama` · model `gemma:2b`
+- **ended:** 2026-08-07T23:53:37.400281+00:00
+- **source lines scanned:** 3
+- **themes:** (unclear — see digests)
+
+## What you were working on
+
+Operator prompts (sample, latest first):
+- pytest: wire agent chats into verkle workdays
+
+## What the agent did (sample)
+
+- Filing residual DNA and appending a Verkle leaf.
+
+## Open loops (heuristic)
+
+- Re-read this summary next session before inventing new epics.
+- Check `scrum/sprints/current/board.md` if republic work was in flight.
+- Full transcript: `memory/agent_sessions/<seat>.json` (Mag agent).
+
+## Intent (best guess)
+
+You were driving **general build work**. Latest ask flavor: “pytest: wire agent chats into verkle workdays…”  Mag/hands and product/mirror layers may have been mixed — prefer re-centering on the stated goal before next sprint.
+
+---
+_Written by Mag biographer (local, seat-agnostic). Not full chord mode._

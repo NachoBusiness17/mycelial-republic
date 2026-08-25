@@ -280,6 +280,21 @@ def chat_provider(
     if tier in never and not pcfg.get("free_local"):
         return {"ok": False, "error": f"refused: tier {tier} cannot use remote {provider_id}"}
 
+    # PEAK GATE (2026-08-24, operator: paid deepseek should land in the cheap window):
+    # genuinely PAID providers (paid:true in providers.yaml) defer during DeepSeek peak hours
+    # (weekday Beijing 09-12/14-18 = 2x) so paid volume naturally falls in the off-peak window
+    # and free lanes carry peak. MAG_ALLOW_PEAK=1 overrides. Never breaks the loop (try/except).
+    if pcfg.get("paid"):
+        try:
+            from mag.offpeak import defer_if_peak
+            d = defer_if_peak()
+            if d.get("defer"):
+                return {"ok": False, "error": f"deferred_peak: {provider_id} is paid and it is "
+                                               f"peak pricing (2x) — off-peak only; MAG_ALLOW_PEAK=1 "
+                                               f"overrides (next_offpeak_utc={d.get('next_offpeak_utc')})"}
+        except Exception:  # noqa: BLE001 — the guard must never break a call
+            pass
+
     b = provider_budget(provider_id)
     if not b.get("budget_ok"):
         return {
@@ -334,6 +349,10 @@ def chat_provider(
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {key or 'ollama'}",
+            # browser-like UA: Cloudflare (groq) returns HTTP 403/1010 to bare
+            # Python-urllib signatures — a real UA passes the edge check (2026-08-24).
+            "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                           "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"),
         }
         for hk, hv in (pcfg.get("extra_headers") or {}).items():
             headers[str(hk)] = str(hv)
@@ -344,7 +363,19 @@ def chat_provider(
                 data = json.loads(r.read().decode("utf-8"))
             lat_ms = int((time.perf_counter() - t0) * 1000)
             choice = (data.get("choices") or [{}])[0]
-            text = ((choice.get("message") or {}).get("content") or "")
+            msg = choice.get("message") or {}
+            text = (msg.get("content") or "")
+            # EMPTY-CONTENT HONESTY (2026-08-24): a reasoning model that spends the whole
+            # budget thinking returns ok-but-empty (content "", finish_reason length). That is
+            # NOT a successful empty answer — it is a budget failure. Report it honestly so the
+            # loop treats it as retryable, not as a dead lane. (Reasoning fields vary: some
+            # providers put it in message.reasoning, others message.reasoning_details.)
+            if not text and (choice.get("finish_reason") == "length"
+                             or msg.get("reasoning") or msg.get("reasoning_details")):
+                return {"ok": False,
+                        "error": "empty content — reasoning model consumed the budget "
+                                  "(max_tokens too small; raise it or disable thinking)",
+                        "provider": provider_id, "model": model, "empty_reasoning": True}
             if _looks_degenerate(text):
                 record_usage(
                     provider_id, model=str(model), ok=False,
@@ -535,6 +566,11 @@ def chat_messages(
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {key or 'ollama'}",
+            # browser-like UA (2026-08-25): chat_provider got this on 08-24, chat_messages
+            # DIDN'T — Cloudflare 1010-blocks the bare urllib signature, so every AGENT run
+            # (which rides chat_messages + tools) failed with "HTTP 403: error code: 1010".
+            "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                           "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"),
         }
         for hk, hv in (pcfg.get("extra_headers") or {}).items():
             headers[str(hk)] = str(hv)

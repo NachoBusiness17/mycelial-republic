@@ -187,9 +187,19 @@ def _dispatch_worker(task: dict[str, Any], *, dry: bool) -> dict[str, Any]:
     if dry:
         return {**out, "ok": True, "worker": "dry"}
     # try free grok surface first (grok_free), else cheap swarm; budgeted via aos_grok.
+    # Bounded-wait: grok_free.capture() can block up to 300s on a dead browser seat, which
+    # stalls the whole round. Run it in a thread with a short timeout so we fall back to
+    # cheap_swarm quickly when the free surface is unreachable.
     try:
         from mag import grok_free as gf
-        cap = gf.capture(goal)
+        import threading
+        _cap: dict = {}
+        def _run():
+            _cap["r"] = gf.capture(goal)
+        t = threading.Thread(target=_run, daemon=True)
+        t.start()
+        t.join(timeout=8)
+        cap = _cap.get("r") or {}
         if cap.get("ok"):
             return {**out, "ok": True, "worker": "grok_free", "cost": cap.get("cost_est_usd")}
     except Exception:

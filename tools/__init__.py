@@ -1,4 +1,5 @@
 from . import code_execution, filesystem, shell, swarm_tools
+from mag import vision
 
 TOOL_MAP = {
     "list_dir": lambda **kw: filesystem.list_dir(**kw),
@@ -19,6 +20,9 @@ TOOL_MAP = {
     "scan_grid": lambda **kw: swarm_tools.scan_grid(**kw),
     "mean_field": lambda **kw: swarm_tools.mean_field(**kw),
     "research": lambda **kw: swarm_tools.research(**kw),
+    # vision — deepseek-v4-flash-vision-exp (2026-08-25): agents can SEE images now.
+    #   vision describe <image_path_or_url> [prompt]  (base64-inline / URL)
+    "vision": lambda **kw: vision.describe(**kw),
 }
 
 

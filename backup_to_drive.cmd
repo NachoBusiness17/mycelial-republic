@@ -27,8 +27,8 @@ echo [backup] excluding recreatable: .venv, __pycache__, logs, state, node_modul
 REM /E = all subdirs incl empty; /XJ = no junctions (prevents loops);
 REM /XD = exclude recreatable dirs; /R:2 /W:2 = retry 2x / wait 2s;
 REM /NFL /NDL = quiet file/dir list; /MT = multithread
-robocopy "%~dp0" "%DEST%" /E /XJ /XD .venv __pycache__ logs state node_modules models .git ^
-  /COPY:DAT /DCOPY:DAT /R:2 /W:2 /NFL /NDL /MT:8
+REM (single line — no ^ continuation; that broke parsing before)
+robocopy "%~dp0" "%DEST%" /E /XJ /XD .venv __pycache__ logs state node_modules models .git /COPY:DAT /DCOPY:DAT /R:2 /W:2 /NFL /NDL /MT:8
 set RC=%errorlevel%
 if %RC% GEQ 8 (
   echo [backup] ROBOCOPY FAILED (exit %RC%) - aborting

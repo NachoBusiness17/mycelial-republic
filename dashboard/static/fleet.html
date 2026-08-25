@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HYPERVISOR · fleet cool/heat + real bills</title>
+<style>
+  :root{
+    --bg:#0b0f0d; --panel:#121815; --panel2:#0e1411; --line:#1e2a24;
+    --fg:#d6e3d8; --dim:#7d9185; --faint:#4c5f55;
+    --ok:#34d17b; --warn:#e5b83b; --bad:#e5533d; --accent:#4fb3a8;
+    --mono:"Cascadia Code",Consolas,monospace; --sans:"Segoe UI",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:14px}
+  #top{display:flex;align-items:baseline;gap:14px;padding:12px 18px;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#0d120f,#0b0f0d)}
+  #top h1{font-family:var(--mono);font-size:18px;margin:0;color:var(--accent);letter-spacing:.08em}
+  #top h1 .sub{color:var(--dim);font-size:11px;margin-left:8px;letter-spacing:.02em}
+  #state{font-family:var(--mono);font-size:11px;color:var(--dim)}
+  #state .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--warn);margin-right:5px}
+  #state.ok .dot{background:var(--ok)} #state.deg .dot{background:var(--warn)} #state.down .dot{background:var(--bad)}
+  #grid{display:grid;grid-template-columns:repeat(12,1fr);gap:10px;padding:12px 18px}
+  .card{grid-column:span 12;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 12px}
+  .card.half{grid-column:span 6}
+  @media(max-width:900px){.card.half{grid-column:span 12}}
+  .card h2{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.12em;
+    color:var(--dim);margin:0 0 8px;display:flex;justify-content:space-between}
+  .card h2 .src{color:var(--faint);font-weight:400}
+  .pill{display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px;font-family:var(--mono);
+    border:1px solid var(--line)}
+  .pill.ok{color:var(--ok);border-color:#1f4a34} .pill.bad{color:var(--bad);border-color:#4a1f1f}
+  .pill.faint{color:var(--faint)}
+  #seatGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-top:6px}
+  .seat{border:1px solid var(--line);border-radius:5px;padding:8px 10px;background:var(--panel2)}
+  .seat .name{font-family:var(--mono);font-size:12px;color:var(--fg)}
+  .seat .meta{font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:3px;word-break:break-all}
+  #billGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-top:6px}
+  .bill{border:1px solid var(--line);border-radius:5px;padding:8px 10px;background:var(--panel2)}
+  .bill .name{font-family:var(--mono);font-size:12px;color:var(--fg)}
+  .bill .val{font-family:var(--mono);font-size:18px;color:var(--accent);margin-top:4px}
+  .bill .meta{font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:3px;word-break:break-all}
+  #acctGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-top:6px}
+  #mermaid{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:14px;overflow:auto;text-align:center}
+  #mermaid svg{max-width:100%;height:auto}
+  .btn{border:1px solid var(--line);background:var(--panel2);color:var(--fg);font-family:var(--mono);
+    font-size:11px;padding:3px 9px;border-radius:4px;cursor:pointer;margin-right:6px}
+  .btn:hover{border-color:var(--accent)}
+  .err{color:var(--bad);font-family:var(--mono);font-size:11px}
+  .muted{color:var(--faint);font-family:var(--mono);font-size:10px}
+  #raw{margin-top:8px;max-height:320px;overflow:auto}
+  #raw pre{font-family:var(--mono);font-size:10px;color:var(--dim);white-space:pre-wrap}
+</style>
+</head>
+<body>
+<div id="top">
+  <h1>HYPERVISOR<span class="sub">fleet cool/heat + real bills</span></h1>
+  <span id="state"><span class="dot"></span><span id="stateTxt">connecting…</span></span>
+  <div style="flex:1"></div>
+  <button class="btn" id="refresh">↻ refresh</button>
+  <button class="btn" id="goHome">home desk</button>
+</div>
+<div id="grid">
+  <div class="card"><h2>Fleet map <span class="src">/api/v1/fleet/hypervisor</span></h2><div id="mermaid"><span class="muted">rendering…</span></div></div>
+  <div class="card half"><h2>Seats <span class="src" id="seatCount"></span></h2><div id="seatGrid"></div></div>
+  <div class="card half"><h2>OpenRouter accounts / lanes <span class="src">seat_hunter.accounts + active pool</span></h2><div id="acctGrid"></div></div>
+  <div class="card"><h2>Real bills <span class="src">trust the bill, not the log field</span></h2><div id="billGrid"></div></div>
+  <div class="card"><h2>Raw <span class="src">full JSON</span></h2><div id="raw"><pre></pre></div></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+const $ = (s)=>document.querySelector(s);
+let mermaidReady = false;
+if (window.mermaid){ mermaid.initialize({startOnLoad:false, theme:'dark', flowchart:{useMaxWidth:true}}); mermaidReady = true; }
+
+async function load(){
+  try{
+    const r = await fetch('/api/v1/fleet/hypervisor');
+    const d = await r.json();
+    if(!d.ok) throw new Error(d.error || 'bad response');
+    const avail = d.n_seats ? `${d.n_available}/${d.n_seats} available` : 'no seats';
+    $('#stateTxt').textContent = avail + ' · ' + (d.ts||'');
+    $('#state').className = (d.n_seats && d.n_available===d.n_seats) ? 'ok' : (d.n_available>=1 ? 'deg' : 'down');
+    $('#seatCount').textContent = `${avail}`;
+    renderSeats(d.seats||[]);
+    renderAccounts(d.accounts||[], d.active_lanes);
+    renderBills(d.bills||{});
+    $('#raw pre').textContent = JSON.stringify(d,null,2);
+    renderMermaid(d.mermaid||'');
+  }catch(e){ $('#stateTxt').textContent = 'error'; $('#state').className='down'; $('#mermaid').innerHTML = '<span class="err">'+e.message+'</span>'; }
+}
+
+function renderSeats(seats){
+  const el = $('#seatGrid'); el.innerHTML='';
+  for(const s of seats){
+    const ok = !!s.available;
+    const ratio = s.ratio ? ` · ${s.ratio} over ${s.checks_n||'?'} checks` : '';
+    const div = document.createElement('div'); div.className='seat';
+    div.innerHTML = `<div class="name">${esc(s.seat||'?')} <span class="pill ${ok?'ok':'bad'}">${ok?'ok':'bad'}</span></div>` +
+      `<div class="meta">${esc(s.detail||s.note||'')}${esc(ratio)}</div>`;
+    el.appendChild(div);
+  }
+  if(!seats.length) el.innerHTML = '<span class="muted">no seat data</span>';
+}
+
+function renderAccounts(accounts, activeLanes){
+  const el = $('#acctGrid'); el.innerHTML='';
+  for(const a of accounts){
+    const ft = a.is_free_tier===true ? 'free' : (a.is_free_tier===false ? 'paid' : '?');
+    const div = document.createElement('div'); div.className='seat';
+    let val = `${esc(a.key_masked||'')} <span class="pill ${a.is_free_tier?'ok':'faint'}">${ft}</span>`;
+    if(a.quota_error) val += `<div class="meta">quota error</div>`;
+    else if(a.limit_remaining!=null) val += `<div class="meta">daily ${esc(a.usage_daily||0)} / ${esc(a.limit_remaining)} used</div>`;
+    div.innerHTML = `<div class="name">acct ${a.account||'?'}</div>${val}`;
+    el.appendChild(div);
+  }
+  if(activeLanes!=null){
+    const d = document.createElement('div'); d.className='seat';
+    d.innerHTML = `<div class="name">Active free lanes</div><div class="val" style="font-family:var(--mono);font-size:18px;color:var(--accent)">${esc(activeLanes)}</div><div class="meta">rotation pool (non-exhausted)</div>`;
+    el.appendChild(d);
+  }
+  if(!accounts.length && activeLanes==null) el.innerHTML = '<span class="muted">no account data</span>';
+}
+
+function renderBills(bills){
+  const el = $('#billGrid'); el.innerHTML='';
+  const fmt = (v)=>{ if(v==null) return '—'; if(typeof v==='number') return v.toLocaleString(undefined,{maximumFractionDigits:2}); return String(v); };
+  for(const [k,v] of Object.entries(bills)){
+    if(!v || typeof v!=='object') continue;
+    let val='', meta='';
+    if(v.total_cost_usd!=null){ val='$'+fmt(v.total_cost_usd); meta='tokens '+fmt(v.total_tokens); }
+    else if(v.total_balance!=null){ val=fmt(v.total_balance)+' '+(v.currency||''); meta='balance'; }
+    else if(v.n_free!=null){ val=fmt(v.n_free); meta='free lanes'; }
+    else if(v.total_tokens!=null){ val=fmt(v.total_tokens); meta='tokens'; }
+    else { val='—'; meta=''; }
+    const div = document.createElement('div'); div.className='bill';
+    div.innerHTML = `<div class="name">${esc(k)}</div><div class="val">${esc(val)}</div><div class="meta">${esc(meta)}</div>`;
+    el.appendChild(div);
+  }
+  if(!Object.keys(bills).length) el.innerHTML = '<span class="muted">no bill data</span>';
+}
+
+function renderMermaid(src){
+  const el = $('#mermaid');
+  if(!src){ el.innerHTML='<span class="muted">no mermaid</span>'; return; }
+  const code = '```mermaid\n'+src+'\n```';
+  if(mermaidReady){
+    el.innerHTML = '<span class="muted">rendering…</span>';
+    try{ mermaid.render('fleetGraph', src).then(({svg})=>{ el.innerHTML = svg; }).catch(e=>{ el.innerHTML='<span class="err">mermaid: '+e.message+'</span>'; }); }
+    catch(e){ el.innerHTML = '<span class="err">'+e.message+'</span>'; }
+  } else {
+    el.innerHTML = '<pre style="text-align:left;font-family:var(--mono);font-size:11px;color:var(--dim)">'+esc(src)+'</pre>';
+  }
+}
+
+function esc(s){ return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+$('#refresh').onclick = load;
+$('#goHome').onclick = ()=> location.href='/';
+load();
+setInterval(load, 60000);
+</script>
+</body>
+</html>

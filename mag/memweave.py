@@ -112,22 +112,47 @@ def _tok(s: str) -> set[str]:
     return set((s or "").lower().split())
 
 
-def consensus_quality(answers: list[str]) -> dict[str, Any]:
+def consensus_quality(answers: list[str], *, independent: list[bool] | None = None,
+                      rho: float | None = None) -> dict[str, Any]:
     """Effective independent agreement across the flock's answers (consensus-illusion guard).
 
-    Counts only answers that are NOT token-overlap-correlated with an already-counted one
-    (tau = 0.6). Returns {n_answers, n_independent, correlated, verdict}. Deterministic + $0.
-    Verdict: 'strong' if >=2 independent agree, 'correlated/weak' if they collapse to ~1 opinion.
+    RESEARCH FIX (OX_SYNTHESIS consensus_illusion_detection, 2026-08-23): agreement is only REAL
+    if the agreeing witnesses are INDEPENDENT. The old guard counted witnesses purely by token-
+    overlap, so it could NOT tell two INDEPENDENTLY-CONSTRUCTED verifiers that byte-agree (the
+    STRONG case) from one correlated opinion (an illusion) — it under-reported strong consensus.
+
+    `independent` (optional, per-answer bool) supplies the construction-independence signal the
+    token-overlap check cannot see. When provided, a byte-identical answer from an independently-
+    constructed witness counts as an ADDITIONAL independent witness (strong). When omitted, the
+    behavior is unchanged (token-overlap only) — a flock of identical answers stays correlated.
+
+    `rho` (optional, mean pairwise error correlation in [0,1)) supplies the MEASURED correlation
+    between agreeing witnesses (OX burn t0416). When provided, it converts raw agreement into
+    effective independent witnesses via the closed-form rule:
+        n* = n / (1 + (n - 1) * rho)
+    At rho=0.9, ten agents give n* ~= 1.17 — ten correlated "unanimous" agents are worth barely
+    more than one opinion. This is the measured-not-guessed rule: agreement carries evidential
+    weight only in proportion to error independence.
+
+    Verdict: 'strong' if >=2 effective independent witnesses agree; 'correlated_weak' if they
+    collapse toward one opinion; 'single' otherwise. Deterministic + $0.
     """
     n = len(answers or [])
     if n == 0:
         return {"ok": True, "schema": "memweave.consensus.v1", "n_answers": 0,
-                "n_independent": 0, "correlated": False, "verdict": "empty"}
-    independent: set[int] = set()
+                "n_independent": 0, "n_effective": 0.0, "correlated": False, "verdict": "empty"}
+    if independent is not None and len(independent) != n:
+        raise ValueError("independent must be None or match len(answers)")
+    if rho is not None:
+        rho = float(rho)
+        if not (0.0 <= rho < 1.0):
+            raise ValueError("rho must be in [0,1)")
+    # structural independent witnesses (token-overlap + explicit independence signal)
+    wit: set[int] = set()
     for i in range(n):
         correlated = False
         ti = _tok(answers[i])
-        for j in independent:
+        for j in wit:
             tj = _tok(answers[j])
             if not ti or not tj:
                 continue
@@ -136,13 +161,26 @@ def consensus_quality(answers: list[str]) -> dict[str, Any]:
                 correlated = True
                 break
         if not correlated:
-            independent.add(i)
-    n_ind = len(independent)
-    verdict = ("strong" if n_ind >= 2 else
-               "correlated_weak" if (n_ind < n and n >= 2) else
+            wit.add(i)
+        elif independent is not None and independent[i]:
+            # explicit independence signal: a byte-identical answer from an independently-
+            # constructed witness is a NEW independent voice, not a correlated echo (the strong case)
+            if any(answers[i] == answers[j] and independent[j] for j in wit):
+                wit.add(i)
+    n_ind = len(wit)
+    # measured effective independent witnesses (correlation-adjusted), when rho is known
+    if rho is not None:
+        n_effective = n / (1 + (n - 1) * rho)
+        eff = n_effective
+    else:
+        n_effective = float(n_ind)
+        eff = n_ind
+    verdict = ("strong" if eff >= 2 else
+               "correlated_weak" if (eff < n and n >= 2) else
                "single")
     return {"ok": True, "schema": "memweave.consensus.v1", "n_answers": n,
-            "n_independent": n_ind, "correlated": n_ind < n, "verdict": verdict}
+            "n_independent": n_ind, "n_effective": round(n_effective, 4),
+            "rho": rho, "correlated": n_ind < n, "verdict": verdict}
 
 
 def main(argv: list[str] | None = None) -> int:

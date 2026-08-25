@@ -56,14 +56,35 @@ def _append_jsonl(path: Path, obj: dict[str, Any]) -> None:
         f.write(json.dumps(obj, ensure_ascii=False, default=str) + "\n")
 
 
-def record(kind: str, label: str, *, path: str = "", note: str = "") -> dict[str, Any]:
-    """Fold one finished piece into the durable work register (verkle knot + shared manifest)."""
+def record(kind: str, label: str, *, path: str = "", note: str = "",
+            claim: dict | None = None) -> dict[str, Any]:
+    """Fold one finished piece into the durable work register (verkle knot + shared manifest).
+
+    claim (2026-08-25, the sharp edge): an optional tri-state claim
+    {statement, status, basis, evidence} run through the vendored AOS integrity kernel
+    BEFORE it lands — a claim that doesn't validate (e.g. Supported without Evidence)
+    is degraded to Unproven, never over-claimed. Every fold CAN carry its status, and
+    the ledger (logs/claims.jsonl) records what was claimed and on what basis.
+    """
     kind = (kind or "work").strip().lower()
     label = (label or "").strip()
     if not label:
         return {"ok": False, "error": "label required"}
     row = {"ts": _now(), "schema": SCHEMA, "kind": kind, "label": label,
            "path": path, "note": note[:300]}
+    # 0) the claim, if any — kernel-validated (never over-claims) + ledgered
+    if claim and isinstance(claim, dict):
+        try:
+            from mag.integrity_kernel import tri_state
+            c = tri_state(str(claim.get("statement") or label),
+                          status=str(claim.get("status") or "Unproven"),
+                          basis=tuple(claim.get("basis") or ("Assumption",)),
+                          evidence=tuple(claim.get("evidence") or ()))
+            row["claim"] = c
+            _append_jsonl(Path(__file__).resolve().parents[1] / "logs" / "claims.jsonl",
+                          {"ts": _now(), "kind": kind, "label": label, "claim": c})
+        except Exception as e:
+            row["claim_error"] = str(e)[:80]
     # 1) content-addressed verkle knot (the chain = durable, recallable by any seat)
     try:
         from mag.verkle_knot import append_verkle_knot

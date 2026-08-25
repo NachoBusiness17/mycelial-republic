@@ -10,8 +10,9 @@ Spawns the background services and keeps them alive:
                  and we must not spawn a second seat on top of it.
   3. Scribe    - synthesis_agent.py (writes memory/running_commentary.md).
   4. Dashboard - python main.py dashboard (serves 127.0.0.1:8765).
-  5. Drainer   - python main.py orchestrator drain (auto-advances the task
-                 queue). OPT-IN: only started if MAG_DRAINER=1. It spawns
+  5. Drainer   - python main.py autorun (the governor/autorun carrier: drains the task
+                 queue AND runs every cadence, incl. parallel provider launches + cadence
+                 learning, throttled to the 90% CPU ceiling).
                  one-shot sub-agents that compete with the interactive seat,
                  so it is OFF by default.
 
@@ -530,7 +531,14 @@ def _sync_dynamic_slots(slots: list[dict]) -> None:
         if s["name"] == "drainer":
             s["wanted"] = want_drain
             if want_drain:
-                s["cmd"] = [PY, str(ROOT / "main.py"), "orchestrator", "drain"]
+                # CARRIER (2026-08-23): run `main.py autorun` (governor_autorun.autorun_loop),
+                # NOT the legacy `orchestrator drain`. autorun_once() internally drains the queue
+                # (drain_parallel/drain_once) AND runs every cadence (incl. parallel_provider +
+                # cadence_learn). The legacy orchestrator-drain path drained the queue but NEVER
+                # ran the cadences — so autonomous work (parallel provider launches, cadence
+                # learning, 90% CPU ceiling) never fired. `main.py autorun` is the one carrier that
+                # does both.
+                s["cmd"] = [PY, str(ROOT / "main.py"), "autorun"]
                 s.pop("note", None)
             else:
                 s["cmd"] = []

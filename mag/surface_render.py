@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import json
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -573,6 +574,175 @@ def matthew_map_html() -> str:
             "});</script></body></html>")
 
 
+def fleet_heartbeat() -> dict[str, Any]:
+    """The FLEET view — fold the all-seat heartbeat (mag.seat_availability) + the REAL bills into
+    one aggregate the hypervisor renders. This is the operator's 'hypervisor' for the flywheel:
+    every seat's cool/heat + every seat's real spend, grounded from the ledgers, never fabricated.
+    (2026-08-23, self-steal: reuses seat_availability, seat_hunter bills — nothing invented.)
+
+    CACHE (2026-08-23): the live bill/account calls (grok_bill ~2.5s, deepseek ~0.6s, accounts
+    ~0.5s) are too slow for a dashboard API polled every 15s. Serve the last folded view from a
+    short-TTL cache so the dashboard is instant; recompute only when the cache is stale (>120s).
+    """
+    # short-TTL cache — serve the last folded fleet view, recompute when stale
+    now = time.time()
+    if _FLEET_CACHE["at"] and (now - _FLEET_CACHE["at"]) < _FLEET_TTL:
+        return _FLEET_CACHE["data"]
+    seats = []
+    avail = 0
+    total = 0
+    avail_summ = None
+    try:
+        from mag import seat_availability
+        hb = seat_availability.status()
+        # self-steal: use the by_seat AGGREGATE (avail/checks ratio over the tail) so each seat
+        # appears once with a real availability ratio, not a single raw heartbeat row.
+        by_seat = hb.get("by_seat") or {}
+        for seat_name, ratio in by_seat.items():
+            ok_n = avail_n = None
+            try:
+                av, ch = str(ratio).split("/")
+                ok_n, avail_n = int(av), int(ch)
+            except Exception:  # noqa: BLE001
+                ok_n = avail_n = None
+            available = bool(ok_n and ok_n > 0)
+            seats.append({"seat": seat_name, "available": available,
+                          "available_n": ok_n, "checks_n": avail_n,
+                          "ratio": ratio, "ts": hb.get("n_heartbeats")})
+            total += 1
+            if available:
+                avail += 1
+        avail_summ = f"{avail}/{total} over {hb.get('n_heartbeats')} heartbeats"
+    except Exception as e:  # noqa: BLE001
+        avail_summ = "unavailable"
+        seats = []
+        total = 0
+        avail = 0
+    # self-steal: OpenRouter account headroom (per-key free-tier flag + daily usage) from
+    # seat_hunter.accounts(), so the hypervisor shows headroom, not just ok/bad.
+    accounts = []
+    active_lanes = None
+    try:
+        from mag import seat_hunter
+        ac = seat_hunter.accounts()
+        for a in (ac.get("accounts") or []):
+            q = a.get("quota") or {}
+            accounts.append({"account": a.get("account"), "key_masked": a.get("key_masked"),
+                             "is_free_tier": q.get("is_free_tier"),
+                             "usage_daily": q.get("usage_daily"),
+                             "limit_remaining": q.get("limit_remaining"),
+                             "quota_error": q.get("error")})
+        try:
+            al = seat_hunter.next_lane()
+            if al.get("ok"):
+                active_lanes = al.get("n_active")
+        except Exception:  # noqa: BLE001
+            active_lanes = None
+    except Exception as e:  # noqa: BLE001
+        accounts = []
+    # the REAL bills (grok invoice, deepseek spend+balance, codex tokens, openrouter lanes)
+    bills = {}
+    for name, fn, args in (
+        ("grok", "grok_bill", ()),
+        ("deepseek_spend", "ingest_deepseek_bill", ()),
+        ("deepseek_balance", "deepseek_bill", ()),
+        ("codex", "codex_bill", ()),
+        ("openrouter_lanes", "free_lanes", ()),
+    ):
+        try:
+            from mag import seat_hunter
+            f = getattr(seat_hunter, fn)
+            r = f(*args) if args else f()
+            if name == "deepseek_spend":
+                bills[name] = {"total_cost_usd": r.get("total_cost_usd"), "by_model": r.get("by_model")}
+            elif name == "deepseek_balance":
+                bills[name] = {"total_balance": r.get("total_balance"), "currency": r.get("currency")}
+            elif name == "grok":
+                bills[name] = {"total_cost_usd": r.get("total_cost_usd"), "total_tokens": r.get("total_tokens")}
+            elif name == "codex":
+                bills[name] = {"total_tokens": r.get("total_tokens"), "n_token_events": r.get("n_token_events")}
+            elif name == "openrouter_lanes":
+                bills[name] = {"n_free": len(r.get("openrouter_free", []) or [])}
+        except Exception:  # noqa: BLE001
+            bills[name] = {"error": "unavailable"}
+    out = {"ok": True, "seats": seats, "n_seats": total, "n_available": avail,
+           "available_summary": avail_summ, "accounts": accounts,
+           "active_lanes": active_lanes, "bills": bills, "schema": SCHEMA}
+    _FLEET_CACHE["at"] = time.time()
+    _FLEET_CACHE["data"] = out
+    return out
+
+
+_FLEET_CACHE: dict[str, Any] = {"at": 0.0, "data": None}
+_FLEET_TTL = 300.0  # RIGHTSIZED 2026-08-24: was 120s; the fleet view is cool/heat + bills (not
+# real-time) but browser pages polled it every 10-15s, so after each window it recomputed a ~4s
+# live bill/account read and pegged the dashboard. 300s TTL + matching page refresh = mostly cached.
+
+
+def fleet_mermaid() -> str:
+    """The FLEET as a mermaid graph — every seat node colored by availability (free/cool = green,
+    hot/throttled = red), plus the bill anchors. The operator's hypervisor, rendered inline."""
+    f = fleet_heartbeat()
+    lines = ["flowchart TB"]
+    lines.append('  HYP["HYPERVISOR — fleet cool/heat + real bills"]')
+    sub = f.get("available_summary") or f"{f.get('n_available')}/{f.get('n_seats')}"
+    lines.append(f'  HYP -->|"{_esc(sub)} available"| FLEET["seats"]')
+    seen_kind = {}
+    for s in (f.get("seats") or []):
+        nid = "s" + str(abs(hash(s.get("seat"))) % 100000)
+        av = "ok" if s.get("available") else "bad"
+        lines.append(f'  {nid}["{_cap(str(s.get("seat")))} :: {av}"]')
+        lines.append(f"  FLEET --> {nid}")
+    # self-steal: OpenRouter account headroom + the active free-lane rotation pool (seat_hunter)
+    accounts = f.get("accounts") or []
+    if accounts or f.get("active_lanes") is not None:
+        lines.append('  HEAD["OR ACCOUNTS / LANES"]')
+        lines.append("  HYP --> HEAD")
+        for a in accounts:
+            nid = "a" + str(abs(hash(str(a.get("account")))) % 1000)
+            ft = a.get("is_free_tier")
+            ft_s = "free" if ft else ("paid" if ft is False else "?")
+            usage = a.get("usage_daily")
+            rem = a.get("limit_remaining")
+            detail = f"acct{a.get('account')} ({ft_s})"
+            if a.get("quota_error"):
+                detail += " :: quota-err"
+            elif rem is not None:
+                detail += f" · daily {usage or 0}/{rem}"
+            lines.append(f'  {nid}["{_esc(detail)}"]')
+            lines.append(f"  HEAD --> {nid}")
+        if f.get("active_lanes") is not None:
+            lnid = "lane" + str(abs(hash("active_lanes")) % 1000)
+            lines.append(f'  {lnid}["active free lanes: {f.get("active_lanes")}"]')
+            lines.append(f"  HEAD --> {lnid}")
+    b = f.get("bills") or {}
+    if b:
+        lines.append("  BILL[\"REAL BILLS\"]")
+        lines.append("  HYP --> BILL")
+        for k, v in b.items():
+            if isinstance(v, dict):
+                cost = v.get("total_cost_usd")
+                if cost is not None:
+                    txt = f"{k}: ${cost:.2f}"
+                elif v.get("total_balance") is not None:
+                    txt = f"{k}: {v.get('total_balance')}"
+                else:
+                    txt = k
+                nid = "B" + str(abs(hash(k)) % 1000)
+                lines.append(f'  {nid}["{_esc(str(txt))}"]')
+                lines.append(f"  BILL --> {nid}")
+    return "\n".join(lines)
+
+
+def _esc(s: Any) -> str:
+    return str(s or "").replace('"', "'").replace("\n", " ")
+
+
+def _cap(s: str, width: int | None = None) -> str:
+    out = (s or "").replace("_", " ").replace("-", " ").title()
+    return out if not width else out[:width]
+
+
 def render_all() -> dict[str, Any]:
     bill = bill_metrics()
     spark = sparkline_svg([bill.get("cache_hit_rate")], label="cache-hit") if bill.get("cache_hit_rate") is not None \
@@ -585,6 +755,8 @@ def render_all() -> dict[str, Any]:
         "wheels_mermaid": wheels_mermaid(),
         "mesh_svg": mesh_svg(),
         "mesh_dot": mesh_dot(),
+        "fleet_mermaid": fleet_mermaid(),
+        "fleet": fleet_heartbeat(),
         "bill_metrics": bill,
         "sparkline_svg": spark,
         "live_artifact_html": live_artifact_html(),

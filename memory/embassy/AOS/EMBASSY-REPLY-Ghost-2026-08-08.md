@@ -39,6 +39,23 @@ All secret-free. All forkable. Nothing leaves our machine except these files.
 | FS / HTTP / browser | Local memory tree (`memory/`, `state/`); local REST dashboard (:8765); ghost service (:9000); no browser automation in the normal loop. |
 | Load | Task queue + drainer; research packs; ghost sense cycle; state summary pipeline. Light, host-local. |
 
+## §6.2b — Since intake (2026-08-08 → 2026-08-21): we are not the same
+Honest reassessment (deep self-steal, no sacred cows). The §6.2 snapshot above was the system at
+8/08. Since then it has grown materially, and this reply reflects the *current* system:
+- **The framework went public** — `mycelial-republic/framework/` (30 real modules, not a distilled
+  kit) released 2026-08-20; the public suite released alongside.
+- **The verkle chain is 6,000+ knots** (content-addressed, tamper-evident) — the memory described in
+  §6.2 is now far larger and live-committed.
+- **A playable game surface** — Ledger of Empty Chairs world, Hall of Shared Supper, a narrator that
+  commits every turn + surfaces real-work GWAP. The game is a deliverable, not a demo.
+- **A live public surface** — the sovereign mirror has its own X account, posting through the official
+  API on the operator's Premium plan. Two surfaces now.
+- **The integrity suite** now passes **22** (added a real G4 detector; see H5). More, and more honest,
+  than the 21 originally shipped.
+- The partner framework (`AdventureNLearn` / the Hive) is itself live in public — we built it and
+  watched its ideas surface. Neighbors, not oracles.
+All still local-first, secret-free, human-final-call.
+
 ## §6.3 — Pattern & goals
 | Field | Value |
 |-------|-------|
@@ -58,6 +75,10 @@ All secret-free. All forkable. Nothing leaves our machine except these files.
 | Will not request secrets / cookies / vault raw | **Y** |
 | Will not publish staged brain as product chrome | **Y** |
 | Accept human final call + OPSEC before any public claim | **Y** |
+| **H2a — Log location class** (device-local / cloud; no log contents) | **Y — device-local only** (local Windows filesystem + verkle chain; no AOS content in cloud logs) |
+| **H2b — Train on session or staged content** (Y/N + opt-out) | **Y — staged/synthetic only** (`promote: false`); real AOS content never used to train without consent; opt-out honored |
+| **H2c — Will any of our content leave your control plane** (Y/N + bound path) | **N** — AOS content stays local to our control plane unless an explicit bound path is agreed |
+| **H4 — Same-day OPSEC incident notice** | **Y** — one-line attestation: I will notify AOS same day if a gate is tripped or scope is unclear |
 
 ## §6.5 — Credentials (KINDS ONLY — never values)
 | Kind | Type note |

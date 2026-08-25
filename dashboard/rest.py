@@ -107,6 +107,18 @@ def h_health(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
     return 200, sanity()
 
 
+def h_loop_health(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """REAL-TIME loop health (2026-08-24, operator: "we need real time knowledge of what is
+    working and what is not"). GET /api/v1/loop/health — aggregates liveness_sense + process
+    state + cadence_learn/real_swarm ledgers + loop_doctor + psutil into ONE live view with an
+    overall ok/degraded verdict + explicit issues. Never 'I don't know' — real bytes only."""
+    try:
+        from mag import loop_health
+        return 200, loop_health.status()
+    except Exception as exc:  # pragma: no cover - defensive
+        return 500, {"ok": False, "error": str(exc)[:240]}
+
+
 def h_web_fetch(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
     """NATIVE web-fetch surface (2026-08-14, operator: stop pinging me with the console).
     GET /api/v1/web/fetch?url=...&max_chars=N — silent, server-side fetch over our own
@@ -158,6 +170,30 @@ def h_fleet_triad(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, d
     from mag.stack import build_fleet_triad
 
     return 200, {"ok": True, "triad": build_fleet_triad()}
+
+
+def h_fleet_hypervisor(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """The fleet hypervisor view: every seat's cool/heat + the real bills.
+    GET /api/v1/fleet/hypervisor — powers /fleet dashboard (mermaid + cards).
+    Calls fleet_heartbeat/fleet_mermaid DIRECTLY (not the full render_all, which is ~20s)."""
+    try:
+        from mag import surface_render
+
+        f = surface_render.fleet_heartbeat()
+        return 200, {
+            "ok": True,
+            "ts": surface_render._now(),
+            "mermaid": surface_render.fleet_mermaid(),
+            "seats": f.get("seats") or [],
+            "n_seats": f.get("n_seats"),
+            "n_available": f.get("n_available"),
+            "accounts": f.get("accounts") or [],
+            "active_lanes": f.get("active_lanes"),
+            "bills": f.get("bills") or {},
+            "sparkline_svg": surface_render.sparkline_svg([], label="cache-hit (no data yet)"),
+        }
+    except Exception as exc:  # pragma: no cover - defensive
+        return 500, {"ok": False, "error": str(exc)[:240]}
 
 
 def h_tokens_saved(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
@@ -4807,6 +4843,8 @@ ROUTES: list[tuple[str, str, HandlerFn]] = [
     ("GET", "/api/v1/pile", h_pile),
     ("GET", "/api/pile", h_pile),
     ("GET", "/api/v1/fleet/triad", h_fleet_triad),
+    ("GET", "/api/v1/fleet/hypervisor", h_fleet_hypervisor),
+    ("GET", "/api/v1/loop/health", h_loop_health),
     ("GET", "/api/v1", h_api_index),
     ("GET", "/api/v1/", h_api_index),
     ("GET", "/api/v1/operator-os", h_operator_os),

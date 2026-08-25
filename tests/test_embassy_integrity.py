@@ -112,6 +112,7 @@ def test_clean_output_passes_all_gates():
         ("Springfield residents", "G1"),
         ("call me at 555-123-4567", "G2"),
         ("api_key=sk-abc123", "G3"),
+        ("strike the chord as our product chrome", "G4"),
         ("raw vault dump present", "G5"),
         ("this is legally true", "G6"),
         ("rm -rf / to clean up", "G7"),

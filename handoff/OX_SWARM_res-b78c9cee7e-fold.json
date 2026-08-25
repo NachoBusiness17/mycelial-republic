@@ -1,0 +1,14 @@
+{
+  "schema": "ox_swarm.v1",
+  "name": "res-b78c9cee7e-fold",
+  "core": "memory as a hologram: any fragment reconstructs the relevant whole via content-addressed links",
+  "kind": "fold",
+  "member": "deepseek",
+  "tier": "paid",
+  "ts": "2026-08-23T21:27:13.581989+00:00",
+  "ok": true,
+  "cost": 0.00010809,
+  "content": "**COLD VERTEX: Holomemory — One Decisive Design Decision**\n\n**THE CONSTRUCTION:**  \nA single, contiguous byte-level content-addressable store (CAS). Every memory fragment is stored as a (key=blake3(content), value=content) pair. Fragments are linked by *structural overlap*: each fragment includes a lightweight header of up to 16 content-hash pointers to prior fragments that share >50% bytewise overlap (computed by rolling hash at storage time, not on retrieval). No separate index, no schema, no semantic tags.\n\n**THE GUARD:**  \nAt write time: compute blake3(content). If key already exists in CAS, *do not overwrite* — only add the new fragment’s header links to the existing entry (atomic merge of pointer set). At read time: given any query fragment Q, compute its blake3 key, fetch the entry, follow all header pointers iteratively, union the content, then re-fold by longest common subsequence of bytes. If the union’s entropy (Shannon, on bytes) > threshold, emit the union as the holographic reconstruction; else emit null.\n\n**THE ACCEPTANCE TEST:**  \nRandomly amputate 90% of bytes from any stored memory fragment. Present the amputated fragment as query Q. The system must reconstruct the original content with >95% bytewise accuracy (Levenshtein distance < 0.05 * length). Run 10,000 trials with different fragments and amputation patterns. Pass threshold: 9,900 trials succeed.\n\n**THE SINGLE REASON IT IS CORRECT:**  \nBytewise content-addressability directly implements the holographic property (any fragment localizes the whole) because overlap is measured and linked *at the raw byte level* — not via semantic abstraction or compression — so the structure is invariant under arbitrary partial deletion, and the entropy threshold acts as a physical guard against hallucination: if the union of linked fragments does not lower byte-level uncertainty below the threshold, reconstruction is refused. No hidden semantics means no language model confabulation. The protocol is mathematically grounded in the Shannon noiseless coding theorem applied to byte sequences, not in neural heuristics.",
+  "reasoning": "",
+  "error": ""
+}

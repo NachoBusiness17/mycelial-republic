@@ -58,12 +58,18 @@ def _now() -> str:
 
 
 def enqueue_task(goal: str, *, provider: str = DEFAULT_PROVIDER, model: str | None = None,
-                 domain: str = "auto", agent_idx: int = 0, tag: str = "") -> dict[str, Any]:
+                 domain: str = "auto", agent_idx: int = 0, tag: str = "",
+                 depends_on: list[str] | None = None,
+                 depends_on_tag: list[str] | None = None) -> dict[str, Any]:
     """Write a task spec to the dedicated swarm queue (stateless, content-addressed).
 
     This is how the local seat hands work to the CLUSTER swarm without ever spawning a
     local process: the spec lands on the shared state PVC and the k8s worker (CronJob)
     picks it up next pass. Deterministic, $0.
+
+    depends_on / depends_on_tag (2026-08-25, queue_gate): optional interdependency
+    edges — the task is gated until the referenced task (or any task carrying the tag)
+    reaches status 'done'. Visible in python -m mag.queue_gate deps/plan.
     """
     if not (goal or "").strip():
         return {"ok": False, "error": "empty goal"}
@@ -77,6 +83,8 @@ def enqueue_task(goal: str, *, provider: str = DEFAULT_PROVIDER, model: str | No
         "domain": domain,
         "agent_idx": int(agent_idx),
         "tag": tag,
+        "depends_on": list(depends_on or []),
+        "depends_on_tag": list(depends_on_tag or []),
         "created_at": _now(),
         "status": "queued",  # queued -> running -> done/failed
         "result": None,
@@ -252,7 +260,14 @@ def run_once(*, max_per_pass: int = MAX_PER_PASS) -> dict[str, Any]:
             break
         f: Path = task["_file"]
         task.pop("_file", None)
-        gate = provider_spawn_allowed(task.get("provider"))
+        # QUEUE GATE (2026-08-25): budget + lane cadence + depends_on + duplicate. The
+        # gate STEALS provider_spawn_allowed internally; a gated task is left queued.
+        gate = {"ok": True}
+        try:
+            from mag.queue_gate import preflight
+            gate = preflight(task)
+        except Exception:  # noqa: BLE001
+            pass
         if not gate.get("ok"):
             tid = str(task.get("task_id") or "")
             skip_ids.add(tid)
@@ -260,14 +275,40 @@ def run_once(*, max_per_pass: int = MAX_PER_PASS) -> dict[str, Any]:
             results.append({
                 "task_id": tid,
                 "ok": False,
-                "skipped": gate.get("reason") or "quota_exhausted",
-                "provider": gate.get("provider"),
-                "reset_in_hours": gate.get("reset_in_hours"),
+                "skipped": gate.get("reason") or "gated",
+                "detail": gate.get("detail"),
+                "provider": gate.get("lane") or task.get("provider"),
             })
             continue
         task["status"] = "running"
+        task["started_at"] = _now()  # stale-sweep basis (2026-08-25): never sweep a fresh pickup
         f.write_text(json.dumps(task, ensure_ascii=False, indent=2), encoding="utf-8")
-        tail, code = _execute(task)
+        # CONCURRENCY GATE (2026-08-25, z.ai rate limits = in-flight, flash=1 / glm-4.7=2):
+        # hold the model's slot for the WHOLE execution so cross-process callers (drain +
+        # autonomous driver + probes) never exceed the cap — the 1305 wall, stopped at the
+        # source. Only z_ai models are gated (other providers have their own limits).
+        gate_model = ""
+        if str(task.get("provider") or "") == "z_ai":
+            gate_model = str(task.get("model") or "glm-4.7-flash")
+        if gate_model:
+            try:
+                from mag import concurrency_gate as cg
+                with cg.hold(gate_model, timeout=180, owner="swarm_worker"):
+                    tail, code = _execute(task)
+            except TimeoutError:
+                # no slot within 180s — leave queued (a consumer is live on the lane)
+                task["status"] = "queued"
+                task["_gated"] = f"concurrency timeout on {gate_model}"
+                f.write_text(json.dumps(task, ensure_ascii=False, indent=2), encoding="utf-8")
+                skip_ids.add(str(task.get("task_id") or ""))
+                skipped += 1
+                results.append({"task_id": task.get("task_id"), "ok": False,
+                                "skipped": "concurrency_timeout", "detail": gate_model})
+                continue
+            except Exception as e:  # noqa: BLE001
+                tail, code = (f"gate error: {str(e)[:120]}", 1)
+        else:
+            tail, code = _execute(task)
         ok = code == 0 and bool((tail or "").strip())
         task["status"] = "done" if ok else "failed"
         task["detail"] = ("exit 0" if ok else f"exit {code}")[:120]

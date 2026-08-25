@@ -17,9 +17,12 @@ Directory:
 """
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
+import os
 import re
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -31,6 +34,7 @@ KNOTS = BIO / "knots"
 CHAIN = BIO / "verkle_chain.jsonl"
 TIP = BIO / "verkle_tip.json"
 EVOLUTION = BIO / "topic_evolution.json"
+LOCK = BIO / ".verkle.lock"
 
 THEME_BASIS = [
     "mirror_meta",
@@ -46,6 +50,56 @@ THEME_BASIS = [
 
 def _h(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
+
+
+# ───────────────────────────────────────────────────────────────────────────
+# SINGLE-WRITER LOCK (2026-08-25) — the lost-update fix.
+#
+# Forensics: 1,044 chain rows referenced knot files that no longer existed.
+# Cause: amend unlinks the old knot file, then rewrites the WHOLE chain file;
+# a concurrent append (read chain → append one line) clobbered that rewrite,
+# leaving the chain pointing at the deleted filename. Every mutator below now
+# holds this lock, so chain read-modify-write, knot unlink and pointer write
+# are atomic with respect to each other, process-wide and seat-wide.
+#
+# O_CREAT|O_EXCL create is atomic on Windows and POSIX. Stale locks (crashed
+# holder) are broken after _LOCK_STALE_SECONDS.
+# ───────────────────────────────────────────────────────────────────────────
+
+# Amends run _rewrite_chain, which is O(n^2) (~2 min at 6.3k leaves). The stale
+# threshold must exceed the worst legitimate holder or we'd re-introduce the race.
+_LOCK_STALE_SECONDS = 900.0
+_LOCK_POLL_SECONDS = 0.05
+
+
+@contextlib.contextmanager
+def verkle_lock(timeout: float = 60.0):
+    """Cross-process single-writer lock for the verkle chain/knots/pointers."""
+    deadline = time.time() + timeout
+    fd = None
+    while True:
+        try:
+            fd = os.open(str(LOCK), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            break
+        except FileExistsError:
+            try:
+                if time.time() - LOCK.stat().st_mtime > _LOCK_STALE_SECONDS:
+                    LOCK.unlink()  # crashed holder — break the stale lock
+            except OSError:
+                pass
+            if time.time() > deadline:
+                raise TimeoutError(f"verkle_lock timeout after {timeout}s (holder pid: "
+                                   f"{LOCK.read_text(encoding='utf-8', errors='replace')[:16] if LOCK.is_file() else '?'})")
+            time.sleep(_LOCK_POLL_SECONDS)
+    try:
+        os.write(fd, f"{os.getpid()} {datetime.now(timezone.utc).isoformat()}".encode("utf-8"))
+        yield
+    finally:
+        try:
+            os.close(fd)
+        finally:
+            with contextlib.suppress(OSError):
+                LOCK.unlink()
 
 
 def _leaf_hash(obj: Any) -> str:
@@ -107,7 +161,9 @@ def knot_filename(
         theme = _slug_theme(parts[1] if len(parts) > 1 else dominant_theme)
     else:
         theme = _slug_theme(dominant_theme)
-    sid = (session_id or "unknown")[:8]
+    # Windows-safe: session ids may carry colons (work:test:...) which are invalid in
+    # filenames — collapse any path-invalid chars so every fold lands (2026-08-25).
+    sid = re.sub(r"[^A-Za-z0-9._-]+", "-", str(session_id or "unknown"))[:8]
     c8 = (commit_hex or "0" * 8)[:8]
     return f"{date}_{hh}{mm}_{theme}_{sid}_{c8}.knot.json"
 
@@ -179,7 +235,7 @@ def _load_chain_rows() -> list[dict[str, Any]]:
     return rows
 
 
-def consolidate_chain_one_leaf_per_session() -> dict[str, Any]:
+def _consolidate_chain_one_leaf_per_session_unlocked() -> dict[str, Any]:
     """Drop duplicate chain rows (keep last per session_id). Safe to run anytime."""
     rows = _load_chain_rows()
     by_sid: dict[str, dict[str, Any]] = {}
@@ -389,7 +445,7 @@ def _verify_chain_consistent() -> tuple[bool, str]:
 
 
 
-def append_verkle_knot(dossier: dict[str, Any], pdf_path: str | None = None) -> dict[str, Any]:
+def _append_verkle_knot_unlocked(dossier: dict[str, Any], pdf_path: str | None = None) -> dict[str, Any]:
     """
     Write/update one leaf per session (amend in place).
 
@@ -449,7 +505,8 @@ def append_verkle_knot(dossier: dict[str, Any], pdf_path: str | None = None) -> 
 
     path = KNOTS / fname
     path.write_text(json.dumps(leaf, indent=2), encoding="utf-8")
-    (KNOTS / f"by-session_{sid[:12]}.json").write_text(
+    _safe_sid = re.sub(r"[^A-Za-z0-9._-]+", "-", sid)[:12]
+    (KNOTS / f"by-session_{_safe_sid}.json").write_text(
         json.dumps({"filename": fname, "leaf_hash": leaf["leaf_hash"]}, indent=2),
         encoding="utf-8",
     )
@@ -523,6 +580,22 @@ def append_verkle_knot(dossier: dict[str, Any], pdf_path: str | None = None) -> 
         "tip": str(TIP),
         "evolution": str(EVOLUTION),
     }
+
+
+def append_verkle_knot(dossier: dict[str, Any], pdf_path: str | None = None) -> dict[str, Any]:
+    """Locked entry point — see _append_verkle_knot_unlocked for the real body.
+
+    Single-writer lock makes chain read-modify-write + knot unlink + pointer
+    write atomic against concurrent seats (the 2026-08-25 lost-update fix).
+    """
+    with verkle_lock():
+        return _append_verkle_knot_unlocked(dossier, pdf_path)
+
+
+def consolidate_chain_one_leaf_per_session() -> dict[str, Any]:
+    """Locked entry point — see _consolidate_chain_one_leaf_per_session_unlocked."""
+    with verkle_lock():
+        return _consolidate_chain_one_leaf_per_session_unlocked()
 
 
 def _update_topic_evolution(

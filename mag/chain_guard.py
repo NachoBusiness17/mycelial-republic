@@ -91,17 +91,26 @@ def check() -> dict:
         return {"ok": False, "state": "marker_unreadable", **live}
 
     expected = int(m.get("evidence_lost_expected") or 0)
-    regression = (len(flagged) < expected) and (len(dangling) > 0)
+    # THE LAW (2026-08-25, corrected after a false alarm): a dangling row
+    # WITHOUT the evidence_lost flag is the only regression. A flagged count
+    # BELOW the marker's expected is NOT a regression by itself — lost
+    # sessions legitimately re-folded into real knots stop being dangling and
+    # stop being flagged (recovery, not stripping). Absolute-count drift is
+    # reported, not alarmed.
+    unflagged_dangling = [r for r in dangling if not r.get("evidence_lost")]
+    regression = len(unflagged_dangling) > 0
     state = "regression" if regression else "healthy"
     return {
         "ok": not regression,
         "state": state,
         **live,
+        "dangling_unflagged": len(unflagged_dangling),
         "expected_evidence_lost": expected,
+        "flag_drift": expected - len(flagged),
         "marker_root": m.get("repair_root"),
         "marker_at": m.get("marked_at"),
-        "alarm": ("REGRESSION: evidence_lost dropped below expected while dangling remains — "
-                  "a pre-repair restore likely happened outside verkle_lock.") if regression else None,
+        "alarm": ("REGRESSION: dangling row(s) lack the evidence_lost flag — a pre-repair "
+                  "restore or flag-stripping amend happened.") if regression else None,
     }
 
 

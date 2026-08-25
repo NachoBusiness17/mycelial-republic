@@ -27,6 +27,7 @@ sys.path.insert(0, str(ROOT))
 
 LOCK = ROOT / "state" / "autodrain.pid"
 LOG = ROOT / "memory" / "runs" / "autodrain.log"
+AUDIT_STATE = ROOT / "state" / "prefix_prover_last.json"
 CADENCE_FLOOR_S = 120.0   # rightsized: stateless -> tight loop, box stays breathable
 CEILING_BACKOFF_S = 30.0  # extra sleep between beats when at/above the CPU ceiling
 
@@ -83,6 +84,46 @@ def release() -> None:
         pass
 
 
+def _maybe_prover_audit() -> None:
+    """Daily (UTC) prefix_prover audit — the zcode seat's open item (2026-08-25):
+    drift alarms page someone instead of waiting to be run. Runs once per UTC day,
+    in the loop's daily slot next to the backup + chain canary. A drift/unpinned
+    verdict logs and prints a PREFIX-DRIFT-ALARM so it's on the record."""
+    from datetime import datetime, timezone
+
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    last = None
+    if AUDIT_STATE.is_file():
+        try:
+            last = json.loads(AUDIT_STATE.read_text(encoding="utf-8")).get("day")
+        except Exception:  # noqa: BLE001
+            pass
+    if last == today:
+        return
+    try:
+        from mag import prefix_prover
+        out = prefix_prover.cmd_audit(24)
+        verdict = out.get("verdict") or {}
+        missing = int(verdict.get("missing_lanes") or 0)
+        unstable = bool(verdict.get("any_unstable"))
+        unpinned = bool(verdict.get("any_unpinned"))
+        line = (f"prover-audit missing={missing} unstable={unstable} "
+                f"unpinned={unpinned} report={out.get('report')}")
+        # PAGE ONLY THE BUILDER BUGS (2026-08-25 calibration): drift/unpinned = a
+        # feeding prefix changed — fix the code, not the budget. NOVELTY and
+        # SMALL-SAMPLE are recorded, not paged — the prover's whole law is
+        # "byte-stable prefixes + low ratio = frontier spend, pay it."
+        _log(line)
+        print(f"[{_now()}] {line}")
+        if unstable or unpinned:
+            _log("PREFIX-DRIFT-ALARM " + line)
+            print(f"[{_now()}] PREFIX-DRIFT-ALARM {line}")
+    except Exception as e:  # noqa: BLE001
+        _log(f"prover-audit ERROR {e}")
+    AUDIT_STATE.parent.mkdir(parents=True, exist_ok=True)
+    AUDIT_STATE.write_text(json.dumps({"day": today}), encoding="utf-8")
+
+
 def run_loop(*, per_beat: int = 8, max_beats: int = 0) -> None:
     from mag import cadence_learn
     from mag import swarm_local_drain as sld
@@ -111,6 +152,7 @@ def run_loop(*, per_beat: int = 8, max_beats: int = 0) -> None:
             _log(line)
             print(f"[{_now()}] {line}")
             cadence_learn.learn({"cpu_pct": cpu, "workers": limit, "ok": ok})
+            _maybe_prover_audit()
         except Exception as e:  # noqa: BLE001
             _log(f"beat#{beats} ERROR {e}")
             print(f"[{_now()}] beat#{beats} ERROR {e}")

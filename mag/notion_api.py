@@ -104,9 +104,28 @@ def heading(text: str) -> dict:
             "heading_2": {"rich_text": [{"type": "text", "text": {"content": text[:1999]}}]}}
 
 
+def _resolve_parent() -> str | None:
+    """Auto-find a page the integration can write under (self-heal: no manual parent id needed).
+    Returns None when the integration has NO workspace access — the real blocker."""
+    res = _post("/search", {"page_size": 20})
+    for r in (res.get("results") or []):
+        if r.get("object") == "page":
+            return r.get("id")
+    return None
+
+
 def create_page(title: str, paragraphs: list[str], parent_page_id: str | None = None) -> dict:
-    """Create a page. parent_page_id=None -> top-level workspace page (integration must have access)."""
-    parent = {"page_id": parent_page_id} if parent_page_id else {"type": "workspace", "workspace": True}
+    """Create a page. Auto-resolves a parent via search when none is given. If the
+    integration has no access to any page, returns the exact unblock (one click in Notion)."""
+    if not parent_page_id:
+        parent_page_id = _resolve_parent()
+    if not parent_page_id:
+        return {"ok": False, "status": 403,
+                "code": "no_access",
+                "message": ("The integration can't see any page. One click fixes it: in Notion, "
+                            "open any page -> '...' top right -> Connections -> add this "
+                            "integration. Then re-run — parent auto-resolves.")}
+    parent = {"page_id": parent_page_id}
     children = []
     for para in paragraphs:
         if para.strip().endswith(":") and len(para.strip()) <= 60:

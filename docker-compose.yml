@@ -116,6 +116,27 @@ services:
       - ALL
     restart: unless-stopped
 
+  # openclaw gateway — CONTAINED 2026-08-25 after the desktop gateway died silently
+  # (missing scheduled task + firewall prompts + AutoClaw stuck "Connecting to
+  # workspace"). Replaces the schtasks/desktop install entirely. Auth is none
+  # inside the container, but the ONLY host surface is 127.0.0.1:18789.
+  #   docker compose up -d openclaw
+  openclaw:
+    build: ./deploy/openclaw
+    image: mag-openclaw:local
+    container_name: mag-openclaw
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:18789:18789"
+    volumes:
+      - mag_openclaw_data:/root/.openclaw
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    networks:
+      - mag_net
+
 networks:
   mag_net:
     driver: bridge
@@ -123,3 +144,4 @@ networks:
 volumes:
   mag_ollama_data:
   mag_redis_data:
+  mag_openclaw_data:

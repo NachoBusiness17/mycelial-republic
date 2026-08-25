@@ -103,10 +103,14 @@ BODIES: dict[str, dict[str, Any]] = {
         "installed": lambda: (Path.home() / "AppData" / "Local" / "notion-updater").is_dir(),
         "surfaces": ["desktop", "pages", "databases", "docs", "api_optional"],
         "best_for": ["knowledge_base", "public_docs", "world_home", "writing_landing"],
-        "note": "desktop app present (notion-updater); NO API token in .env yet — a GUI/mailbox "
-                "surface until a NOTION_API_KEY is added, then a writable body. Natural fit: the "
-                "game world's public home (Hall/museum — the world remembers), or a knowledge "
-                "base the fleet writes to.",
+        "bridge": "watch/notion_bridge.py",
+        "api_module": "mag/notion_api.py",
+        "note": "desktop app present (notion-updater); TWO paths wired 2026-08-25: mailbox "
+                "bridge (watch/notion_bridge.py — works NOW, no token) and API body "
+                "(mag/notion_api.py — writable once NOTION_API_KEY is in .env, see "
+                "https://www.notion.so/my-integrations). Natural fit: the game world's public "
+                "home (Hall/museum — the world remembers), or a knowledge base the fleet "
+                "writes to.",
     },
     "vision": {
         "name": "DeepSeek Vision (deepseek-v4-flash-vision-exp, 2026-08-25)",
@@ -115,6 +119,16 @@ BODIES: dict[str, dict[str, Any]] = {
         "best_for": ["see_images", "read_screenshots", "read_charts", "game_visuals"],
         "note": "agents can SEE now (mag/vision.py + the 'vision' agent tool). Images in user "
                 "messages only; <=384 tok/img after resize; JPEG/PNG/GIF/WebP. Verified live.",
+    },
+    "mlx-cluster": {
+        "name": "Mac Studio quad (MLX/exo cluster) — the physical substrate (stub 2026-08-25)",
+        "installed": lambda: False,  # STUB: endpoint at 127.0.0.1:7777 doesn't exist until 09-22
+        "surfaces": ["local_inference", "tripartite", "verkle_anchor", "game_host", "no_rent"],
+        "best_for": ["sovereignty", "local_flagship", "always_on", "no_cache_ttl", "no_prefix_rules"],
+        "note": "THE ENDGAME: 4x Mac Studio M5 Ultra 256GB, TB5 ring, ~1TB pooled unified memory. "
+                "Three nodes run the tripartite (mag/tripartite.py), the fourth is orchestrator + "
+                "verkle anchor + always-on game host. Provider stub wired in providers.yaml; "
+                "preorder 09-22, birthday 10-27. The stack stops renting its own brain.",
     },
 }
 
@@ -170,6 +184,11 @@ def route(intent: str) -> list[str]:
         "deep work": ["coding_plan", "claude_harness"],
         "fold": ["shared_memory"],
         "ground truth": ["shared_memory"],
+        "knowledge base": ["notion", "shared_memory"],
+        "public docs": ["notion"],
+        "notes": ["notion"],
+        "writing": ["notion", "coding_plan"],
+        "world home": ["notion", "shared_memory"],
     }
     for key, bodies in match.items():
         if key in intent:

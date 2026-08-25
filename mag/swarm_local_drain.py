@@ -189,6 +189,18 @@ def run_cadence(*, per_beat: int = DEFAULT_PER_BEAT, daily_cap: int = DEFAULT_DA
                 persist: bool = True) -> dict[str, Any]:
     """The loop's self-healing drain beat: bounded, budget-guarded, key-reconciled. Drains a small
     number of queued swarm tasks per beat locally so the sanctioned path actually executes."""
+    # STANDING BACKUP (2026-08-25, sacred-cow fix): the chain is gitignored for opsec, so it needs
+    # its own backup path. Once per day, under the verkle lock (the script guards same-day dupes).
+    # Failure is non-fatal — the drain beats on regardless.
+    try:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "backup_chain", ROOT / "scripts" / "backup_chain.py")
+        m = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(m)
+        m.backup()
+    except Exception:  # noqa: BLE001
+        pass
     used = _today_drained()
     remaining = max(0, int(daily_cap) - used)
     if remaining <= 0:

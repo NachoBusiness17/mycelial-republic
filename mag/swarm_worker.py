@@ -198,6 +198,38 @@ def _tool_context(task: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+_BRAKE_PROVIDERS = ("deepseek", "deepseek_overmind")
+# Free lanes with verified keys that can carry bulk research off the brake (free-first order).
+_FREE_REROUTE_LANES = ("nvidia", "groq", "openrouter")
+
+
+def _reroute_research_off_brake(task: dict[str, Any], f: Path) -> bool:
+    """Swap a research-class task off the paid brake to a free lane that has budget.
+
+    2026-08-25 (drain wall root cause): heavy research on deepseek blew the 360s timeout.
+    Free-first law (providers.yaml): deepseek is the paid fallback, not the default. If the
+    goal classifies as research and a free lane can spawn, reassign and persist the task so
+    the swap is durable across passes. Returns True if rerouted.
+    """
+    p = str(task.get("provider") or "")
+    if p not in _BRAKE_PROVIDERS:
+        return False
+    depth, _path = _task_tier(str(task.get("goal") or ""))
+    if depth != "research":
+        return False
+    for cand in _FREE_REROUTE_LANES:
+        try:
+            if provider_spawn_allowed(cand).get("ok"):
+                task["provider"] = cand
+                task["model"] = None  # lane picks its default model
+                task["_rerouted"] = f"{p}->{cand} (research off the brake)"
+                f.write_text(json.dumps(task, ensure_ascii=False, indent=2), encoding="utf-8")
+                return True
+        except Exception:  # noqa: BLE001
+            continue
+    return False
+
+
 def _execute(task: dict[str, Any]) -> tuple[str, int]:
     """Run ONE stateless agent headless (windowless) via the real machinery.
 
@@ -232,7 +264,11 @@ def _execute(task: dict[str, Any]) -> tuple[str, int]:
         # run_headless (NOT run_py): `cmd` ALREADY starts with headless.PYTHON, and run_py would
         # PREPEND it again -> `python python main.py` -> instant ModuleNotFoundError (the 8-fail
         # swarm bug). run_headless passes the full command through as-is (windowless).
-        r = headless.run_headless(cmd, capture_output=True, text=True, timeout=360, cwd=str(ROOT))
+        # 2026-08-25 (drain wall): the paid brake (deepseek) gets a longer leash — heavy research
+        # on it measured past 360s. Free lanes keep 360s; brake gets 720s.
+        brake = str(task.get("provider") or "") in ("deepseek", "deepseek_overmind")
+        r = headless.run_headless(cmd, capture_output=True, text=True,
+                                  timeout=720 if brake else 360, cwd=str(ROOT))
         out = r.stdout or ""
         err = r.stderr or ""
         # prefer stderr when the agent failed (that's where the diagnosis lives)
@@ -260,6 +296,14 @@ def run_once(*, max_per_pass: int = MAX_PER_PASS) -> dict[str, Any]:
             break
         f: Path = task["_file"]
         task.pop("_file", None)
+        # REROUTE OFF THE BRAKE (2026-08-25, sacred-cow fix): research-class tasks queued on
+        # the paid brake (deepseek) swap to a free lane with budget. Free-first law: deepseek
+        # is the paid FALLBACK, not the default; bulk research rides free lanes. Persisted so
+        # every pass sees the swap.
+        try:
+            _reroute_research_off_brake(task, f)
+        except Exception:  # noqa: BLE001
+            pass
         # QUEUE GATE (2026-08-25): budget + lane cadence + depends_on + duplicate. The
         # gate STEALS provider_spawn_allowed internally; a gated task is left queued.
         gate = {"ok": True}

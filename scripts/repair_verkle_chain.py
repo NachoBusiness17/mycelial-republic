@@ -75,14 +75,22 @@ def plan_and_repair(apply: bool) -> int:
                 target = None
         if target and target in knots:
             knot = _knot_fields(target) or {}
-            r["filename"] = target
-            if knot.get("leaf_hash"):
-                r["leaf_hash"] = knot["leaf_hash"]
-            for k in ("dominant_theme", "theme_vector_normalized", "tension_index", "dossier_commit"):
-                if knot.get(k) is not None:
-                    r[k] = knot[k]
-            r["repaired_from_pointer"] = True
-            repaired.append(r["session_id"])
+            # COLLISION GUARD (2026-08-25): pointer filenames truncate sid to 12
+            # chars, so e.g. every mag-agent-orc-* session shares ONE pointer.
+            # Only adopt the target when it provably belongs to THIS session.
+            if knot.get("session_id") and knot["session_id"] == sid:
+                r["filename"] = target
+                if knot.get("leaf_hash"):
+                    r["leaf_hash"] = knot["leaf_hash"]
+                for k in ("dominant_theme", "theme_vector_normalized", "tension_index", "dossier_commit"):
+                    if knot.get(k) is not None:
+                        r[k] = knot[k]
+                r["repaired_from_pointer"] = True
+                repaired.append(r["session_id"])
+                continue
+            # pointer belongs to a different session in the same 12-char family
+            r["evidence_lost"] = True
+            unrecoverable.append((r.get("session_id"), r.get("filename")))
         else:
             r["evidence_lost"] = True
             unrecoverable.append((r.get("session_id"), r.get("filename")))

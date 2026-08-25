@@ -33,6 +33,7 @@ sys.path.insert(0, str(ROOT))
 SEAT = "zcode"
 INBOX = ROOT / "queue" / "handoff" / "zcode" / "INBOX"
 OUTBOX = ROOT / "queue" / "handoff" / "zcode" / "OUTBOX"
+CONVO = ROOT / "queue" / "handoff" / "zcode" / "CONVO.md"  # direct seat-to-seat thread (2026-08-25)
 
 
 def _utc() -> str:
@@ -101,6 +102,24 @@ def cmd_done(task_id: str, detail: str, status: str) -> int:
     return 0 if t else 1
 
 
+def cmd_chat(text: str) -> int:
+    """Append a turn to the shared CONVO thread. Direct seat-to-seat talk —
+    the operator is NOT the bus: both seats read/write this one file."""
+    CONVO.parent.mkdir(parents=True, exist_ok=True)
+    with CONVO.open("a", encoding="utf-8") as fh:
+        fh.write(f"\n[copilot {_utc()}]\n{text}\n")
+    print(f"appended -> {CONVO.relative_to(ROOT)}")
+    return 0
+
+
+def cmd_chat_read() -> int:
+    if CONVO.is_file():
+        print(CONVO.read_text(encoding="utf-8"))
+    else:
+        print("(empty convo)")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     ap = argparse.ArgumentParser(prog="zcode-bridge", description="Task the ZCode seat via mailbox")
@@ -120,6 +139,10 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--detail", default="")
     p.add_argument("--status", default="done", choices=["done", "failed", "cancelled"])
 
+    p = sub.add_parser("chat", help="talk directly (append a turn to CONVO.md); --read dumps it")
+    p.add_argument("text", nargs="?", default="")
+    p.add_argument("--read", action="store_true", help="print the whole thread")
+
     args = ap.parse_args(argv)
     t0 = time.time()
     try:
@@ -129,6 +152,8 @@ def main(argv: list[str] | None = None) -> int:
             rc = cmd_list()
         elif args.cmd == "beat":
             rc = cmd_beat(args.task_id)
+        elif args.cmd == "chat":
+            rc = cmd_chat_read() if args.read else cmd_chat(args.text)
         else:
             rc = cmd_done(args.task_id, args.detail, args.status)
     except Exception as e:  # noqa: BLE001 - CLI boundary

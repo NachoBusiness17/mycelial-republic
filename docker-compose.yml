@@ -128,7 +128,10 @@ services:
     env_file:
       - .env
     ports:
-      - "127.0.0.1:18789:18789"
+      # 18790 while the elevated AutoClaw desktop app respawns its own gateway
+      # on 18789 and can't be killed from a non-admin shell. Quit the app,
+      # then flip this back to "127.0.0.1:18789:18789" (docker compose up -d openclaw).
+      - "127.0.0.1:18790:18789"
     volumes:
       - mag_openclaw_data:/root/.openclaw
     security_opt:

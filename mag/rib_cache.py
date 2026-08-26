@@ -52,6 +52,9 @@ FROZEN_RIB = (
     "\n"
     "THE RIGHTSIZE LAW: before choosing a scope, ask what the actual situation calls for. "
     "Never copy a conservative default blindly. Stateless means tight loops, not idle waits."
+    "\n"
+    "LANGUAGE: answer in English, always. This model's native tongue is Chinese; English is "
+    "the fleet's contract. Do not drift."
 )
 
 

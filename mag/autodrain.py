@@ -124,6 +124,23 @@ def _maybe_prover_audit() -> None:
     AUDIT_STATE.write_text(json.dumps({"day": today}), encoding="utf-8")
 
 
+def _maybe_feed_fuel(batch: int = 4) -> None:
+    """Feed the free-lane channel each beat (2026-08-25, operator: "what are we waiting for").
+    The explore queue holds 610+ open signals; fuel_feed routes them through the $0 channel
+    (both OpenRouter accounts, ox, nvidia, groq, z_ai cache lane, cerebras), folds + percolates.
+    The machine runs its own fuel — nobody waits. Bounded per beat, CPU-ceiling-aware via cadence."""
+    try:
+        from mag import fuel_feed
+        r = fuel_feed.run(batch=batch)
+        fired = int((r or {}).get("fired") or 0)
+        line = f"fuel-feed fired={fired} open={str((r or {}).get('open'))}"
+        _log(line)
+        if fired:
+            print(f"[{_now()}] {line}")
+    except Exception as e:  # noqa: BLE001
+        _log(f"fuel-feed ERROR {e}")
+
+
 def run_loop(*, per_beat: int = 8, max_beats: int = 0) -> None:
     from mag import cadence_learn
     from mag import swarm_local_drain as sld
@@ -153,6 +170,7 @@ def run_loop(*, per_beat: int = 8, max_beats: int = 0) -> None:
             print(f"[{_now()}] {line}")
             cadence_learn.learn({"cpu_pct": cpu, "workers": limit, "ok": ok})
             _maybe_prover_audit()
+            _maybe_feed_fuel(batch=max(1, min(4, limit)))
         except Exception as e:  # noqa: BLE001
             _log(f"beat#{beats} ERROR {e}")
             print(f"[{_now()}] beat#{beats} ERROR {e}")

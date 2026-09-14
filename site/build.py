@@ -85,6 +85,12 @@ def main():
         gp = ROOT / "dashboard" / "static" / g
         if gp.exists():
             shutil.copy(gp, OUT / "games" / g); print("built games/" + g)
+    # constellation data — maze_arena ?real=1 fetches /static/rounds_real.json; without this
+    # copy the deployed site 404s it (fixed 2026-09-14: "this needs to be fixed")
+    rr = ROOT / "dashboard" / "static" / "rounds_real.json"
+    if rr.exists():
+        (OUT / "static").mkdir(exist_ok=True)
+        shutil.copy(rr, OUT / "static" / "rounds_real.json"); print("built static/rounds_real.json")
     mp3 = ROOT / "dashboard" / "static" / "suno" / "flat_beat_loop.mp3"
     if mp3.exists():
         (OUT / "suno").mkdir(exist_ok=True)

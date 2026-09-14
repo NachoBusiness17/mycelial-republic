@@ -759,7 +759,11 @@ frame=function(now){
 // no walls drawn — nodes and threads only. Rectangles stay in the physics for the demo mode.)
 (function(){
   if(!/real=1/.test(location.search||'')) return;
-  fetch('/static/rounds_real.json').then(r=>r.ok?r.json():null).then(j=>{
+  // layout-proof: local dashboard serves /static/*; static hosts (netlify/cf) may have the
+  // json beside the page or one level up — try in order, first hit wins (fixed 2026-09-14)
+  const RR_CANDIDATES=['/static/rounds_real.json','../static/rounds_real.json','rounds_real.json'];
+  const rrLoad=RR_CANDIDATES.reduce((c,u)=>c.then(r=>r||fetch(u).then(x=>x.ok?x.json():null)).catch(()=>null),Promise.resolve(null));
+  rrLoad.then(j=>{
     if(!j||!Array.isArray(j.walls)||!j.walls.length) return;
     WALLS_BASE.length=0; for(const w of j.walls) WALLS_BASE.push(w.slice());
     walls.length=0; wallMoved.length=0; for(const w of WALLS_BASE) walls.push(w.slice());

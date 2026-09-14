@@ -1,0 +1,906 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DECK — Mesh 3D</title>
+<style>
+:root{--bg:#0a0a0a;--panel:#111114;--line:#232328;--ink:#d8d8dc;--mut:#8a8a92;--gold:#e8b64a;--accent:#7cf5ff}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-monospace,Consolas,monospace}
+header{display:flex;justify-content:space-between;align-items:center;padding:14px 22px;border-bottom:1px solid var(--line)}
+h1{font-size:.9rem;letter-spacing:.12em;margin:0}
+a{color:var(--accent);text-decoration:none}
+button{background:#141418;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 12px;font-family:inherit;font-size:.72rem;cursor:pointer}
+.wrap{padding:22px;max-width:1000px;margin:0 auto}
+h2{font-size:.75rem;letter-spacing:.14em;color:var(--gold);margin:22px 0 10px}
+.q{display:block;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:6px 0;font-size:.75rem;color:var(--ink)}
+.q:hover{border-color:var(--accent)}
+.q small{color:var(--mut);display:block;margin-top:2px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:10px 0;cursor:pointer}
+.card .t{font-weight:bold;font-size:.82rem;margin-bottom:4px}
+.card .n{font-size:.72rem;color:var(--mut);line-height:1.45}
+.card pre{display:none;white-space:pre-wrap;font-size:.7rem;color:#b8b8c0;background:#0d0d10;border:1px solid #1c1c22;border-radius:8px;padding:10px;max-height:380px;overflow:auto;margin-top:8px}
+.card.open pre{display:block}
+</style></head><body>
+<header><h1>DECK — Mesh 3D</h1><div><a href="/static/decks.html">← all decks</a></div></header>
+<div class="wrap">
+<h2>INVARIANT HUNT — click to arm on X (live)</h2>
+<a class="q" href="https://x.com/search?q=%22turns%20out%22%20%28min_faves%3A200%29&f=live" target="_blank">"turns out" (min_faves:200)<small>arms on X — live search</small></a><a class="q" href="https://x.com/search?q=%22the%20fix%20was%22%20OR%20%22root%20cause%20was%22%20%28min_faves%3A100%29&f=live" target="_blank">"the fix was" OR "root cause was" (min_faves:100)<small>arms on X — live search</small></a><a class="q" href="https://x.com/search?q=%22we%20measured%22%20OR%20%22we%20proved%22%20OR%20%22we%20benchmarked%22%20%28min_faves%3A100%29&f=live" target="_blank">"we measured" OR "we proved" OR "we benchmarked" (min_faves:100)<small>arms on X — live search</small></a><a class="q" href="https://x.com/search?q=%22anti-pattern%22%20OR%20gotcha%20OR%20%22footgun%22%20%28min_faves%3A100%29&f=live" target="_blank">"anti-pattern" OR gotcha OR "footgun" (min_faves:100)<small>arms on X — live search</small></a><a class="q" href="https://x.com/search?q=%22after%2010%20years%22%20OR%20%22lessons%20learned%22%20%28min_faves%3A300%29&f=live" target="_blank">"after 10 years" OR "lessons learned" (min_faves:300)<small>arms on X — live search</small></a><a class="q" href="https://x.com/search?q=%28SDF%20OR%20%22signed%20distance%22%20OR%20mesh%29%20%28%22turns%20out%22%20OR%20%22the%20trick%22%29&f=live" target="_blank">(SDF OR "signed distance" OR mesh) ("turns out" OR "the trick")<small>arms on X — live search</small></a><a class="q" href="https://x.com/search?q=%28geometry%20OR%20mesh%29%20invariant&f=live" target="_blank">(geometry OR mesh) invariant<small>arms on X — live search</small></a>
+<h2>CARDS ON THIS DECK (11)</h2>
+<div class="card" data-text="# INTAKE CARD — BLACKBOX_LAB: &quot;TRELLIS IN A TAB IS THE ACTUAL NEWS&quot; (Grok batch 4/10, 2026-09-04)
+
+## ITEM (verbatim root, fxtwitter 200 OK — this is itself a REPLY)
+@blackbox_lab, Sep 03 2026 06:31Z, replying to @hybridherbst: &quot;@hybridherbst running
+TRELLIS in a tab with no API key is the actual news here. 1-3 minutes local beats waiting
+on someone's queue. only thing that survives from my side is the cleanup pass. the browser
+can generate it, Blender still has to apologise for it.&quot;
+Stats: 81 views / 0 replies / 0 likes.
+
+## THREAD CONTEXT (Amendment 2)
+Parent thread = hybridherbst's TRELLIS-in-browser post, ALREADY BUILT into the fleet
+(mesh_gallery + pipeline, per scout file). Parent root re-fetched for thread context:
+93,717 views / 71 replies / 1,977 likes; &quot;image-to-3D, locally in your browser ...
+Generation takes 1-3 minutes ... mesh-baker.needle.tools&quot;. FETCH INTEGRITY: the scout
+file's parent ID (2095267724464391, 16 digits) is mangled — real ID is 2095267724440064391
+(recovered from the reply's replying_to_status field). Scout-integrity receipt for the
+batch report.
+
+## MAP
+- Peer-velocity receipt on the mesh/3D pipeline arc (INTAKE_MESH_BAKER_20260903 +
+  INTAKE_CITY_FRONTIER_20260904 pattern): 93.7K views on the parent is the demand signal
+  for the arc the fleet already built tonight.
+- The one NEW datum is the named gap: cleanup/retopo — &quot;the browser can generate it,
+  Blender still has to apologise for it.&quot; Raw generated meshes need a decimation/cleanup
+  stage before they are usable assets; our mesh_gallery pipeline inherits the same gap.
+
+## [SOCRATIC] assumption attacked: &quot;a 0-like reply is noise&quot; — attacked by checking the
+gap claim against our own pipeline's shape. What survives: the gap is real and ours too;
+the reply is a margin note, not a build item.
+
+## ASSERT
+Browser-local TRELLIS generation is the solved half; mesh cleanup/retopology remains the
+unsolved half of the image-to-3D pipeline.
+
+## ATTACK
+1. &quot;1-3 minutes beats waiting on someone's queue&quot; — false for queue-free APIs; the real
+   advantage is no-account/no-cost, not latency (evidence: parent's own 1-3 min figure).
+2. &quot;Blender has to apologise&quot; is a quip, not a spec — no named cleanup tool, metric, or
+   failure class; can't build from it without our own gap analysis.
+3. n=1 opinion, 0 engagement — signal weight near zero on its own.
+
+## MEASURE ($0, run)
+Parent thread fetched; claim cross-checked against parent's own numbers (1-3 min
+generation confirmed; &quot;no API key&quot; confirmed — client-side WebGPU). Kill condition for
+the gap being load-bearing for US: when mesh_gallery next ingests a generated mesh, log
+manual cleanup minutes; >15 min/asset → the cleanup stage is a real pipeline organ worth
+one build card.
+
+## SCORE — F:3 P:3 C:5 W:2 N:2 = **15/25** band says BUILD WINDOWED; verb is REMEMBER —
+nothing here to build that our pipeline doesn't already imply; it names one backlog line.
+
+## TRI-STATE
+- Parent demo real and big (93.7K views, client-side, no key) — **Supported** (root
+  refetch; fleet already built on it).
+- Cleanup/retopo is the remaining gap — **Supported-directional** (matches known mesh
+  pipeline reality; no metric attached by the author).
+- &quot;1-3 min beats any queue&quot; — **Disputed** as framed (latency isn't the advantage;
+  sovereignty/no-account is).
+
+## VERDICT — **REMEMBER**: one line in the mesh arc's ledger — &quot;cleanup stage named as
+the gap, externally, by a practitioner&quot; + the corrected parent ID. No build; the arc's
+driver already owns the pipeline.
+TWO COUNTERS: FORBIDS promoting the reply into a requirement without the cleanup-minutes
+measurement. PAID RENT: one backlog line + one scout-integrity fix.
+
+## THE CROP
+The other 70 parent replies unread (free vein of peer rows, same as the city-frontier
+card's note); no cleanup-tooling survey run. The 3D-pipeline chair should own that sweep
+if the mesh arc widens.
+
+## FILED — watch/INTAKE_BLACKBOX_TRELLIS_REPLY_20260904.md + room thread &quot;intake&quot;
+"><div class="t">Blackbox Trellis Reply</div><div class="n">@blackbox_lab, Sep 03 2026 06:31Z, replying to @hybridherbst: "@hybridherbst running</div><pre></pre></div><div class="card" data-text="# INTAKE CARD — DEPTH-ANYTHING.CPP / 17 LOCAL C++ BACKENDS (bookmarks batch 1, item 5, 2026-09-04)
+
+ITEM: x.com/jichiep/status/2089326519470432763 (2026-08-17, 75.9K views, 979 likes, 793 bookmarks, 14 replies). Claim shape: LocalAI team built 17 C++ inference backends in 6 months; highlights depth-anything.cpp — estimates depth from standard images, generates &quot;depth maps or 3D point clouds.&quot; 33.5s demo video attached. Author: Richard Palethorpe (@jichiep), &quot;Working on local AI. I wrote a Linux kernel exploit for an n-day once.&quot;
+
+INGEST: root fetched via fxtwitter; 14 reply bodies walled. Author identity cross-verified: same @jichiep credited in the kimodo.cpp parent tweet (item 3) and carded by us in INTAKE_MOTION_BRICKS_GGML_20260904.md — one builder, three organs, now triangulated.
+
+[SOCRATIC] assumption attacked: that &quot;17 backends&quot; breadth signals production depth per backend. Instrument: $0 repo probe of the one backend we'd actually use. What survives: the specific organ is real and well-licensed; the breadth number remains unmeasured.
+
+MAP: Eyes arc — eyes_receipt verified end-to-end 2026-08-27 (memory/runs/eyes_receipt/receipt_20260827T082113Z.json: blind fails honestly, vision reads exact, endowed passes). Depth is the next sense after sight: monocular depth → point clouds feeds the dungeon's 3D (mesh_gallery v0 live today) and the maze_world build-out. Same C++/GGML lane as kimodo.cpp/motion-bricks (items 3 + prior card) — the convergence is now a supply line, not a coincidence.
+
+ASSERT: From-scratch C++/GGML monocular depth estimation turns ordinary images into depth maps and point clouds locally, giving the fleet a $0-license path from photos to dungeon-usable 3D.
+
+ATTACK: (1) WEIGHTS TRAP — measured: DA3 Small/Base are Apache-2.0 but Large/Giant/Nested are CC BY-NC 4.0; the best quality tier is non-commercial, so the usable ceiling is the small/base models — quality claims from the demo may not transfer. (2) Monocular depth is noisy: single-image depth priors hallucinate geometry; &quot;point clouds = the dungeon's 3D&quot; overpromises — expect cleanup, decimation, and manual repair before assets are room-grade. (3) &quot;17 backends in 6 months&quot; is breadth, not depth — maintenance status of the other 16 unmeasured; a one-maintainer lane at this pace carries bus-factor risk. (4) 14 replies unread (walled).
+
+MEASURE ($0, RAN): github.com/localai-org/depth-anything.cpp EXISTS — &quot;from-scratch C++17/ggml port of Depth Anything 2 and 3 (ByteDance)&quot;, no Python/PyTorch at runtime, MIT code, 1.1k stars. Existence + license: Supported by direct probe. Kill condition for the build: run the small model on one dungeon-adjacent photo; if the point cloud needs more than a session of cleanup to render acceptably in mesh_gallery, depth stays a someday-rung.
+
+CORRECT: Tri-state — repo/license/architecture Supported (measured); point-cloud quality at small-model tier Unproven (untested); &quot;17 backends&quot; breadth claim Unproven (one backend probed, 16 not). Verb: BUILD, WINDOWED behind the kimodo/motion wire (item 3) — same builder, same lane; one integration lane at a time, motion first (the NPCs need legs before they need eyes), depth second for environment capture. THE CROP: throughput on our hardware + reply-section bug reports (walled); a vision-lens chair (the eyes-receipt lane) sits next for the photo→cloud test.
+
+SCORE: F4 P4 C5 W3 N4 = 20/25 (BUILD NOW band, windowed behind item 3 — the verb's window is the ordering, not doubt)
+VERDICT: BUILD (windowed: after the motion wire) + tri-state above
+DOGFOOD: invariant pass ran (reinforces the local-inference doctrine — C++/GGML, no Python runtime, loopback-friendly); stockfish pass: opcode = vision-depth lane, second entry on the same builder's shelf. Two counters: FORBIDS pulling CC BY-NC weight tiers into any fleet pipeline; PAID RENT: triangulated the @jichiep C++/GGML supply line across three independent cards — rent to the steal doctrine.
+FILED: watch/INTAKE_DEPTH_ANYTHING_CPP_20260904.md + room row (kind: intake.card)
+"><div class="t">Depth Anything Cpp</div><div class="n"></div><pre></pre></div><div class="card" data-text="# INTAKE CARD — DUNE FICTION SOURCE (item: sfGSWG resolved, 2026-09-04)
+
+## ITEM
+Operator pasted the full GLSL source of baselunaire's &quot;DUNE FICTION&quot; Shadertoy
+(presumed = sfGSWG, the &quot;fucking woah&quot; shader — connection Unproven until the
+parallel search fold confirms, but the hand-carried source supersedes the wall).
+The author's own header: *&quot;I'm trying to bring back some life into scifi by making
+it fly with the help of motorized algebra (i.e. shaders). =D&quot;*
+
+**MOTORIZED ALGEBRA.** That is the most beautiful one-line definition of the
+operator-field arena ever written — algebra with force. The author proved our
+thesis independently: the entire Dune scene is ONE field evaluation — no meshes,
+no textures, no scene graph. Every element is a term in the algebra.
+
+## THE TECHNIQUE INVENTORY (what the source teaches, verifiable in the paste)
+1. **THE ORNITHOPTER LOOP — the tesuji.** `for(float or=0.0;or<10.0;or++)`: ten
+   ornithopters from ONE function, each at a different phase of a shared cycle
+   (`p *= 5.5-5.0*fract(-t+0.05*or)`), each banking its own wing-noise. This is
+   the swarm-render law: **an ensemble is a scale-phase loop over one SDF.** The
+   arena's marble-vs-walkers becomes exactly this loop.
+2. **The worm = the vortex cell's cousin.** `abs(length(wp)-0.15)` with angular
+   wobble (`cos(0.6*atan)`) inside a rotating frame (`wp*=r(3.0*t)`) — ring-distance
+   + angular modulation + rotating reference frame: the curl cell's leaping form.
+3. **Characters as pure SDF** — the Emperor stands on the dune as stillsuit lines
+   and two dot-eyes, ~10 signed-distance terms. Agents as algebra, no sprites.
+4. **Radial chromatic aberration** — R/G/B sampled at radius-offset UVs: the
+   Room's R/G/B metamerism trap, formalized as a post pass.
+5. **Scanline-tied heat shimmer** — `floor(150.0*p.y)` noise displacement =
+   content-borne distortion (Britney doctrine in one line).
+6. **Parallax cloud stacks, silhouette ships on rails, constellation as point
+   set (metaDiamond clusters), explosions as floor-cell noise with fract cycles** —
+   a full catalog of field-skin techniques.
+
+## SCORE — F:4 P:4 C:5 W:5 N:4 = 22/25 → **BUILD NOW** (as B1 v1 render skin)
+
+The transform is ours (the source is in-hand, techniques are enumerable), the
+consumer is owed (B1 v1's stained-glass/field skin was queued two cards ago),
+cost is zero, and the window is NOW — the operator hand-carried it mid-build.
+Novelty honest: ensemble-loops and SDF figures are known GLSL craft; the author's
+composition density is the art.
+
+## LICENSE HYGIENE
+Shadertoy default CC BY-NC-SA; author baselunaire, music Skaven (both credited in
+the source header). **Steal the techniques, write our own GLSL, attribute both.
+Never paste the bodies.** Author's blog: baselunaire.fr (ENG/FR).
+
+## DOGFOOD RECEIPTS
+1. **INVARIANT PASS**: motorized algebra = det-spine+stoch-flesh confirmed by an
+   artist; the ornithopter loop = the legions' render law (one SDF, scale-phase
+   ensemble = 50 ractors, one loop); heat shimmer = content-borne steering.
+2. **STOCKFISH PASS**: opcode = B1 v1 render-skin catalog; routes to the arena's
+   next touch. The Emperor-as-SDF is also the maze-keeper avatar spec.
+3. **ROOM TEST**: a Dune wing — worm cell (curl), ornithopter swarm (ensemble),
+   Emperor figure (SDF avatar), heat shimmer (steer distortion). The dungeon
+   gains Arrakis as a room pack.
+
+## VERDICT
+**BUILD** — techniques into the B1 v1 skin catalog, own GLSL, credited. The
+parallel sfGSWG search fold folds into this card as its identity receipt when it
+returns.
+
+## ROUTE
+Wire to driver (B1 v1 catalog landed). Source receipt: the operator's own paste
+is the provenance record — stored verbatim in this card's parent chat log and
+quotable from it.
+"><div class="t">Dune Fiction Source</div><div class="n">Operator pasted the full GLSL source of baselunaire's "DUNE FICTION" Shadertoy</div><pre></pre></div><div class="card" data-text="# INTAKE CARD — GLORIOUS LINE ALGORITHM (item 2026-09-03, zcode intake lane)
+
+## ITEM
+https://www.shadertoy.com/view/4tc3DX — operator note verbatim: *&quot;self contained
+agents? dunno self steal this one is cool.&quot;* Old-style ID (4t prefix).
+
+## RECEIPTS
+**IDENTIFIED: &quot;Glorious Line Algorithm&quot; by otaviogood (Otavio Good).**
+- Direct page: Cloudflare-walled four ways (WebFetch 403; curl raw = 11-byte shell;
+  web_reader = rate-limit then JS shell with zero source/comments; r.jina.ai = hit
+  the same wall). Shadertoy API endpoint 403 (key required). TRI-STATE: **Unproven**
+  source text.
+- Identity **Supported** via independent indexed sources: title + author + description
+  snippet in Google's index of the page; official @Shadertoy feature posts on
+  [X](https://x.com/Shadertoy/status/2054438730942050728) and
+  [Facebook](https://www.facebook.com/Shadertoy/videos/825930110181401/)
+  (&quot;The new Featured Shaders are: 'Glorious Line Algorithm' by otaviogood&quot;).
+- Description (indexed snippet): *&quot;This is an attempt to solve everything anyone
+  could want from a line in one function. See comments.&quot;* Plus a truncated feature
+  list fragment: *&quot;Glorious features: 11 - antialiasing 12 - rectangles, ...&quot;*
+  (numbered list exists; full content **Unproven**).
+- Structure (single search summary): multi-pass — Common, Sound, Buffer A, Buffer B,
+  Image. Buffers imply persistent state; **Unproven** what the state is.
+- Popularity ~6,872 views / 139 interactions: single source, **Unproven**.
+- Author cross-check: github.com/otaviogood (13 repos) — no mirror of this shader;
+  only Shadertoy-adjacent repo is StochasticRayTrace (unrelated). grep.app 429,
+  Sourcegraph challenge-walled — no public code mirror found anywhere.
+- **COMMENTS LAW GAP (logged):** &quot;See comments&quot; is the author's own pointer to the
+  docs, and the comment section is unreachable from here (no indexed mirror, no
+  cache, X/Facebook posts carry only the feature blurb). The one door that would
+  open this: the operator's browser — open the page, select-all, paste.
+
+## SCORE — F:3 P:2 C:3 W:2 N:2 = **12/25 → CALIBRATE**
+
+- **FIT 3**: consumes as a composable-operator-cell in the arenas — perfect-AA
+  line/rect primitive upgrades trail rendering, steer-field vector overlays, and
+  divergence-receipt markup. But arenas are BUILT v0 and working; this is polish,
+  not capability.
+- **PULL 2**: the live pull arcs (B1' CPU K-ray sensor falsifier, dumb-swarm GPS)
+  are sensing-side; this shader is draw-side. The &quot;agents&quot; reading that would map
+  it onto dumb-swarms is Unproven. Operator's own note says &quot;dunno.&quot;
+- **COST 3**: one copy-paste into the arena GLSL header once unsealed — pennies.
+  But sealed: the only key that opens it is the operator's one browser pass.
+- **WINDOW 2**: gates nothing. B1' needs zero GPU lines; B1 v0 awaits HIS browser
+  verification, not prettier primitives.
+- **NOVELTY 2**: genuinely a new category in our steal lineage (layers 0-9 are
+  field/navigation/shadow; this is primitive-quality utility), but distance-field
+  line AA is standard graphics knowledge — the value is the packaging, and that
+  part is still behind the wall.
+
+## READ (honest)
+The operator's &quot;self contained agents&quot; note does not match the artifact we found:
+this is a **line-primitive library**, &quot;everything anyone could want from a line in
+one function&quot; — self-contained in the one-function sense, not agent-themed
+(theme claim **Unproven**; either the demo visuals read as agents, or the mental
+tag slipped). What makes it cool is real though: it's the same instinct as
+composable-operator-cells — one pure cell that solves its whole problem domain,
+documented in its own comments. Steal-worthy bones, wrong week. The wall is the
+second honest limit: five fetch routes failed; identity is triple-sourced but the
+source text is not ours yet, and per the license default (Shadertoy CC BY-NC-SA)
+credit otaviogood whenever it lands.
+
+## TRI-STATE
+- Identity (title/author/description/multi-pass/featured): **Supported** (multi-source).
+- Source text + full feature list: **Unproven** (walled; five doors failed).
+- Agent-themed content (&quot;self contained agents&quot; reading): **Unproven**.
+- Comments content: **Unreachable — gap logged** (author's own docs pointer, unmined).
+- Population figures: **Unproven** (single source).
+
+## DOGFOOD
+1. **INVARIANT PASS** (det-spine + stoch-flesh / composable-operator-cells /
+   map-presents-the-solved-problem): WEAK PASS — it is a deterministic primitive
+   cell by design-sentence (&quot;everything from a line in one function&quot;), exactly the
+   cell shape our invariant wants; but spine-vs-flesh internals are **Unproven**
+   until source. Map-presents-the-solved-problem: the demo presents solved
+   line-drawing we'd consume as solved rendering.
+2. **STOCKFISH PASS**: no live opcode consumes it today. Nearest future opcode:
+   **B2' (THE ROOM occlusion, ground-truth raycast comparison)** — visualizing
+   cast rays as crisp exact-AA lines is precisely this primitive's job; second
+   consumer = arena overlay polish if the operator asks for it during B1
+   verification. Opcode = B2'-rayviz, deferred.
+
+## VERDICT — **CALIBRATE** (12/25)
+Keep on the shelf as lineage layer-10 candidate (walled, Unproven). One trigger
+promotes it to BUILD: the operator pastes the source (his one browser pass) or B2'
+ray visualization becomes live work. Then the function lands in the arena GLSL
+header the same window, credit line included.
+
+## ROUTE
+Card filed. Parent/intake: append the typed room row per the wire law (intake
+appends, driver pulls on cadence). No organ_queue feed — nothing to build yet.
+
+*Sources: [shadertoy.com/view/4tc3DX](https://www.shadertoy.com/view/4tc3DX) ·
+[x.com/Shadertoy](https://x.com/Shadertoy/status/2054438730942050728) ·
+[facebook.com/Shadertoy](https://www.facebook.com/Shadertoy/videos/the-new-featured-shaders-are-glorious-line-algorithm-by-otaviogood-httpswwwshade/825930110181401/) ·
+[github.com/otaviogood](https://github.com/otaviogood)*
+"><div class="t">Glorious Line</div><div class="n">https://www.shadertoy.com/view/4tc3DX — operator note verbatim: *"self contained</div><pre></pre></div><div class="card" data-text="# INTAKE CARD — MATHEOREMS HYBRID MATRIX (item 22-ish, 2026-09-03) — the room law arrives a third time, from the same stranger
+
+## ITEM
+X post by @matheorems, 1:18 AM Sep 3 2026, 996 views:
+&quot;Twelve silhouettes. Thirteen motifs. One operator. 156 hybrid ornaments, each
+unique. Hᵢⱼ = Rᵢ ⊕ Cⱼ — Row shape Rᵢ supplies the outer frame; column shape Cⱼ
+supplies the inner pattern. Their fusion ⊕ keeps both identities visible at
+once. ... a short vocabulary of primitives yields an unexpectedly large set of
+forms. Simple composition builds complexity.&quot;
+Third same-day arrival from this account: the operator already pasted its
+Möbius strip + Four Vector Operators infographics tonight (both filed via
+INTAKE_OPERATOR_FIELD_B1_20260903.md — the four-operators sheet is the field
+grammar's namesake and is now the live arena).
+
+## RECEIPTS
+- **Post text/author/date/views — Supported**: webReader pulled the root post
+  verbatim, twice (second pass with images retained).
+- **The infographic — Supported (read directly)**: downloaded from
+  pbs.twimg.com/media/HROUVXVagAAEeI- and viewed. Title: &quot;162 SHAPE HYBRID
+  MATRIX — WHERE PATTERNS COMBINE&quot;. 12 blue row shapes (ovals → multi-lobed
+  curves) down the left, 13 red column shapes (rosettes/stars/knots) across the
+  top; cells are blue+red curve OVERLAYS — ⊕ is literally planar
+  superposition (draw both, blue outside, red inside), not a morph, not an SDF
+  blend. Displayed as a LOWER TRIANGLE (~90 cells), not the full 156. Legend:
+  &quot;THE RULE ... one row shape and one column shape&quot;; &quot;MATHEMATICAL VIEW
+  H_i,j = R_i ⊕ C_j, i = 1..12, j = 1..13&quot;; &quot;Simple rules. Infinite beauty.&quot;;
+  @matheorems watermark (matches the operator's two pasted infographics).
+- **Arithmetic — DISPUTED on the image**: the infographic claims &quot;162 unique
+  shapes = 12 rows × 13 columns&quot;; 12×13 = 156 (the tweet text says 156
+  correctly). And only ~90 cells are displayed (lower triangle). The
+  deterministic count is exactly the part they got wrong — un-receipted flesh.
+- **&quot;Each unique&quot; — Disputed as stated**: overlay is commutative, so cells
+  (i,j) and (j,i) coincide as unordered shapes; the triangular display
+  sidesteps the symmetric half rather than proving uniqueness.
+- **Replies/quotes — Unproven**: three fetch routes (webReader, WebFetch,
+  WebSearch) — replies login-walled, post text not search-indexed anywhere.
+  Engagement figures visible (~7 / 36 / 18, labels ambiguous); reply content
+  unreadable. Operator law (threads-and-replies-are-signal) attempted and
+  walled, not skipped.
+- **Corpus sweep — Supported, and it's the finding**: MEMORY.md + watch/ swept.
+  The post's law is ALREADY-RUN in the fleet, three named places:
+  1. watch/GAME_MECHANICS_LATTICE_20260903.md:37-38 —
+     `room = invariant × engine_family × cultural_pack; 47 × 7 × N = ~329+
+     distinct lawful rooms` — Hᵢⱼ = Rᵢ ⊕ Cⱼ in fleet dress, one factor richer.
+  2. Light Codec — &quot;SDF field + stochastic alpha + free pieces&quot; = layered
+     composition of primitives (SELF_STEAL_LIGHT_CODEC_20260903.md).
+  3. Verb genomes — small verb vocabulary → large behavior space.
+  Zero new transform enters the corpus with this post.
+
+## SCORE — F:3 P:2 C:4 W:1 N:2 = 12/25 → **CALIBRATE (band) — REMEMBER-lean, BUILD trigger pre-registered**
+
+- **FIT 3** — conceptually bolts onto the rooms substrate (the lattice IS this
+  formula) and a future room-skin generator; does NOT bolt onto FIELD.json
+  (fields are force fields, not ornament layers — a schema stretch) and adds
+  nothing to the arena's falsifiers.
+- **PULL 2** — advances no live arc (not B1, not coverage, not QLoRA, not
+  Rocinante); hands one sharpener to the content pipeline (see READ #2).
+- **COST 4** — this card cost pennies + one premium pass; any future build is
+  free-lane static-file work. Not 5 because the honest cost of a build nobody
+  owes is displacement of starved organs.
+- **WINDOW 1** — no starved lane consumes it. Tonight's windows are owned by
+  tale-re-encoder, the owed B1/arena browser verification, and QLoRA Stage 1.
+- **NOVELTY 2** — new artifact, old law. The math-viz discriminator applied
+  strictly: the transform (outer product of shape vocabularies, fused by
+  overlay) is wireable but trivial, and pretty-but-already-run — the corpus
+  triple-instantiates it. What keeps this out of pure REMEMBER: it's the third
+  same-day external arrival of the fleet's grammar from the same account, and
+  it states one constraint we haven't written down (READ #2).
+
+## READ
+1. **The room law, third external instance today**: Smith chart morning
+   (&quot;strangers keep shipping it to us&quot; — INTAKE_SMITH_CHART_20260903.md), the
+   four-operators sheet → the arena, now the hybrid matrix. matheorems is not
+   a random feed; it is an external validator stream for composable-operator
+   grammar. The repetition-is-emphasis reading: the discipline is real enough
+   that the same stranger keeps re-deriving it in ornament dress.
+2. **The one new micro-law worth keeping — provenance-preserving fusion**:
+   &quot;their fusion keeps both identities visible at once&quot; is a falsifiable
+   acceptance test for ANY composition the fleet does: a lawful hybrid is one
+   where you can still read both parents. That is the same shape as chain v2
+   knots carrying memlang anchors INTO v1 (&quot;every new truth cites the elder
+   truth it grew from&quot;), and it names what the infographic itself violates:
+   count 162 vs 156 is a hybrid whose parents (the arithmetic and the claim)
+   no longer agree. Use it as the acceptance line for room skins: a room must
+   read as both its invariant and its engine.
+3. **Map minus walk**: the matrix presents a solved design space as a flat
+   catalog — 156 lawful forms, no navigation, no consumer, no steps. The
+   map-presents-the-solved-problem invariant requires the map to present the
+   solved problem IN STEPS; this is the atlas page with the arena missing.
+   That is the precise structural reason it cannot BUILD tonight.
+
+## TRI-STATE
+- Post text + image content + account identity: **Supported** (dual reader
+  receipt + direct image read + watermark match to operator's pastes).
+- Infographic arithmetic (162 = 12×13) and displayed completeness: **Disputed**
+  (156 actual; ~90 cells shown, lower triangle only).
+- &quot;Each unique&quot;: **Disputed as stated** (commutative overlay; triangle
+  sidesteps, doesn't prove).
+- Replies/quote content: **Unproven** (login-walled; three routes attempted).
+- Fleet-law intersection (lattice = same outer product): **Supported**
+  (line-receipted, GAME_MECHANICS_LATTICE_20260903.md:37-38).
+- Room-skin generator would satisfy &quot;both identities visible&quot;: **Unproven
+  until built** — pre-registered, not owed.
+
+## VERDICT — **CALIBRATE** (12/25, band-mid; REMEMBER-lean under the strict math-viz discriminator)
+Do not build. The math is pretty-but-already-run; no lane owes it. Keep two
+things calibrated: (a) the provenance-preserving-fusion acceptance test (one
+line into the lattice's vocabulary), (b) the account itself as a standing
+external-grammar validator stream — note the pattern, chase nothing (external
+posts flow through the operator's hand only, per the X creative surface law).
+
+## ROUTE
+1. Card to the intake shelf; typed room row per the WIRE-INCIDENT fix (driver
+   pulls on cadence) — opcode: REMEMBER/CALIBRATE, no builder spawn.
+2. One-line law deposit (no build): &quot;lawful composition keeps both parents
+   legible&quot; → hang beside `room = invariant × engine × pack` in
+   GAME_MECHANICS_LATTICE_20260903.md vocabulary at next touch; do not edit the
+   canon file just for this.
+3. PRE-REGISTERED BUILD TRIGGER (fires only when its consumer is born): when
+   the dungeon content pipeline formally opens its first owed room-skin pass,
+   the frame×motif generator (R_i outer/invariant layer ⊕ C_j inner/engine
+   layer) is a one-free-lane-build fill with acceptance test &quot;both identities
+   visible in the hybrid.&quot; Until that consumer exists, the trigger stays cold.
+4. Pattern note for the operator's next matheorems paste: third same-day hit
+   from one account; if a fourth arrives, treat the account as a deliberate
+   mirror of the fleet's grammar and read ITS backlog, not just the pastes.
+"><div class="t">Hybrid Matrix</div><div class="n">X post by @matheorems, 1:18 AM Sep 3 2026, 996 views:</div><pre></pre></div><div class="card" data-text="# INTAKE CARD — INTERNETLABSAI: &quot;WEBGPU TRELLIS CHANGES UNIT ECONOMICS&quot; (Grok batch 5/10, 2026-09-04)
+
+## ITEM (verbatim root, fxtwitter 200 OK — itself a REPLY)
+@internetlabsai (Internet Labs), Sep 03 2026 09:18Z, replying to @hybridherbst: &quot;Running
+full Trellis inference client-side via WebGPU completely changes the unit economics for 3D
+pipelines zero backend compute costs and zero latency.&quot;
+Stats: 26 views / 0 replies / 1 like.
+
+## THREAD CONTEXT (Amendment 2)
+Same parent as the blackbox_lab card: hybridherbst TRELLIS-in-browser, 93,717 views / 71
+replies / 1,977 likes, mesh-baker.needle.tools, 1-3 min generation. Parent re-fetched with
+the CORRECTED id 2095267724440064391 (scout file's copy was mangled; see blackbox card).
+
+## MAP
+- Second peer-velocity row on the mesh/3D arc in one batch — two independent accounts
+  reading the same demo as an economics event, not a demo event. Convergent reading =
+  signal (the corpus law: two lanes, same organ).
+- Maps onto the free-lane doctrine: client-side inference is the terminal free lane, the
+  same way on-device is for LLMs (uzu card) — &quot;zero backend compute&quot; is our cache-
+  economics language applied to 3D.
+- &quot;Zero latency&quot; is wrong as posted and the correction matters for our pipeline design.
+
+## [SOCRATIC] assumption attacked: &quot;unit-economics framing is just hype vocabulary&quot; —
+attacked by placing it on our own cost lattice. What survives: the frame is correct
+(backend $0), the latency clause is false, the compute moves to the client's silicon.
+
+## ASSERT
+Client-side WebGPU inference moves the cost of 3D asset generation from the service's
+ledger to the user's GPU — backend compute cost goes to zero and the pipeline scales with
+users instead of with servers.
+
+## ATTACK
+1. &quot;Zero latency&quot; is false by the parent's own numbers: 1-3 minutes generation (evidence:
+   parent root). What he means is zero network round-trip — sloppy claim, corrected here.
+2. &quot;Zero backend compute&quot; is only true at generation; the demo site still serves the
+   weights (multi-GB download per user — someone pays that CDN bill).
+3. 26 views, 1 like: no community validation; the account has standing (Internet Labs is
+   a real org) but this row adds none.
+
+## MEASURE ($0, run)
+Parent root refetched; numbers cross-checked (1-3 min stands; client-side stands; no-API-
+key stands). Nothing else testable in a one-line reply. Kill condition for the economics
+frame mattering to US: mesh_gallery usage shows users abandon on the weights download or
+generation wait — then latency is the product problem, not backend cost.
+
+## SCORE — F:3 P:3 C:5 W:1 N:1 = **13/25 → CALIBRATE** band; verb: REMEMBER (nothing to
+calibrate that the mesh arc's own usage data won't measure for free).
+
+## TRI-STATE
+- Client-side TRELLIS via WebGPU, no backend generation cost — **Supported** (parent
+  demo live; fleet built the pipeline tonight).
+- &quot;Zero latency&quot; — **Disputed** (1-3 min generation, parent's own claim).
+- &quot;Changes unit economics for 3D pipelines&quot; — **Supported-directional** (cost moves to
+  client silicon; matches free-lane doctrine), unquantified.
+
+## VERDICT — **REMEMBER**: second peer-velocity row on the mesh arc; the economics
+framing (not the demo) is the datum. Ledger line only.
+TWO COUNTERS: FORBIDS repeating &quot;zero latency&quot; in any fleet doc. PAID RENT: one ledger
+row; sharpens the free-lane vocabulary for the mesh arc.
+
+## THE CROP
+No unit-economics math run (what a served TRELLIS API would cost at our scale vs client
+silicon — probably $0-relevant only if the fleet ever serves 3D). The 3D chair owns it if
+the Desk ever ships meshes to anyone.
+
+## FILED — watch/INTAKE_INETLABS_TRELLIS_REPLY_20260904.md + room thread &quot;intake&quot;
+"><div class="t">Inetlabs Trellis Reply</div><div class="n">@internetlabsai (Internet Labs), Sep 03 2026 09:18Z, replying to @hybridherbst: "Running</div><pre></pre></div><div class="card" data-text="# INTAKE CARD — MATTPERFECT SHADOWS (2026-09-03) — PRIMARY-SOURCE PROVENANCE VERIFIED, ONE NEW HYGIENE FIND
+
+## ITEM
+https://github.com/mattdesl/lwjgl-basics/wiki/2D-Pixel-Perfect-Shadows — mattdesl's
+wiki page on 2D pixel-perfect shadow rendering. Intake brief flagged it as &quot;likely a
+PRIMARY-SOURCE receipt, not a new discovery&quot; — the shadow-fields arc
+(watch/SHADERTOY_SHADOW_FIELDS_20260903.md) already claims it as the stolen ancestor.
+
+## RECEIPTS (fetched 2026-09-03, independent re-fetch by intake seat)
+
+- **Fetch**: raw door worked exactly as briefed —
+  `raw.githubusercontent.com/wiki/mattdesl/lwjgl-basics/2D-Pixel-Perfect-Shadows.md`,
+  HTTP 200, **13,837 bytes — byte-identical to the shelf's recorded receipt.**
+  (First curl attempt returned a hijacked/proxied page — an Agent.so Framer site,
+  975KB of Framer HTML from a GitHub URL; clean retry succeeded. Sandbox network
+  flakiness, worth remembering, not a wall.)
+- **Lineage self-declared on page**: &quot;My technique is inspired by Catalin Zima's
+  [dynamic lighting](catalinzima.com/2010/07/my-technique-for-the-shader-based-dynamic-2d-shadows/),
+  although the process discussed in this article is rather different and requires far
+  fewer passes.&quot; + java-gaming Starbound thread link + demo at
+  gist.github.com/mattdesl/5286905. Matches shelf PROVENANCE bullet verbatim.
+- **The 1D map, verbatim**: &quot;The texture is very small (256x1 pixels)&quot; ... &quot;Each pixel
+  in the resulting 1D shadow map describes the *minimum distance to the first occluder
+  for that ray's angle*.&quot; — this IS d(θ), the radial horizon, taught explicitly.
+- **Min-reduction, verbatim**: &quot;We take the *minimum* distance so that we 'stop casting
+  the ray' after hitting the first occluder (so to speak).&quot; + `distance = min(distance, dst);`
+  + the author's own note: &quot;we could probably use 'break' or 'return' here.&quot;
+- **Light render, verbatim**: `return step(r, texture2D(u_texture, coord).r);` —
+  `step(r, d(θ))` exactly. Softness: &quot;we multiply the blur amount by our distance from
+  center ... this leads to more blurriness as the shadow 'fades away'&quot; —
+  `float blur = (1./resolution.x) * smoothstep(0., 1., r);`, 9-tap gaussian over
+  neighboring angles, falloff `sum * smoothstep(1.0, 0.0, r)`.
+- **Budget, verbatim**: &quot;On my Mac OSX 10.6.6 (GeForce 9400), I can add about 20 lights
+  before fill-rate becomes a bottleneck.&quot; Honesty: &quot;this is generally less performant
+  than geometry shadows (which are not per-pixel).&quot; Wrap seam handled by
+  `TextureWrap.Repeat`. Optimizations list matches shelf: 4 maps in RGBA channels,
+  cones cheaper than 360°, disc meshes cut fill.
+- **LICENSE (the new finding)**: the page carries no license statement, and GitHub's
+  license API returns 404 for mattdesl/lwjgl-basics — **no license file in the repo**.
+  Default copyright applies. Hygiene rule: attribute mattdesl, short quotes fine,
+  **never republish the two GLSL shader bodies wholesale — re-implement from the
+  technique description.** This lands exactly on B1', the next build, where the
+  temptation to paste the gaussian shader verbatim is highest.
+- **PENUMBRA QUADS: ABSENT.** The intake brief expected &quot;penumbra quads&quot; on this page —
+  there are none. Softness here is the distance-scaled angular gaussian, not quad
+  geometry; penumbra-quad construction belongs to a different technique family
+  (geometry extrusion). The shelf never claimed penumbra quads, so nothing filed is
+  contradicted — the brief's model was the only thing wrong.
+
+## SCORE — F:5 P:2 C:5 W:4 N:1 = **17/25 → BUILD WINDOWED** (ride with B1')
+
+- **FIT 5** — it is the ground truth under the live arc: anchors all exist and compose
+  (dashboard/static/arena_operator_field.html, dashboard/static/room_lightmap.html,
+  watch/steer_field/FIELD.json, dashboard/static/maze_arena.html B1' target).
+- **PULL 2** — pulls nothing new; all momentum was captured at first steal. Only pull
+  is de-risking B1' (recipe now verified against source).
+- **COST 5** — the fix is a two-line append, minutes.
+- **WINDOW 4** — tied to B1' timing: the license constraint must exist BEFORE anyone
+  ports the WebGL shader.
+- **NOVELTY 1** — primary-source re-find, honestly scored. Repetition as emphasis.
+  The value is verification, not discovery — see READ.
+
+## READ
+
+This is provenance closure, not a find — and it closes clean. The independent re-fetch
+is byte-identical to what the shelf recorded, every verbatim quote in
+SHADERTOY_SHADOW_FIELDS_20260903.md checks against the source with zero fabrication,
+and all four extracted laws have their mechanisms physically present in the page text.
+The one genuinely new output is the license finding (no license on page or repo →
+default copyright → B1' must re-implement, never paste), plus the negative result that
+the page contains no penumbra-quad construction — the brief's vocabulary, not the
+page's. Provenance-closing has its own value: the shelf's PROVENANCE section now moves
+from self-reported to independently witnessed.
+
+## DOGFOOD
+
+1. **INVARIANT PASS (verbatim-check of the visibility-factorization claim)**: the page
+   teaches the MECHANISM exactly — x-axis = theta, value = minimum distance to first
+   occluder per angle, per-fragment `step(r, d(θ))` — but never states the LAW as a
+   principle. &quot;A point sensor's knowledge of a field is its radial horizon function&quot;
+   is the seat's generalization, not a quote; the shelf correctly files it as
+   abstraction over technique. Min-reduction: taught explicitly (quoted above).
+   Artifact-into-feature: taught as intent but framed aesthetically (&quot;more blurriness
+   as the shadow 'fades away'&quot;) — the doctrine reading (spend error as gradient) is
+   ours, and the page's own words support it. Three-engines-one-field: the page
+   supplies two of three engines (blending-mode alternative linked; geometry-shadow
+   contrast stated); the unification is the fleet's. Verdict: four for four grounded,
+   zero fabricated quotes, two of four honestly fleet-level abstractions.
+2. **STOCKFISH PASS**: opcode confirmed as provenance-citation on the shadow-fields
+   shelf — with one correction: the shelf ALREADY carries the primary citation
+   (PROVENANCE bullet 1, URL + byte count). The honest opcode is therefore
+   &quot;verify existing citation + append license note,&quot; not &quot;add citation.&quot; Verified and
+   routed below.
+
+## TRI-STATE
+
+- **SUPPORTED** — this page is the primary ancestor of the four extracted laws:
+  byte-identical fetch, all mechanisms present in text, lineage self-declared
+  (Zima 2010 → java-gaming Starbound thread → this wiki → gist demo).
+- **SUPPORTED** — shelf receipts (13,837 bytes, raw URL, verbatim quotes):
+  independently reproduced this intake.
+- **DISPROVEN** — &quot;the page teaches penumbra quads&quot;: no penumbra-quad construction
+  exists on the page; softness is distance-scaled angular gaussian. (Intake brief's
+  model only; the shelf never claimed it.)
+- **DISPUTED → settled as constraint** — &quot;wiki content is reusable&quot;: no license on
+  page or repo (GitHub license API 404) → default copyright. Attribute, quote short,
+  re-implement; no wholesale GLSL reuse.
+- **UNPROVEN (out of scope)** — the Flyguy CC BY-NC-SA attribution in the shelf
+  (Shadertoy 403 wall stands; not re-verified here).
+
+## VERDICT
+
+**17/25 BUILD WINDOWED — citation-hygiene fix, rides with B1'.** No new build
+warranted; the page's build-relevant content was fully absorbed at first steal.
+
+## ROUTE
+
+1. **Exact shelf file**: `watch/SHADERTOY_SHADOW_FIELDS_20260903.md` — already cites
+   the primary source correctly (PROVENANCE bullet 1). Append two lines to that
+   section: (a) license note — page and repo carry no license (GitHub API 404);
+   default copyright; attribute mattdesl, short quotes only, **B1' WebGL port
+   re-implements the shaders from the technique description, never pastes the GLSL
+   bodies**; (b) optional one-line credit to &quot;nego&quot; (LibGDX forums) for the
+   fewer-passes reduction, per the page's own acknowledgment.
+2. **B1' implementer constraint**: the license rule above binds the CPU K-ray sensor
+   and any later WebGL port.
+3. This card filed. Done.
+"><div class="t">Mattperfect Shadows</div><div class="n">https://github.com/mattdesl/lwjgl-basics/wiki/2D-Pixel-Perfect-Shadows — mattdesl's</div><pre></pre></div><div class="card" data-text="# INTAKE CARD — MESH-BAKER: image→3D locally in browser (driver lane, 2026-09-03 ~00:15Z)
+
+Source: https://x.com/hybridherbst/status/2095267724440064391 (herbst, @needletools) —
+&quot;We did it!! — image-to-3D, locally in your browser!&quot; TRELLIS on the web, runs entirely
+on the user's machine, 1–3 min generation. Demo: https://mesh-baker.needle.tools.
+Engagement at fetch: 93.2K views, 1,968 likes, **2,661 bookmarks** — bookmarks > likes,
+the practitioner save-signal. No paper/repo in post; TRELLIS = Microsoft's image-to-3D.
+
+## SCORE — F:4 P:4 C:5 W:4 N:3 = 20/25 → BUILD NOW (pipeline v0)
+
+- FIT 4: browser-local inference = the static-render law's big brother (surfaces that
+  COMPUTE without servers); zero-fetch doctrine holds; no new vendor account.
+- PULL 4: the dungeon/game arc needs a content pipeline (room_game, maze_arena, erosion
+  field are 2D-canvas tonight); ROCINANTE prep — browser-as-serving-substrate is the
+  M5's little brother, and this is the vram_hologram law (high-poly→low-poly) in vendor voice.
+- COST 5: $0 — the bakery is the author's free public tool; the visitor's GPU does the work.
+- WINDOW 4: dungeon content pipeline is a live arc; meshes wanted since the game codex salon.
+- NOVELTY 3: TRELLIS known; the full local WebGPU port is the new part.
+
+## THE BUILD (pipeline v0, bounded)
+1. `dashboard/static/mesh_gallery.html` — zero-fetch drop-zone: drag a .glb/.gltf → renders
+   in the room aesthetic (three.js inline or CDN-disclosed fallback), turntable, wireframe toggle.
+2. Pipeline doc: images → mesh-baker.needle.tools (external free bakery) → .glb →
+   mesh_gallery.html → the dungeon surfaces. The fleet bakes nothing; it curates.
+3. Provenance: herbst/needle.tools + TRELLIS credited; the decimation law noted
+   (high-poly in, silhouette-law out — the calibrator's chair).
+
+## TRI-STATE
+- Supported: post + demo site fetched via mirror; engagement numbers at fetch.
+- Unproven: TRELLIS repo license/commercial terms (not fetched — flag for the pipeline doc);
+  WebGPU support on the operator's browser.
+- Disputed: none.
+
+## FLEET TIE
+The vram_hologram arc (operator, Aug 12): &quot;high-poly to low-poly as an engine&quot; — TRELLIS
+bakes the high-poly from an IMAGE; the fleet's decimation law keeps the silhouette; the
+dungeon renders the remainder. Content pipeline for the maze = the game codex's &quot;untouched
+research is the content pipeline&quot; line, now with a bakery attached.
+"><div class="t">Mesh Baker</div><div class="n"></div><pre></pre></div><div class="card" data-text="# INTAKE CARD — SFGSWG IDENTITY FOLD (item: shadertoy.com/view/sfGSWG, 2026-09-04)
+
+This is the &quot;parallel sfGSWG search fold&quot; that watch/INTAKE_DUNE_FICTION_SOURCE_20260904.md
+awaited (&quot;folds into this card as its identity receipt when it returns&quot;). A RE-FIND, filed
+as a re-find (repetition is emphasis): the item was already processed ~03:4xZ tonight; this
+run's unique product is the identity receipt + wall ledger, not a second technique card.
+
+## ITEM (verbatim)
+https://www.shadertoy.com/view/sfGSWG — operator note: &quot;fucking woah&quot;. HIGH-ATTENTION flag:
+the operator, who has screenshopped hundreds of shaders, was stopped in his tracks.
+Find out what this is.
+
+## RECEIPTS — the door ledger (every door walked, all $0)
+1. webReader on the URL — Cloudflare &quot;Performing security verification&quot;. WAILED (walled).
+2. WebSearch &quot;shadertoy sfGSWG&quot; + exact-URL + quoted-id variants + social-restricted
+   (twitter/x/reddit/HN/bsky/masto) — ZERO index anywhere. Comments yield: NONE (nothing
+   to mine; not viral; not documented).
+3. Shadertoy JSON API (/api/v1/shaders/sfGSWG?key=BdHjRd) — &quot;Bad request&quot;/403, but the
+   CONTROL differential is the finding: the same request for famous id MdX3Rr ALSO fails.
+   The documented example key is dead fleet-wide. Door is auth-dead, NOT shader-absent —
+   sfGSWG existence remains untestable from this box (the wall 403s every id equally).
+4. Media CDN (/media/shaders/sfGSWG.jpg) — 403; control MdX3Rr.jpg also 403. Same wall
+   covers media; the thumbnail door needs a browser too.
+5. Wayback availability + CDX — zero snapshots, ever.
+6. Jina reader (headless-browser proxy) — challenged by the same Cloudflare.
+7. browser-use control lane — &quot;Browser is not available in subagent&quot;. The one door that
+   passes JS walls exists, but only from a resident/operator seat.
+8. Corpus grep — repo: zero sfGSWG. Rollouts: heartbeat echoes only (sess_dddf6069).
+   The operator's raw GLSL paste is NOT greppable in any rollout — provenance gap logged
+   below. Verkle chain (7,065 rows): zero knots for sfgswg / dune fiction / baselunaire.
+9. Swarm seam research ask routed (det-scan) — fired, not retrievable from this lane.
+   No receipt; carried as none.
+
+## SCORE (re-find, scored as one with the DUNE card)
+F:4 P:4 C:5 W:5 N:3 = 21/25 → **BUILD NOW band** (DUNE card scored 22; my -1 novelty is
+honest: from this lane the technique inventory is not byte-recheckable, and known-GLSL-craft
+holds). BUILD verdict unchanged and already routed: B1 v1 render-skin catalog, own GLSL,
+baselunaire + Skaven credited, CC BY-NC-SA hygiene per the DUNE card.
+
+## READ (what this run found that the DUNE card could not)
+The DUNE card's one open link was: sfGSWG = baselunaire's DUNE FICTION? Its own text said
+&quot;presumed ... Unproven until the parallel search fold confirms.&quot; The fold returns: the web
+neither confirms nor refutes (zero index, total wall). The identity now rests on exactly
+one leg: a same-night seat presumption that the operator's &quot;woah&quot; URL and his pasted GLSL
+were the same shader. That is one hop from the root pattern identity-skipped-for-resemblance
+— matched &quot;operator pasted a Dune shader tonight,&quot; skipped the row &quot;is THIS url THAT
+shader.&quot; No fault assigned: the paste supersedes the wall regardless, and the build is
+correct either way; but the chain carries no knot pinning the link, so the card's
+provenance line (&quot;presumed&quot;) must stay until the one-glance falsifier below runs.
+
+## TRI-STATE
+1. &quot;sfGSWG exists and stopped the operator&quot; — **Supported** by operator's verbatim
+   HIGH-ATTENTION receipt; NOT machine-verifiable from this box (wall 403s all ids).
+2. &quot;sfGSWG = baselunaire's DUNE FICTION&quot; — **Unproven.** Evidence: zero web index
+   (searches #2), chain-absent (7,065 rows), paste bytes unrecoverable from rollouts,
+   single-leg presumption. Falsifier below.
+3. &quot;DUNE FICTION techniques compose with B1/Room&quot; (ornithopter ensemble loop = swarm-render
+   law; worm = curl-cell cousin; Emperor = pure SDF; RCA = metamerism trap; shimmer =
+   content-borne steering) — **Supported-as-filed** by the parent seat that held the bytes;
+   thesis-consistent with three pre-existing arcs (operator field B1, light codec, shadow
+   fields). This lane could not re-verify the bytes (paste never custody-landed as a file).
+
+## VERDICT
+**CALIBRATE** (this run) — the identity receipt and wall ledger calibrate the DUNE card;
+its BUILD NOW stands untouched. REMEMBER (rider): shadertoy.com is hard-walled from this
+box at every path (page, API, media); the documented example API key is dead; the only
+door is a real browser, resident-seat or operator-side.
+
+## ROUTE
+- One-glance falsifier (kill condition, executable cold): if shadertoy.com/view/sfGSWG's
+  title/author is NOT &quot;DUNE FICTION&quot;/baselunaire, the identity claim dies and this card
+  reopens as an unidentified item; if it matches, fold &quot;presumed&quot; → &quot;confirmed&quot; in the
+  DUNE card and pin one chain knot. Cost: one browser glance on the operator's surface.
+- Custody debt: land the pasted GLSL as a file (docs/ref/vendor/ or watch/) so the
+  technique inventory is byte-checkable by any seat — chat is vapor; the card claims
+  &quot;quotable from parent chat log&quot; and that log is not greppable.
+- Driver: B1 v1 skin catalog build proceeds as already routed (unaffected by identity).
+"><div class="t">Sfgswg Identity Fold</div><div class="n">https://www.shadertoy.com/view/sfGSWG — operator note: "fucking woah". HIGH-ATTENTION flag:</div><pre></pre></div><div class="card" data-text="# INTAKE CARD — Shadertoy tsXSR (2026-09-04, research-socratic genome, L0 bound)
+
+## ITEM (verbatim)
+`https://www.shadertoy.com/view/tsXSR` — operator paste (originally with dropped leading
+`h` in `https`; reconciled to the same view URL). Unknown shader; evaluate.
+Shadertoy is Cloudflare-walled tonight (multiple prior fails on this lane).
+
+## RECEIPTS (the door ladder, run in order, $0)
+1. `mcp__web_reader__webReader` on the URL → Cloudflare &quot;Performing security verification&quot;
+   page, zero shader bytes. FAIL.
+2. WebSearch `shadertoy tsXSR` and `shadertoy tsXSR shader` → shader NOT indexed anywhere:
+   no blogs, forums, Twitter, HN, or mirrors. Only generic Shadertoy pages returned. FAIL.
+3. Wayback CDX `web.archive.org/cdx/...url=www.shadertoy.com/view/tsXSR` → &quot;no captures&quot;.
+   Availability API → `&quot;archived_snapshots&quot;: {}` (no snapshot). FAIL ×2.
+4. Shadertoy official REST API `shadertoy.com/api/v1/shaders/tsXSR` → HTTP 403. FAIL.
+5. WebSearch bare `&quot;tsXSR&quot;` → zero exact-string matches on the open web (stock-ticker noise
+   only). FAIL.
+COMMENTS YIELD (Amendment 2b): no indexed mirror of any kind exists → comment section
+unreachable. GAP LOGGED: Shadertoy comments for tsXSR are a mining ground behind the
+wall; no author, no variants, no notes recovered.
+Corpus grep of watch/ + docs/ for `tsXSR` → zero hits (no prior footprint, no re-find).
+
+## MAP (corpus sweep)
+- memory index + watch/ shelf: NO prior tsXSR. Honest novelty = first encounter, but the
+  item's CONTENT is walled, so novelty of the object is Unproven, not &quot;new&quot;.
+- DISAMBIGUATION: fleet's known tornado shader is `XsK3RR` (6-char ID,
+  watch/SHADERTOY_SHADOW_FIELDS_20260903.md). `tsXSR` is a 5-char ID — DIFFERENT item,
+  not a re-drop of the tornado. FLAG (Unproven, falsifiable): every Shadertoy ID observed
+  in corpus and tonight's searches is 6 chars (MstcWr, tdGBDG, wsScDy, XsK3RR); a 5-char
+  ID is anomalous and may itself be evidence the ORIGINAL paste lost a trailing character
+  too, not just the leading `h`. One clean re-paste from the operator's source kills this.
+- Convergence named: operator drops shader links into this lane almost exclusively during
+  the shadow-fields/light-codec arc (XsK3RR precedent). Prior = composition candidate for
+  B1/Room. Evidence for THIS item = none yet. Prior is not proof (read the row, not the zone).
+
+## SCORE (5 axes, 0-5; walled content scored honestly low)
+- FIT: 1 — composes-with-B1/FIELD.json/rooms is plausible by lane prior, zero source
+  evidence. 
+- PULL: 2 — shadow-fields + B1 v1 arcs are live and hungry, but the item supplies unknown
+  food.
+- COST: 4 — identification costs ~$0 and one operator action (re-paste full URL, or 30
+  seconds in his logged-in browser; the clipboard/a11y door is armed per 09-03 re-arm).
+- WINDOW: 4 — shader-intake door order executing NOW; operator at screen; arc hot.
+- NOVELTY: 0 — unmeasurable on an unopened box; scored 0, not 5.
+TOTAL: 11/25 → CALIBRATE band (8-13). VERDICT VERB: **CALIBRATE**.
+
+## ASSERT (steel-man)
+&quot;This Shadertoy shader, tsXSR, is worth the fleet's attention as a shadow-field/field-op
+steal for the B1 arena or Room surfaces.&quot; — stated as the operator would accept it; its
+truth is exactly what the wall prevents testing tonight.
+
+## ATTACK (strongest counter-case, two named causes minimum)
+1. CAUSE — secondary index absent is weak evidence of existence-quality: zero web index +
+   zero Wayback captures for a shader ID is common for ALL Shadertoy content (JS-rendered,
+   robot-walled), so the silence is 90%+ door artifact, not item signal. Evidence: the
+   same searches DO index popular shaders; tsXSR returning nothing proves only that it
+   isn't famous. If the operator meant a famous shader, the ID was probably mangled (see
+   5-char anomaly).
+2. CAUSE — the arc-composition prior can be an identity-skip trap: the last shader drop
+   (XsK3RR) WAS a shadow algorithm, so &quot;this one composes&quot; is pattern-resemblance, not row-
+   reading. Failure shape: filing a steal card for a shader that turns out to be a fire
+   demo or a tunnel flythrough, wasting a driver build slot on a non-opcode.
+3. CAUSE (minor) — possible paste truncation: 5-char ID vs the 6-char convention. If the
+   true ID has a sixth character, everything above was measured against a nonexistent page.
+   Evidence: operator's own note that the paste already dropped one character (`h`).
+
+## MEASURE (cheapest falsifier — RAN, plus the cold-executable kill condition)
+- RAN: the five-door ladder above (webReader, 3× search variants, Wayback CDX +
+  availability, REST API). Measurement result: all doors closed tonight; identification
+  claim DISPUTED-as-of-now and Unproven absolutely.
+- KILL CONDITION for the wall (next seat executes cold): (a) operator re-pastes the URL
+  from his source with the full ID → resolve in one fetch pass; or (b) fleet browser door
+  (logged-in session, a11y-first, clipboard-over-captures per the 09-03 re-arm) opens the
+  view page and copies `gShader` source + title + author into the intake register; or
+  (c) any seat with a Shadertoy appkey pulls `api/v1/shaders/tsXSR?key=` — API keys are
+  free; nobody has registered one. Any of the three converts this card from CALIBRATE to
+  a real score in under 5 minutes.
+
+## TRI-STATE SUMMARY
+- &quot;Shader tsXSR exists at the given URL&quot; — Unproven (walled; 5-char ID anomaly open).
+- &quot;tsXSR composes with B1/Room/shadow-fields&quot; — Unproven (prior only, no source).
+- &quot;tsXSR is unindexed on the open web tonight&quot; — Supported (3 search variants + Wayback
+  CDX + availability API, all empty; evidence = this card's RECEIPTS section).
+- &quot;The door ladder is the limiting factor, not the item&quot; — Supported (Cloudflare page
+  captured verbatim in receipt 1; API 403 receipted).
+
+## VERDICT
+CALIBRATE (11/25). Not BUILD (nothing buildable from an unopened box), not REMEMBER
+(nothing to archive as a steal; the wall is the finding, and this card is its record).
+The calibration is one operator action or one appkey registration.
+
+## ROUTE
+1. Card → watch/ (this file). 
+2. Kill condition → next seat with browser door or a registered Shadertoy appkey (queue
+   item; $0, <5 min once unblocked).
+3. If identified and it is a field/shadow/marble opcode → straight into the B1 cell rack
+   beside kaliset orbit-trap and erosion; score re-runs the same five axes.
+4. Room row (ready to append by the seat, not appended from this spawn):
+   `{&quot;kind&quot;:&quot;intake&quot;,&quot;item&quot;:&quot;shadertoy:tsXSR&quot;,&quot;verdict&quot;:&quot;CALIBRATE&quot;,&quot;score&quot;:11,&quot;tri_state&quot;:&quot;Unproven&quot;,&quot;receipt&quot;:&quot;watch/INTAKE_SHADERTOY_TSXSR_20260904.md&quot;}`
+
+## [SOCRATIC] (shown once)
+Assumption attacked: &quot;an operator shader drop inherits the arc's composition prior.&quot;
+Instrument: five-door ladder (reader, search, archive, API, corpus grep) — all $0.
+What survives: only the wall itself and the 5-char ID anomaly; every claim about the
+shader's content did not survive contact with the Cloudflare page.
+
+## TWO COUNTERS (L0)
+- FORBIDS: no driver build, no B1 cell slot, no REMEMBER-archive entry on the strength of
+  this card — the item is unopened and must not be costume-matched to XsK3RR.
+- PAID RENT: the door ladder is now a receipted map of tonight's Shadertoy wall (5 doors,
+  5 failures, all cheap) — the next shader drop skips re-discovering which doors are dead;
+  and the 5-char ID anomaly gives the operator a one-glance check on his own paste.
+
+## THE CROP (visibly incomplete)
+This pass did NOT see: the shader source, title, author, comments, or even a thumbnail —
+the entire visual object is behind the wall; only its URL-shaped shadow was measured.
+Next lens: the operator's own logged-in browser (30 seconds) or one registered Shadertoy
+API key; a second chair that should sit next is whoever owns the browser-bridge door so
+future shader drops ride it on arrival, not after five failed doors.
+"><div class="t">Shadertoy Tsxsr</div><div class="n">`https://www.shadertoy.com/view/tsXSR` — operator paste (originally with dropped leading</div><pre></pre></div><div class="card" data-text="# INTAKE CARD — THREE.JS SHADERTOY MANUAL (item 7, 2026-09-03)
+
+## ITEM
+Operator pasted: https://threejs.org/manual/#en/shadertoy
+The vendor manual for porting Shadertoy shaders into Three.js — receipted from
+raw source (hash-routed page fetched via raw.githubusercontent master):
+fullscreen quad = `PlaneGeometry(2,2)` + `OrthographicCamera(-1,1,1,-1)` +
+`ShaderMaterial`; uniforms `iTime` / `iResolution` / `iChannel0` fed from JS
+(`Clock` ms→s, `TextureLoader` + NearestFilter + RepeatWrapping); `mainImage()`
+wrapped and called from `main()`. Two modes: **fullscreen** (per-pixel) and
+**procedural texture** (per-surface via `vUv` varying — their demo: three rotating
+cubes carrying the shader on their faces). Honest vendor warnings: heavy
+per-pixel shaders can hit ~5 fps; Shadertoy globals are site conventions, not
+GLSL; example shaders (iq, Daedelus) are CC BY-NC-SA.
+
+## SCORE — F:4 P:5 C:4 W:4 N:3 = 20/25 → **BUILD NOW**
+
+## WHY IT SCORES
+This is the vendor recipe for **B1 maze_arena GPU field** — the build already
+named &quot;Next&quot; in the shadow fields arc (AGENTS.md pointer + memory). The manual is
+the consult-first pass, already written by the vendor. The per-surface `vUv`
+variant is the second key: it is how THE ROOM's walls/occluders could CARRY the
+shadow field (the mattdesl radial lightmap computed on geometry) — the Light
+Codec's film becomes the actual framebuffer, and Britney content-borne steering
+becomes literal: FIELD.json → uniform array → pixels.
+
+## DESIGN (named now so the build is one session)
+- **B1a (recommended first): raw WebGL2 fullscreen quad in maze_arena.html.**
+  The manual's technique ports 1:1 to raw WebGL — no three.js dependency. Keeps
+  the STATIC RENDER LAW (zero-fetch, renders in any browser). ~100 lines + our
+  own GLSL.
+- **B1b: three.js per-surface procedural textures** — only when THE ROOM grows
+  real 3D occluder geometry; vendored three.js at that point, not CDN.
+- **The honest hard part:** walkers are JS and read the CPU field. Don't do
+  per-frame readback. Do DUAL DERIVATION: GLSL renders the field from FIELD.json
+  uniforms; JS BFS keeps navigating from the same FIELD.json; add a **divergence
+  receipt** — sample N points per frame, GPU vs CPU must match within epsilon.
+  One source, two renderers: the standing wave (det spine + stoch flesh) applied
+  to our own renderer stack. One-builds-one-verifies, inside one file.
+- **License hygiene:** steal the technique, write our own GLSL (the field is
+  ours anyway); iq/Daedelus example code is CC BY-NC-SA — never vendored.
+
+## DOGFOOD RECEIPTS
+1. **INVARIANT PASS**: extends the Britney doctrine — steering packets now write
+   the film itself; reinforces STATIC RENDER LAW (the reason B1a stays raw);
+   the divergence receipt is the full-chord law applied to renderers (assert
+   every leg or say &quot;partial&quot;).
+2. **STOCKFISH PASS**: opcode = BUILD, shadow-fields B1; lane = THIS seat (the
+   driver is on campaign legs; no dependency between lanes).
+3. **ROOM TEST**: the room's walls carry the light as procedural texture — the
+   map presents the solved problem IN LIGHT.
+
+## FALSIFIER (pre-registered)
+maze_arena.html renders the light field via GPU shader from FIELD.json uniforms;
+N-point GPU-vs-CPU divergence < epsilon; walkers still reach the cheese at steps
+≤ CPU baseline; receipt filed to the intake thread. Fail either check → the GPU
+field is a costume → demote to CALIBRATE.
+
+## VERDICT
+**BUILD** B1a tonight in this lane on operator GO (one word). B1b queued behind
+real 3D geometry in THE ROOM.
+"><div class="t">Threejs Shadertoy</div><div class="n">Operator pasted: https://threejs.org/manual/#en/shadertoy</div><pre></pre></div>
+</div>
+<script>
+document.querySelectorAll('.card').forEach(el=>{
+  el.onclick=()=>{
+    const pre=el.querySelector('pre');
+    if(pre.style.display==='block'){pre.style.display='none';el.classList.remove('open');return;}
+    pre.textContent=el.dataset.text;
+    pre.style.display='block';el.classList.add('open');
+  };
+});
+</script></body></html>

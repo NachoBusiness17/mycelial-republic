@@ -1,0 +1,6 @@
+{
+  "situation": "Quantizing a modular TTS stack (AR language model + tokenizer + flow/vocoder).",
+  "decision": "Quantize the autoregressive LLM first; keep the speech tokenizer, flow model, and vocoder at higher precision until perceptual tests establish safety.",
+  "reasoning_physics": "The AR LM dominates memory and suffers quant least visibly; the tokenizer/vocoder are perceptual bottlenecks where artifacts are immediately audible to humans. Quantize the memory-dominant, perceptually-tolerant block first, gate the rest on A/B testing.",
+  "source_path": "/mag/docs/ref/GLM_K8S_MCP_DEEP_RESEARCH_20260826.md"
+}

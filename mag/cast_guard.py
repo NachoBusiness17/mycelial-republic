@@ -65,7 +65,7 @@ def _log_probe(ip: str, path: str, reason: str) -> None:
         f.write(json.dumps({"ts": _now(), "ip": ip, "path": path, "reason": reason}) + "\n")
 
 
-def _last_call: dict[str, float] = {}
+_last_call: dict[str, float] = {}
 
 
 def rate_limited(ip: str) -> bool:

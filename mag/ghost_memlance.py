@@ -86,6 +86,14 @@ _TOKEN_RE = re.compile(r"[a-z0-9_]+")
 _cache: dict[str, dict[str, Any]] = {}
 
 
+def _display_path(path: Path) -> str:
+    """Return a stable provenance path even when a caller supplies a temp root."""
+    try:
+        return path.relative_to(ROOT).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
 def _read(path: Path) -> str:
     try:
         return path.read_text(encoding="utf-8", errors="replace")
@@ -139,7 +147,7 @@ def _index_file(path: Path, kind: str) -> dict[str, Any] | None:
     verdict = _grounding_verdict(text)
     excerpt = "\n".join(l for l in text.splitlines()[:6] if l.strip())[:600]
     return {
-        "path": path.relative_to(ROOT).as_posix(),
+        "path": _display_path(path),
         "kind": kind,
         "title": title,
         "ts": _ts(path, text),
@@ -161,7 +169,7 @@ def _index_notebook(path: Path, kind: str = "notebook") -> dict[str, Any] | None
         return None
     cells = nb.get("cells") or []
     parts = []
-    title = path.stem
+    title = ""
     for c in cells:
         src = "".join(c.get("source") or [])
         parts.append(src)
@@ -182,7 +190,7 @@ def _index_notebook(path: Path, kind: str = "notebook") -> dict[str, Any] | None
         return None
     verdict = _grounding_verdict(text)
     return {
-        "path": path.relative_to(ROOT).as_posix(),
+        "path": _display_path(path),
         "kind": kind,
         "title": title or path.stem,
         "ts": _ts(path, text),
@@ -200,6 +208,13 @@ def index(*, refresh: bool = False) -> list[dict[str, Any]]:
         return list(_cache.values())
     out: dict[str, dict[str, Any]] = {}
     for kind, rel in INDEX_ROOTS:
+        # ``notebook`` is a marker for the explicit *.ipynb pass below, not the
+        # repository root.  Treating rel="" as a normal memory directory makes
+        # the fallback rglob walk the entire checkout (including .venv and
+        # tooling) on the first read, turning a bounded memory lookup into a
+        # context/indexing stall.
+        if kind == "notebook":
+            continue
         base = ROOT / rel
         if rel.endswith(".jsonl") or rel.endswith(".md"):
             if base.is_file():

@@ -1,0 +1,265 @@
+{
+  "auditor": "df6",
+  "campaign": "dogfood everything (operator 2026-09-06)",
+  "protocol": "watch/SELF_STEAL_IDEA_TRIANGULATION_20260906.md",
+  "slice": "nav.js LINKS index 50-66 (17 surfaces, all remaining)",
+  "audited_at": "2026-09-06",
+  "method": "curl live bytes from 127.0.0.1:8765 -> inline <script> extraction -> node --check -> five-liner from served bytes -> KEEP/MERGE/DEMOTE",
+  "tally": { "audited": 17, "keep": 12, "merge": 3, "demote": 2, "all_200": true, "node_check_failures": 0, "node_check_false_positive": "index.clear-ui (inline block is a JSON importmap, type=application/importmap - not JS)" },
+  "surfaces": [
+    {
+      "idx": 50, "url": "/static/steer_field.html", "name": "Steer Field", "http": 200, "bytes": 7012,
+      "scripts": { "inline": 1, "inline_bytes": 5951, "node_check": "PASS" },
+      "five_liner": {
+        "happening": "A canvas 'film' rendering 7 engine-lights (glm-flash-free, openclaw, zai-opencode), 4 failure occluders and 6 gradient-walking sagents - but the entire field is one hardcoded JSON literal baked into the page.",
+        "matters": "It looks like a live steering view of the lanes but the data ts is 2026-09-03T18:26:13Z (3 days stale) and every seat_tail carries age_h 99/-1 placeholder values; nothing fetches or refreshes.",
+        "decision": "None can be safely made from it - a stale field that dresses yesterday's lane state as present tense is worse than a DOWN badge (violates T2's 'from live bytes, not a badge').",
+        "next": "It can render a frozen snapshot; walkers wander a dead field; no fetch(), no regen hook, no live lane data.",
+        "evidence": "served bytes line 13: const F = {\"schema\":\"field.v1\",\"ts\":\"2026-09-03T18:26:13Z\"...} with seat_tails age_h:99"
+      },
+      "because": "Because its payload (which lanes are hot, which seat failed - TURN-FAIL sp_60400550) is exactly what /static/lanes.html and Health already serve live, this frozen canvas is that payload as decoration.",
+      "verdict": "MERGE", "twin": "/static/lanes.html",
+      "reason": "Repeats the lane/seat-health payload as a static picture; the live twins exist. Fold the one nice idea (occluders = named failure classes) into Lanes' evidence section."
+    },
+    {
+      "idx": 51, "url": "/static/maze_arena.html", "name": "Maze Arena", "http": 200, "bytes": 16259,
+      "scripts": { "inline": 2, "inline_bytes": 13977, "node_check": "PASS", "note": "error-banner fixture present" },
+      "five_liner": {
+        "happening": "The B1 shadow-field falsifier runs live in-browser: BFS cheese-lightmap GPS agents vs random-walk dumb agents, plus the mattdesl/XsK3RR 3-pass WebGL ray-field (occlusion -> 1D shadow map -> polar light render) toggleable against the BFS engine.",
+        "matters": "This is the standing falsifier 'does the field beat the bounce?' for the whole shadow-fields program - avg-steps stats print per class every frame.",
+        "decision": "Whether B1 counts as PASSED for the shadow-fields falsifier card (falsifiers: field < bounce steps, reproducible).",
+        "next": "Toggle FIELD: BOTH/RAY/BFS, add agents, read the stats line; all birth defects fixed in these bytes (bounded sdf outer clamp, wall halfh 0.28, consistent /2.7 y-transform).",
+        "evidence": "served bytes: sdf() comment 'outer walls keep the world bounded' (maze_arena.html:39); FIELD mode cycler at maze_arena.html:262-265"
+      },
+      "because": "Because it is the only surface that actually measures field-vs-bounce and prints the numbers, it owns its destination-question outright.",
+      "verdict": "KEEP",
+      "reason": "Unique falsifier, live measurement, fixed and honest (error banner, no-network self-contained)."
+    },
+    {
+      "idx": 52, "url": "/static/salon_lightmap.html", "name": "Salon Lightmap", "http": 200, "bytes": 28068,
+      "scripts": { "inline": 1, "inline_bytes": 20261, "node_check": "PASS", "data_endpoint": "/static/room_state.json -> HTTP 200, 6921B, generated 2026-09-06T04:10:08Z" },
+      "five_liner": {
+        "happening": "The Room That Remembers v2: fleet organs as occluder walls, attention-lit from the last 200 trajectory steps (mag/room_state.py), d(theta) 1D shadow map, JOINED/ghost/PRUNE hook economy, gaze law at 15%.",
+        "matters": "It is the legible map of which organs the seat's attention actually touched - lit set right now: chain, memory, watch, immune, lanes, room, board, organs, sensors; economy: 0 joined / 10 ghost / 0 prune.",
+        "decision": "Whether the Ponytail economy thresholds (>=3 fires/24h twice running for JOINED, 0/72h PRUNE) should promote/demote walls this week - the data is in place and fresh, the economy has not yet fired (joined=0).",
+        "next": "Drag the light, read per-texel occlusion, verify NO-HASH-NO-DRAW; falsifier on page: move light to an organ, if its shadow misses the memory wall the invariant lies.",
+        "evidence": "room_state.json (live 200): schema room_state.v2, window 200, lit[9], economy {joined:0, ghost:10, prune:0}"
+      },
+      "because": "Because it renders attention-as-light from live trajectory bytes with a kill-condition falsifier, it is interface and evidence at once.",
+      "verdict": "KEEP",
+      "reason": "Charter B2 build, live data endpoint fresh today, honest offline fallback marked as such."
+    },
+    {
+      "idx": 53, "url": "/static/tesuji_map.html", "name": "Tesuji Map", "http": 200, "bytes": 10096,
+      "scripts": { "inline": 2, "inline_bytes": 6414, "node_check": "PASS", "data_endpoint": "/static/tesuji_map.json -> HTTP 200, stones stamped 2026-09-06T03:21-03:25Z" },
+      "five_liner": {
+        "happening": "Polls tesuji_map.json every 10s and renders the six charter corridors (A1 reasoning depth ... A6 local diff) as stone fields, tri-state SUPPORTED/DISPUTED/UNPROVEN plus SHADOW for refusals.",
+        "matters": "It is the charter watch/TESUJI_MAP_20260906.md made legible - the 5.3-flash behavior surface the whole tesuji program spends probes against (falsifier: predictive >=70%).",
+        "decision": "Which corridors to spend the next $0 T0 probes on - A1 already carries external/grid/bank/build/research cells from today 03:21-03:25Z.",
+        "next": "Read per-stone tooltips (cell, tokens, ms, ts), watch empty corridors honestly render 'no stones yet', page keeps polling through failure with the reason shown.",
+        "evidence": "tesuji_map.json live: A1/external/terminal-bench-84-3 SUPPORTED ts 2026-09-06T03:21:08Z etc.; empty-state handler tesuji_map.html:107-110,159-164"
+      },
+      "because": "Because every stone is a measured probe with verdict and timestamp, the map changes what the operator aims at next.",
+      "verdict": "KEEP",
+      "reason": "Charter surface, live data, honest empty/error states, tri-state law on display."
+    },
+    {
+      "idx": 54, "url": "/static/shadow_walk.html", "name": "Shadow Walk", "http": 200, "bytes": 111352,
+      "scripts": { "inline": 2, "inline_bytes": 106935, "node_check": "PASS", "data_endpoint": "/static/shadow_walk_content.json -> HTTP 200, 4993B, updated 2026-09-06" },
+      "five_liner": {
+        "happening": "A voxel roguelite built from 9,305 behavioral parts quantized to a 288x64 grid - law_hits as ore, zero-law void as the shadow volume, chunk manifest with fnv1a32 content hashes and the vision contract 'no hash no draw; ghost until vision_validated:true'.",
+        "matters": "It is the lattice made walkable and the vision pipeline's densest dogfood target: every one of the 50 manifest chunks is currently vision_validated:false - the page honestly ghosts its own world.",
+        "decision": "Whether to run the vision pass (V key / seat eyes) on chunks to flip vision_validated - the falsifier and the cite-gate arc both land here.",
+        "next": "Walk BOOT_CHECK -> THE CHAIN -> collect doctrine riddles (each cites the repo file that answers it) -> THE ROOM -> ascend; THE RUN v2 scores to localStorage keyed by data_hash.",
+        "evidence": "served bytes: MAN.chunks[*].vision_validated:false (all 50), content_hash present per chunk, WALK.HASH aaad8ddf; riddles cite operator-corrections SKILL.md, verkle_chain.jsonl, ORIGIN.md"
+      },
+      "because": "Because it turns the corpus into a place with a per-chunk honesty contract, it is the T5 training-corpus thesis playable.",
+      "verdict": "KEEP",
+      "reason": "Unique destination-question (the lattice as volume), hash-gated claims, fresh content json, honest unvalidated state."
+    },
+    {
+      "idx": 55, "url": "/static/arrakis.html", "name": "Arrakis", "http": 200, "bytes": 11495,
+      "scripts": { "inline": 2, "inline_bytes": 9668, "node_check": "PASS", "note": "error-banner fixture present; duplicate const MACH fixed (single declaration line 91)" },
+      "five_liner": {
+        "happening": "The Dune wing: ride the sand, the worm hunts your speed, spice pickups dispense fleet laws verbatim, and three gates are real open operator decisions (DRAGON OF ASTRA: $1,000 wizard coin awaiting a signature; THE BLIND GATE: concurrency of the crown = 50; THE COLD FORGE: zai-lite forge relit).",
+        "matters": "It carries pending-decision state as gameplay - play = dogfood - so the operator's actual open loops surface while flying.",
+        "decision": "The three gate decisions themselves; and whether gates should be data-driven (regen/fetch) instead of hardcoded - 'tonight's quests' text has no data source and can silently rot.",
+        "next": "Play; collect 12 laws; light the gates; worm punishes speed - all mechanics sound (SDF bounce fixed, bounded clamp at P.x/P.y).",
+        "evidence": "GATES array arrakis.html:61-65 (three real decisions with lore), LAWS arrakis.html:67-80 (12 fleet laws)"
+      },
+      "because": "Because the gates encode genuinely open operator decisions, the game is a decision surface, not just spectacle - but only while the hardcoded lore stays true.",
+      "verdict": "KEEP",
+      "reason": "Unique payload (decision-state as play), fixed birth defects, honest fixture; flag: gates need a regen law before the lore goes stale."
+    },
+    {
+      "idx": 56, "url": "/static/game.html", "name": "Necromancer", "http": 200, "bytes": 29768,
+      "scripts": { "inline": 1, "inline_bytes": 20261, "node_check": "PASS", "ext": "game_verkle_knots.js -> HTTP 200, 67478B" },
+      "five_liner": {
+        "happening": "The Necromancer's Swarm: raise k3s nodes against the Hoarded Loop dragon, loot is eight REAL invariants (stable prefix, crash backoff, roshomon core, no_window flags, route-by-surface...), swarm moves by magnetic field rules not commands.",
+        "matters": "It teaches load-bearing fleet law as loot and the swarm-over-parts doctrine as mechanics; distinct from dungeon.html (invariants as lighting) - different mechanic, different payload.",
+        "decision": "None live - it is doctrine-as-game; loot table frozen at 8 invariants and could take new ones from the record.",
+        "next": "Play, collect invariants, 'forge it into the chain'; Saelis anchor/reweave and auto-run modes demonstrate stateless-worker persistence.",
+        "evidence": "INVARIANTS table game.html:139-156 with per-item doctrine text; FIELD boid engine game.html:179-210"
+      },
+      "because": "Because the loot is the actual invariant ledger playable, it holds a unique destination-question no other surface owns.",
+      "verdict": "KEEP",
+      "reason": "Distinct twin-check vs dungeon.html passed (loot-as-invariants vs lighting-as-invariants); real doctrine payload, no dead links."
+    },
+    {
+      "idx": 57, "url": "/static/grab_write.html", "name": "Grab Write", "http": 200, "bytes": 4728,
+      "scripts": { "inline": 0, "inline_bytes": 0, "node_check": "n/a (no scripts)" },
+      "five_liner": {
+        "happening": "A static doctrine page for the 2026-08-15 Grab & Write tesuji (never let the write get ahead of the reach) with a four-step loop and one evidence anecdote.",
+        "matters": "The doctrine is load-bearing for the whole fleet (trust bytes, not reports), but this page is a rendered copy of an already-saved memory file.",
+        "decision": "Whether doctrine documents deserve nav tabs at all - per the gate rule this is a file, not a surface.",
+        "next": "Nothing - zero JS, zero fetch, no state; it cannot change, answer, or measure anything.",
+        "evidence": "footer cites memory/steal/GRAB_WRITE_DOCTRINE_20260815.md; page has no script tags at all (extract.py: inline=0)"
+      },
+      "because": "Because it is a beautiful static copy of a file that already lives in memory/steal/, the tab adds no destination-question the file does not answer.",
+      "verdict": "DEMOTE",
+      "twin": "LIBRARY (file: memory/steal/GRAB_WRITE_DOCTRINE_20260815.md)",
+      "reason": "Gate rule: 'if it can't answer what is happening on Home, it's a file, not a surface.' Zero live claims, zero interactivity - re-home under LIBRARY, keep the file."
+    },
+    {
+      "idx": 58, "url": "/static/rib_toy.html", "name": "Rib Toy", "http": 200, "bytes": 9923,
+      "scripts": { "inline": 1, "inline_bytes": 5790, "node_check": "PASS", "data_endpoint": "POST http://localhost:11434/api/chat (Ollama) - NOT verifiable from this audit's curl scope (own-server-only: 8765)" },
+      "five_liner": {
+        "happening": "A shadertoy-for-steering-packets: editor + buffer A/B, four corpus starter RIBs (wing miner, world contract, socratic chain, the fold), save/load .rib, run against a selectable local engine (maze-keeper, qwen2.5:32b, deepseek-r1:1.5b...).",
+        "matters": "It is the only surface for composing and testing steering packets against live local engines - the RIB/steering layer's workbench.",
+        "decision": "Whether Ollama on :11434 is a sanctioned lane for it (audit could not verify it is up), and the default packet still points at watch/SESSION_SELF_STEAL_PLACEHOLDER.md - a placeholder path in the default payload.",
+        "next": "Write a packet, load corpus starter, RUN, watch the room answer (reply shows model/latency/tok; runs leave lights in the room render).",
+        "evidence": "OLLAMA const rib_toy.html:68; default textarea placeholder packet rib_toy.html:47 references SESSION_SELF_STEAL_PLACEHOLDER.md"
+      },
+      "because": "Because no other surface lets you draft and fire a steering packet at a live engine, it owns its question - with two flags: unverified engine dependency and a placeholder default.",
+      "verdict": "KEEP",
+      "reason": "Unique tool surface; PASS syntax; decision needed on the 11434 lane and the stale default packet text."
+    },
+    {
+      "idx": 59, "url": "/static/scout_deck.html", "name": "Scout Deck", "http": 200, "bytes": 13264,
+      "scripts": { "inline": 0, "inline_bytes": 0, "node_check": "n/a", "note": "baked static render by design (header: STATIC RENDER LAW - zero fetch at view time; regen: python dashboard/static/_build_scout_deck.py)" },
+      "five_liner": {
+        "happening": "The scout's one-screen working deck, baked 2026-09-04 02:31Z: X-surface launcher (FYP/bookmarks/grok), room tape last-15, 12 scored intake cards with rubric bands, flight-recorder summary (1434 rows, glm-5.3-flash n=1418 p50 4539.8ms), organ queue + OPERATOR GO list, baked doctrine readers.",
+        "matters": "It is the launch-law pipeline on one page: score -> card -> BUILD WINDOWED/GO - the GO list names heros_journey_inmodel (23/25) and shadertoy_rule_lattice (20/25).",
+        "decision": "The deck is 2 days stale vs today 09-06 - regen now, and set the regen cadence (after room/card/queue changes, per its own footer).",
+        "next": "Click through to the 12 intake cards and 5 doctrine readers; launch the GO items; the tape shows mostly empty '?' rows - scout log hygiene question.",
+        "evidence": "header bake stamp scout_deck.html:71; CARDS section lines 101-113 with rubric scores; QUEUE section 132-140"
+      },
+      "because": "Because it is the only place the intake scoring and GO queue are legible together, it changes the operator's next build decision - but only if it is regenerated.",
+      "verdict": "KEEP",
+      "reason": "Unique scout surface, honest baked-by-design staleness with regen command printed on the page; decision: regen cadence."
+    },
+    {
+      "idx": 60, "url": "/static/smith_chart.html", "name": "Smith Chart", "http": 200, "bytes": 14759,
+      "scripts": { "inline": 1, "inline_bytes": 10590, "node_check": "PASS" },
+      "five_liner": {
+        "happening": "An interactive exhibit of the fold law: the Mobius map G=(z-1)/(z+1) folding the infinite impedance half-plane into one circle, with drag-the-marble readout, provenance (Smith 1939 / Mizuhashi 1937 / operator's hand-annotated chart / @anish2good intake 20/25 BUILD NOW).",
+        "matters": "It is doctrine-as-exhibit: the fold law mapped onto the standing wave, the Light Codec, the verkle chain, and cache prefixes - one picture for why bounded maps beat bounded worlds.",
+        "decision": "None live - it is evidence, not an instrument (per the campaign end-state it is a LIBRARY re-home candidate, but evidence is never demoted).",
+        "next": "Drag inside the rim, watch |Gamma|=const and r->0 warnings; zToG/gToZ are verified mutual inverses in the comments.",
+        "evidence": "HTML comment block smith_chart.html:2-34 (full provenance + fleet resonance); fold/inverse functions lines 70-77"
+      },
+      "because": "Because it carries a claim link (the fold law and its four fleet instances) with full provenance, it is evidence - the alternating law says never merge, never demote evidence.",
+      "verdict": "KEEP",
+      "reason": "Claim-linked exhibit, honest walls (walled X content marked UNPROVEN in-source), zero-fetch law; LIBRARY-class re-home candidate at re-org time."
+    },
+    {
+      "idx": 61, "url": "/static/steal_tools.html", "name": "Armory", "http": 200, "bytes": 4513,
+      "scripts": { "inline": 1, "inline_bytes": 1432, "node_check": "PASS", "ext": "steal_tools_data.js -> HTTP 200, auto-generated by mag/steal_tools.py" },
+      "five_liner": {
+        "happening": "A searchable grid of the 116-tool steal corpus: theme, invariant, mechanism excerpt, source file per card, click-through detail panel, live client-side search.",
+        "matters": "It is the reusable-shape index - every steal we have taken, reachable and cited back to its memory/steal/ file; the regen is one command from the corpus.",
+        "decision": "Whether new steals (post-generation) should regen the data file on a cadence - the corpus grows, the data file is a snapshot.",
+        "next": "Search by theme/mechanism/file, open detail panels, follow the file paths into memory/steal/.",
+        "evidence": "meta line renders data.length + ' steal tools'; footer: 'The shape is never stored - only the corpus. Reuse: mag/steal_tools'; data head confirms AUTO-GENERATED from mag/steal_tools.py with real file paths"
+      },
+      "because": "Because it indexes the corpus with per-card source citations and regenerates from real bytes, it owns the 'what have we stolen and where' question.",
+      "verdict": "KEEP",
+      "reason": "Unique library index, generated from the corpus (not hand-copied), every claim carries its file path."
+    },
+    {
+      "idx": 62, "url": "/static/room_game.html", "name": "Room Game", "http": 200, "bytes": 9919,
+      "scripts": { "inline": 1, "inline_bytes": 8146, "node_check": "PASS (syntax only - logic is broken)", "dead_organ": "POST /static/lantern_priority.json every 30s -> endpoint 404, response discarded" },
+      "five_liner": {
+        "happening": "A stale fork of maze_arena.html with the v1 player layer (lantern, six law shards, 'the assumption' dragon) - but carrying the birth defects maze_arena already fixed: sealed central wall halfh=1.2, sdf() missing the outer clamp, and the BFS flood bug wy=(ny+0.5)/2.7 that makes the lightmap wall-blind.",
+        "matters": "Its own falsifier reads WRONG on this page: the flood leaks through walls so GPS agents appear to win by walking through stone - the field does not beat the bounce here, a broken map does; and the lantern 'steers the bay' via a POST to a 404 endpoint whose response is discarded - a write with no reach, the exact grab_write anti-pattern.",
+        "decision": "Delete the tab and fold the (fun) lantern/shard v1 layer into the fixed maze_arena - or port it with the fixes; keeping both guarantees someone measures the falsifier on the broken twin.",
+        "next": "As served: nothing trustworthy - stats line reports field wins earned through walls; lantern steering silently no-ops.",
+        "evidence": "walls[0]=[0.5,0.5,0.03,1.2] room_game.html:25 (vs 0.28 in maze_arena:29); BFS wy bug room_game.html:48 (vs maze_arena:51); dead POST room_game.html:179-184; /static/lantern_priority.json GET -> 404; no error banner (pre-fixture)"
+      },
+      "because": "Because it duplicates maze_arena's payload with the fixed bugs reintroduced plus one dead organ, it is the dangerous kind of twin - same question, wrong answers.",
+      "verdict": "MERGE",
+      "twin": "/static/maze_arena.html",
+      "reason": "Strictly superseded fork; salvage the v1 lantern layer into the fixed arena, then remove this tab. Worst offender of the slice."
+    },
+    {
+      "idx": 63, "url": "/static/viz_spore_fish.html", "name": "Spore Fish", "http": 200, "bytes": 1572,
+      "scripts": { "inline": 1, "inline_bytes": 568, "node_check": "PASS" },
+      "five_liner": {
+        "happening": "A 10k-point parametric curve that draws a fish - and its own caption says so: attempt 1 of the Tsubuyaki spore, 'pretty, but it rendered a fish, not the Republic's actual structure... the honest record of the wrong turn.'",
+        "matters": "It is a correctly-labeled failure record, which is exactly what the protocol says a demoted surface becomes - the page already IS its own one-line failure note.",
+        "decision": "Only whether it stays a nav tab - as a tab it fails the gate rule (no destination-question); as a LIBRARY entry it is honest history.",
+        "next": "Nothing - it animates and that is all.",
+        "evidence": "caption viz_spore_fish.html:16-17; entire page is 1,572 bytes, one animation loop"
+      },
+      "because": "Because the page's own bytes declare it a wrong turn kept for honesty, a nav tab adds nothing the caption does not already do.",
+      "verdict": "DEMOTE",
+      "twin": "LIBRARY (already self-labeled as the failure note)",
+      "reason": "Pure eye-candy per the protocol's DEMOTE clause - but honest, so keep it filed under LIBRARY with its caption as the failure note, out of the nav."
+    },
+    {
+      "idx": 64, "url": "/static/index.clear-ui.html", "name": "Clear UI", "http": 200, "bytes": 18992,
+      "scripts": { "inline": 1, "inline_bytes": 199, "node_check": "FALSE-POSITIVE FAIL (inline block is <script type=importmap> JSON, not JS)", "ext": "visual.js/board.js/app.js/clear-boot.js all HTTP 200 (29384/13843/351247/3542B)" },
+      "five_liner": {
+        "happening": "A complete plain-language alternative Home: FIND -> FILE -> LOAD explained in one sentence each, chain tip, today's latest workday bead with bullets and provenance list, tokens today, verify-day panel, still-open loops, do-next list, health pill, tabs for Chat/Days/More tools.",
+        "matters": "This is the T1/T2 shape already built: it answers who/what/where-from in plain language with live stats - the five questions in order, before any spectacle tab.",
+        "decision": "Promote it (or its layout) toward being THE Home - the current Hypervisor root and this Clear UI are two competing constitutions of the same interface (the two-IAs amendment made flesh).",
+        "next": "Open it, read Home, run verify, hit Catch up/Refresh; importmap pulls three.js from cdn.jsdelivr.net - will degrade without egress (3D visual only).",
+        "evidence": "FIND/FILE/LOAD steps index.clear-ui.html:54-70; chain tip / today / tokens / verify / still open / do next cards lines 96-119"
+      },
+      "because": "Because it renders the operator's own five-question law as the page structure, it is the strongest Home candidate in this slice - and the importmap CDN dependency is the one hole in its sovereignty.",
+      "verdict": "KEEP",
+      "reason": "Owns the destination-question 'what is happening and what do I do next'; node --check failure is a false positive (JSON importmap); flag: jsdelivr CDN + the Home duality decision."
+    },
+    {
+      "idx": 65, "url": "/static/_rtfm_graph_shell.html", "name": "RTFM Shell", "http": 200, "bytes": 11497,
+      "scripts": { "inline": 2, "inline_bytes": 5891, "node_check": "PASS (syntax only)", "build_defect": "line 93: const GRAPH = __RTFM_GRAPH_JSON__; - placeholder token never substituted by the data-injection step" },
+      "five_liner": {
+        "happening": "A build shell for the RTFM graph leaked into the live nav with its data-injection placeholder unreplaced: the served bytes literally contain 'const GRAPH = __RTFM_GRAPH_JSON__', so the page throws ReferenceError on load and renders only chrome + placeholder text.",
+        "matters": "The working twin rtfm_graph.html serves the real injected knowledge_graph.v2 JSON (verified: real graph data inline); this tab is a dead link wearing the same name - the regen step (python dashboard/static/_rtfm_graph_data.py, then re-inject) was never run on the shell.",
+        "decision": "Remove the _-prefixed shell from nav.js LINKS (build intermediates should not ship) or run the regen injection into it - either way one of the two RTFM tabs must go.",
+        "next": "As served: nothing - the second script block dies at GRAPH.nodes on line 98.",
+        "evidence": "served _rtfm_graph_shell.html:93 placeholder token; twin /static/rtfm_graph.html: const GRAPH = {\"schema\":\"knowledge_graph.v2\",\"ts\":\"2026-09-04T15:10:12...\" (0 occurrences of the placeholder)"
+      },
+      "because": "Because its twin serves the same graph with real data, the shell is pure defect - a build intermediate that escaped into the navigation bar.",
+      "verdict": "MERGE",
+      "twin": "/static/rtfm_graph.html",
+      "reason": "Uninjected build shell; ReferenceError on load; second-worst offender of the slice. Remove from nav.js."
+    },
+    {
+      "idx": 66, "url": "/static/doorbench.html", "name": "DOORBENCH", "http": 200, "bytes": 23011,
+      "scripts": { "inline": 1, "inline_bytes": 19927, "node_check": "PASS" },
+      "five_liner": {
+        "happening": "A falsifiable cache-invalidation benchmark: 64^3 R16F SDF field + 64^3 RGBA8 state as WebGL2 3D textures; K recomputes only the door's 48 swept cells via one texSubImage3D dirty-region upload, B storms 1000 generation bumps with zero uploads, C is the naive full-grid control - every pass line measured with performance.now() and printed tri-state.",
+        "matters": "It settles the two-layer law (det field / stoch state) with numbers instead of vibes: dirty-region vs full-upload cost, measured live in your browser, UNPROVEN printed when unmeasurable.",
+        "decision": "Adopt dirty-region invalidation for the field engine wherever the pass line reads PASS on this GPU - the whole tesuji dirty-radius invalidation model wants this receipt.",
+        "next": "Hit K/B/C, read FIELD UPL/FRAME, FIELD COST, STATE WRITES, FPS; honest fatal screen if WebGL2 is missing.",
+        "evidence": "doorbench.html:50-58 design comment; tri-state pass lines #pl0-2 starting [UNPROVEN] and upgrading on measurement; #fatal honest-degradation path line 66"
+      },
+      "because": "Because it measures its own claim live and prints tri-state, it is the falsifier pattern done right - keep it as the door's evidence bench.",
+      "verdict": "KEEP",
+      "reason": "Unique instrument surface, live measurement, honest UNPROVEN/fatal states; receipt for the dirty-radius tesuji law."
+    }
+  ],
+  "worst_offenders": [
+    { "url": "/static/room_game.html", "why": "Stale fork of maze_arena that reintroduces the fixed birth defects (sealed wall halfh 1.2, BFS flood wy=(ny+0.5)/2.7 making the lightmap wall-blind, missing outer sdf clamp) AND ships a dead organ: a 30s POST to /static/lantern_priority.json (404) with the response discarded - its falsifier reads wrong by construction." },
+    { "url": "/static/_rtfm_graph_shell.html", "why": "Build shell shipped into nav.js with the __RTFM_GRAPH_JSON__ placeholder never injected - ReferenceError on load; the working twin rtfm_graph.html carries the real data." }
+  ],
+  "cross_cutting_findings": [
+    "All 17 surfaces serve HTTP 200 from 127.0.0.1:8765; zero dead links in this slice.",
+    "node --check: 15/15 real JS blocks PASS; index.clear-ui's 'failure' is a JSON importmap (type=application/importmap), not JS - false positive.",
+    "Error-banner fixture present on newer game surfaces (maze_arena, arrakis, tesuji_map, shadow_walk) but ABSENT on the stale fork room_game.html - fixture dating confirms fork age.",
+    "Honesty pattern is strong in this slice: tesuji_map (empty corridor = data), shadow_walk (all 50 chunks vision_validated:false, ghost until proven), salon_lightmap (offline fallback marked), doorbench (UNPROVEN lines) - versus steer_field's frozen snapshot dressed as live, the slice's one dishonest-presenting surface.",
+    "index.clear-ui pulls three.js from cdn.jsdelivr.net via importmap - the only non-local code dependency found in this slice.",
+    "gate-rule candidates for LIBRARY re-home at the six-destination re-org: grab_write.html, viz_spore_fish.html, smith_chart.html (evidence-class), plus the room_game shell after salvage."
+  ]
+}

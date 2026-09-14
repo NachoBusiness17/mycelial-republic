@@ -25,6 +25,7 @@ from config import ROOT
 
 STATE_DIR = ROOT / "memory" / "runs" / "self_steal"
 STATE = STATE_DIR / "state.json"
+DOGFOOD_REPORT = ROOT / "memory" / "runs" / "dogfood_audit" / "report.jsonl"
 SCHEMA = "self_steal.v1"
 
 # Internal capabilities we should be utilizing. Each: existence + freshness of evidence
@@ -253,6 +254,31 @@ def _mtime(rel: str) -> float:
     return 0.0
 
 
+def _dogfood_mtime(capability: str) -> float:
+    """Return central dogfood evidence time for a capability, if it passed.
+
+    A successful centralized probe is durable utilization evidence even when a
+    capability intentionally has no private ledger of its own.  Match exact
+    probe names and versioned children (for example ``whisper_image.rt``), but
+    never treat a failed probe as liveness.
+    """
+    if not DOGFOOD_REPORT.is_file():
+        return 0.0
+    try:
+        report_mtime = DOGFOOD_REPORT.stat().st_mtime
+        for line in reversed(DOGFOOD_REPORT.read_text(encoding="utf-8", errors="replace").splitlines()):
+            if not line.strip():
+                continue
+            report = json.loads(line)
+            for result in report.get("results") or []:
+                name = str(result.get("system") or "")
+                if result.get("ok") and (name == capability or name.startswith(capability + ".")):
+                    return report_mtime
+    except (OSError, json.JSONDecodeError, TypeError):
+        return 0.0
+    return 0.0
+
+
 def _wired(name: str) -> bool:
     """True if the capability's module is referenced anywhere in the framework."""
     for base in ("main.py", "mag", "dashboard", "watch", "tools"):
@@ -276,7 +302,10 @@ def audit() -> dict[str, Any]:
     for cap in CAPABILITIES:
         name = cap["name"]
         module_ok = (ROOT / cap["module"]).is_file()
-        mtime = _mtime(cap["evidence"])
+        # Prefer the newest private evidence or successful centralized
+        # dogfood receipt.  This keeps the liveness map evidence-backed while
+        # avoiding duplicate per-organ ledgers for deterministic probes.
+        mtime = max(_mtime(cap["evidence"]), _dogfood_mtime(name))
         age = (now.timestamp() - mtime) if mtime else None
         stale = age is not None and age > cap["stale_s"]
         absent = age is None
@@ -324,9 +353,17 @@ def enqueue_research(finding: dict[str, Any]) -> dict[str, Any]:
         return {"ok": True, "action": "already_queued", "capability": finding["capability"]}
     try:
         from mag.orchestrator import enqueue
-        r = enqueue(goal, provider="deepseek", model="deepseek-v4-flash", tag="self-steal-research")
+        # Self-steal is a maintenance/reconciliation lane: use the free local
+        # worker by default and reserve scarce frontier budget for explicit
+        # frontier work. Operators can still choose a stronger lane for a
+        # particular cadence with MAG_SELF_STEAL_PROVIDER/MODEL.
+        import os
+
+        provider = (os.environ.get("MAG_SELF_STEAL_PROVIDER") or "ollama").strip()
+        model = (os.environ.get("MAG_SELF_STEAL_MODEL") or "gemma:2b").strip()
+        r = enqueue(goal, provider=provider, model=model, tag="self-steal-research")
         return {"ok": bool(r.get("ok")), "action": "enqueued", "queue_id": r.get("queue_id"),
-                "capability": finding["capability"]}
+                "capability": finding["capability"], "provider": provider, "model": model}
     except Exception as e:
         return {"ok": False, "action": "error", "error": str(e)[:200], "capability": finding["capability"]}
 

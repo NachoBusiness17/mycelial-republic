@@ -1,11 +1,12 @@
-# Mag runs in a container — agent subprocesses never get your full desktop.
-# Host only: localhost ports + explicit volume mounts (memory, watch, logs, state, queue).
+# Mag runs in containers — agent subprocesses never get your full desktop.
+# Public ingress is intentionally absent. Tailscale sidecars provide tailnet-only
+# access to selected control surfaces.
 #
 #   docker compose up -d --build
 #   http://127.0.0.1:8765/
 #
-# Optional local LLM sidecar:
-#   docker compose --profile ollama up -d --build
+# Ollama runs as a core local LLM sidecar in this deployment.
+#   docker compose up -d --build
 
 services:
   mag:
@@ -18,15 +19,16 @@ services:
       PYTHONUTF8: "1"
       MAG_BIND_HOST: "0.0.0.0"
       MAG_CONTAINER: "1"
+      MAG_RUNTIME_ROLE: "authoritative"
       MAG_NO_MIRROR: "1"
       MAG_DRAINER: "1"
-      # OLLAMA_HOST: the test lane (--provider ollama) runs INSIDE this container but
-      # the working ollama lives on the HOST. The `ollama` sidecar service (profile)
-      # was Exited and would duplicate the 39GB store. host.docker.internal reaches the
-      # host's live ollama directly (verified 200 from inside this container, 2026-08-17).
-      # Must include /v1: providers.py builds "{base}/chat/completions", and Ollama's
-      # OpenAI-compat endpoint is /v1/chat/completions (a bare host gave HTTP 404).
+      # The eye is HOST ollama (127.0.0.1:11434) since 2026-09-07 — Docker Desktop
+      # proxies host.docker.internal to host loopback (same proven path as Bionic).
+      # The provider chat path needs /v1; native /api probes normalize it away.
       OLLAMA_HOST: "http://host.docker.internal:11434/v1"
+      # Bionic/LM Studio is the host GPU seat. Keep the endpoint overridable
+      # for a relay, while Docker Desktop resolves the host consistently.
+      BIONIC_BASE_URL: "${BIONIC_BASE_URL:-http://host.docker.internal:1234/v1}"
       REDIS_HOST: "redis"
       REDIS_PORT: "6379"
     depends_on:
@@ -35,21 +37,28 @@ services:
       - "127.0.0.1:8765:8765"
       - "127.0.0.1:8000:8000"
       - "127.0.0.1:9000:9000"
+      - "127.0.0.1:8001:8001"
     volumes:
       - ./memory:/app/memory
       - ./watch:/app/watch
       - ./logs:/app/logs
       - ./state:/app/state
       - ./queue:/app/queue
+      - ./jobs:/app/jobs
       - ./configs:/app/configs:ro
       - ./mag:/app/mag
+      - ./dashboard:/app/dashboard
+      - ./models:/app/models
       - ./tests:/app/tests:ro
       - ./main.py:/app/main.py:ro
+      - ./mag_launch.py:/app/mag_launch.py:ro
     security_opt:
       - no-new-privileges:true
     cap_drop:
       - ALL
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - mag_net
 
@@ -69,10 +78,19 @@ services:
       timeout: 3s
       retries: 3
 
+  # RETIRED 2026-09-07 (eye migration): the containerized eye kept dying because
+  # this service had restart policy "no" — every Docker Desktop restart/update
+  # swept it away and nothing revived it (deaths Sep-4, Sep-6 ~14:14Z). The 09-06
+  # audit ruled: host ollama = the eye, Startup Ollama.lnk = the sanctioned front
+  # door. The models always lived on the host — this block only bind-mounted
+  # C:/Users/foste/.ollama/models. Sacred cow, kept behind a profile; resurrect:
+  #   docker compose --profile retired-eye up -d ollama
   ollama:
-    profiles: ["ollama"]
+    profiles: ["retired-eye"]
     image: ollama/ollama:latest
     container_name: mag-ollama
+    environment:
+      - OLLAMA_ORIGINS=*
     ports:
       - "127.0.0.1:11434:11434"
     volumes:
@@ -82,6 +100,12 @@ services:
       - C:/Users/foste/.ollama/models:/root/.ollama/models
     networks:
       - mag_net
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   # Browser / computer-use seat — runs as a CONTAINER driver (not the desktop).
   # Headless Chromium under xvfb, CDP over localhost only. Drives FREE web frontends
@@ -101,7 +125,7 @@ services:
     # 0.0.0.0 (--remote-debugging-address=0.0.0.0), so a published port mapping forwards cleanly
     # to Windows localhost. Docker Desktop forwards published ports to 127.0.0.1 on Windows.
     ports:
-      - "9222:9222"
+      - "127.0.0.1:9222:9222"
     command: >
       bash -c "CHROME=$$(ls -d /ms-playwright/chromium-*/chrome-linux64/chrome /ms-playwright/chromium-*/chrome-linux/chrome 2>/dev/null | head -1) &&
       rm -rf /tmp/mag-chrome-profile && mkdir -p /tmp/mag-chrome-profile &&
@@ -116,29 +140,178 @@ services:
       - ALL
     restart: unless-stopped
 
-  # openclaw gateway — CONTAINED 2026-08-25 after the desktop gateway died silently
-  # (missing scheduled task + firewall prompts + AutoClaw stuck "Connecting to
-  # workspace"). Replaces the schtasks/desktop install entirely. Auth is none
-  # inside the container, but the ONLY host surface is 127.0.0.1:18789.
-  #   docker compose up -d openclaw
+  # Tailscale sidecar for the OpenClaw Gateway. OpenClaw shares this network
+  # namespace, so the Gateway and its private HTTPS tailnet surface are one
+  # Docker-owned unit. TS_AUTHKEY is optional after the first interactive login;
+  # state persists in a named volume.
+  # RETIRED 2026-09-09 (operator GO, zcode seat): hermes covers the internal
+  # agent loop; the outside door (gateway + tailnet + phone surface) parked
+  # whole. State kept in named volumes mag_openclaw_tailscale/mag_openclaw_data.
+  # Resurrect the door stack:
+  #   docker compose --profile retired-openclaw up -d openclaw tailscale-openclaw
+  tailscale-openclaw:
+    profiles: ["retired-openclaw"]
+    image: tailscale/tailscale:v1.94.1
+    container_name: mag-openclaw-tailscale
+    hostname: ${TS_HOSTNAME:-mag-openclaw}
+    environment:
+      TS_AUTHKEY: ${TS_AUTHKEY:-}
+      TS_AUTH_ONCE: "true"
+      TS_HOSTNAME: ${TS_HOSTNAME:-mag-openclaw}
+      TS_STATE_DIR: /var/lib/tailscale
+      TS_SERVE_CONFIG: /config/openclaw.json
+      # Userspace mode works in Docker Desktop without exposing /dev/net/tun.
+      TS_USERSPACE: "true"
+    volumes:
+      - mag_openclaw_tailscale:/var/lib/tailscale
+      # Mount the directory, not an individual file: containerboot watches it.
+      - ./deploy/openclaw/tailscale:/config:ro
+    restart: unless-stopped
+    networks:
+      - mag_net
+    # openclaw shares this netns and reaches the HOST eye via host.docker.internal.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    healthcheck:
+      test: ["CMD", "tailscale", "status", "--json"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # openclaw gateway — container-only Gateway, reachable through the Tailscale
+  # sidecar above. There is deliberately no host port mapping and no desktop
+  # scheduled-task dependency.
+  # RETIRED 2026-09-09 (operator GO): the consent-gate crash-loop (#20+) dissolved
+  # by retirement, not repair — hermes + flash workers are the internal loop now.
+  # Bone kept for the next outside door: the governed PATCHES queue (external
+  # writes land as JSON in queue/handoff/openclaw/PATCHES, host applies).
   openclaw:
+    profiles: ["retired-openclaw"]
     build: ./deploy/openclaw
     image: mag-openclaw:local
     container_name: mag-openclaw
     env_file:
       - .env
-    ports:
-      # 18790 while the elevated AutoClaw desktop app respawns its own gateway
-      # on 18789 and can't be killed from a non-admin shell. Quit the app,
-      # then flip this back to "127.0.0.1:18789:18789" (docker compose up -d openclaw).
-      - "127.0.0.1:18790:18789"
+    environment:
+      # The OpenClaw plugin talks native /api to the HOST eye (2026-09-07 migration).
+      OLLAMA_HOST: "http://host.docker.internal:11434"
+      # Local-only marker so OpenClaw reports the provider as usable.
+      OLLAMA_API_KEY: "ollama-local"
+      # Normalize provider key names at the container boundary. The host .env
+      # keeps the paid/free account labels; OpenClaw receives stable IDs.
+      COHERE_API_KEY: "${COHERE_API_KEY_PAID:-}"
+      CEREBRAS_API_KEY: "${CEREBAS_API_KEY:-}"
+    network_mode: service:tailscale-openclaw
+    depends_on:
+      - tailscale-openclaw
     volumes:
       - mag_openclaw_data:/root/.openclaw
+      # Mag DNA read-only — OpenClaw identity stays in the named volume workspace
+      - ./:/mag:ro
+      # Governed write path: OpenClaw drops patch JSON here; Mag host applies.
+      - ./queue/handoff/openclaw/PATCHES:/patches
+      # 4chan board + trajectory tape (hooks FILE here; Mag DNA stays :ro)
+      - ./watch:/board
+      # Live mag-file hook (tool cards → /chan). Mag DNA still :ro.
+      - ./deploy/openclaw/hooks:/opt/openclaw-hooks:ro
     security_opt:
       - no-new-privileges:true
     restart: unless-stopped
+    healthcheck:
+      # OpenClaw is a Node service and shares 127.0.0.1 with its Tailscale
+      # sidecar.  Probe the local UI only; authentication remains unchanged.
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:18789/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+
+  # Optional Cloudflare One edge for phone/browser access. This is a
+  # remotely-managed Tunnel connector: no cloudflared config or credentials
+  # are baked into the image, and no host port is opened. Enable only after
+  # creating the Tunnel + Access application in the Cloudflare dashboard.
+  cloudflared-openclaw:
+    image: cloudflare/cloudflared:latest
+    container_name: mag-openclaw-cloudflared
+    # Retired with the door stack 2026-09-09: it depends_on openclaw healthy,
+    # so it moves with the stack (old "cloudflare" profile would break compose
+    # while openclaw is gated). Phone door successor when wanted = host
+    # cloudflared quick tunnel / named tunnel + Access.
+    profiles: ["retired-openclaw"]
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+    command: ["tunnel", "--no-autoupdate", "run", "--token", "${CLOUDFLARE_TUNNEL_TOKEN:-}"]
+    # Share the namespace where OpenClaw listens on 127.0.0.1:18789.
+    network_mode: service:tailscale-openclaw
+    depends_on:
+      openclaw:
+        condition: service_healthy
+      tailscale-openclaw:
+        condition: service_started
+    restart: unless-stopped
+
+  # swarm drain worker — CONTAINED 2026-08-27 after the zombie-python sweep found
+  # five mag.mcp_server copies + background-bash beats dying with sessions.
+  # ONE bounded beat per cycle; state/worker.off pauses it without docker commands.
+  # No published ports at all — talks provider APIs outbound and the bind-mounted
+  # queue/ledger only. The template for every future periodic job (tick, miners).
+  worker:
+    build: .
+    image: mag-sovereign:local
+    container_name: mag-worker
+    env_file:
+      - .env
+    environment:
+      PYTHONUTF8: "1"
+      MAG_CONTAINER: "1"
+      # Eye moved to host ollama 2026-09-07 (see mag service note).
+      OLLAMA_HOST: "http://host.docker.internal:11434/v1"
+      BIONIC_BASE_URL: "${BIONIC_BASE_URL:-http://host.docker.internal:1234/v1}"
+      WORKER_BEAT: "1"
+      WORKER_SLEEP: "45"
+      WORKER_MAX_BEAT_SECONDS: "600"
+    # entrypoint override REQUIRED: the image's entrypoint.sh spawns the full fleet
+    # (dashboard/ghost/lab/drainer) — first launch without this spawned a duplicate
+    # sovereign inside the worker cage (killed 2026-08-27, lesson in SANITY.md).
+    entrypoint: ["python", "scripts/container/drain_worker.py"]
+    volumes:
+      - ./memory:/app/memory
+      - ./logs:/app/logs
+      - ./state:/app/state
+      - ./configs:/app/configs:ro
+      - ./mag:/app/mag:ro
+      - ./models:/app/models:ro
+      - ./scripts/container/drain_worker.py:/app/scripts/container/drain_worker.py:ro
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - mag_net
+    # The worker is a drain loop, not the dashboard.  The inherited image
+    # healthcheck probes :8765/api/v1/health, which this service never serves.
+    # Its truthful liveness surface is the atomic heartbeat written by
+    # drain_worker.py into the shared state mount.
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - >-
+          import json,os,time; from datetime import datetime,timezone;
+          d=json.load(open('/app/state/worker_heartbeat.json',encoding='utf-8'));
+          age=(datetime.now(timezone.utc)-datetime.fromisoformat(d['updated_at'].replace('Z','+00:00'))).total_seconds();
+          max_age=int(os.environ.get('WORKER_MAX_BEAT_SECONDS','600'))+int(os.environ.get('WORKER_SLEEP','45'))+60;
+          assert age < max_age, f'worker heartbeat stale: {age:.0f}s (limit {max_age}s)'
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
 
 networks:
   mag_net:
@@ -148,3 +321,4 @@ volumes:
   mag_ollama_data:
   mag_redis_data:
   mag_openclaw_data:
+  mag_openclaw_tailscale:

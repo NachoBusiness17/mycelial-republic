@@ -66,23 +66,47 @@ def rib() -> dict[str, Any]:
                     "Dynamic task goes in the TAIL, never here."}
 
 
-def rib_chat(task: str, context: str = "", *, lane: str = "z_ai",
-             model: str = "glm-4.7-flash", max_tokens: int = 1024) -> dict[str, Any]:
+def rib_chat(task: str, context: str = "", *, lane: str = "z_ai3",
+             model: str = "glm-4.5-flash", max_tokens: int = 1024,
+             thinking: bool | str = False) -> dict[str, Any]:
     """One cache-mined call: FROZEN_RIB (system, stable) + task/context (user, dynamic).
     Rides the concurrency gate for the lane, returns cached_tokens so mining is measurable.
+    Defaults repointed 2026-08-27 (operator GO): Lite/z_ai3 pinned glm-4.5-flash — the old
+    defaults (z_ai lane, 4.7-flash) ride a fenced key and the provider-wide congested pool.
+    thinking: False for most lanes; 5.3-family rejects False ('always thinks') — pass 'low'.
     """
+    if lane == "z_ai3":  # Lite is METERED (09-05 promo verdict) — law 15 pacing ceiling
+        from mag import lite_guard
+        g = lite_guard.check(f"rib_cache:{model}")
+        if not g["ok"]:
+            return {"ok": False, "error": g["deny"], "cached_tokens": 0,
+                    "lane": lane, "model": model}
     from mag.concurrency_gate import hold
     from models.providers import chat_provider
 
     user = (task or "").strip() + (f"\n\nCONTEXT:\n{context[:8000]}" if context else "")
     try:
-        with hold(model, timeout=180, owner="rib_cache"):
+        with hold(model, timeout=8, owner="rib_cache", lane=lane):
             r = chat_provider(lane, system=FROZEN_RIB, user=user, model=model,
-                              thinking=False, max_tokens=max_tokens, tier="T2")
+                              thinking=thinking, max_tokens=max_tokens, tier="T2")
     except TimeoutError:
-        return {"ok": False, "error": "concurrency timeout", "cached_tokens": 0}
+        r = {"ok": False, "error": "concurrency timeout"}
+    if not r.get("ok"):
+        from models.providers import burst_mill, should_burst
+        err = str(r.get("error") or "")
+        if should_burst(err):
+            b = burst_mill(FROZEN_RIB, user, max_tokens=max_tokens, reason=f"{lane}: {err}")
+            b["lane"] = "deepseek"
+            b["orig_lane"] = lane
+            return b
+        return {"ok": False, "error": err[:160], "cached_tokens": 0, "lane": lane, "model": model}
     usage = r.get("usage") or {}
     details = usage.get("prompt_tokens_details") or {}
+    if lane == "z_ai3":
+        from mag import lite_guard
+        lite_guard.record(f"rib_cache:{model}",
+                          int(usage.get("prompt_tokens") or 0)
+                          + int(usage.get("completion_tokens") or 0))
     return {
         "ok": bool(r.get("ok")),
         "text": (r.get("text") or "").strip(),
@@ -101,8 +125,8 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("rib")
     p = sub.add_parser("chat")
     p.add_argument("task", nargs="+")
-    p.add_argument("--lane", default="z_ai")
-    p.add_argument("--model", default="glm-4.7-flash")
+    p.add_argument("--lane", default="z_ai3")
+    p.add_argument("--model", default="glm-4.5-flash")
     a = ap.parse_args(argv)
     if a.cmd == "rib":
         out = rib()

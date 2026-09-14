@@ -17,6 +17,7 @@ SCHEMA = "mag_display.v1"
 TRUST_PATH = ROOT / "memory" / "working" / "agent_desk_trust_status.json"
 CURSOR_PATH = ROOT / "memory" / "working" / "agent_desk_cursor.json"
 DESK_PATH = ROOT / "memory" / "working" / "agent_desk.md"
+CHRONICLE = ROOT / "memory" / "running_commentary.md"
 
 
 def _utc() -> str:
@@ -58,13 +59,37 @@ def _desk_dialogue_tail(text: str, *, lines: int = 4) -> list[str]:
     return out
 
 
-def build_display_payload(*, event_limit: int = 8) -> dict[str, Any]:
-    """Compose a TV-safe JSON slice: pulse, body, desk, trust."""
-    from mag.chronicle import build_chronicle_payload
-    from mag.nervous_system import build_glance
+def build_display_payload(*, event_limit: int = 8, fast: bool = False) -> dict[str, Any]:
+    """Compose a TV-safe JSON slice: pulse, body, desk, trust.
 
-    chronicle = build_chronicle_payload()
-    nervous = build_glance(write=False)
+    ``fast`` is for the ambient cast receiver: it must render while a provider,
+    Docker host, or Ollama endpoint is down, so it never performs remote health
+    probes on the HTTP request thread.
+    """
+    from mag.chronicle import build_chronicle_payload
+
+    if fast:
+        # The full chronicle walks worker/task history. Ambient and brain
+        # observers only need the durable headline; keep that path bounded.
+        chronicle = {"content": "", "updated": None, "events": [], "workers_layman": ""}
+        try:
+            if CHRONICLE.is_file():
+                chronicle["content"] = CHRONICLE.read_text(
+                    encoding="utf-8", errors="replace"
+                )[:12000]
+                chronicle["updated"] = datetime.fromtimestamp(
+                    CHRONICLE.stat().st_mtime, tz=timezone.utc
+                ).strftime("%Y-%m-%d %H:%M:%S UTC")
+        except OSError:
+            chronicle["content"] = "Chronicle unreadable"
+    else:
+        chronicle = build_chronicle_payload()
+    if fast:
+        nervous = {"body": {"dashboard_8765": False, "ollama_11434": False,
+                             "integral_ok": False}}
+    else:
+        from mag.nervous_system import build_glance
+        nervous = build_glance(write=False)
     body = nervous.get("body") or {}
     desk_trust = nervous.get("desk_trust") or _read_json(TRUST_PATH)
     cursor = _read_json(CURSOR_PATH)

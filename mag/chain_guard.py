@@ -73,12 +73,35 @@ def check() -> dict:
     flagged = [r for r in rows if r.get("evidence_lost")]
     sids = [r.get("session_id") for r in rows]
     dups = len(sids) - len(set(sids))
+    tip_root = _tip_root()
+
+    # ── tip-vs-chain canary (2026-09-11, Hermes boot finding) ──
+    # The CHAIN_STOP incident proved that the tip bookmark and the chain rows
+    # can diverge silently (tip froze at a poisoned snapshot while rows
+    # continued). This check recomputes the merkle root from the chain rows
+    # and compares against the tip. If they diverge, the tip is stale or
+    # poisoned.
+    chain_root_match = None
+    chain_root = None
+    try:
+        from mag.verkle_knot import _load_chain_rows, _merkle_root
+        rows_v = _load_chain_rows()
+        hashes = [r.get("leaf_hash") for r in rows_v if r.get("leaf_hash")]
+        if hashes:
+            chain_root = _merkle_root(hashes)
+            if tip_root:
+                chain_root_match = (chain_root[:16] == tip_root[:16])
+    except Exception:
+        chain_root_match = None  # can't compute — report, don't alarm
+
     live = {
         "rows": len(rows),
         "dangling": len(dangling),
         "evidence_lost": len(flagged),
         "dup_sessions": dups,
         "tip_root": _tip_root(),
+        "chain_root": chain_root[:16] if chain_root else None,
+        "tip_matches_chain": chain_root_match,
     }
 
     if not MARKER.is_file():

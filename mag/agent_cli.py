@@ -22,7 +22,8 @@ if os.name == "nt":  # B1 non-blocking stdin listener (Windows)
     import msvcrt
 
 from config import ROOT
-from mag.context_pack import build_context_pack, format_context_pack_text
+from mag.context_pack import build_context_pack, format_context_pack_text, infer_pack_mode
+from mag.context_admission import assess as assess_context, safe_write_receipt
 from mag.compass import (
     FRAMEWORK_BLOCK,
     build_compass,
@@ -111,14 +112,15 @@ def _out(text: str = "", *, end: str = "\n") -> None:
 
 
 # Manifesto Phase 0: stdout/stderr split.
-# Route ALL UI chrome (banner, status, tool traces, prompts) to stderr.
-# Only the final answer text goes to stdout via _out().
+# Route this module's UI chrome (banner, status, tool traces, prompts) to
+# stderr. Keep the binding module-local: mutating builtins.print here used to
+# redirect every later-imported CLI's machine-readable output as well.
 import builtins as _builtins
 _PRINT = _builtins.print
 def _chrome_print(*args, **kwargs):
     kwargs["file"] = sys.stderr
     _PRINT(*args, **kwargs)
-_builtins.print = _chrome_print
+print = _chrome_print
 
 
 def _enable_windows_vt() -> None:
@@ -696,10 +698,18 @@ def _run_tool_http(name: str, args: dict[str, Any]) -> dict[str, Any]:
             if not isinstance(body, dict):
                 return {"ok": False, "error": f"backend returned non-JSON: {str(body)[:200]}"}
             if not body.get("ok"):
+                result = body.get("result")
+                # The actionable text lives one level down: `tools.dispatch`
+                # returns {"ok": False, "error": "bad arguments for <tool>: ..."}
+                # as the *result*, leaving the envelope's own `error` null.
+                # Reading only the envelope replaces a self-teaching message
+                # with the opaque "backend reported failure" and the model
+                # re-emits the same bad call forever.
+                nested = result.get("error") if isinstance(result, dict) else None
                 return {
                     "ok": False,
-                    "error": body.get("error") or "backend reported failure",
-                    "result": body.get("result"),
+                    "error": body.get("error") or nested or "backend reported failure",
+                    "result": result,
                 }
             return body.get("result") or {"ok": True}
     except httpx.ConnectError:
@@ -858,12 +868,18 @@ def repack_messages(
     user_text: str,
     traces: list[str],
     provider: str,
+    mode: str | None = None,
 ) -> list[dict[str, Any]]:
     """Rebuild to system pack + residual (pack-first analog).
 
     Drops bloated tool chains. Keeps goal + tool ok flags + short result crumbs.
     """
-    pack = build_context_pack(max_brief=900, max_live=400)
+    pack = build_context_pack(
+        mode=mode or infer_pack_mode(user_text),
+        goal=user_text,
+        max_brief=900,
+        max_live=400,
+    )
     pack_text = format_context_pack_text(pack)
     try:
         (ROOT / "memory" / "context_pack_latest.md").write_text(pack_text, encoding="utf-8")
@@ -901,15 +917,9 @@ def _clip_history(messages: list[dict[str, Any]], *, provider: str = "deepseek")
     out = ([system] if system else []) + rest
     # Token budget wins over message count: if still fat, hard-repack path is run_turn's job
     budget = int(usable_context_budget(provider) * _repack_ratio())
-    if _estimate_tokens(out) > budget and rest:
-        # keep system + last user only as emergency clip (caller may full-repack)
-        last_user = None
-        for m in reversed(rest):
-            if m.get("role") == "user":
-                last_user = m
-                break
-        if last_user is not None:
-            out = ([system] if system else []) + [last_user]
+    # Do not silently destroy the remaining history here.  run_turn owns the
+    # repack decision and can preserve tool crumbs plus the active build/audit
+    # contract in a durable, inspectable residual.
     return out
 
 
@@ -1042,6 +1052,8 @@ def run_turn(
     threshold = int(budget * ratio)
     repacks = 0
     max_repacks = 4
+    timeout_retries = 0
+    pack_mode = infer_pack_mode(user_text)
 
     rnd = 0
     empty_streak = 0
@@ -1118,12 +1130,28 @@ def run_turn(
                     print(dim("  → resumed (Human Nod)"), flush=True)
         messages = _sanitize_messages(messages)
         est = _estimate_tokens(messages)
+        admission = assess_context(
+            estimated_tokens=est,
+            context_window=provider_context_tokens(provider),
+            repack_ratio=ratio,
+            tool_schema_reserve=_TOOL_SCHEMA_RESERVE,
+            reply_reserve=_REPLY_RESERVE,
+            reason="round_preflight",
+            provider=provider,
+            session_id=session_id or "",
+            repacks=repacks,
+            max_repacks=max_repacks,
+        )
+        if admission["band"] in ("red", "black"):
+            safe_write_receipt(ROOT, admission)
+            traces.append(f"context_pressure:{admission['band']}:{est}")
         if est > threshold and repacks < max_repacks:
             messages = repack_messages(
                 messages,
                 user_text=user_text,
                 traces=traces,
                 provider=provider,
+                mode=pack_mode,
             )
             repacks += 1
             est2 = _estimate_tokens(messages)
@@ -1182,11 +1210,27 @@ def run_turn(
                 )
             )
             if needs_repack and repacks < max_repacks:
+                safe_write_receipt(
+                    ROOT,
+                    assess_context(
+                        estimated_tokens=est,
+                        context_window=provider_context_tokens(provider),
+                        repack_ratio=ratio,
+                        tool_schema_reserve=_TOOL_SCHEMA_RESERVE,
+                        reply_reserve=_REPLY_RESERVE,
+                        reason="provider_context_error",
+                        provider=provider,
+                        session_id=session_id or "",
+                        repacks=repacks,
+                        max_repacks=max_repacks,
+                    ),
+                )
                 messages = repack_messages(
                     messages,
                     user_text=user_text,
                     traces=traces,
                     provider=provider,
+                    mode=pack_mode,
                 )
                 repacks += 1
                 traces.append(f"repack_on_error#{repacks}: {err[:80]}")
@@ -1195,6 +1239,47 @@ def run_turn(
                     flush=True,
                 )
                 continue
+            timeout_like = any(
+                k in err_l
+                for k in (
+                    "timeout",
+                    "timed out",
+                    "idle timeout",
+                    "no response",
+                    "session file changed while embedded prompt lock was released",
+                )
+            )
+            if timeout_like:
+                safe_write_receipt(
+                    ROOT,
+                    {
+                        **assess_context(
+                            estimated_tokens=est,
+                            context_window=provider_context_tokens(provider),
+                            repack_ratio=ratio,
+                            tool_schema_reserve=_TOOL_SCHEMA_RESERVE,
+                            reply_reserve=_REPLY_RESERVE,
+                            reason="provider_timeout_or_takeover",
+                            provider=provider,
+                            session_id=session_id or "",
+                            repacks=repacks,
+                            max_repacks=max_repacks,
+                        ),
+                        "error_class": "session_takeover" if "session file changed" in err_l else "timeout",
+                    },
+                )
+                if timeout_retries < 1 and repacks < max_repacks:
+                    timeout_retries += 1
+                    messages = repack_messages(
+                        messages,
+                        user_text=user_text,
+                        traces=traces,
+                        provider=provider,
+                        mode=pack_mode,
+                    )
+                    repacks += 1
+                    traces.append(f"timeout_recovery_repack#{repacks}")
+                    continue
             # Model lock-loop (ƒ"?ƒ"?… repetition garbage) -> retry the SAME
             # round slot with a hotter temperature + bigger completion budget
             # instead of returning garbage as the final answer.
@@ -1504,6 +1589,23 @@ def run_turn(
                         "tool_call_id": tc_id,
                         "content": payload,
                     }
+                )
+            post_tool_est = _estimate_tokens(messages)
+            if post_tool_est > threshold:
+                safe_write_receipt(
+                    ROOT,
+                    assess_context(
+                        estimated_tokens=post_tool_est,
+                        context_window=provider_context_tokens(provider),
+                        repack_ratio=ratio,
+                        tool_schema_reserve=_TOOL_SCHEMA_RESERVE,
+                        reply_reserve=_REPLY_RESERVE,
+                        reason="post_tool_admission",
+                        provider=provider,
+                        session_id=session_id or "",
+                        repacks=repacks,
+                        max_repacks=max_repacks,
+                    ),
                 )
             _activity["step"] = rnd
             _activity["last_tool"] = name
@@ -2203,10 +2305,20 @@ def _handle_steer_cmd(cmd: str) -> str | None:
         return ctx or "resume the active Blueprint from the interruption point"
     if low in ("!pause", "!p"):
         _paused.set()  # HOLD: pause gate (in-tool-loop + between rounds) waits for !continue
+        try:
+            from mag.operator_mode import set_paused
+            set_paused(reason="agent CLI steer pause", requested_by="agent_cli")
+        except Exception:
+            pass
         return None
     if low in ("!continue", "!c"):
         _paused.clear()
         _steer_interrupt.clear()
+        try:
+            from mag.operator_mode import resume
+            resume(requested_by="agent_cli")
+        except Exception:
+            pass
         return None
     if low == "!escape":
         _steer_interrupt.set()
@@ -2393,6 +2505,7 @@ def run_agent(
                     messages=messages,
                     on_stream=_on_stream,
                     tier=tier,
+                    session_id=cli_session_id,
                 )
             except Exception as exc:  # seat crash-guard: never die mid-turn
                 _log_seat_crash("do_turn", exc)
@@ -2647,6 +2760,16 @@ def api_agent_turn(
     goal = (goal or "").strip()
     if not goal:
         return {"ok": False, "error": "empty goal"}
+
+    # Dashboard/API turns are autonomous one-shot work.  Respect the same
+    # durable operator switch as the container worker and governor; the
+    # interactive CLI can still accept !continue as the operator escape hatch.
+    try:
+        from mag.operator_mode import pause_reason
+        if (reason := pause_reason()):
+            return {"ok": True, "paused": True, "session_id": session_id, "reason": reason}
+    except Exception:
+        pass
 
     if tier is None:
         try:

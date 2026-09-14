@@ -1,0 +1,50 @@
+#define rot(a)mat2(cos(a),sin(a),-sin(a),cos(a))
+
+void fold45(inout vec2 p)
+{
+  if(p.x<p.y)p=p.yx;
+}
+
+void sFold45(inout vec2 p)
+{
+  float e=2e-3;
+  vec2 v =normalize(vec2(1,-1));
+  float g=dot(p,v);
+ 	p-=(g-sqrt(g*g+2e-3))*v;
+}
+
+void fold(inout vec2 p)
+{
+  if(fract(t*.5)<.5)
+  {
+    fold45(p);
+  }else{
+    sFold45(p);
+  }
+}
+
+float map(vec3 p)
+{
+	p.xz*=rot(t*.5);
+	p.xy*=rot(t*.5);
+	p=abs(p)-1.;
+	fold(p.xz);
+	fold(p.yz);
+	fold(p.xy);
+ 	return length(vec2(length(p.xz)-1.,p.y))-.2;
+}
+
+void main(){
+  vec2 uv=(2.*gl_FragCoord.xy-r)/r.y;
+  vec3 ro=vec3(0,0,-5);
+  vec3 rd=normalize(vec3(uv,2));
+  vec3 p;
+  float h=0.,d,i;
+	for(i=1.;i<50.;i++){
+    p=ro+rd*h;    
+		d=map(p);
+  	if(d<.0001)break;
+    h+=d;
+	}
+  o.xyz+=10./i;
+}

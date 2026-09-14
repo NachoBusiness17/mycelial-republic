@@ -38,6 +38,11 @@ SCHEMA = "cache_watch.v1"
 
 PROBE_FLOOR = 0.90
 LEDGER_FLOOR = 0.90
+DEADMAN_FLOOR_MIN = 45
+
+
+def _now_dt() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 def _now() -> str:
@@ -95,6 +100,17 @@ def run() -> dict[str, Any]:
             row["alarms"].append(f"ledger hit ratio {hr:.2%} below {LEDGER_FLOOR:.0%} floor")
     except Exception as e:  # noqa: BLE001
         row["ledger"] = {"error": str(e)[:160]}
+
+    # 4. dead-man: usage ledger must be fresh, or the meter is blind
+    #    (Aug 26 19:49 -> Aug 27 06:5x blackout went unnoticed ~12h — never again)
+    try:
+        ledger = ROOT / "logs" / "provider_usage.jsonl"
+        age_min = (_now_dt() - datetime.fromtimestamp(ledger.stat().st_mtime, timezone.utc)).total_seconds() / 60
+        row["ledger_freshness"] = {"age_minutes": round(age_min, 1)}
+        if age_min > DEADMAN_FLOOR_MIN:
+            row["alarms"].append(f"meter dead-man: provider_usage.jsonl silent {age_min:.0f}min > {DEADMAN_FLOOR_MIN}min")
+    except Exception as e:  # noqa: BLE001
+        row["ledger_freshness"] = {"error": str(e)[:160]}
 
     row["healthy"] = not row["alarms"]
     with REPORT.open("a", encoding="utf-8") as fh:

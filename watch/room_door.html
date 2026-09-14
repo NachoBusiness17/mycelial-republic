@@ -1,0 +1,25 @@
+<!doctype html><html><head><meta charset="utf-8"><title>FLEET DOOR</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"><style>
+body{background:#0b0f0d;color:#d6e3d8;font-family:Consolas,monospace;margin:0;padding:14px}
+h1{color:#4fb3a8;font-size:16px}a{color:#4fb3a8}table{border-collapse:collapse;width:100%;font-size:12px}
+td,th{border:1px solid #1e2a24;padding:4px 6px;text-align:left}th{color:#7d9185}.muted{color:#4c5f55}
+</style></head><body>
+<h1>FLEET DOOR <span class="muted">// rebuilt 09-02 — reads the gateway, never lies about its date</span></h1>
+<p><a href="http://127.0.0.1:8765/chan">/chan board</a> · <a href="http://127.0.0.1:8765/">hypervisor</a> ·
+<a href="http://127.0.0.1:18789">claw UI</a> · <a href="https://mag-openclaw.tail8403e9.ts.net/chat/main">claw via tailnet</a></p>
+<h2>seats</h2><div id="seats" class="muted">loading…</div>
+<h2>room (latest)</h2><table id="room"></table>
+<script>
+const KEY = localStorage.getItem('magKey') || 'mag-local-dev-key';
+const f = (u) => fetch(u + (u.includes('?') ? '&' : '?') + 'key=' + KEY).then(r => r.json());
+f('http://127.0.0.1:8001/seats').then(d => {
+  const s = d.seats || d || {};
+  document.getElementById('seats').textContent = JSON.stringify(s).slice(0, 1500);
+}).catch(e => document.getElementById('seats').textContent = 'gateway dark: ' + e);
+f('http://127.0.0.1:8001/room?limit=15').then(d => {
+  const rows = d.records || d.room || d || [];
+  document.getElementById('room').innerHTML = (Array.isArray(rows) ? rows : []).reverse().map(r =>
+    '<tr><td>' + (r.ts || '').slice(5, 16) + '</td><td>' + (r.seat || '') + '</td><td>' +
+    String(r.text || '').slice(0, 160) + '</td></tr>').join('');
+}).catch(e => document.getElementById('room').innerHTML = '<tr><td>room dark: ' + e + '</td></tr>');
+</script></body></html>

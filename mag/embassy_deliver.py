@@ -150,8 +150,6 @@ def _git(*args: str, cwd: Path) -> subprocess.CompletedProcess:
 
 def assemble(dry: bool = True) -> dict:
     """git init/add/commit the deliverable folder. Dry-run reports, doesn't run."""
-    if not DELIVER.is_dir():
-        return {"ok": False, "error": f"deliverable not found: {DELIVER}"}
     steps = [
         f"cd {DELIVER.name}",
         "git init",
@@ -160,7 +158,9 @@ def assemble(dry: bool = True) -> dict:
     ]
     if dry:
         return {"ok": True, "schema": "embassy_assemble.v1", "dry": True, "steps": steps,
-                "git_repo": (DELIVER / ".git").is_dir()}
+                "deliver_exists": DELIVER.is_dir(), "git_repo": (DELIVER / ".git").is_dir()}
+    if not DELIVER.is_dir():
+        return {"ok": False, "error": f"deliverable not found: {DELIVER}", "dry": False}
     if not (DELIVER / ".git").is_dir():
         r = _git("init", cwd=DELIVER)
         if r.returncode != 0:

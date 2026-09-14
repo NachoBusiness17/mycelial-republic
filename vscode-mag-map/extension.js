@@ -835,7 +835,7 @@ function activate(context) {
     for (const [viewId, inst] of Object.entries(viewMap)) {
       context.subscriptions.push(
         vscode.window.registerWebviewViewProvider(viewId, inst, {
-          webviewOptions: { retainContextWhenHidden: true },
+          webviewOptions: { retainContextWhenHidden: false },
         })
       );
     }
@@ -877,7 +877,7 @@ function activate(context) {
 
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider("magMap.view", provider, {
-      webviewOptions: { retainContextWhenHidden: true },
+      webviewOptions: { retainContextWhenHidden: false },
     })
   );
   context.subscriptions.push(provider);

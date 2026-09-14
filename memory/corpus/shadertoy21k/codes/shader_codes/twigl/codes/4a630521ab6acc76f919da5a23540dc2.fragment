@@ -1,0 +1,37 @@
+precision highp float;
+uniform vec2 resolution;
+uniform float time;
+out vec4 fragColor;
+
+#define rot(a) mat2(cos(a),sin(a),-sin(a),cos(a))
+
+#define PI (atan(1.)*4.)
+
+float map(vec3 p){
+  p.yz *= rot(-time);
+  p.xz *= rot(-time);
+  float s = 1.;
+  float d, dPrev, dPrePrev;
+  for(int i = 0; i++ < 5;) {
+    dPrePrev = dPrev;
+    dPrev = d;
+    p.xz *= rot(time-3.14/6. + float(i));
+    p.yz *= rot(time+3.14/6. + float(i));
+    p = abs(p);
+    p -= .4;
+    p *= 2.;
+    s *= 2.;
+    d = (length(vec2(length(p)-.9, p.z))-.4)/s;
+  }
+    // return length(vec2(length(p.xy)-.4,p.z))-.1;
+    return (length(vec2(d, dPrePrev))-.01)*.5;
+}
+
+void main(){
+    vec2 uv=(gl_FragCoord.xy-.5*resolution)/resolution.y;
+    vec3 rd=normalize(vec3(uv,1));
+    vec3 p=vec3(0,0,-3);
+    float d=1.,i;
+    for(;++i<99.&&d>.001;)p+=rd*(d=map(p));
+    if(d<.001)fragColor+=9./i;
+}

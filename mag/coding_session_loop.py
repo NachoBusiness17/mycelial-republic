@@ -179,6 +179,10 @@ def _run_cmd(cmd: str, *, optional: bool = False) -> dict[str, Any]:
             cmd,
             shell=True,
             cwd=str(ROOT),
+            # headless.PYTHON is the real interpreter (not the venv shim); the
+            # companion env is what makes the project's installed packages
+            # visible to short-lived preflight commands.
+            env=headless._spawn_env(),
             capture_output=True,
             text=True,
             timeout=300,

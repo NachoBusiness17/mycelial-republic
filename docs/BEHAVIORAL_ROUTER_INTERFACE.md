@@ -1,3 +1,5 @@
+> **Deprecation banner:** cursor lane lapsed 2026-08-27 — current seats are Codex, Grok x2, DeepSeek. See `docs/ref/ZAI_API_EXPERT_REFERENCE.md` for current lanes.
+
 # Behavioral Router Interface
 
 **Status:** Desk migration contract · 2026-08-06
@@ -13,7 +15,7 @@ The earlier three-lane Desk was a calibration rig for proving Local → DeepSeek
 1. **Direction** — one outcome, optional constraints, optional definition of done.
 2. **Route goal** — commits direction, enables continuity, and advances until done, blocked, or gated.
 3. **Working contract** — editable disk-backed state shared across seats and tools.
-4. **Activity** — Local, DeepSeek, Cursor/Codex, Grok, workers, and tools report concise deltas.
+4. **Activity** — Local, DeepSeek, Codex, Grok x2, workers, and tools report concise deltas.
 5. **Exception inbox** — only genuine decisions, unavailable credentials, irreversible actions, spending, publishing, or unresolved ambiguity.
 
 Everything else belongs under **Lab & maintenance** or **System details**.
@@ -52,7 +54,7 @@ Must stop for the operator:
 - changing constitution, promotion policy, or autonomy boundary;
 - ambiguity where plausible choices materially change the requested outcome.
 
-Host applications such as Codex, Cursor, Windows, and browsers may enforce their own security prompts. Mag cannot safely impersonate the operator for those prompts. The integration target is persistent, narrowly scoped permissions and agent-owned sandbox execution—not universal “always approve” on the host.
+Host applications such as Codex, Windows, and browsers may enforce their own security prompts. Mag cannot safely impersonate the operator for those prompts. The integration target is persistent, narrowly scoped permissions and agent-owned sandbox execution—not universal “always approve” on the host.
 
 ## Active contract shape
 

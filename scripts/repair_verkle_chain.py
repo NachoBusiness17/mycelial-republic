@@ -25,6 +25,7 @@ CLI:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import sys
@@ -43,6 +44,12 @@ from mag.verkle_knot import (  # noqa: E402
 def _pointer_name(session_id: str) -> Path:
     sid = re.sub(r"[^A-Za-z0-9._-]+", "-", str(session_id or ""))[:12]
     return KNOTS / f"by-session_{sid}.json"
+
+
+def _pointer_names(session_id: str) -> list[Path]:
+    sid = str(session_id or "")
+    v2 = KNOTS / f"by-session_v2_{hashlib.sha256(sid.encode('utf-8')).hexdigest()[:32]}.json"
+    return [v2, _pointer_name(sid)]
 
 
 def _knot_fields(fname: str) -> dict | None:
@@ -66,9 +73,9 @@ def plan_and_repair(apply: bool) -> int:
         if r.get("filename") and r["filename"] in knots:
             continue
         sid = r.get("session_id") or ""
-        ptr = _pointer_name(sid)
+        ptr = next((candidate for candidate in _pointer_names(sid) if candidate.is_file()), None)
         target = None
-        if ptr.is_file():
+        if ptr is not None:
             try:
                 target = json.loads(ptr.read_text(encoding="utf-8")).get("filename")
             except (json.JSONDecodeError, OSError):

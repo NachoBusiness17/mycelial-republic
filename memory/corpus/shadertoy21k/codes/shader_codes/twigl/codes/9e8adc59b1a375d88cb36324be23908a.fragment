@@ -1,0 +1,31 @@
+precision highp float;
+uniform vec2 resolution;
+uniform float time;
+out vec4 fragColor;
+
+#define rot(a) mat2(cos(a),sin(a),-sin(a),cos(a))
+
+float lpNorm(vec2 p, float n){
+p = pow(abs(p), vec2(n));
+return pow(p.x+p.y, 1.0/n);
+}
+
+
+float map(vec3 p){
+  p.xy*=rot(time*1.);
+  p.xz*=rot(time*1.);
+  
+  float sdf2d=length(p.xy-clamp(p.xy,-1.,1.))-.01;
+  vec2 q=vec2(sdf2d,p.z);
+  return lpNorm(q,8.)-1.;
+  //return length(q)-1.;
+}  
+
+void main(){
+    vec2 uv=(gl_FragCoord.xy-.5*resolution)/resolution.y;
+    vec3 rd=normalize(vec3(uv,1));
+    vec3 p=vec3(0,0,-6);
+    float d=1.,i;
+    for(;++i<99.&&d>.001;)p+=rd*(d=map(p));
+    if(d<.001)fragColor+=3./i;
+}

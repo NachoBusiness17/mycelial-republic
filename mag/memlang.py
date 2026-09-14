@@ -235,7 +235,11 @@ def trigger(token_hex: str, *, execute: bool = False) -> dict[str, Any]:
         out["note"] = "resolved intent; pass execute=True to fire the action"
         return out
     target = params.get("target")
-    if not _executor_up(target):
+    # ``memo`` is a local durable operation and does not depend on the ghost
+    # process being alive.  Gating it on the remote executor made the basic
+    # token smoke test report a dead knot even though the receiver could
+    # execute the log action immediately.
+    if action != "memo" and not _executor_up(target):
         out["executed"] = False
         out["dead_knot"] = True
         out["note"] = f"executor {target or 'ghost'} down; token not fired (persists in shared registry)"

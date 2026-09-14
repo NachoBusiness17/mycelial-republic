@@ -126,20 +126,25 @@ def truth_audit(*, skip_sense: bool = False) -> dict[str, Any]:
     skip_sense=True when called FROM within ghost.sense() (avoids recursion — the loop IS the sense)."""
     s = ghost_sense() if not skip_sense else {"ok": None, "note": "inside the loop; sense is the loop"}
     p = provenance_audit()
-    p = provenance_audit()
     g = grounding()
     ga = gaps()
-    return {"ok": True, "schema": SCHEMA, "ts": _now(),
+    verdict = {
+        "loop_alive": bool(s.get("ok")) if not skip_sense else None,
+        "chain_alive": bool(s.get("chain_alive")) if not skip_sense else None,
+        "hallucination_risk": bool(p.get("hallucination_risk")),
+        "bill_grounded": bool(g.get("bill_grounded")),
+    }
+    audit_ok = (
+        not verdict["hallucination_risk"]
+        and verdict["bill_grounded"]
+        and (skip_sense or bool(verdict["loop_alive"]))
+    )
+    return {"ok": audit_ok, "schema": SCHEMA, "ts": _now(),
             "ghost_sense": s,
             "provenance": p,
             "grounding": g,
             "gaps": {"n": ga.get("n_gaps", 0), "top": ga.get("gaps", [])[:6]},
-            "verdict": {
-                "loop_alive": bool(s.get("ok")),
-                "chain_alive": bool(s.get("chain_alive")),
-                "hallucination_risk": bool(p.get("hallucination_risk")),
-                "bill_grounded": bool(g.get("bill_grounded")),
-            },
+            "verdict": verdict,
             "honest": "the audit uses what we KNOW (grounded modules + real data + honest frontier "
                       "provenance); if any claim is not grounded, it is flagged, not hidden"}
 

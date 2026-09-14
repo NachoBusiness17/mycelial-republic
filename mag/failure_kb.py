@@ -20,6 +20,7 @@ import hashlib
 import json
 import re
 import sys
+import threading
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -30,10 +31,81 @@ LOG_PATH = ROOT / "logs" / "failure_kb.jsonl"
 INDEX_PATH = ROOT / "memory" / "failure_kb" / "signatures.json"
 REMEDY_DIR = ROOT / "memory" / "remedies"
 AUTO_DRAFT_THRESHOLD = 3
+ALERT_STATE_PATH = ROOT / "state" / "failure_kb_alerts.json"
+ALERTS_LOG_PATH = ROOT / "logs" / "failure_kb_alerts.jsonl"
+_ALERT_MILESTONES = (10, 50, 100, 500)
+_ALERT_COOLDOWN_S = 3600.0
+
+_INDEX_CACHE: tuple[int, int, dict[str, Any]] | None = None
+_INDEX_CACHE_LOCK = threading.Lock()
 
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _alert_signature_pressure(sig: str, rec: dict[str, Any]) -> None:
+    """Loud cross-session alarm when one failure signature piles up.
+
+    The in-session collapse detector (5 consecutive identical calls inside
+    one turn) cannot see failures spread 1-3 per turn across many sessions —
+    the 2026-08-06..09-11 run_shell loop (25k rows, no alert) is the receipt.
+    This counter is cross-session: it lives in the shared signatures index
+    and pages at count milestones, cooldown-gated per signature.
+    """
+    try:
+        import time
+
+        count = int(rec.get("count") or 0)
+        milestone = count in _ALERT_MILESTONES or (count > 500 and count % 500 == 0)
+        if not milestone:
+            return
+        ALERT_STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        state: dict[str, Any] = {}
+        try:
+            state = json.loads(ALERT_STATE_PATH.read_text(encoding="utf-8"))
+        except Exception:
+            state = {}
+        now = time.time()
+        try:
+            last = float(state.get(sig) or 0)
+        except (TypeError, ValueError):
+            last = 0.0
+        if now - last < _ALERT_COOLDOWN_S:
+            return
+        state[sig] = now
+        ALERT_STATE_PATH.write_text(json.dumps(state), encoding="utf-8")
+        alert = {
+            "ts": _now(),
+            "type": "signature_pressure",
+            "sig": sig,
+            "count": count,
+            "tool": rec.get("tool"),
+            "sample": (rec.get("error_sample") or rec.get("detail_sample") or "")[:200],
+        }
+        ALERTS_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with ALERTS_LOG_PATH.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(alert, ensure_ascii=False) + "\n")
+        print(
+            f"!! signature pressure: {sig} x{count} — recurring failure across sessions"
+            " (see logs/failure_kb_alerts.jsonl)",
+            flush=True,
+        )
+        try:
+            from mag.training_events import emit
+
+            emit(
+                "fkb_signature_pressure",
+                join={"sig": sig},
+                input_data={"count": count},
+                action={"tool": rec.get("tool")},
+                outcome={"alerted": True},
+                pattern_tags=["signature_pressure", rec.get("tool") or "unknown"],
+            )
+        except Exception:
+            pass
+    except Exception:
+        pass
 
 
 def _slug(text: str, max_len: int = 48) -> str:
@@ -59,11 +131,23 @@ def signature_key(*, tool: str | None = None, error: str | None = None, detail: 
 
 
 def _load_index() -> dict[str, Any]:
+    global _INDEX_CACHE
     if not INDEX_PATH.is_file():
         return {"schema": "failure_kb.signatures.v1", "signatures": {}}
     try:
+        stat = INDEX_PATH.stat()
+        stamp = (int(stat.st_mtime_ns), int(stat.st_size))
+        with _INDEX_CACHE_LOCK:
+            if _INDEX_CACHE and _INDEX_CACHE[:2] == stamp:
+                return _INDEX_CACHE[2]
+    except OSError:
+        stamp = None
+    try:
         data = json.loads(INDEX_PATH.read_text(encoding="utf-8"))
         if isinstance(data, dict) and isinstance(data.get("signatures"), dict):
+            if stamp is not None:
+                with _INDEX_CACHE_LOCK:
+                    _INDEX_CACHE = (stamp[0], stamp[1], data)
             return data
     except (OSError, json.JSONDecodeError):
         pass
@@ -71,8 +155,16 @@ def _load_index() -> dict[str, Any]:
 
 
 def _save_index(data: dict[str, Any]) -> None:
+    global _INDEX_CACHE
     INDEX_PATH.parent.mkdir(parents=True, exist_ok=True)
     INDEX_PATH.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    try:
+        stat = INDEX_PATH.stat()
+        with _INDEX_CACHE_LOCK:
+            _INDEX_CACHE = (int(stat.st_mtime_ns), int(stat.st_size), data)
+    except OSError:
+        with _INDEX_CACHE_LOCK:
+            _INDEX_CACHE = None
 
 
 def log_failure(
@@ -145,6 +237,7 @@ def log_failure(
         rec["detail_sample"] = detail[:200]
     sigs[sig] = rec
     _save_index(idx)
+    _alert_signature_pressure(sig, rec)
 
     drafted = None
     if int(rec["count"]) >= AUTO_DRAFT_THRESHOLD and not rec.get("remedy_id"):

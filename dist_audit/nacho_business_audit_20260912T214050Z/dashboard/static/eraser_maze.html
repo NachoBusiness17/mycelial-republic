@@ -1,0 +1,508 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ERASER MAZE — seeing collapses the light (PURPLE HARVEST B2)</title>
+<style>
+:root{--bg:#030806;--ink:#c8e6d9;--accent:#b48cff;--gold:#e8c96a}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-monospace,Consolas,monospace;text-align:center}
+h1{font-size:.95rem;letter-spacing:.1em;color:var(--accent);margin:12px 0 2px}
+.mut{font-size:.7rem;color:#8ab8a4;margin:6px auto;max-width:940px}
+canvas{width:960px;max-width:96vw;border:1px solid rgba(180,140,255,.3);border-radius:6px;image-rendering:pixelated}
+.stats{font-size:.78rem;margin:8px auto;max-width:940px}
+.stats b{color:var(--gold)}
+.g{color:#7dfab0}.d{color:#ff9d5c}.v{color:#b48cff}.c{color:#e8c96a}
+button{background:#0a1412;color:var(--accent);border:1px solid rgba(180,140,255,.35);border-radius:8px;padding:6px 14px;font-family:inherit;font-size:.75rem;cursor:pointer;margin:4px}
+label{font-size:.72rem;color:#8ab8a4;margin:0 8px}
+input[type=range]{accent-color:#b48cff;vertical-align:middle;width:130px}
+#led{font-size:.66rem;color:#9ad0c0;text-align:left;max-width:940px;margin:6px auto;border:1px solid rgba(124,245,255,.14);border-radius:6px;padding:6px 10px;min-height:74px;line-height:1.5}
+#led .row b{color:#e8c96a}
+#fals{font-size:.72rem;margin:8px auto;max-width:940px;border:1px dashed rgba(180,140,255,.3);border-radius:6px;padding:6px 10px}
+.pass{color:#7dfab0}.fail{color:#ff9d5c}
+</style></head><body>
+<div id="errbanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99;background:#5c1010;color:#ffd9d9;font:12px ui-monospace,monospace;padding:6px 10px;white-space:pre-wrap"></div>
+<script>window.addEventListener('error',function(e){var b=document.getElementById('errbanner');if(!b)return;b.style.display='block';b.textContent+='ERR: '+e.message+' @ '+(e.lineno||'?')+':'+(e.colno||'?')+'\n';});window.addEventListener('unhandledrejection',function(e){var b=document.getElementById('errbanner');if(!b)return;b.style.display='block';b.textContent+='REJ: '+e.reason+'\n';});</script>
+<h1>THE ERASER MAZE — seeing collapses the light</h1>
+<div class="mut">two-layer field, PURPLE HARVEST B2 · <span class="v">WAVE LAYER</span>: path-sum amplitudes A(cell)=&Sigma;<sub>p</sub> A(p)·e<sup>i·k·d(p)</sup>/N per route family, |A|&sup2; fringes the twin-slit chamber · <span class="d">MEASUREMENT LAYER</span>: cells inside your sight radius are SEEN — where seen, the incoherent sum &Sigma;|A<sub>p</sub>|&sup2; shows instead: which-path info kills the fringes · <span class="v">ERASER</span>: fires a unitary phase rotation on the which-path tags — fringes return IN THE NEW BASIS, pattern shifted</div>
+<div class="mut">the observation ledger below is <b>APPEND-ONLY</b>: every collapse, every basis change is a row; erasing never deletes rows — the chain does not invalidate, it appends · reach the PRISM while it still fringes: walk past it (it goes flat), fire an eraser over it (delayed choice — it re-lights in the new basis), then step close · arrows/WASD move · <span class="v">E</span> fires the carried eraser · <span class="c">R</span> new maze</div>
+<div>
+<button id="newmaze">NEW MAZE</button> <button id="runtest">RUN FALSIFIER TEST</button>
+<label>k (wavenumber) <input type="range" id="kslider" min="0.2" max="3.5" step="0.05" value="2"> <span id="kval">2.00</span></label>
+<label>sight radius <input type="range" id="rslider" min="2" max="14" step="1" value="7"> <span id="rval">7</span></label>
+</div>
+<canvas id="c"></canvas>
+<div class="stats" id="stats"></div>
+<div id="led"></div>
+<div id="fals">falsifiers: running…</div>
+<div class="mut">card: watch/PURPLE_HARVEST_01_20260906.md (B2 eraser field, from @LensScientific) · math note: the literal single-d path sum admits only equal-length routes (all in phase — zero fringes); the field propagates per WHICH-PATH FAMILY (d_f = family distance), the minimal correction that lets distinguishable routes of different length recombine — everything else is the spec: [re,im] partials, per-parent partial sums, tag-basis unitary on erase, append-only ledger</div>
+<script src="/static/nav.js"></script>
+<script>
+'use strict';
+/*__ERASER_CORE_BEGIN__*/
+// ===== FIELD CORE — pure math, DOM-free. Slice between the markers and eval in Node
+// (harness) or poke via window.__ERASER_CORE in the console.
+var MAXS=8;            // max partial slots per cell (parents across route families)
+var ERASER_PHI=Math.PI/3; // basis rotation per erase event (unitary on tags — never a deletion)
+var SEED_AMP=0.5;      // slits re-emit coherently at unit gain (display normalizes absolute scale)
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function makeField(W,H){
+  var N=W*H;
+  var f={W:W,H:H,N:N,open:new Uint8Array(N),
+    fams:[], // route families: {d:Int32Array dist, ar,ai:Float32Array amp, sig:+-1 which-path tag}
+    partRe:new Float32Array(N*MAXS),partIm:new Float32Array(N*MAXS),
+    partSig:new Int8Array(N*MAXS),nPart:new Uint8Array(N),
+    lastMax:1,lastFringed:0,
+    _order:new Int32Array(N)};
+  var DX=[1,-1,0,0],DY=[0,0,1,-1];
+  f.genBraidedMaze=function(rng,braid){
+    f.open.fill(0);
+    var x,y,d;
+    for(y=1;y<H-1;y++)for(x=1;x<W-1;x++)if(x%2===1&&y%2===1)f.open[y*W+x]=1;
+    var stack=[W+1],seen=new Uint8Array(N);seen[W+1]=1;
+    while(stack.length){
+      var cur=stack[stack.length-1],cx=cur%W,cy=(cur/W)|0,opts=[];
+      for(d=0;d<4;d++){var nx=cx+DX[d]*2,ny=cy+DY[d]*2;
+        if(nx>0&&ny>0&&nx<W-1&&ny<H-1&&!seen[ny*W+nx])opts.push(d);}
+      if(!opts.length){stack.pop();continue;}
+      d=opts[(rng()*opts.length)|0];
+      var mx=cx+DX[d],my=cy+DY[d];var tx=cx+DX[d]*2,ty=cy+DY[d]*2;
+      f.open[my*W+mx]=1;f.open[ty*W+tx]=1;seen[ty*W+tx]=1;stack.push(ty*W+tx);
+    }
+    // braid: open one extra wall at dead-ends -> cycles -> multiple route families
+    for(y=1;y<H-1;y++)for(x=1;x<W-1;x++){
+      if(!f.open[y*W+x])continue;
+      var n=0,walls=[];
+      for(d=0;d<4;d++){var wx=x+DX[d],wy=y+DY[d];
+        if(wx<=0||wy<=0||wx>=W-1||wy>=H-1)continue;
+        if(f.open[wy*W+wx])n++;else walls.push(wy*W+wx);}
+      if(n===1&&walls.length&&rng()<braid)f.open[walls[(rng()*walls.length)|0]]=1;
+    }
+  };
+  f.carve=function(x0,y0,x1,y1,val){for(var y=y0;y<=y1;y++)for(var x=x0;x<=x1;x++)f.open[y*W+x]=val;};
+  f.bfs=function(sx,sy,mask){
+    var dist=new Int32Array(N).fill(-1),q=f._q||(f._q=new Int32Array(N)),qh=0,qt=0;
+    var s=sy*W+sx;dist[s]=0;q[qt++]=s;
+    while(qh<qt){
+      var c=q[qh++],cx=c%W,cy=(c/W)|0,dc=dist[c];
+      for(var d=0;d<4;d++){var nx=cx+DX[d],ny=cy+DY[d];
+        if(nx<0||ny<0||nx>=W||ny>=H)continue;
+        var ni=ny*W+nx;
+        if(!f.open[ni]||dist[ni]>=0)continue;
+        if(mask&&!mask[ni])continue;
+        dist[ni]=dc+1;q[qt++]=ni;}}
+    return dist;};
+  f.addFamily=function(sx,sy,sig,mask,ar,ai){
+    var d=f.bfs(sx,sy,mask);
+    var fm={d:d,sig:sig,ar:new Float32Array(N),ai:new Float32Array(N)};
+    fm.ar[sy*W+sx]=ar;fm.ai[sy*W+sx]=ai;
+    f.fams.push(fm);return fm;};
+  // per-family amplitudes, BFS layer order (parents final before children read them).
+  // Split from computePartials so callers can register the source family, amp it, then
+  // seed slit families from the actual arriving amplitude+phase.
+  f.computeAmps=function(k){
+    var fams=f.fams,nf=fams.length,maxD=2,i,fi,t;
+    for(fi=0;fi<nf;fi++){var d0=fams[fi].d;for(i=0;i<N;i++)if(d0[i]>maxD)maxD=d0[i];}
+    var ccos=new Float32Array(maxD+2),csin=new Float32Array(maxD+2);
+    for(i=0;i<=maxD+1;i++){ccos[i]=Math.cos(k*i);csin[i]=Math.sin(k*i);}
+    for(fi=0;fi<nf;fi++){
+      var fm=fams[fi],d=fm.d,ar=fm.ar,ai=fm.ai;
+      var cnt=new Int32Array(maxD+3),off=new Int32Array(maxD+3),ord=f._order;
+      for(i=0;i<N;i++)if(d[i]>=0)cnt[d[i]+1]++;
+      for(t=0;t<=maxD+1;t++)off[t+1]=off[t]+cnt[t];
+      var pos=off.slice(0,maxD+3);
+      for(i=0;i<N;i++)if(d[i]>=0)ord[pos[d[i]+1]++]=i;
+      for(var oi=0;oi<N;oi++){
+        i=ord[oi];var di=d[i];if(di<=0)continue;
+        var x=i%W,y=(i/W)|0,np=0,pr=0,pi=0;
+        for(var dd=0;dd<4;dd++){var nx=x+DX[dd],ny=y+DY[dd];
+          if(nx<0||ny<0||nx>=W||ny>=H)continue;
+          var p=ny*W+nx;if(!f.open[p]||d[p]!==di-1)continue;
+          np++;var co=ccos[di-1],sn=csin[di-1];
+          pr+=ar[p]*co-ai[p]*sn;pi+=ar[p]*sn+ai[p]*co;}
+        if(np>0){ar[i]=pr/np;ai[i]=pi/np;}
+      }
+    }
+  };
+  // A(cell) = SUM_p A_f(p)*e^{i*k*d_f(p)} / n_f  over parents p of each route family f.
+  // d_f = the family's own propagation distance (see math note in the page footer / receipt).
+  f.computePartials=function(k){
+    var partRe=f.partRe,partIm=f.partIm,partSig=f.partSig,nPart=f.nPart;
+    partRe.fill(0);partIm.fill(0);partSig.fill(0);nPart.fill(0);
+    var fams=f.fams,nf=fams.length,i,fi;
+    f.computeAmps(k);
+    var maxD=2;
+    for(fi=0;fi<nf;fi++){var dd0=fams[fi].d;for(i=0;i<N;i++)if(dd0[i]>maxD)maxD=dd0[i];}
+    var ccos=new Float32Array(maxD+2),csin=new Float32Array(maxD+2);
+    for(i=0;i<=maxD+1;i++){ccos[i]=Math.cos(k*i);csin[i]=Math.sin(k*i);}
+    // per-cell partial slots across families (one slot per parent — per-parent partial sums
+    // are what the incoherent display needs)
+    for(i=0;i<N;i++){
+      if(!f.open[i])continue;
+      var slot=0,x2=i%W,y2=(i/W)|0;
+      for(fi=0;fi<nf&&slot<MAXS;fi++){
+        var f2=fams[fi],d2=f2.d,di2=d2[i],j;
+        if(di2===0){ // family seed: its own amplitude, phase 0
+          partRe[i*MAXS+slot]=f2.ar[i];partIm[i*MAXS+slot]=f2.ai[i];
+          partSig[i*MAXS+slot]=f2.sig;slot++;continue;}
+        if(di2<0)continue;
+        var np2=0;
+        for(j=0;j<4;j++){var nx2=x2+DX[j],ny2=y2+DY[j];
+          if(nx2<0||ny2<0||nx2>=W||ny2>=H)continue;
+          var p2=ny2*W+nx2;if(f.open[p2]&&d2[p2]===di2-1)np2++;}
+        if(!np2)continue;
+        var co2=ccos[di2-1],sn2=csin[di2-1];
+        for(j=0;j<4&&slot<MAXS;j++){
+          var nx3=x2+DX[j],ny3=y2+DY[j];
+          if(nx3<0||ny3<0||nx3>=W||ny3>=H)continue;
+          var p3=ny3*W+nx3;if(!f.open[p3]||d2[p3]!==di2-1)continue;
+          var are=f2.ar[p3],aim=f2.ai[p3];
+          partRe[i*MAXS+slot]=(are*co2-aim*sn2)/np2;
+          partIm[i*MAXS+slot]=(are*sn2+aim*co2)/np2;
+          partSig[i*MAXS+slot]=f2.sig;slot++;}
+      }
+      nPart[i]=slot;
+    }
+  };
+  // display intensity: observed since last erase -> incoherent (which-path known, flat);
+  // else coherent in the current basis Phi (unitary e^{i*Phi*sigma} on each partial's tag)
+  f.displayInto=function(disp,phi,obsStamp,eraseStamp){
+    var nPart=f.nPart,partRe=f.partRe,partIm=f.partIm,partSig=f.partSig;
+    var cs=Math.cos(phi),sn=Math.sin(phi),max=0,fringed=0,i,j,o;
+    for(i=0;i<N;i++){
+      var n=nPart[i];if(!n){disp[i]=0;continue;}
+      var v;
+      if(obsStamp[i]>eraseStamp[i]){
+        v=0;for(j=0;j<n;j++){o=i*MAXS+j;v+=partRe[o]*partRe[o]+partIm[o]*partIm[o];}
+      }else{
+        var cr=0,ci=0,plus=false,minus=false;
+        for(j=0;j<n;j++){o=i*MAXS+j;var sg=partSig[o],re=partRe[o],im=partIm[o];
+          if(sg>=0)plus=true;else minus=true;
+          cr+=re*cs-im*sg*sn;ci+=re*sg*sn+im*cs;}
+        v=cr*cr+ci*ci;
+        if(plus&&minus)fringed++;
+      }
+      disp[i]=v;if(v>max)max=v;
+    }
+    f.lastMax=max;f.lastFringed=fringed;return max;};
+  f.intensityAt=function(i,mode,phi){
+    var nPart=f.nPart,partRe=f.partRe,partIm=f.partIm,partSig=f.partSig;
+    var n=nPart[i];if(!n)return 0;
+    var j,o;
+    if(mode===1){var s=0;for(j=0;j<n;j++){o=i*MAXS+j;s+=partRe[o]*partRe[o]+partIm[o]*partIm[o];}return s;}
+    var cs=Math.cos(phi),sn=Math.sin(phi),cr=0,ci=0;
+    for(j=0;j<n;j++){o=i*MAXS+j;var sg=partSig[o],re=partRe[o],im=partIm[o];
+      cr+=re*cs-im*sg*sn;ci+=re*sg*sn+im*cs;}
+    return cr*cr+ci*ci;};
+  // fringe visibility V=(Imax-Imin)/(Imax+Imin) over a cell list;
+  // norm=true divides by the incoherent envelope first (modulation depth vs local background)
+  f.visibility=function(cells,mode,phi,norm){
+    var mx=0,mn=1e30,i,v;
+    for(var ci=0;ci<cells.length;ci++){
+      i=cells[ci];v=f.intensityAt(i,mode,phi);
+      if(norm){var e=f.intensityAt(i,1,0);v=e>1e-20?v/e:1;}
+      if(v>mx)mx=v;if(v<mn)mn=v;}
+    if(mx<=0)return 0;return (mx-mn)/(mx+mn);};
+  return f;
+}
+// built-in double-slit test grid: source left, full wall at x=22 with two gaps,
+// screen column at x=36. Falsifier: V_coherent ~ 1, V_after_tagging ~ 0, V_after_eraser > 0.5
+function buildDoubleSlit(k){
+  var W=47,H=27,f=makeField(W,H),x,y;
+  f.open.fill(1);
+  for(x=0;x<W;x++){f.open[x]=0;f.open[(H-1)*W+x]=0;}
+  for(y=0;y<H;y++){f.open[y*W]=0;f.open[y*W+W-1]=0;}
+  var WX=22,g1=9,g2=17;
+  for(y=1;y<H-1;y++)if(y!==g1&&y!==g2)f.open[y*W+WX]=0;
+  var mask0=new Uint8Array(W*H),mask1=new Uint8Array(W*H);
+  for(y=1;y<H-1;y++)for(x=1;x<W-1;x++){
+    if(!f.open[y*W+x])continue;
+    if(x<=WX)mask0[y*W+x]=1;
+    if(x>=WX)mask1[y*W+x]=1;}
+  f.addFamily(2,13,+1,mask0,1,0);
+  f.computeAmps(k); // amp the source family BEFORE reading its arrival at the slit gaps
+  var f0=f.fams[0],gi=g1*W+WX,gi2=g2*W+WX;
+  var m1=Math.hypot(f0.ar[gi],f0.ai[gi])||1,m2=Math.hypot(f0.ar[gi2],f0.ai[gi2])||1;
+  f.addFamily(WX,g1,+1,mask1,f0.ar[gi]/m1*SEED_AMP,f0.ai[gi]/m1*SEED_AMP);
+  f.addFamily(WX,g2,-1,mask1,f0.ar[gi2]/m2*SEED_AMP,f0.ai[gi2]/m2*SEED_AMP);
+  f.computePartials(k);
+  var screen=[];
+  for(y=1;y<H-1;y++)if(f.open[y*W+36])screen.push(y*W+36);
+  return {f:f,screen:screen,band0:10,band1:17,sx:36};
+}
+function runFalsifiers(k){
+  var t=buildDoubleSlit(k);
+  var band=[],y;
+  for(y=t.band0;y<=t.band1;y++)band.push(y*t.f.W+t.sx);
+  var vc=t.f.visibility(band,0,0,false);            // raw coherent fringes, central band
+  var vt=t.f.visibility(band,1,0,false);            // tagged -> incoherent -> flat
+  var ve=t.f.visibility(band,0,ERASER_PHI,false);   // erased -> fringes in the new basis
+  var vcn=t.f.visibility(t.screen,0,0,true);        // modulation depth vs envelope, full column
+  var vtn=t.f.visibility(t.screen,1,0,true);        // (tagged depth = 0: the tagged display IS the envelope)
+  var ven=t.f.visibility(t.screen,0,ERASER_PHI,true);
+  var am0=0,am1=0,b0=-1,b1=-1,s;
+  for(s=0;s<t.screen.length;s++){
+    var i=t.screen[s],v0=t.f.intensityAt(i,0,0),v1=t.f.intensityAt(i,0,ERASER_PHI);
+    if(v0>b0){b0=v0;am0=(i/t.f.W)|0;}
+    if(v1>b1){b1=v1;am1=(i/t.f.W)|0;}}
+  return {vc:vc,vt:vt,ve:ve,vcn:vcn,vtn:vtn,ven:ven,shift:am1-am0};
+}
+if(typeof window!=='undefined')window.__ERASER_CORE={makeField:makeField,buildDoubleSlit:buildDoubleSlit,runFalsifiers:runFalsifiers,mulberry32:mulberry32,MAXS:MAXS,ERASER_PHI:ERASER_PHI};
+/*__ERASER_CORE_END__*/
+
+// ===== GAME SURFACE =====
+var GW=61,GH=41,CELL=12,GX=44,G1=15,G2=25; // chamber wall column x=44, slit gaps y=15/25
+var core=window.__ERASER_CORE;
+var field=null;
+var disp=new Float32Array(GW*GH),obsStamp=new Int32Array(GW*GH),eraseStamp=new Int32Array(GW*GH);
+var frameN=0,phi=0,k=2.0,sightR=7,won=false,prismHasFringes=false;
+var srcX=3,srcY=20,player={x:6,y:20},prism={x:52,y:20};
+var tiles=[];
+var ledger=[],ledgerDirty=true,stats={collapses:0,erases:0};
+var keys={},lastMove=0,lastFire=0;
+function snapOpen(x,y){
+  if(field.open[y*GW+x])return [x,y];
+  for(var r=1;r<14;r++)for(var dy=-r;dy<=r;dy++)for(var dx=-r;dx<=r;dx++){
+    var nx=x+dx,ny=y+dy;
+    if(nx<1||ny<1||nx>=GW-1||ny>=GH-1)continue;
+    if(field.open[ny*GW+nx])return [nx,ny];}
+  return [1,1];
+}
+function log(kind,detail){
+  ledger.push({t:frameN,kind:kind,detail:detail});
+  ledgerDirty=true;
+}
+function buildWorld(seed){
+  var rng=core.mulberry32(seed);
+  field=core.makeField(GW,GH);
+  field.genBraidedMaze(rng,0.55);
+  field.carve(36,8,56,32,1);                      // the chamber hall
+  var y;
+  for(y=8;y<=32;y++)if(y!==G1&&y!==G2)field.open[y*GW+GX]=0; // full-height twin-slit wall
+  // fam0: the source's own light, everywhere except the dark side of the slit wall
+  var mask0=new Uint8Array(GW*GH),mask1=new Uint8Array(GW*GH),i,x2,y2;
+  for(i=0;i<GW*GH;i++){
+    if(!field.open[i])continue;
+    x2=i%GW;y2=(i/GW)|0;
+    if(!(x2>GX&&y2>=8&&y2<=32))mask0[i]=1;
+    if(x2>=GX&&y2>=8&&y2<=32)mask1[i]=1;
+  }
+  var s=snapOpen(srcX,srcY);srcX=s[0];srcY=s[1];
+  field.addFamily(srcX,srcY,+1,mask0,1,0);
+  field.computeAmps(k); // amp the source family before reading its arrival at the slits
+  var f0=field.fams[0];
+  var ga=G1*GW+GX,gb=G2*GW+GX;
+  var ma=Math.hypot(f0.ar[ga],f0.ai[ga])||1,mb=Math.hypot(f0.ar[gb],f0.ai[gb])||1;
+  field.addFamily(GX,G1,+1,mask1,f0.ar[ga]/ma*SEED_AMP,f0.ai[ga]/ma*SEED_AMP);
+  field.addFamily(GX,G2,-1,mask1,f0.ar[gb]/mb*SEED_AMP,f0.ai[gb]/mb*SEED_AMP);
+  field.computePartials(k);
+  s=snapOpen(6,20);player.x=s[0];player.y=s[1];
+  s=snapOpen(prism.x,prism.y);prism.x=s[0];prism.y=s[1];
+  var want=[[40,12,'eraser',0],[48,20,'eraser',0],[12,6,'eraser',0],[38,28,'eraser',0],
+            [46,20,'detector',13],[36,20,'detector',10],[20,34,'detector',9]];
+  tiles=[];
+  for(i=0;i<want.length;i++){
+    var sp=snapOpen(want[i][0],want[i][1]);
+    tiles.push({x:sp[0],y:sp[1],kind:want[i][2],r:want[i][3],cool:0});
+  }
+  // the prism must sit in true two-path light (both tags present) or the win is fake
+  var pn=field.nPart[prism.y*GW+prism.x],plus=false,minus=false;
+  for(i=0;i<pn;i++){var sg=field.partSig[prism.y*GW*core.MAXS+prism.x*core.MAXS+i];if(sg>=0)plus=true;else minus=true;}
+  prismHasFringes=plus&&minus;
+  obsStamp.fill(0);eraseStamp.fill(0);
+  frameN=0;
+  phi=0;won=false;stats.collapses=0;stats.erases=0;
+  log('SEED','maze seed '+seed+' · ledger opened (append-only) · prism two-path: '+(prismHasFringes?'YES':'NO'));
+}
+function collapseBlast(cx,cy,r,label){
+  var n=0,dx,dy;
+  for(dy=-r;dy<=r;dy++)for(dx=-r;dx<=r;dx++){
+    if(dx*dx+dy*dy>r*r)continue;
+    var x=cx+dx,y=cy+dy;
+    if(x<0||y<0||x>=GW||y>=GH)continue;
+    var i=y*GW+x;
+    if(!field.open[i])continue;
+    obsStamp[i]=frameN;n++;
+  }
+  stats.collapses++;log('COLLAPSE',label+' r='+r+' @'+cx+','+cy+' · +'+n+' cells · total '+stats.collapses);
+}
+function eraseBlast(cx,cy,r,label){
+  phi+=core.ERASER_PHI;
+  var n=0,dx,dy;
+  for(dy=-r;dy<=r;dy++)for(dx=-r;dx<=r;dx++){
+    if(dx*dx+dy*dy>r*r)continue;
+    var x=cx+dx,y=cy+dy;
+    if(x<0||y<0||x>=GW||y>=GH)continue;
+    var i=y*GW+x;
+    if(!field.open[i])continue;
+    eraseStamp[i]=frameN;n++;
+  }
+  stats.erases++;log('ERASE',label+' r='+r+' @'+cx+','+cy+' · +'+n+' cells · basis now '+(Math.round(phi*180/Math.PI)%360)+'&deg; · total '+stats.erases);
+}
+function stampSight(){
+  var px=player.x,py=player.y,r=sightR,dx,dy;
+  for(dy=-r;dy<=r;dy++)for(dx=-r;dx<=r;dx++){
+    if(dx*dx+dy*dy>r*r)continue;
+    var x=px+dx,y=py+dy;
+    if(x<0||y<0||x>=GW||y>=GH)continue;
+    var i=y*GW+x;
+    if(!field.open[i])continue;
+    if(x===prism.x&&y===prism.y)continue; // the prism reads the field without recording it
+    obsStamp[i]=frameN;
+  }
+}
+function tryMove(){
+  var now=performance.now();
+  if(now-lastMove<95)return;
+  var dx=0,dy=0;
+  if(keys.ArrowUp||keys.KeyW)dy=-1;
+  else if(keys.ArrowDown||keys.KeyS)dy=1;
+  else if(keys.ArrowLeft||keys.KeyA)dx=-1;
+  else if(keys.ArrowRight||keys.KeyD)dx=1;
+  if(!dx&&!dy)return;
+  var nx=player.x+dx,ny=player.y+dy;
+  if(nx<0||ny<0||nx>=GW||ny>=GH)return;
+  if(!field.open[ny*GW+nx])return;
+  player.x=nx;player.y=ny;lastMove=now;
+  log('COLLAPSE','sight r='+sightR+' step @'+nx+','+ny);
+}
+function checkTiles(){
+  for(var i=0;i<tiles.length;i++){
+    var t=tiles[i];
+    if(t.x!==player.x||t.y!==player.y||frameN<t.cool)continue;
+    t.cool=frameN+30;
+    if(t.kind==='eraser')eraseBlast(t.x,t.y,10,'eraser tile');
+    else collapseBlast(t.x,t.y,t.r,'DETECTOR tile');
+  }
+}
+function checkWin(){
+  if(won||!prismHasFringes)return;
+  var d=Math.abs(player.x-prism.x)+Math.abs(player.y-prism.y);
+  if(d>2)return;
+  var pi=prism.y*GW+prism.x;
+  // the prism only reads as LIT if an eraser has actually re-mixed its basis
+  // (eraseStamp set) and no collapse has landed on it since — the delayed-choice loop
+  if(eraseStamp[pi]>0&&obsStamp[pi]<=eraseStamp[pi]){
+    won=true;
+    log('PRISM','LIT — prism read in the eraser basis @'+prism.x+','+prism.y+' · delayed choice honored');
+  }
+}
+// ---- render ----
+var cnv=document.getElementById('c'),ctx=cnv.getContext('2d');
+cnv.width=GW*CELL;cnv.height=GH*CELL;
+var lm=document.createElement('canvas');lm.width=GW;lm.height=GH;
+var lmx=lm.getContext('2d');var im=lmx.createImageData(GW,GH);
+function drawSprites(){
+  var px,py;
+  // slit gaps
+  ctx.fillStyle='#e8c96a';
+  ctx.fillRect(GX*CELL+CELL/2-1,G1*CELL-1,2,CELL+2);
+  ctx.fillRect(GX*CELL+CELL/2-1,G2*CELL-1,2,CELL+2);
+  // source
+  px=srcX*CELL+CELL/2;py=srcY*CELL+CELL/2;
+  ctx.fillStyle='#e8c96a';
+  ctx.beginPath();ctx.arc(px,py,CELL*0.45,0,7);ctx.fill();
+  // tiles
+  for(var i=0;i<tiles.length;i++){
+    var t=tiles[i];
+    ctx.fillStyle=t.kind==='eraser'?'rgba(180,140,255,0.85)':'rgba(255,106,77,0.85)';
+    ctx.fillRect(t.x*CELL+2,t.y*CELL+2,CELL-4,CELL-4);
+    ctx.fillStyle='#030806';
+    ctx.fillText(t.kind==='eraser'?'E':'D',t.x*CELL+4,t.y*CELL+CELL-4);
+  }
+  // prism
+  px=prism.x*CELL+CELL/2;py=prism.y*CELL+CELL/2;
+  var pi=prism.y*GW+prism.x,lit=obsStamp[pi]<=eraseStamp[pi]&&prismHasFringes;
+  ctx.strokeStyle=lit?'#ffffff':'#ff7ce0';
+  ctx.lineWidth=lit?2+Math.sin(frameN*0.2):1.5;
+  ctx.beginPath();ctx.arc(px,py,CELL*0.55,0,7);ctx.stroke();
+  // player + sight ring
+  ctx.strokeStyle='rgba(255,255,255,0.22)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.arc((player.x+0.5)*CELL,(player.y+0.5)*CELL,sightR*CELL,0,7);ctx.stroke();
+  ctx.fillStyle='#ffffff';
+  ctx.fillRect(player.x*CELL+2,player.y*CELL+2,CELL-4,CELL-4);
+}
+function updateHUD(){
+  var pi=prism.y*GW+prism.x;
+  var prismState=!prismHasFringes?'no two-path light':(obsStamp[pi]<=eraseStamp[pi]?'<b class="g">LIT (fringed)</b>':'flat (observed)');
+  document.getElementById('stats').innerHTML=
+    'pos '+player.x+','+player.y+' · k='+k.toFixed(2)+' · sight r='+sightR+
+    ' · basis &Phi;='+(Math.round(phi*180/Math.PI)%360)+'&deg;'+
+    ' · <span class="v">fringed cells '+field.lastFringed+'</span>'+
+    ' · collapses '+stats.collapses+' · erases '+stats.erases+
+    ' · ledger rows '+ledger.length+' (append-only)'+
+    ' · PRISM: '+prismState+(won?' · <b class="c">YOU LIT THE PRISM</b>':'');
+  if(ledgerDirty){
+    var rows=[],i,a=Math.max(0,ledger.length-9);
+    for(i=a;i<ledger.length;i++){
+      var r=ledger[i];
+      var col=r.kind==='ERASE'?'v':r.kind==='COLLAPSE'?'d':r.kind==='PRISM'?'c':'g';
+      rows.push('<div class="row"><b>#'+String(i).padStart(4,'0')+'</b> <span class="'+col+'">'+r.kind+'</span> f'+r.t+' · '+r.detail+'</div>');
+    }
+    document.getElementById('led').innerHTML=rows.join('');
+    ledgerDirty=false;
+  }
+}
+function runFalsifierStrip(){
+  var r=core.runFalsifiers(k);
+  var p1=r.vcn>0.8,p2=r.vtn<0.05,p3=r.ven>0.5;
+  document.getElementById('fals').innerHTML=
+    'FALSIFIERS (double-slit test grid, k='+k.toFixed(2)+', visibility = modulation depth vs local envelope) · '+
+    'V_coherent='+r.vcn.toFixed(3)+' <span class="'+(p1?'pass':'fail')+'">'+(p1?'PASS':'FAIL')+'</span> (want ~1) · '+
+    'V_after_tagging='+r.vtn.toFixed(3)+' <span class="'+(p2?'pass':'fail')+'">'+(p2?'PASS':'FAIL')+'</span> (want ~0 — the tagged display IS the envelope) · '+
+    'V_after_eraser='+r.ven.toFixed(3)+' <span class="'+(p3?'pass':'fail')+'">'+(p3?'PASS':'FAIL')+'</span> (want &gt;0.5)'+
+    ' · raw central-band: '+r.vc.toFixed(3)+' / '+r.vt.toFixed(3)+' / '+r.ve.toFixed(3)+
+    ' · fringe shift on erase: '+r.shift+' rows';
+}
+function frame(){
+  frameN++;
+  tryMove();
+  stampSight();
+  checkTiles();
+  checkWin();
+  field.displayInto(disp,phi,obsStamp,eraseStamp);
+  var max=field.lastMax||1,D=im.data,i,o;
+  for(i=0;i<GW*GH;i++){
+    o=i*4;
+    if(!field.open[i]){D[o]=6;D[o+1]=10;D[o+2]=9;D[o+3]=255;continue;}
+    var t=Math.pow(disp[i]/max,0.72);
+    if(obsStamp[i]>eraseStamp[i]){ // observed: incoherent sum, washed flat slate
+      D[o]=26+70*t;D[o+1]=30+66*t;D[o+2]=52+80*t;
+    }else{                         // coherent: violet band
+      D[o]=36+219*t;D[o+1]=22+98*t*t;D[o+2]=70+185*t;
+    }
+    D[o+3]=255;
+  }
+  lmx.putImageData(im,0,0);
+  ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(lm,0,0,cnv.width,cnv.height);
+  drawSprites();
+  if(frameN%10===0)updateHUD();
+  requestAnimationFrame(frame);
+}
+// ---- input ----
+addEventListener('keydown',function(e){
+  keys[e.code]=true;
+  if(e.code.indexOf('Arrow')===0)e.preventDefault();
+  if(e.code==='KeyE'){
+    var now=performance.now();
+    if(now-lastFire>250){lastFire=now;eraseBlast(player.x,player.y,7,'carried eraser (E)');}
+  }
+  if(e.code==='KeyR')buildWorld((Date.now()%1000000000)|0);
+});
+addEventListener('keyup',function(e){keys[e.code]=false;});
+document.getElementById('newmaze').onclick=function(){buildWorld((Date.now()%1000000000)|0);};
+document.getElementById('runtest').onclick=runFalsifierStrip;
+document.getElementById('kslider').oninput=function(){
+  k=parseFloat(this.value);
+  document.getElementById('kval').textContent=k.toFixed(2);
+  field.computePartials(k);
+  runFalsifierStrip();
+};
+document.getElementById('rslider').oninput=function(){
+  sightR=parseInt(this.value,10);
+  document.getElementById('rval').textContent=sightR;
+};
+// ---- boot ----
+buildWorld(20260906);
+runFalsifierStrip();
+updateHUD();
+requestAnimationFrame(frame);
+</script></body></html>

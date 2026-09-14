@@ -1,0 +1,150 @@
+# Riddler semantic-surrogate domain templates
+# Each domain maps Mag's actual problem shapes into a synthetic story world.
+# The remote model reasons in the story domain; the operator decodes back to territory.
+#
+# schema: riddler_domains.v1
+# Law: surrogate vocabulary must vary per-export so the metaphor is not a stable fingerprint.
+
+domains:
+  fantasy_village:
+    description: "Village council making resource-allocation and routing decisions"
+    role_slots:
+      - elder       # → decision authority
+      - gatekeeper  # → router / dispatcher
+      - messenger   # → async task / handoff
+      - crafter     # → code generation worker
+      - healer      # → error recovery / critic
+    resource_types:
+      - horse       # → shared compute / GPU lane
+      - bridge      # → deployment gate
+      - road        # → API route
+      - scroll      # → documentation / pack
+      - lantern     # → visibility / monitoring
+    constraint_patterns:
+      - "only one traveler may cross the bridge at a time"       # → sequential execution
+      - "the elder's word is final but the elder is slow"         # → LLM routing latency tradeoff
+      - "a messenger may carry only one scroll per journey"       # → single-task handoff
+      - "the gatekeeper must decide before sunset"                # → timeout / deadline
+      - "if the lantern goes out, all travelers must stop"        # → monitoring failure → halt
+    action_verbs: [wait, cross, send, craft, heal, consult, guard, yield, report]
+    domain_vocabulary:
+      agents: [elder, gatekeeper, messenger, crafter, healer, scout, sentinel, archivist]
+      places: [village, bridge, fork, watchtower, archive, forge, infirmary, gate]
+      objects: [scroll, lantern, horse, map, seal, token, key, bell]
+      events: [sunset, storm, festival, council, alarm, arrival, departure]
+
+  tower_defense:
+    description: "Tower defense game — turret targeting and resource management"
+    role_slots:
+      - player      # → operator / human
+      - turret      # → automated tool / worker
+      - spotter     # → monitor / spider
+      - engineer    # → code generator
+    resource_types:
+      - ammo        # → token budget
+      - power       # → compute / GPU
+      - time        # → deadline / timeout
+      - scrap       # → error artifacts / tech debt
+    constraint_patterns:
+      - "turrets auto-fire on nearest target; player can override"   # → heuristic + operator override
+      - "power is shared across all turrets"                         # → shared compute
+      - "each shot costs ammo; ammo is limited"                      # → token budget
+      - "spotter calls targets; turret fires"                        # → spider → executor
+      - "scrap can be recycled into ammo but takes time"             # → tech debt repayment
+    action_verbs: [fire, build, upgrade, scan, recycle, hold, redirect, salvage]
+    domain_vocabulary:
+      agents: [player, turret, spotter, engineer, commander, drone, sentry]
+      places: [base, lane, tower, workshop, depot, radar, bunker]
+      objects: [ammo, power_cell, scrap, blueprint, turret_part, beacon]
+      events: [wave, breach, recharge, upgrade_cycle, alert, repair]
+
+  restaurant_kitchen:
+    description: "Restaurant kitchen — order priority and resource scheduling"
+    role_slots:
+      - head_chef   # → orchestrator / conductor
+      - line_cook   # → worker / executor
+      - expediter   # → router / dispatcher
+      - dishwasher  # → janitor / cleanup
+    resource_types:
+      - burner      # → active task slot
+      - ingredient  # → input data / context
+      - plate       # → output artifact
+      - ticket      # → task ticket
+    constraint_patterns:
+      - "only four burners; each order uses one"                     # → concurrency limit
+      - "the expediter decides order priority"                       # → routing decision
+      - "hot food must go out within 2 minutes"                      # → latency SLA
+      - "if a ticket is wrong, the whole plate is remade"            # → task failure → retry
+      - "ingredients can spoil if not used"                          # → stale context / cache expiry
+    action_verbs: [cook, plate, fire, restock, clean, expedite, "86", refire]
+    domain_vocabulary:
+      agents: [chef, cook, expediter, dishwasher, runner, saucier, patissier]
+      places: [kitchen, pass, walkin, dish_pit, line, pantry, expo]
+      objects: [ticket, plate, pan, knife, pot, order_rail, timer]
+      events: [rush, fire, 86, all_day, last_call, cleanup]
+
+  space_colony:
+    description: "Space colony — life support and resource allocation under constraints"
+    role_slots:
+      - commander   # → operator / human
+      - engineer    # → code worker
+      - biologist   # → critic / reviewer
+      - navigator   # → planner
+    resource_types:
+      - oxygen      # → compute time
+      - power       # → energy / GPU
+      - water       # → memory / context
+      - fuel        # → token budget
+    constraint_patterns:
+      - "oxygen is finite; every colonist consumes it"               # → compute cost per task
+      - "the navigator must plot course before engines fire"         # → plan before execute
+      - "power grid can only support 3 active modules at once"       # → concurrency limit
+      - "if life support fails, all non-essential tasks halt"        # → critical failure → halt
+      - "fuel is rationed; long journeys require commander approval" # → expensive API calls need signoff
+    action_verbs: [vent, route, seal, ignite, recycle, scan, dock, broadcast]
+    domain_vocabulary:
+      agents: [commander, engineer, biologist, navigator, pilot, medic, miner]
+      places: [bridge, engine_room, lab, airlock, habitat, mine, comms]
+      objects: [oxygen_tank, fuel_cell, solar_panel, transmitter, rover, beacon]
+      events: [breach, solar_flare, landing, blackout, quarantine, all_clear]
+
+  medieval_guild:
+    description: "Medieval guild — apprenticeship, tool sharing, and quality gates"
+    role_slots:
+      - master      # → operator / architect
+      - apprentice  # → worker / executor
+      - journeyman  # → mid-level reviewer
+      - clerk       # → router / scribe
+    resource_types:
+      - tool        # → dev tool / environment
+      - material    # → input data
+      - workbench   # → active workspace
+      - seal        # → approval gate
+    constraint_patterns:
+      - "a master may take only one apprentice at a time"            # → single-task worker
+      - "guild seal required before any work leaves the hall"        # → promotion gate
+      - "journeymen inspect apprentice work before master review"    # → critic → reviewer pipeline
+      - "tools are shared; only one person per tool at a time"       # → shared resource
+      - "broken tools must be reported to the clerk immediately"     # → error reporting
+    action_verbs: [forge, temper, inspect, seal, apprentice, promote, retire, mend]
+    domain_vocabulary:
+      agents: [master, apprentice, journeyman, clerk, smith, weaver, mason, alchemist]
+      places: [forge, hall, library, vault, bench, kiln, loft, study]
+      objects: [hammer, seal, ledger, blueprint, ingot, parchment, ring, bellows]
+      events: [inspection, ceremony, market_day, audit, flood, fire, holiday]
+
+# Mapping from Mag problem domains to recommended surrogate domains
+# The compiler uses this to pick a domain that preserves structural fidelity.
+problem_domain_map:
+  routing:           [fantasy_village, restaurant_kitchen]
+  scheduling:        [restaurant_kitchen, tower_defense]
+  resource_allocation: [space_colony, fantasy_village]
+  tool_selection:    [tower_defense, medieval_guild]
+  architecture:      [medieval_guild, space_colony]
+  error_recovery:    [restaurant_kitchen, space_colony]
+  code_generation:   [medieval_guild, tower_defense]
+  review_critique:   [medieval_guild, restaurant_kitchen]
+  handoff:           [fantasy_village, space_colony]
+  deployment:        [tower_defense, space_colony]
+  monitoring:        [space_colony, tower_defense]
+  cost_optimization: [restaurant_kitchen, space_colony]

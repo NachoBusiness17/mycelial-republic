@@ -39,6 +39,11 @@ spec:
           envFrom:
             - configMapRef: { name: mag-config }
             - secretRef: { name: mag-secrets }
+          # Compose owns the shared autonomous loop. K8s is a standby/read-side
+          # runtime unless deliberately promoted by changing this value.
+          env:
+            - name: MAG_RUNTIME_ROLE
+              value: "standby"
           volumeMounts:
             - { name: state, mountPath: /app/memory, subPath: memory }
             - { name: state, mountPath: /app/logs, subPath: logs }

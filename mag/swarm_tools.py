@@ -305,6 +305,28 @@ def blackboard_post(*, text: str, kind: str = "finding", owner: str = "worker") 
         return {"ok": False, "schema": SCHEMA, "tool": "swarm_blackboard", "error": "empty text"}
     if kind not in _BB_KINDS:
         kind = "finding"
+    # LAW: a roast can become a proposal; it cannot become a permission.
+    # Pinned kinds (decision/conflict) anchor swarm coherence forever — a
+    # legacy direct write must never mint them. Route those through
+    # switchboard.propose; downgrade everything else is fine, these are not.
+    if kind in _BB_PINNED:
+        return {"ok": False, "schema": SCHEMA, "tool": "swarm_blackboard",
+                "error": "pinned kind requires switchboard authorization — use switchboard_v2.propose",
+                "authority_label": "tool-output"}
+    # steer_bus v0.1 (2026-09-01, salon lane A I1-I3): steering posts are gated —
+    # schema + closed enum + ttl cap + anchor; gossip threads never become steers.
+    if (text or "").strip().upper().startswith("STEER"):
+        try:
+            import steer_bus
+        except ImportError:
+            return {"ok": False, "schema": SCHEMA, "tool": "swarm_blackboard",
+                    "error": "steer_bus module missing — steering post refused",
+                    "authority_label": "tool-output"}
+        _sb = steer_bus.authorize(text, source_seat=owner)
+        if not _sb.get("ok"):
+            return {"ok": False, "schema": SCHEMA, "tool": "swarm_blackboard",
+                    "error": "steer_bus: " + _sb.get("reason", "unauthorized"),
+                    "authority_label": "agent-generated"}
     BLACKBOARD_DIR.mkdir(parents=True, exist_ok=True)
     idx = 0
     for p in sorted(BLACKBOARD_DIR.glob("bb-*.json")):
@@ -315,7 +337,10 @@ def blackboard_post(*, text: str, kind: str = "finding", owner: str = "worker") 
         except Exception:
             continue
     entry = {"schema": SCHEMA, "tool": "swarm_blackboard", "seq": idx, "ts": _now(),
-             "owner": owner, "kind": kind, "pinned": kind in _BB_PINNED, "text": text}
+             "owner": owner, "kind": kind, "pinned": kind in _BB_PINNED, "text": text,
+             "authority_label": "tool-output",
+             "authority": {"status": "UNMESHED", "authority_label": "tool-output",
+                           "note": "legacy direct write; route through switchboard.propose for any effect"}}
     (BLACKBOARD_DIR / f"bb-{idx:05d}.json").write_text(
         json.dumps(entry, ensure_ascii=False, indent=2), encoding="utf-8")
     # EVICTION (the steal, made real): pinned decisions/conflicts live forever; evict the oldest

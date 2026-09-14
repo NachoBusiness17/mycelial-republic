@@ -105,8 +105,37 @@ def usage_tail(limit: int = 40) -> list[dict[str, Any]]:
     path = usage_log_path()
     if not path.is_file():
         return []
+    limit = max(0, int(limit))
+    if not limit:
+        return []
     rows: list[dict[str, Any]] = []
-    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+    # The usage log is append-only and can grow large. Reading the whole file
+    # for every router probe turned a 33 MB history into repeated parse work.
+    # Read from the end, expanding only when one oversized row means the first
+    # pass did not contain enough complete lines.
+    try:
+        size = path.stat().st_size
+        chunk_size = min(size, max(64 * 1024, limit * 2048))
+        raw = b""
+        while True:
+            start = max(0, size - chunk_size)
+            with path.open("rb") as f:
+                f.seek(start)
+                raw = f.read()
+            lines = raw.splitlines()
+            if start == 0 or len(lines) > limit:
+                break
+            if chunk_size >= size:
+                break
+            chunk_size = min(size, chunk_size * 2)
+        if start > 0 and lines:
+            # The first line may be a partial row because the read starts in
+            # the middle of the file; discard only that fragment.
+            lines = lines[1:]
+        text_lines = [line.decode("utf-8", errors="replace") for line in lines[-limit:]]
+    except OSError:
+        text_lines = []
+    for line in text_lines:
         if not line.strip():
             continue
         try:

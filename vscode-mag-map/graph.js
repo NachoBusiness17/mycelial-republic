@@ -22,7 +22,7 @@ class OpsGraphPanel {
       "magMap.opsGraph",
       "MAG Ops Graph",
       column || vscode.ViewColumn.Active,
-      { enableScripts: true, retainContextWhenHidden: true }
+      { enableScripts: true, retainContextWhenHidden: false }
     );
     const inst = new OpsGraphPanel(extensionUri, panel);
     panel.webview.html = inst._html();

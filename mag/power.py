@@ -63,7 +63,12 @@ def _python_exe() -> str:
     return sys.executable
 
 
-def _health(url: str, timeout: float = 1.5) -> bool:
+def _health(url: str, timeout: float = 0.35) -> bool:
+    """Bounded loopback probe used by status surfaces.
+
+    Status is an observer, not a recovery loop.  A dead or half-open local
+    listener must not hold the brain pulse for seconds at a time.
+    """
     try:
         with urllib.request.urlopen(url, timeout=timeout) as r:
             return 200 <= r.status < 300
@@ -116,7 +121,7 @@ def _pids_on_port(port: int) -> list[int]:
     if os.name != "nt":
         try:
             out = subprocess.check_output(
-                ["ss", "-ltnp"], text=True, errors="replace", timeout=5,
+                ["ss", "-ltnp"], text=True, errors="replace", timeout=1.5,
             )
             pids: set[int] = set()
             for line in out.splitlines():
@@ -130,8 +135,9 @@ def _pids_on_port(port: int) -> list[int]:
             return []
     try:
         out = subprocess.check_output(["netstat", "-ano"], text=True, errors="replace",
+                                      timeout=1.5,
                                       creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000))
-    except (OSError, subprocess.CalledProcessError):
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
         return []
     pids: set[int] = set()
     token = f":{port} "
@@ -159,7 +165,8 @@ def _mag_python_pids() -> set[int]:
                 ["powershell", "-NoProfile", "-Command", ps_cmd],
                 text=True,
                 errors="replace",
-                timeout=30,
+                timeout=3,
+                stderr=subprocess.DEVNULL,
                 creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000),
             )
             for line in out.splitlines():
@@ -194,7 +201,7 @@ def _self_ancestor_pids() -> set[int]:
             ps = ("Get-CimInstance Win32_Process | "
                   "Select-Object ProcessId,ParentProcessId | ConvertTo-Json -Compress -Depth 3")
             res = subprocess.run(["powershell", "-NoProfile", "-Command", ps],
-                                 capture_output=True, text=True, timeout=20, errors="replace",
+                                 capture_output=True, text=True, timeout=3, errors="replace",
                                  creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000))
             pp: dict[int, int] = {}
             rows = json.loads(res.stdout) if res.stdout.strip() else []
@@ -227,18 +234,26 @@ def _self_ancestor_pids() -> set[int]:
     return out
 
 
-def _collect_all_pids() -> set[int]:
-    """Every pid belonging to this Mag stack."""
-    targets: set[int] = set()
-    try:
-        from mag_launch import _collect_mag_pids
+def _collect_all_pids(*, deep: bool = True) -> set[int]:
+    """Every pid belonging to this Mag stack.
 
-        targets.update(_collect_mag_pids())
-    except Exception:
-        pass
-    for port in MAG_PORTS:
-        targets.update(_pids_on_port(port))
-    targets.update(_mag_python_pids())
+    ``deep`` is reserved for the destructive stop path.  Read-only status
+    surfaces use the bounded state/port view and must not launch PowerShell,
+    walk live task knots, or inspect every Python command line.
+    """
+    targets: set[int] = set()
+    if deep:
+        try:
+            from mag_launch import _collect_mag_pids
+
+            targets.update(_collect_mag_pids())
+        except Exception:
+            pass
+    if deep:
+        for port in MAG_PORTS:
+            targets.update(_pids_on_port(port))
+    if deep:
+        targets.update(_mag_python_pids())
     try:
         data = json.loads(LAUNCH_STATE.read_text(encoding="utf-8"))
         sup = int(data.get("supervisor_pid") or 0)
@@ -249,14 +264,15 @@ def _collect_all_pids() -> set[int]:
                 targets.add(int(pid))
     except Exception:
         pass
-    try:
-        from mag.orchestrator import list_tasks_live
+    if deep:
+        try:
+            from mag.orchestrator import list_tasks_live
 
-        for t in list_tasks_live(limit=100) or []:
-            if t.get("status") == "running" and t.get("pid"):
-                targets.add(int(t["pid"]))
-    except Exception:
-        pass
+            for t in list_tasks_live(limit=100) or []:
+                if t.get("status") == "running" and t.get("pid"):
+                    targets.add(int(t["pid"]))
+        except Exception:
+            pass
     if GUARD_DIR.is_dir():
         for p in GUARD_DIR.glob("seat-*.json"):
             try:
@@ -271,9 +287,11 @@ def _collect_all_pids() -> set[int]:
         targets.add(int(mag_pid.read_text(encoding="utf-8").strip()))
     except Exception:
         pass
-    # Never kill our own pid (or the caller's whole lineage — on a uv-venv the code
-    # runs as a child of the venv shim python and both match the ROOT-path scan)
-    targets -= _self_ancestor_pids()
+    if deep:
+        # Never kill our own pid (or the caller's whole lineage — on a uv-venv
+        # the code runs as a child of the venv shim python and both match the
+        # ROOT-path scan).
+        targets -= _self_ancestor_pids()
     return targets
 
 
@@ -509,8 +527,14 @@ def start_all(*, open_browser: bool = False) -> dict[str, Any]:
     }
 
 
-def stack_status() -> dict[str, Any]:
-    """Honest glance — services, ports, supervisor, fleet, switchboard."""
+def stack_status(*, deep: bool = False) -> dict[str, Any]:
+    """Bounded stack glance, with optional deep mesh inspection.
+
+    The default is deliberately safe for brain/dashboard polling: it reports
+    services, known state, and recent fleet rows without invoking switchboard
+    orphan scans or process-wide discovery.  ``deep=True`` is available for a
+    deliberate operator audit or shutdown diagnostic.
+    """
     off = is_off()
     services = {
         "backend": _health("http://127.0.0.1:8000/health"),
@@ -547,13 +571,14 @@ def stack_status() -> dict[str, Any]:
     except Exception:
         pass
 
-    switchboard: dict[str, Any] = {}
-    try:
-        from mag.switchboard import status as sb_status
+    switchboard: dict[str, Any] = {"deferred": True, "reason": "deep status not requested"}
+    if deep:
+        try:
+            from mag.switchboard import status as sb_status
 
-        switchboard = sb_status()
-    except Exception as exc:
-        switchboard = {"error": str(exc)[:120]}
+            switchboard = sb_status()
+        except Exception as exc:
+            switchboard = {"error": str(exc)[:120]}
 
     seat_guards = 0
     if GUARD_DIR.is_dir():
@@ -572,7 +597,11 @@ def stack_status() -> dict[str, Any]:
     except Exception:
         pass
 
-    mag_pids = len(_collect_all_pids())
+    # This is a read-only observer.  The deep process scan belongs to
+    # stop_all(), where a slow probe is acceptable and actionable.
+    mag_pids = len(_collect_all_pids(deep=deep)) if deep else len(
+        _collect_all_pids(deep=False)
+    )
     headline = "STOPPED" if off else ("UP" if stack_up else "PARTIAL")
     if not off and mag_pids > 0 and not stack_up:
         headline = "ZOMBIES"  # processes without healthy ports
@@ -585,7 +614,12 @@ def stack_status() -> dict[str, Any]:
         "power_off": off,
         "stack_up": stack_up,
         "services": services,
-        "ports": {str(p): _pids_on_port(p) for p in MAG_PORTS},
+        # PID-to-port discovery shells out to netstat and is intentionally
+        # deferred from ordinary polling.  Deep stop/audit paths still collect
+        # it through _collect_all_pids(deep=True).
+        "ports": ({str(p): _pids_on_port(p) for p in MAG_PORTS} if deep
+                  else {str(p): [] for p in MAG_PORTS}),
+        "ports_deferred": not deep,
         "supervisor": supervisor,
         "fleet": fleet,
         "seat_guards_running": seat_guards,
@@ -595,7 +629,11 @@ def stack_status() -> dict[str, Any]:
         "top_peers": (switchboard.get("top_peers") or [])[:5],
         "ui": DASH_URL,
         "browser_env": _browser_env_glance(),
-        "lifecycle": _lifecycle_glance(),
+        "lifecycle": _lifecycle_glance() if deep else {
+            "deferred": True,
+            "reason": "deep status not requested",
+            "api": "GET /api/v1/lifecycle",
+        },
         "actions": {
             "stop": "mag.cmd power stop  or  mag_kill.cmd",
             "start": "mag.cmd power start --browser  or  boot_mag.cmd",

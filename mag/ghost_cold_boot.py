@@ -137,6 +137,7 @@ def boot_context(max_chars: int = 2000) -> str:
 def boot_and_fold() -> dict[str, Any]:
     """Cold-boot + fold this boot as a lesson (self-improving loop)."""
     cb = cold_boot()
+    folded = False
     try:
         from mag import training_events
         training_events.emit(
@@ -148,9 +149,10 @@ def boot_and_fold() -> dict[str, Any]:
             tier_max="T1",
             exportable=False,
         )
-    except Exception:
-        pass
-    cb["folded"] = True
+        folded = True
+    except Exception as exc:
+        cb["fold_error"] = str(exc)[:200]
+    cb["folded"] = folded
     return cb
 
 

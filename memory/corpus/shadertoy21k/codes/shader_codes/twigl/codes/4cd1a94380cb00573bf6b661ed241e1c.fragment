@@ -1,0 +1,8 @@
+precision highp float;
+uniform vec2 r;
+uniform float t;
+vec2 v;
+float A(float n) {return fract(sin(v.x*v.y+t+n));}
+void main(){
+  vec2 p=(gl_FragCoord.xy*2.-r)/min(r.y,r.x)*30.;v=floor(p);float l=length(v)*.1;gl_FragColor=exp(-l*5.*vec4(A(.0),A(.1),A(.2),0));
+}

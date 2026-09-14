@@ -51,10 +51,18 @@ def _now() -> str:
 
 
 def _ask_shape(prompt: str) -> str:
-    """Classify the ask shape via self_drive (best-effort, $0)."""
+    """Classify the ask shape without assembling the full handoff context.
+
+    Right-sizing is an admission decision made for every skill. Calling
+    ``self_drive.plan`` here recursively built health/model/context packs for
+    each skill, turning a cheap routing probe into repeated expensive I/O.
+    ``model_pick`` owns the shape classifier and is the appropriate lightweight
+    surface for this decision.
+    """
     try:
-        from mag.self_drive import plan as _plan
-        p = _plan(prompt or "")
+        from mag.model_pick import recommend_model
+
+        p = recommend_model(prompt or "")
         return str(p.get("model_shape") or "balanced")
     except Exception:
         return "balanced"

@@ -103,14 +103,19 @@ def ingest_cloud_handoffs(*, limit: int = 10) -> list[dict[str, Any]]:
     if not HANDOFF_DIR.is_dir():
         return []
     rows: list[dict[str, Any]] = []
-    for p in sorted(HANDOFF_DIR.glob(f"{CLOUD_PREFIX}*.json"), reverse=True)[:limit]:
+    # UUID filenames are deliberately opaque and are not chronological.  The
+    # old lexical sort could hide a just-written handoff behind ten older
+    # records, making the mailbox look unwired.  Read the durable timestamp,
+    # then apply the limit after sorting.
+    for p in HANDOFF_DIR.glob(f"{CLOUD_PREFIX}*.json"):
         try:
             h = json.loads(p.read_text(encoding="utf-8"))
             h["_path"] = p.name
             rows.append(h)
         except Exception:
             continue
-    return rows
+    rows.sort(key=lambda row: str(row.get("ts") or ""), reverse=True)
+    return rows[: max(0, int(limit))]
 
 
 def run_improve_cycle(
@@ -120,8 +125,14 @@ def run_improve_cycle(
     drain_one: bool = False,
     spider_inject: bool = False,
     scout: bool = False,
+    control_plane: bool = False,
 ) -> dict[str, Any]:
-    """One improve cycle — behavioral + queue + nervous + spider + training events."""
+    """One improve cycle — behavioral + queue + nervous + spider + training events.
+
+    ``control_plane=True`` admits only bounded queue work and emits explicit
+    deferrals for cadence-owned surfaces; it is used by synchronous law/health
+    enforcement so those callers cannot recursively run the whole flywheel.
+    """
     report: dict[str, Any] = {
         "schema": SCHEMA,
         "ts": _now(),
@@ -143,7 +154,13 @@ def run_improve_cycle(
     try:
         from mag.governor_autorun import fill_queue
 
-        filled = fill_queue(max_improve=max_improve, max_handoff=3)
+        filled = fill_queue(
+            max_improve=max_improve,
+            max_state=0 if control_plane else 2,
+            max_handoff=0 if control_plane else 3,
+            max_verkle=0 if control_plane else 2,
+            budget_seconds=2.0 if control_plane else 12.0,
+        )
         report["fill"] = {
             "improve": len(filled.get("improve") or []),
             "handoff": len(filled.get("handoff") or []),
@@ -162,17 +179,28 @@ def run_improve_cycle(
 
         ps = pile_status()
         report["pile"] = {"pending": ps.get("unclassified", 0), "total": ps.get("pile", 0)}
-        if ps.get("unclassified"):
-            from tools.pile_classify import run_pile
+        if control_plane:
+            report["pile"]["deferred"] = "control_plane"
+        elif ps.get("unclassified"):
+            # Do not import the heavyweight LangChain/Transformers classifier
+            # until the local model lane is actually present. On an offline
+            # host that import can itself consume the whole control-plane
+            # timeout before it ever reaches a model call.
+            from models.registry import ollama_tags
 
-            pr = run_pile(model="gemma4:latest", limit=3, fold=True)
-            report["pile"]["classified"] = pr.get("classified_this_run", 0)
-            report["pile"]["errors"] = len(pr.get("errors") or [])
-            report["pile"]["training_rows"] = _pile_training_count()
+            if not ollama_tags(timeout=0.6):
+                report["pile"]["deferred"] = "ollama_unavailable"
+            else:
+                from tools.pile_classify import run_pile
+
+                pr = run_pile(model="gemma4:latest", limit=3, fold=True)
+                report["pile"]["classified"] = pr.get("classified_this_run", 0)
+                report["pile"]["errors"] = len(pr.get("errors") or [])
+                report["pile"]["training_rows"] = _pile_training_count()
     except Exception as exc:
         report["pile_error"] = str(exc)[:200]
 
-    if drain_one:
+    if drain_one and not control_plane:
         try:
             from mag.orchestrator import drain_once
 
@@ -212,17 +240,24 @@ def run_improve_cycle(
     try:
         from mag.spider import tick
 
-        report["spider"] = tick(dry=False, inject=spider_inject)
+        report["spider"] = (
+            {"ok": True, "deferred": "control_plane"}
+            if control_plane
+            else tick(dry=False, inject=spider_inject)
+        )
     except Exception as exc:
         report["spider_error"] = str(exc)[:200]
 
     try:
         from mag.nervous_system import build_glance
 
-        report["nervous"] = {
-            "ok": build_glance(write=True).get("ok"),
-            "integral_ok": build_glance(write=False).get("integral_ok"),
-        }
+        if control_plane:
+            report["nervous"] = {"ok": True, "deferred": "control_plane"}
+        else:
+            report["nervous"] = {
+                "ok": build_glance(write=True).get("ok"),
+                "integral_ok": build_glance(write=False).get("integral_ok"),
+            }
     except Exception as exc:
         report["nervous_error"] = str(exc)[:200]
 

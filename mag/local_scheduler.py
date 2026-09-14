@@ -130,11 +130,21 @@ def steer(cmd: str) -> dict[str, Any]:
         if low in ("!pause", "pause"):
             state["paused"] = True
             _save(state)
+            try:
+                from mag.operator_mode import set_paused
+                set_paused(reason="local scheduler pause", requested_by="local_scheduler")
+            except Exception:
+                pass
             _cond.notify_all()
             return {"ok": True, "action": "pause", "paused": True}
         if low in ("!continue", "continue", "!resume", "resume"):
             state["paused"] = False
             _save(state)
+            try:
+                from mag.operator_mode import resume
+                resume(requested_by="local_scheduler")
+            except Exception:
+                pass
             _cond.notify_all()
             return {"ok": True, "action": "continue", "paused": False}
         if low.startswith("!escape") or low == "escape":
@@ -275,7 +285,13 @@ def _wait_turn(task_id: str, *, timeout: float) -> bool:
     with _cond:
         while True:
             state = _load()
-            if state.get("paused"):
+            shared_pause = None
+            try:
+                from mag.operator_mode import pause_reason
+                shared_pause = pause_reason()
+            except Exception:
+                pass
+            if state.get("paused") or shared_pause:
                 _cond.wait(timeout=min(2.0, max(0.1, deadline - time.monotonic())))
                 if time.monotonic() >= deadline:
                     return False
@@ -397,12 +413,21 @@ def status() -> dict[str, Any]:
     state = _load()
     pending = state.get("pending") or []
     cur = state.get("current")
+    try:
+        from mag.operator_mode import read as read_operator_mode, pause_reason
+        operator_mode = read_operator_mode()
+        shared_paused = bool(pause_reason())
+    except Exception as exc:
+        operator_mode = {"mode": "invalid", "reason": str(exc)[:120]}
+        shared_paused = True
     return {
         "ok": True,
         "schema": SCHEMA,
         "ts": _utc(),
         "enabled": _enabled(),
-        "paused": bool(state.get("paused")),
+        "paused": bool(state.get("paused")) or shared_paused,
+        "local_paused": bool(state.get("paused")),
+        "operator_mode": operator_mode,
         "busy": bool(cur),
         "current": cur,
         "pending": pending[:12],

@@ -7,6 +7,18 @@ This project is the **Mag Resource Harness** (standalone product home): local Ol
 **DNA:** residual + registry + leaf = filed workdays (`docs/DNA.md`). Lab is optional ops.  
 **Zeitgeist:** beads (this repo) + forest (mycelial-republic) — `docs/ZEITGEIST.md`. No core-mirror throne.
 
+## Shared artifact boundary — every client
+
+All durable cross-surface work lands on the shared inbox. A VS Code, Cursor, z.code, Grok, Codex, PowerShell, Linux, WSL, or OpenClaw-local session directory is cache only and must never be the sole copy.
+
+| Context | Read first | Durable write root |
+|---|---|---|
+| Windows host / Mag venv | `watch\inbox\INDEX.json` | `watch\inbox\` |
+| Docker / OpenClaw | `/board/inbox/INDEX.json` | `/board/inbox/` |
+| WSL | `/mnt/c/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/INDEX.json` | same directory |
+
+The machine contract is `watch/inbox/SHARED_SURFACE_CONTRACT.json`. Read the index, classify content before reuse, preserve hashes and bounded pointers, and leave a receipt before promotion. Model text can propose; only the switchboard/effect broker authorizes effects. Validate with `.venv\Scripts\python.exe -m mag.shared_surface validate`.
+
 ## 🖇️ Clippy — standing reminders (always-on, verkle-knotted)
 
 > It looks like you're trying to work on Mag. Would you like a reminder? *(You do not have a choice. The rope is verkle-committed.)*

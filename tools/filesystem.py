@@ -238,6 +238,16 @@ def write_file(
         return {"ok": False, "exit_code": 1, "error": str(e)}
 
 
+def apply_patch(
+    path: str,
+    search: str,
+    replace: str,
+    snapshot: str | None = None,
+) -> dict:
+    """OpenClaw-shaped alias: surgical edit through the Mag write jail."""
+    return write_file(path=path, search=search, replace=replace, snapshot=snapshot)
+
+
 def search_files(pattern: str, under: str = ".") -> dict:
     """Simple substring search in text files under path."""
     try:

@@ -14,15 +14,14 @@ zero drain since 08-10. THE RECURRING "wrong tool / route through the swarm" COR
 OF THIS: the sanctioned execution path enqueues-but-never-executes on this host, so work piles up or I
 fall back to terminal/one-shots. The interruptions were training data that named the infra block.
 
-THE FIX (self-steal, correct internal mechanism): invoke the SAME swarm_worker.run_once() drain logic
-LOCALLY on the governor cadence — no k8s needed. Plus reconcile the key env: providers.yaml reads
-DEEPSEEK_SWARM_API_KEY but the local .env sets DEEPSEEK_API_KEY -> alias the present key into the
-spawn env so deepseek actually resolves. This turns enqueue -> execute, drains the backlog into real
-research, and makes the sanctioned path functional on this host.
+THE FIX (self-steal, correct internal mechanism): invoke the SAME rightsized swarm_worker drain logic
+LOCALLY on the governor cadence — no k8s needed. Reconcile any available key for reporting, but do
+not make a DeepSeek key a global prerequisite: local/free lanes must still drain when DeepSeek is
+unavailable. This turns enqueue -> execute without forcing every task through the paid brake.
 
-SECONDARY KEY MISMATCH (reconciled here): providers.yaml reads DEEPSEEK_SWARM_API_KEY; local .env
-sets only DEEPSEEK_API_KEY. key_reconcile() copies the present key into the env var the provider reads
-(logs the KEY NAME, never the value), so a local drain resolves deepseek.
+SECONDARY KEY MISMATCH (still reported): providers.yaml reads DEEPSEEK_SWARM_API_KEY; local .env sets
+only DEEPSEEK_API_KEY. key_reconcile() can alias the present key for DeepSeek tasks, but it does not
+block local/free work when that key is absent.
 
 Schema: swarm_local_drain.v1 · deterministic coordinator + bounded swarm work · reuse: swarm_worker
 """
@@ -152,20 +151,18 @@ def drain_pass(*, limit: int = DEFAULT_PER_BEAT) -> dict[str, Any]:
     except Exception:  # noqa: BLE001
         pass
     kr = key_reconcile()
-    if not kr["resolved_provider_key"]:
-        return {"ok": False, "schema": SCHEMA, "error": "no deepseek key resolves (see key_reconcile)",
-                "key_reconcile": kr}
     try:
         from mag import swarm_worker
-        # run_once is bounded internally by MAX_PER_PASS; cap it further per beat.
-        ran = swarm_worker.run_once(max_per_pass=max(1, int(limit)))
+        # Rightsized drain is bounded internally and sends deterministic/local
+        # work to the cheap path before asking any remote provider.
+        ran = swarm_worker.run_rightsized_once(max_per_pass=max(1, int(limit)))
     except Exception as e:
         return {"ok": False, "schema": SCHEMA, "error": str(e)[:160], "key_reconcile": kr}
     done = int((ran or {}).get("done") or 0)
     failed = int((ran or {}).get("failed") or 0)
     return {"ok": True, "schema": SCHEMA, "ts": _now(), "ran": ran,
             "done": done, "failed": failed, "key_reconcile": kr,
-            "note": "local swarm drain: same swarm_worker.run_once mechanism, invoked locally because "
+            "note": "local swarm drain: same swarm_worker rightsized mechanism, invoked locally because "
                     "the k8s CronJob drainer never runs on Windows"}
 
 

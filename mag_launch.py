@@ -43,6 +43,19 @@ from config import bind_host  # noqa: E402
 
 BIND = bind_host()
 
+# There must be exactly one autonomous Mag supervisor for a shared state tree.
+# Windows has a named mutex, but POSIX containers can otherwise start a second
+# ghost/lab/autorun stack (for example Compose plus kind).  Compose is the
+# current authority; other runtimes may keep read-side HTTP slots alive but
+# must not create autonomous writers.
+RUNTIME_ROLE_ENV = "MAG_RUNTIME_ROLE"
+
+
+def _runtime_is_authoritative() -> bool:
+    return os.environ.get(RUNTIME_ROLE_ENV, "host").strip().lower() in {
+        "authoritative", "compose"
+    }
+
 CHECK_S = 5  # default; overridden by configs/temperature_stacks.yaml loops
 MUTEX_NAME = "Local\\MAGResourceHarnessSupervisor"
 
@@ -198,9 +211,16 @@ def build_slots() -> list[dict]:
             "health_url": "http://127.0.0.1:8000/health",
         },
         {
+            "name": "api_gateway",
+            "cmd": [PY, str(ROOT / "main.py"), "api", "--host", "0.0.0.0", "--port", "8001"],
+            "wanted": True,
+            "proc": None,
+            "health_url": "http://127.0.0.1:8001/health",
+        },
+        {
             "name": "scribe",
             "cmd": [PY, str(ROOT / "synthesis_agent.py")],
-            "wanted": True,
+            "wanted": _runtime_is_authoritative(),
             "proc": None,
         },
         {
@@ -215,7 +235,7 @@ def build_slots() -> list[dict]:
         {
             "name": "ghost",
             "cmd": [PY, "-m", "mag.ghost", "--daemon", "--port", "9000"],
-            "wanted": True,
+            "wanted": _runtime_is_authoritative(),
             "proc": None,
             "health_url": "http://127.0.0.1:9000/api/v1/health",
         },
@@ -224,7 +244,17 @@ def build_slots() -> list[dict]:
         {
             "name": "lab",
             "cmd": [PY, str(ROOT / "main.py"), "lab", "--no-dashboard"],
-            "wanted": True,
+            "wanted": _runtime_is_authoritative(),
+            "proc": None,
+        },
+        # Lane scheduler — the in-cage lane engine (research/builder/day_work/
+        # economist/bard_ledger/elder/night). Owned HERE so container recreates
+        # respawn it (the 09-04/05 O4 lesson); never start it by hand — its
+        # daemon refuses `>>` redirects into its own log (one file, one writer).
+        {
+            "name": "lane_scheduler",
+            "cmd": [PY, "-m", "mag.lane_runner", "--daemon"],
+            "wanted": _runtime_is_authoritative(),
             "proc": None,
         },
     ]
@@ -246,7 +276,7 @@ def build_slots() -> list[dict]:
         })
     # Drainer is deliberately opt-in. It can perform autonomous work while an
     # operator uses an interactive seat, so it must never start by surprise.
-    if _drainer_wanted():
+    if _runtime_is_authoritative() and _drainer_wanted():
         slots.append({
             "name": "drainer",
             "cmd": [PY, str(ROOT / "main.py"), "autorun"],
@@ -338,8 +368,9 @@ def _pids_on_port(port: int) -> list[int]:
             ["netstat", "-ano"],
             text=True,
             errors="replace",
+            timeout=1.5,
         )
-    except (OSError, subprocess.CalledProcessError):
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
         return []
     pids: set[int] = set()
     token = f":{port} "
@@ -387,6 +418,8 @@ def _collect_mag_pids() -> set[int]:
                 ["powershell", "-NoProfile", "-Command", ps_cmd],
                 text=True,
                 errors="replace",
+                stderr=subprocess.DEVNULL,
+                timeout=3,
             )
             for line in out.splitlines():
                 if line.strip().isdigit():

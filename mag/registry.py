@@ -12,7 +12,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import shutil
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -331,10 +333,20 @@ def upsert_registry(row: dict[str, Any]) -> None:
         key=lambda r: str(r.get("end_minute") or r.get("start_minute") or r.get("updated") or ""),
         reverse=True,
     )
-    REGISTRY.write_text(
-        "\n".join(json.dumps(r, default=str) for r in items) + "\n",
-        encoding="utf-8",
-    )
+    payload = "\n".join(json.dumps(r, default=str) for r in items) + "\n"
+    with tempfile.NamedTemporaryFile(
+        mode="w", encoding="utf-8", dir=str(REGISTRY.parent),
+        prefix=f".{REGISTRY.name}.", suffix=".tmp", delete=False,
+    ) as fh:
+        tmp = Path(fh.name)
+        fh.write(payload)
+    try:
+        os.replace(tmp, REGISTRY)
+    finally:
+        try:
+            tmp.unlink(missing_ok=True)
+        except OSError:
+            pass
 
 
 def list_registry(*, limit: int = 200) -> list[dict[str, Any]]:
@@ -347,7 +359,11 @@ def list_registry(*, limit: int = 200) -> list[dict[str, Any]]:
     return items[:limit]
 
 
-def lean_pack_status(session_id: str) -> dict[str, Any]:
+def lean_pack_status(
+    session_id: str,
+    *,
+    registry_map: dict[str, dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     """Complete = residual + card + content commit + chain leaf. Derived optional."""
     if not session_id:
         return {"ok": False, "complete": False, "missing": ["session_id"]}
@@ -360,7 +376,7 @@ def lean_pack_status(session_id: str) -> dict[str, Any]:
     vk = (d or {}).get("verkle_knot") or {}
     has_leaf = bool(vk.get("leaf_hash") or vk.get("filename"))
     # also accept chain registry leaf
-    reg = _load_registry_map().get(session_id) or {}
+    reg = (registry_map if registry_map is not None else _load_registry_map()).get(session_id) or {}
     if not has_leaf and reg.get("leaf_hash"):
         has_leaf = True
 

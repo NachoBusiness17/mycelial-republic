@@ -1,0 +1,6 @@
+{
+  "situation": "Quantizing MoE models (GLM-5.3-Flash) for memory fit.",
+  "decision": "For MoE models, quantization reduces storage but ALL 320B parameters (all experts) still occupy memory even though only ~18B activate per token.",
+  "reasoning_physics": "Expert sparsity is an activate-time savings, not a resident-memory savings. All experts must be loadable; quant lowers each expert's bytes but none can be paged out during active decode. So footprint ≈ total params × bits, not active × bits.",
+  "source_path": "/mag/docs/ref/GLM_K8S_MCP_DEEP_RESEARCH_20260826.md"
+}

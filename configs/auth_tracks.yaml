@@ -1,0 +1,51 @@
+schema: mag_auth_tracks.v1
+# The AUTH track registry — same grammar as env_tracks.yaml, identity instead of code.
+# A track = a named, snapshotted auth state the ZCode seat can ride or return to.
+# Values are NEVER stored here — only fingerprints, verdicts, and pointers.
+# Measure truth with: python -m mag.auth_switchboard status
+
+tracks:
+  zai-coding-plan-live:
+    description: The seat's working lane — OAuth coding plan on the zai family (the burn/promo pool)
+    provider: builtin:zai-coding-plan
+    status_2026-09-05T16:16Z: PASS (HTTP 200)
+
+  zai-apikey-entry:
+    description: The API-key lane entry in the provider picker — LIVE PAYG lane since 09-07
+      ($15.08 cash balance, balance alert recommended ON)
+    provider: builtin:zai
+    status_2026-09-05T16:16Z: FAIL code=1000 Authentication Failed (key fp cf3e4c0a, len 49 — wrong/revoked account)
+    status_2026-09-07T0824Z: PASS HTTP 200 (key fp 8acf87a0707f, len 49 — env ZAI_API_KEY, funded
+      PAYG; swapped from env by seat under operator order, double backup pre_apikey_swap_20260907
+      + config.json.bak-preswap-apikey-20260907; coding-plan lane kept PASS as reserve per LAW-15)
+
+  zai-start-plan:
+    description: The start-plan lane — carries an expired token after the swap
+    provider: builtin:zai-start-plan
+    status_2026-09-05T16:16Z: FAIL 401 token expired (token fp 2236d084, len 255)
+
+  bigmodel-door:
+    description: China endpoint family — disconnected by design
+    provider: builtin:bigmodel*
+    status_2026-09-05T16:16Z: disabled (oauth_provider_inactive)
+
+  lite-rearm-sep8:
+    description: FORWARD TRACK — first non-auth row proves the grammar grows. Lite pool re-arms
+      Sep 8 02:19Z THROUGH B1's refeed-guard; after re-arm run status to verify the re-authed
+      lane, then snapshot known_good. Registry grows; the grammar does not.
+    provider: builtin:zai-coding-plan
+    due: 2026-09-08T02:19Z
+    gate: B1 refeed-guard (watch/WEEKEND_BURN_BOARD_20260905.md)
+
+snapshots:
+  post_swap_broken_20260905:
+    ts: 2026-09-05T16:17:00Z
+    path: state/auth_switchboard/20260905T161700Z_post_swap_broken_20260905
+    verdict: 2 dead lanes enabled (apikey code=1000, start-plan 401); coding-plan lane live
+    note: the state the operator could not find his way back FROM — frozen as the origin marker
+
+# Way back (operator hand):
+#   A. zero-paste: point windows at "Z.ai - Coding Plan" (PASS lane). Avoid API Key + Start Plan entries.
+#   B. fix lanes:  app sign-in to the burn account refreshes start-plan; dashboard key pastes into API Key entry.
+#      then:       python -m mag.auth_switchboard snapshot known_good
+#   forever after: python -m mag.auth_switchboard use known_good   (GO-gated: type RESTORE)

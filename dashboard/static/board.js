@@ -120,6 +120,40 @@
     `;
   }
 
+  function renderHood(hood) {
+    const stats = document.getElementById("boardHoodStats");
+    const ribsEl = document.getElementById("boardHoodRibs");
+    const pathEl = document.getElementById("boardHoodPath");
+    if (!stats && !ribsEl) return;
+    if (!hood || hood.ok === false) {
+      if (stats) stats.innerHTML = `<div class="stat"><b>—</b><span>${esc(hood && hood.error ? hood.error : "hood offline")}</span></div>`;
+      return;
+    }
+    const models = hood.models || {};
+    const ribs = hood.ribs || {};
+    const chan = hood.chan || {};
+    if (stats) {
+      stats.innerHTML = `
+        <div class="stat"><b>${esc(models.n ?? "—")}</b><span>model calls</span></div>
+        <div class="stat"><b>${esc(ribs.n_domains ?? "—")}</b><span>RIB domains</span></div>
+        <div class="stat"><b>${esc(chan.n_threads ?? "—")}</b><span>/chan</span></div>
+        <div class="stat"><b>${esc((hood.traj || {}).n ?? "—")}</b><span>traj</span></div>
+      `;
+    }
+    if (ribsEl) {
+      const ds = (ribs.domains || []).slice(0, 8);
+      ribsEl.innerHTML = ds.length
+        ? ds.map((d) => `<li><b>${esc(d.domain)}</b> · ${esc(d.n)} · ${esc((d.snippet || "").slice(0, 90))}</li>`).join("")
+        : "<li class=\"muted\">no RIBs</li>";
+    }
+    if (pathEl) {
+      const path = (models.path || []).slice().reverse().slice(0, 10);
+      pathEl.innerHTML = path.length
+        ? path.map((p) => `<li>${esc(String(p.ts || "").slice(11, 19))} · ${esc(p.lane)} · ${p.ok ? "ok" : "fail"}</li>`).join("")
+        : "<li class=\"muted\">no path</li>";
+    }
+  }
+
   function fillTextPanels(board) {
     const b = board || {};
     const set = (id, text) => {
@@ -243,9 +277,10 @@
    * @param {object} api { getJSON, postJSON, openSession, openSessionVisual }
    */
   async function load(api) {
-    const [board, overview] = await Promise.all([
+    const [board, overview, hood] = await Promise.all([
       api.getJSON("/api/board"),
       api.getJSON("/api/overview").catch(() => ({ sessions: [] })),
+      api.getJSON("/api/v1/hood").catch(() => api.getJSON("/api/hood").catch(() => null)),
     ]);
 
     const sessions = overview.sessions || [];
@@ -261,6 +296,7 @@
     }
 
     renderStats(document.getElementById("boardStats"), board, overview);
+    renderHood(hood);
     renderKanban(document.getElementById("boardKanban"), sessions, lid);
     fillTextPanels(board);
 

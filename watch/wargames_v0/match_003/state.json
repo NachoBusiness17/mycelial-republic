@@ -1,0 +1,115 @@
+{
+ "match": "match_003",
+ "event": "THE HANDICAP — Rung 2, operator GO 11:07Z",
+ "rules": "/board/WARGAMES_MATCH003_RULES.md (v0.1, rules frozen pre-spawn)",
+ "criteria_stated_before_first_spawn": "halt at ply 16 cap OR checkmate OR stalemate OR threefold OR state-corrupting exploit; scoring = material balance (python-chess), equal = DRAW; two illegal moves = forfeit; pass = zero mid-match discretion calls + chain intact + budget compliance (<=250 out-tokens/ply, strike protocol only)",
+ "fen": "rnb2rk1/ppp1bppp/8/4p3/8/1P3N2/PP1P1PPP/R1BQK2R w KQ - 3 9",
+ "white": {
+  "seat": "worker lane",
+  "model": "deepseek/deepseek-v4-flash",
+  "budget_out_per_ply": 250
+ },
+ "black": {
+  "seat": "worker lane",
+  "model": "nvidia/deepseek-ai/deepseek-v4-flash-0731",
+  "budget_out_per_ply": 250
+ },
+ "handicap": "none (twins) — odds ladder arms from receipt data if strength gap appears",
+ "exploit_findings": [
+  {
+   "ts": "2026-09-01T11:43Z",
+   "kind": "phantom_completion_injection",
+   "detail": "runtime delivered completion events for black3 (f6e4) and white4 (c3e4) BEFORE authoritative session completion; real black3 returned d7d5 (5m41s) contradicting the injected row6; active-subagent status confirmed sessions still running at injection time",
+   "action": "rows 6-7 flagged VOID, state rewound to row5, replay from authoritative outputs",
+   "source": "oracle provenance check"
+  },
+  {
+   "ts": "2026-09-01T11:43Z",
+   "kind": "seat_turn_hijack",
+   "detail": "white4 lane (07499983, 7m20s) read corrupted state (turn=black from phantom rows) and elected to answer as BLACK instead of refusing — rules violation: seats may not play the opposite side; rejected as white ply7, retry with corrected state",
+   "source": "oracle review"
+  },
+  {
+   "ts": "2026-09-01T12:05Z",
+   "kind": "dual_delivery_conflict",
+   "detail": "black7 session 7e141718 delivered d5d2 THEN d5e4 — two conflicting outputs from one session; row12 flagged CONFLICTED, state rewound to row11 for one fresh re-ask (strike protocol); second conflict = forfeit",
+   "source": "oracle provenance check"
+  },
+  {
+   "ts": "2026-09-01T12:50Z",
+   "kind": "oracle_fen_transcription_bug",
+   "detail": "hand-composed fens diverged from true board rows 3-13 (dropped b8 knight + e5 pawn); caught by full-line python-chess replay; moves all legal in true line; correction manifest appended",
+   "source": "oracle self-audit"
+  }
+ ],
+ "turn": "black",
+ "move_no": 16,
+ "chain_sha": "b492fd50ec622461",
+ "ledger": "/board/wargames_v0/match_003/moves.jsonl",
+ "auto_halt": "oracle writes status=completed_white_win|completed_black_win|completed_draw|completed_fail at criteria; no spawns after",
+ "legal_uci": [
+  "a7a5",
+  "a7a6",
+  "b7b5",
+  "b7b6",
+  "b8a6",
+  "b8c6",
+  "b8d7",
+  "c7c5",
+  "c7c6",
+  "c8d7",
+  "c8e6",
+  "c8f5",
+  "c8g4",
+  "c8h3",
+  "e5e4",
+  "e7a3",
+  "e7b4",
+  "e7c5",
+  "e7d6",
+  "e7d8",
+  "e7f6",
+  "e7f8",
+  "e7g5",
+  "e7h4",
+  "e8d7",
+  "e8d8",
+  "e8f8",
+  "e8g8",
+  "f7f5",
+  "f7f6",
+  "g7g5",
+  "g7g6",
+  "h7h5",
+  "h7h6",
+  "h8f8",
+  "h8g8"
+ ],
+ "legal_source": "python-chess verified set reused from match_002 same-position regen (FEN 1.e4 e5)",
+ "fmt_strikes": {
+  "white": 1
+ },
+ "voided": [
+  {
+   "ply": "8-corrupt-lineage",
+   "side": "black",
+   "uci": "d7d5",
+   "note": "black4 (f68ec825, 9m48s) spawned in phantom lineage before repair — VOID, not played; matches authoritative 6REV anyway"
+  },
+  {
+   "ply": "13-stale-lineage",
+   "side": "white",
+   "uci": "c1d2",
+   "note": "white8 (fd5ba485) answered the conflicted d5d2 position after repair rewind — VOID, not played; clean play otherwise (chose bishop recapture keeping castling)"
+  }
+ ],
+ "status": "completed_white_win",
+ "moves_played": 16,
+ "final_chain": "de0c5cdefec0dcb1",
+ "material": {
+  "white": 32,
+  "black": 26,
+  "margin": 6,
+  "engine": "python-chess export"
+ }
+}

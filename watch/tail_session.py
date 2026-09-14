@@ -148,7 +148,7 @@ def refresh_live(sid: str, recent: list[dict], source: str) -> None:
 
 Written by **Mag integral** (`python main.py lab` or `python main.py mag` — watch is baked in).
 Optional standalone: `python main.py watch` only if Mag is not running.
-If this file goes stale, the integral process was killed — restart `python main.py lab`.
+If this file goes stale, the cage lab slot may be wedged — `scripts\\mag_exec.ps1 doctor`; `docker compose restart mag`. Do not host `python main.py lab`.
 Local only (T1) — do not send to free remote train-on-input APIs.
 """,
         encoding="utf-8",

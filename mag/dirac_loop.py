@@ -18,7 +18,7 @@ THE MAP (operator's frame):
   * A loop whose invariant is NOVEL = OPEN = a GAP the swarm/flock should fill.
 
 Schema: dirac_loop.v1 · deterministic · $0
-CLI: python -m mag.dirac_loop scan | cycles | rank | spectrum | closed <label...>
+CLI: python -m mag.dirac_loop scan [--scope operational|knowledge|all] | cycles | rank | spectrum
 """
 from __future__ import annotations
 
@@ -43,6 +43,7 @@ except Exception:
     pass
 
 SCHEMA = "dirac_loop.v1"
+_GRAPH_ERROR = ""
 
 
 def _now() -> str:
@@ -53,14 +54,38 @@ def _h(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
-def _graph() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-    """The graph from the knowledge graph (nodes + edges). Isolated nodes are kept as components."""
-    try:
-        from mag.knowledge_graph import build
-        g = build()
-        return g.get("nodes", []), g.get("edges", [])
-    except Exception:
+def _graph(scope: str = "operational") -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Load the selected graph without treating declarations as live evidence.
+
+    The operational organ graph is the default because it exposes the lifecycle that can
+    overflow or stall.  ``knowledge`` preserves the older source-backed content graph, and
+    ``all`` combines both.  Isolated nodes are kept as components.
+    """
+    global _GRAPH_ERROR
+    _GRAPH_ERROR = ""
+    scope = (scope or "operational").strip().lower()
+    if scope not in {"operational", "knowledge", "all"}:
+        _GRAPH_ERROR = f"unknown graph scope: {scope}"
         return [], []
+    nodes: list[dict[str, Any]] = []
+    edges: list[dict[str, Any]] = []
+    if scope in {"operational", "all"}:
+        try:
+            from mag.organ_map import operational_graph
+            g = operational_graph()
+            nodes.extend(g.get("nodes", []))
+            edges.extend(g.get("edges", []))
+        except Exception as exc:
+            _GRAPH_ERROR = f"operational graph: {str(exc)[:160]}"
+    if scope in {"knowledge", "all"}:
+        try:
+            from mag.knowledge_graph import build
+            g = build()
+            nodes.extend(g.get("nodes", []))
+            edges.extend(g.get("edges", []))
+        except Exception as exc:
+            _GRAPH_ERROR = f"knowledge graph: {str(exc)[:160]}"
+    return nodes, edges
 
 
 def _all_vertices(nodes: list[dict[str, Any]], edges: list[dict[str, Any]]) -> list[str]:
@@ -72,7 +97,7 @@ def _all_vertices(nodes: list[dict[str, Any]], edges: list[dict[str, Any]]) -> l
     for e in edges:
         v.add(e["from"])
         v.add(e["to"])
-    return list(v)
+    return sorted(v)
 
 
 def _components(edges: list[dict[str, Any]], node_ids: list[str]) -> int:
@@ -140,9 +165,9 @@ def _tree_path(parent: dict[str, str], u: str, v: str) -> list[str]:
     return up + list(reversed(down))
 
 
-def fundamental_cycles() -> dict[str, Any]:
+def fundamental_cycles(*, scope: str = "operational") -> dict[str, Any]:
     """The Dirac loops = fundamental cycle basis (spanning forest + one cycle per non-tree edge)."""
-    nodes, edges = _graph()
+    nodes, edges = _graph(scope)
     node_ids = _all_vertices(nodes, edges)
     by_id = {n["id"]: n for n in nodes}
     parent, tree_edges = _spanning_forest(edges, node_ids)
@@ -154,7 +179,7 @@ def fundamental_cycles() -> dict[str, Any]:
         path = _tree_path(parent, u, v)
         loops.append({"edge": f"{u}->{v}", "path": path,
                       "labels": [str(by_id.get(x, {}).get("label") or x) for x in path]})
-    return {"loops": loops}
+    return {"scope": scope, "loops": loops, **({"error": _GRAPH_ERROR} if _GRAPH_ERROR else {})}
 
 
 def loop_invariant(labels: list[str]) -> str:
@@ -163,11 +188,11 @@ def loop_invariant(labels: list[str]) -> str:
     return _h("dirac_loop:" + "|".join(sorted(set(labels))))
 
 
-def _known_invariants() -> set[str]:
+def _known_invariants(*, scope: str = "operational") -> set[str]:
     """Existing solved-shapes: hashes of the knot/case-law nodes already in the lattice."""
     known: set[str] = set()
     try:
-        nodes, _ = _graph()
+        nodes, _ = _graph(scope)
         for n in nodes:
             lab = str(n.get("label") or n.get("summary") or "")
             if n["kind"] in ("knot", "case_law", "doctrine") and lab:
@@ -177,23 +202,25 @@ def _known_invariants() -> set[str]:
     return known
 
 
-def rank() -> dict[str, Any]:
+def rank(*, scope: str = "operational") -> dict[str, Any]:
     """Circuit rank = first Betti number beta1 = m - n + c: the number of independent Dirac loops."""
-    nodes, edges = _graph()
+    nodes, edges = _graph(scope)
     n = len(_all_vertices(nodes, edges))
     m = len(edges)
     c = _components(edges, _all_vertices(nodes, edges))
     beta1 = m - n + c
-    return {"ok": True, "schema": SCHEMA, "n_vertices": n, "n_edges": m,
+    return {"ok": not bool(_GRAPH_ERROR), "schema": SCHEMA, "scope": scope,
+            "n_vertices": n, "n_edges": m,
             "components": c, "betti1": beta1, "beta1": beta1,
             "dirac_loops": max(beta1, 0),
+            **({"error": _GRAPH_ERROR} if _GRAPH_ERROR else {}),
             "note": "beta1 = m - n + c = number of independent Dirac loops (first Betti number)"}
 
 
-def spectrum() -> dict[str, Any]:
+def spectrum(*, scope: str = "operational") -> dict[str, Any]:
     """Discrete Dirac/Laplacian: count zero eigenvalues = connected components; beta1 = loops.
     Computed on the edge-graph (Laplacian L = D - A). Deterministic, no heavy deps."""
-    nodes, edges = _graph()
+    nodes, edges = _graph(scope)
     ids = _all_vertices(nodes, edges)
     idx = {nid: i for i, nid in enumerate(ids)}
     n = len(ids)
@@ -205,26 +232,30 @@ def spectrum() -> dict[str, Any]:
             deg[b] += 1
     # connected components via BFS = multiplicity of the zero eigenvalue of the Laplacian
     c = _components(edges, ids)
-    return {"ok": True, "schema": SCHEMA, "n_vertices": n, "n_edges": len(edges),
+    return {"ok": not bool(_GRAPH_ERROR), "schema": SCHEMA, "scope": scope,
+            "n_vertices": n, "n_edges": len(edges),
             "connected_components": c, "kernel_dim": c,
-            "betti1": len(edges) - n + c, "note": "kernel dim of graph Laplacian = components"}
+            "betti1": len(edges) - n + c,
+            **({"error": _GRAPH_ERROR} if _GRAPH_ERROR else {}),
+            "note": "kernel dim of graph Laplacian = components"}
 
 
-def scan() -> dict[str, Any]:
+def scan(*, scope: str = "operational") -> dict[str, Any]:
     """Full Dirac-loop scan: beta1, the loops, and each loop closed(solved)/open(gap)."""
-    fc = fundamental_cycles()
+    fc = fundamental_cycles(scope=scope)
     loops = fc["loops"]
-    known = _known_invariants()
+    known = _known_invariants(scope=scope)
     closed, open_loops = [], []
     for lp in loops:
         inv = loop_invariant(lp["labels"])
         status = "closed" if inv in known else "open"
         (closed if status == "closed" else open_loops).append({**lp, "invariant": inv, "status": status})
-    r = rank()
-    return {"ok": True, "schema": SCHEMA, "ts": _now(),
+    r = rank(scope=scope)
+    return {"ok": bool(r.get("ok")), "schema": SCHEMA, "scope": scope, "ts": _now(),
             "betti1": r["betti1"], "n_loops": len(loops),
             "closed_solved": len(closed), "open_gaps": len(open_loops),
             "closed": closed[:8], "open": open_loops[:8],
+            **({"error": r.get("error")} if r.get("error") else {}),
             "note": "closed = invariant already in lattice (solved, verify-without-replay); "
                     "open = novel invariant = a gap the swarm should fill"}
 
@@ -232,19 +263,23 @@ def scan() -> dict[str, Any]:
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="dirac_loop", description="Dirac loops + knot topology on the knowledge graph")
     sub = p.add_subparsers(dest="cmd")
-    sub.add_parser("scan")
-    sub.add_parser("cycles")
-    sub.add_parser("rank")
-    sub.add_parser("spectrum")
+    for name in ("scan", "cycles", "rank", "spectrum"):
+        # Accept --scope both before and after the subcommand.  Suppress the
+        # subparser default so a global --scope is not overwritten.
+        sub.add_parser(name).add_argument(
+            "--scope", choices=("operational", "knowledge", "all"),
+            default=argparse.SUPPRESS,
+        )
+    p.add_argument("--scope", choices=("operational", "knowledge", "all"), default="operational")
     a = p.parse_args(argv)
     if a.cmd == "scan":
-        print(json.dumps(scan(), indent=2, ensure_ascii=False, default=str))
+        print(json.dumps(scan(scope=a.scope), indent=2, ensure_ascii=False, default=str))
     elif a.cmd == "cycles":
-        print(json.dumps(fundamental_cycles(), indent=2, ensure_ascii=False, default=str))
+        print(json.dumps(fundamental_cycles(scope=a.scope), indent=2, ensure_ascii=False, default=str))
     elif a.cmd == "rank":
-        print(json.dumps(rank(), indent=2, ensure_ascii=False))
+        print(json.dumps(rank(scope=a.scope), indent=2, ensure_ascii=False))
     elif a.cmd == "spectrum":
-        print(json.dumps(spectrum(), indent=2, ensure_ascii=False))
+        print(json.dumps(spectrum(scope=a.scope), indent=2, ensure_ascii=False))
     else:
         p.print_help(); return 1
     return 0

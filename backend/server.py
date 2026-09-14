@@ -12,9 +12,11 @@ Run:
 from __future__ import annotations
 
 import argparse
+import json
 import sys
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 # Ensure project root on path
 ROOT = Path(__file__).resolve().parents[1]
@@ -63,7 +65,111 @@ def health() -> dict[str, Any]:
         "service": "mag-backend",
         "tools": sorted(TOOL_MAP),
         "version": "1.0.0",
+        "semantic": "/healthz",  # process-up says nothing about health
     }
+
+
+# --- Semantic health (/healthz) — Chair 6/D lane-3 finding -------------------
+# /health is hardcoded {"ok": true}: process-up, not health. /healthz reads the
+# tail of logs/failure_kb.jsonl (last ~2MB, no full scan) and grades the
+# trailing hour: ok=false when >=10 http_tool_fail rows in 1h OR any critical
+# tool failed in the last 15 min.
+FAILURE_KB_PATH = ROOT / "logs" / "failure_kb.jsonl"
+FAILURE_TAIL_BYTES = 2 * 1024 * 1024
+FAILURE_KINDS = frozenset(
+    {"tool_fail", "http_tool_fail", "warning", "collapse", "swarm_health", "guard_registry"}
+)
+CRITICAL_TOOLS = frozenset({"run_shell", "run_python", "write_file", "apply_patch", "fence_strike"})
+HTTP_FAIL_OK_THRESHOLD = 10  # per hour
+CRITICAL_WINDOW_MINUTES = 15
+
+
+def _tail_rows(path: Path, max_bytes: int = FAILURE_TAIL_BYTES) -> Iterator[dict[str, Any]]:
+    """Yield dict rows from the last ~max_bytes of a JSONL file. Cheap tail read."""
+    try:
+        size = path.stat().st_size
+        with path.open("rb") as fh:
+            if size > max_bytes:
+                fh.seek(size - max_bytes)
+                fh.readline()  # drop the partial line cut by the seek
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    row = json.loads(line)
+                except Exception:  # noqa: BLE001 — corrupt tail row is not a crash
+                    continue
+                if isinstance(row, dict):
+                    yield row
+    except OSError:
+        return
+
+
+def _row_ts(row: dict[str, Any]) -> datetime | None:
+    raw = row.get("ts")
+    if not isinstance(raw, str) or not raw:
+        return None
+    try:
+        ts = datetime.fromisoformat(raw)
+    except ValueError:
+        return None
+    if ts.tzinfo is None:
+        ts = ts.replace(tzinfo=timezone.utc)
+    return ts
+
+
+def semantic_health(path: Path = FAILURE_KB_PATH) -> dict[str, Any]:
+    """Grade fleet health from the failure_kb tail (trailing hour)."""
+    now = datetime.now(timezone.utc)
+    hour_ago = now - timedelta(hours=1)
+    crit_ago = now - timedelta(minutes=CRITICAL_WINDOW_MINUTES)
+    http_fail_1h = 0
+    tool_fail_1h = 0
+    critical_failure_recent = False
+    last_failure_dt: datetime | None = None
+    for row in _tail_rows(path):
+        ts = _row_ts(row)
+        kind = row.get("kind")
+        if kind not in FAILURE_KINDS:
+            continue
+        if ts is not None and (last_failure_dt is None or ts > last_failure_dt):
+            last_failure_dt = ts
+        if ts is None or ts < hour_ago:
+            continue
+        if kind == "http_tool_fail":
+            http_fail_1h += 1
+        elif kind == "tool_fail":
+            tool_fail_1h += 1
+        if kind in ("tool_fail", "http_tool_fail") and row.get("tool") in CRITICAL_TOOLS and ts >= crit_ago:
+            critical_failure_recent = True
+    # failure_kb records failures only — attempts are unobservable from this
+    # surface, so the rate is null and counts stand in (per endpoint contract).
+    tool_error_rate_1h: float | None = None
+    ok = http_fail_1h < HTTP_FAIL_OK_THRESHOLD and not critical_failure_recent
+    return {
+        "ok": ok,
+        "tool_error_rate_1h": tool_error_rate_1h,
+        "tool_fail_1h": tool_fail_1h,
+        "critical_failure_recent": critical_failure_recent,
+        "http_tool_fail_1h": http_fail_1h,
+        "last_failure_ts": last_failure_dt.isoformat() if last_failure_dt else None,
+        "window": {"hours": 1, "critical_minutes": CRITICAL_WINDOW_MINUTES, "tail_bytes": FAILURE_TAIL_BYTES},
+    }
+
+
+@app.get("/healthz")
+def healthz() -> JSONResponse:
+    """Semantic health — is the fleet actually working, not just up.
+
+    200 when healthy, 503 on breach (>=10 http_tool_fail/1h or a critical
+    tool failed in the last 15 min). Body carries the same detail either way,
+    so monitors may grade the body, but the status code is the gate signal —
+    a monitor that only checks the code still catches a breach.
+    """
+    report = semantic_health()
+    return JSONResponse(status_code=200 if report["ok"] else 503, content=report)
+# -----------------------------------------------------------------------------
 
 
 @app.post("/api/v1/cast/launch")
@@ -85,10 +191,33 @@ def cast_launch() -> dict[str, Any]:
         return {"ok": False, "service": "mag-backend", "error": str(e)[:160]}
 
 
+def _log_http_failure(tool: str, error: str, result: dict | None) -> None:
+    """Count direct-API tool failures into failure_kb (cross-session pressure alarm).
+
+    Buried-signal probe (2026-09-11): 12 direct-API failures produced zero rows —
+    the HTTP seam the organ router uses was invisible to the counter. Closes the
+    seam Chair 3 verified; the CLI path was already counted."""
+    try:
+        from mag.failure_kb import log_failure
+
+        log_failure(
+            kind="http_tool_fail",
+            detail=f"direct-API /run_task failure: {(result or {}).get('error') or error}"[:500],
+            tool=tool,
+            error=error[:300],
+            phase="http_dispatch",
+            session_id=None,
+            provider=None,
+        )
+    except Exception:
+        pass
+
+
 @app.post("/run_task", response_model=RunTaskResponse)
 def run_task(req: RunTaskRequest) -> RunTaskResponse:
     """Dispatch a tool call. Returns Success/Failure JSON envelope."""
     if req.tool not in TOOL_MAP:
+        _log_http_failure(req.tool, f"unknown tool: {req.tool}", None)
         return RunTaskResponse(
             ok=False,
             tool=req.tool,
@@ -98,8 +227,17 @@ def run_task(req: RunTaskRequest) -> RunTaskResponse:
     try:
         result = tool_dispatch(req.tool, req.args or {})
         ok = bool(result.get("ok", False))
+        if not ok:
+            # Count HTTP-seam failures: without this, direct-API loops are
+            # invisible to failure_kb (the 25,007-row blind spot, 08-06..09-11).
+            _log_http_failure(
+                req.tool,
+                str((result or {}).get("error") or "")[:300],
+                result if isinstance(result, dict) else None,
+            )
         return RunTaskResponse(ok=ok, tool=req.tool, result=result)
     except Exception as e:  # noqa: BLE001
+        _log_http_failure(req.tool, str(e)[:300], None)
         return RunTaskResponse(
             ok=False,
             tool=req.tool,

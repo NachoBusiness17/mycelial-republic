@@ -1,10 +1,11 @@
-from . import code_execution, filesystem, shell, swarm_tools
+from . import code_execution, filesystem, sense_tools, shell, swarm_tools
 from mag import vision
 
 TOOL_MAP = {
     "list_dir": lambda **kw: filesystem.list_dir(**kw),
     "read_file": lambda **kw: filesystem.read_file(**kw),
     "write_file": lambda **kw: filesystem.write_file(**kw),
+    "apply_patch": lambda **kw: filesystem.apply_patch(**kw),
     "search_files": lambda **kw: filesystem.search_files(**kw),
     "run_shell": lambda **kw: shell.run_shell(**kw),
     "run_python": lambda **kw: code_execution.run_python(**kw),
@@ -23,6 +24,32 @@ TOOL_MAP = {
     # vision — deepseek-v4-flash-vision-exp (2026-08-25): agents can SEE images now.
     #   vision describe <image_path_or_url> [prompt]  (base64-inline / URL)
     "vision": lambda **kw: vision.describe(**kw),
+    # sense bus — voice packets + image-whisper scan for dumb bodies (MCP GPS)
+    "voice_turn": sense_tools.voice_turn,
+    "whisper_decode": sense_tools.whisper_decode,
+    # desk tools — the gateway's four callable organs (P0 master plan, lane R2)
+    "biblio_query": lambda **kw: __import__("mag.desk_tools", fromlist=["biblio_query"]).biblio_query(**kw),
+    "invariant_sheet": lambda **kw: __import__("mag.desk_tools", fromlist=["invariant_sheet"]).invariant_sheet(**kw),
+    "kvos_stats": lambda **kw: __import__("mag.desk_tools", fromlist=["kvos_stats"]).kvos_stats(**kw),
+    "fence_strike": lambda **kw: __import__("mag.desk_tools", fromlist=["fence_strike"]).fence_strike(**kw),
+}
+
+
+# Advertised parameter name -> synonyms models actually emit. Applied only when
+# the advertised name is absent, so the mapping is lossless.
+_ARG_ALIASES: dict[str, dict[str, str]] = {
+    "run_shell": {
+        "cmd": "command",
+        "command_line": "command",
+        "shell_command": "command",
+        "script": "command",
+    },
+    "run_python": {
+        "python": "code",
+        "code_str": "code",
+        "snippet": "code",
+        "script": "code",
+    },
 }
 
 
@@ -42,20 +69,30 @@ def _normalize_args(name: str, args: dict | None) -> dict | None:
     # Also unwrap when the value is a JSON *string* (harness captures the
     # parameter value as raw text, so a model emitting one `arguments` param
     # yields {"arguments": '{"path": ...}'} — a string, not a dict).
-    for key in ("arguments", "parameters", "params", "kwargs"):
+    for key in ("arguments", "parameters", "params", "kwargs", "kw"):
         if len(args) == 1 and key in args:
             val = args[key]
             if isinstance(val, dict):
-                return dict(val)
+                args = dict(val)
+                break
             if isinstance(val, str):
                 try:
                     import json
 
                     parsed = json.loads(val)
                     if isinstance(parsed, dict):
-                        return parsed
+                        args = parsed
+                        break
                 except (ValueError, TypeError):
                     pass
+    # Same drift, one level down: models emit the OpenAI code-interpreter
+    # parameter names (`cmd`, `code_str`) instead of the advertised ones
+    # (`command`, `code`). The advertised name is absent, so the rename is
+    # unambiguous — accept it rather than spending a round trip on a TypeError
+    # the model may never read (the 2026-08-06 run_shell loop, 25k rows).
+    for wrong, right in _ARG_ALIASES.get(name, {}).items():
+        if wrong in args and right not in args:
+            args[right] = args.pop(wrong)
     return args
 
 
@@ -65,6 +102,7 @@ _FN = {
     "list_dir": filesystem.list_dir,
     "read_file": filesystem.read_file,
     "write_file": filesystem.write_file,
+    "apply_patch": filesystem.apply_patch,
     "search_files": filesystem.search_files,
     "run_shell": shell.run_shell,
     "run_python": code_execution.run_python,
@@ -78,6 +116,13 @@ _FN = {
     "scan_grid": swarm_tools.scan_grid,
     "mean_field": swarm_tools.mean_field,
     "research": swarm_tools.research,
+    "voice_turn": sense_tools.voice_turn,
+    "whisper_decode": sense_tools.whisper_decode,
+    # desk tools (P0 master plan)
+    "biblio_query": __import__("mag.desk_tools", fromlist=["biblio_query"]).biblio_query,
+    "invariant_sheet": __import__("mag.desk_tools", fromlist=["invariant_sheet"]).invariant_sheet,
+    "kvos_stats": __import__("mag.desk_tools", fromlist=["kvos_stats"]).kvos_stats,
+    "fence_strike": __import__("mag.desk_tools", fromlist=["fence_strike"]).fence_strike,
 }
 
 

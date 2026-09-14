@@ -1,0 +1,46 @@
+precision highp float;
+uniform vec2 resolution;
+uniform float time;
+out vec4 fragColor;
+
+#define rot(a) mat2(cos(a),sin(a),-sin(a),cos(a))
+
+void sFold90(inout vec2 p)
+{
+  vec2 v=normalize(vec2(1,-1)); ;
+  float g=dot(p,v);
+  p-=(g-sqrt(g*g+1e-4))*v;
+}
+
+float map(vec3 p){
+  p.xy*=rot(time*.5);
+  p.xz*=rot(time*.3);
+  float s=1.;
+  for(int i=0;i<3;i++){
+    p=abs(p)-.3;
+    sFold90(p.xz);
+    sFold90(p.yz);
+    sFold90(p.xy);
+    p-=vec3(.1,-.2,.1);
+    p.xy*=rot(.2);
+    p.yz*=rot(.4);
+    float b=.04;
+    p=b-abs(abs(p-2.*b)-b);
+    p*=-2.;
+    s*=2.;
+  }
+  p/=abs(s);
+  float h=.7;
+  p.x-=clamp(p.x,-h,h);
+  // torus SDF
+  return length(vec2(length(p.xy)-.5,p.z))-.007;
+}
+
+void main(){
+    vec2 uv=(gl_FragCoord.xy-.5*resolution)/resolution.y;
+    vec3 rd=normalize(vec3(uv,1));
+    vec3 p=vec3(0,0,-5);
+    float d=1.,i;
+    for(;++i<99.&&d>.001;)p+=rd*(d=map(p));
+    if(d<.001)fragColor+=10./i;
+}

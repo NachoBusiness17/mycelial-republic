@@ -105,6 +105,11 @@
       <option value="browser">Browser Web Speech (fast interim, flaky)</option>
     </select>
   </label>
+  <label>Mic (STT input)
+    <select id="micDevice">
+      <option value="" selected>OS default input</option>
+    </select>
+  </label>
   <label>Dictation language (Whisper)
     <select id="sttLang">
       <option value="en" selected>English</option>
@@ -377,10 +382,14 @@
       stopWhisperRec(false);
       mediaStream = await navigator.mediaDevices.getUserMedia({
         audio: {
+          // earbud fix (ghost-era STEAL_VOICE_EARBUD_STT_20260811, wired 09-05):
+          // route STT to the CHOSEN mic + force 16k mono for faster-whisper
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
           channelCount: 1,
+          sampleRate: 16000,
+          ...(selectedMicId() ? { deviceId: { exact: selectedMicId() } } : {}),
         },
         video: false,
       });
@@ -506,6 +515,29 @@
         try { await startWhisperRec(); }
         catch (e) { setStatus(String(e.message || e)); }
       }
+    }
+
+    function selectedMicId() {
+      const sel = $("micDevice");
+      return (sel && sel.value) || localStorage.getItem("magVoiceMicDevice") || "";
+    }
+
+    async function fillMics() {
+      const sel = $("micDevice");
+      if (!sel || !canMedia) return;
+      try {
+        const devs = (await navigator.mediaDevices.enumerateDevices())
+          .filter((d) => d.kind === "audioinput");
+        const cur = localStorage.getItem("magVoiceMicDevice") || "";
+        sel.innerHTML = '<option value="">OS default input</option>';
+        for (const d of devs) {
+          const o = document.createElement("option");
+          o.value = d.deviceId;
+          o.textContent = d.label || `input ${d.deviceId.slice(0, 8)}`;
+          if (d.deviceId === cur) o.selected = true;
+          sel.appendChild(o);
+        }
+      } catch (_) { /* permission not granted yet — keep OS default */ }
     }
 
     function fillVoices() {
@@ -1146,6 +1178,13 @@
         updateMetaStrip({ voice: activeVoiceLabel(), seat: seatEl.value });
       };
     }
+    if (canMedia) {
+      fillMics();
+      navigator.mediaDevices.addEventListener?.("devicechange", fillMics);
+      $("micDevice").addEventListener("change", () => {
+        localStorage.setItem("magVoiceMicDevice", $("micDevice").value || "");
+      });
+    }
     updateMetaStrip({ voice: activeVoiceLabel(), seat: seatEl.value || "local", stt: sttMode() });
     $("ttsVoice")?.addEventListener("change", () => updateMetaStrip({ voice: activeVoiceLabel() }));
 
@@ -1185,5 +1224,5 @@
     probeStt();
     refreshCanvas();
   </script>
-</body>
+<script src="/static/nav.js"></script></body>
 </html>

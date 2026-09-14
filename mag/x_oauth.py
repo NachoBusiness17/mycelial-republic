@@ -48,7 +48,7 @@ AUTHORIZE_URL = "https://x.com/i/oauth2/authorize"
 TOKEN_URL = "https://api.x.com/2/oauth2/token"
 POST_URL = "https://api.x.com/2/tweets"
 ME_URL = "https://api.x.com/2/users/me"
-SCOPES = "users.read tweet.read tweet.write like.write follows.write bookmark.write dm.read dm.write offline.access"
+SCOPES = "users.read tweet.read tweet.write media.write like.write follows.write bookmark.write dm.read dm.write offline.access"
 
 TOKENS = ROOT / "memory" / "runs" / "x_oauth" / "tokens.json"
 OAUTH_STATE = ROOT / "memory" / "runs" / "x_oauth" / "state.json"
@@ -73,7 +73,7 @@ _load_env_x()
 CLIENT_ID = os.environ.get("X_ClientID", os.environ.get("X_CLIENT_ID", ""))
 CLIENT_SECRET = os.environ.get("X_ClientSecret", os.environ.get("X_CLIENT_SECRET", ""))
 REDIRECT_URI = os.environ.get("X_REDIRECT_URI", "http://127.0.0.1:8788/callback")
-HANDLE = os.environ.get("GHOST_X_HANDLE", "GroundingWave")
+HANDLE = os.environ.get("GHOST_X_HANDLE", "NachoQuixotic")  # token binds NachoQuixotic (verified 09-05 via me())
 
 
 def _now() -> str:
@@ -242,11 +242,50 @@ def _access_token() -> tuple[str, str]:
 
 
 # ── Step 3: post ────────────────────────────────────────────────────
-def post(text: str) -> dict[str, Any]:
+MEDIA_URL = "https://api.x.com/2/media/upload"
+
+
+def upload_media(image_path: str) -> dict[str, Any]:
+    """v2 simple media upload (images <=5MB). Returns {media_id}."""
+    at, err = _access_token()
+    if not at:
+        return {"ok": False, "schema": SCHEMA, "error": err}
+    p = Path(image_path)
+    if not p.exists():
+        return {"ok": False, "schema": SCHEMA, "error": f"no file: {image_path}"}
+    raw = p.read_bytes()
+    if len(raw) > 5 * 1024 * 1024:
+        return {"ok": False, "schema": SCHEMA, "error": f"file too large: {len(raw)} B"}
+    mime = "image/png" if raw[:8] == b"\x89PNG\r\n\x1a\n" else (
+        "image/jpeg" if raw[:3] == b"\xff\xd8\xff" else "application/octet-stream")
+    if mime == "application/octet-stream":
+        return {"ok": False, "schema": SCHEMA, "error": "not a PNG/JPEG"}
+    try:
+        r = requests.post(
+            MEDIA_URL,
+            headers={"Authorization": f"Bearer {at}", "User-Agent": f"{HANDLE}/0.1"},
+            files={"media": (p.name, raw, mime)},
+            data={"media_category": "tweet_image"},
+            timeout=60,
+        )
+    except requests.RequestException as e:
+        return {"ok": False, "schema": SCHEMA, "error": f"net: {e}"}
+    if r.status_code not in (200, 201):
+        return {"ok": False, "schema": SCHEMA, "error": r.text[:400]}
+    j = r.json()
+    mid = (j.get("data") or {}).get("id", "")
+    return {"ok": True, "schema": SCHEMA, "media_id": mid}
+
+
+def post(text: str, media_ids: list[str] | None = None, reply_to: str = "") -> dict[str, Any]:
     at, err = _access_token()
     if not at:
         return {"ok": False, "schema": SCHEMA, "error": err}
     payload: dict[str, Any] = {"text": text[:4000]}  # X Premium allows up to 4000 chars/post
+    if media_ids:
+        payload["media"] = {"media_ids": media_ids[:4]}
+    if reply_to:
+        payload["reply"] = {"in_reply_to_tweet_id": reply_to}
     headers = {
         "Authorization": f"Bearer {at}",
         "Content-Type": "application/json",
@@ -430,7 +469,8 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="x-oauth")
     ap.add_argument("cmd", choices=["start", "complete", "post", "me", "refresh", "like", "follow", "recent", "dm", "edit", "delete", "status"])
     ap.add_argument("arg", nargs="*", default=[])
-    args = ap.parse_args(argv)
+    args, _unknown = ap.parse_known_args(argv)
+    args.arg = (args.arg or []) + _unknown
     body = " ".join(args.arg)
     if args.cmd == "start":
         print(json.dumps(start(), indent=2))
@@ -445,7 +485,28 @@ def main(argv: list[str] | None = None) -> int:
     elif args.cmd == "complete":
         print(json.dumps(complete(body), indent=2))
     elif args.cmd == "post":
-        print(json.dumps(post(body), indent=2))
+        # post "<text>" | post --media <path> --reply <tweet_id> "<text>"
+        # flags are stripped from ANYWHERE in the arg list (order-free)
+        mid, rto = "", ""
+        rest, flags = [], {}
+        pending = None
+        for a in args.arg:
+            if a in ("--media", "--reply"):
+                pending = a
+            elif pending == "--media":
+                flags["media"] = a; pending = None
+            elif pending == "--reply":
+                flags["reply"] = a; pending = None
+            else:
+                rest.append(a)
+        if "media" in flags:
+            up = upload_media(flags["media"])
+            if not up.get("ok"):
+                print(json.dumps(up, indent=2)); sys.exit(1)
+            mid = up.get("media_id", "")
+        rto = flags.get("reply", "")
+        body = " ".join(rest)
+        print(json.dumps(post(body, [mid] if mid else None, rto), indent=2))
     elif args.cmd == "edit":
         # python -m mag.x_oauth edit "<post_id>" "<text>"
         parts = [a for a in args.arg if a.strip()]

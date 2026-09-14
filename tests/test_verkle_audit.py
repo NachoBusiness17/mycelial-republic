@@ -47,3 +47,29 @@ def test_run_audit_writes_report(tmp_path, monkeypatch):
     assert len(files) == 1
     data = json.loads(files[0].read_text(encoding="utf-8"))
     assert data.get("schema") == "verkle_audit.v1"
+
+
+def test_tip_repair_does_not_rewrite_verified_chain(tmp_path, monkeypatch):
+    from mag import verkle_knot as vk
+
+    chain = tmp_path / "verkle_chain.jsonl"
+    tip = tmp_path / "verkle_tip.json"
+    monkeypatch.setattr(vk, "CHAIN", chain)
+    monkeypatch.setattr(vk, "TIP", tip)
+    monkeypatch.setattr(vk, "LOCK", tmp_path / ".verkle.lock")
+    leaves = ["leaf-a", "leaf-b"]
+    root = vk._merkle_root(leaves)
+    rows = [
+        {"index": 0, "leaf_hash": leaves[0], "verkle_root": leaves[0], "session_id": "a"},
+        {"index": 1, "leaf_hash": leaves[1], "verkle_root": root, "session_id": "b"},
+    ]
+    chain.write_text("\n".join(json.dumps(row) for row in rows) + "\n", encoding="utf-8")
+    tip.write_text(json.dumps({"root": "stale", "n_leaves": 2}), encoding="utf-8")
+    before = chain.read_bytes()
+
+    result = vk.repair_tip_if_consistent()
+
+    assert result["ok"] is True
+    assert result["repaired"] is True
+    assert json.loads(tip.read_text(encoding="utf-8"))["root"] == root
+    assert chain.read_bytes() == before

@@ -73,6 +73,14 @@ def _ledger_path(agent: str) -> Path:
     return LEDGERS / f"{agent}.jsonl"
 
 
+def _display_path(path: Path) -> str:
+    """Render a path without assuming test or alternate roots are under ROOT."""
+    try:
+        return str(path.relative_to(ROOT)).replace("\\", "/")
+    except ValueError:
+        return str(path)
+
+
 def _ensure() -> None:
     CORPUS_DIR.mkdir(parents=True, exist_ok=True)
     LEDGERS.mkdir(parents=True, exist_ok=True)
@@ -120,7 +128,7 @@ def log_chat(agent: str, version: str, text: str, *, source: str = "manual") -> 
         f.write(json.dumps({"leaf": leaf, "agent": agent, "version": version, "text": text,
                             "source": source, "ts": _now()}, ensure_ascii=False) + "\n")
     return {"ok": True, "schema": SCHEMA, "agent": agent, "version": version, "leaf": leaf,
-            "deduped": False, "logged": True, "ledger": str(ledger.relative_to(ROOT)).replace("\\", "/")}
+            "deduped": False, "logged": True, "ledger": _display_path(ledger)}
 
 
 def corpus(agent: str | None = None) -> dict[str, Any]:
@@ -136,7 +144,7 @@ def corpus(agent: str | None = None) -> dict[str, Any]:
                 except Exception:
                     continue
         return {"ok": True, "schema": SCHEMA, "agent": agent, "n_chats": len(rows),
-                "chats": rows[-50:], "ledger": str(p.relative_to(ROOT)).replace("\\", "/")}
+                "chats": rows[-50:], "ledger": _display_path(p)}
     per_agent = {}
     for a in KNOWN_AGENT_IDS:
         p = _ledger_path(a)

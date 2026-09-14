@@ -107,6 +107,10 @@ def xai_key_status() -> dict[str, Any]:
 
 def probe_xai_keys(*, max_tokens: int = 8) -> dict[str, Any]:
     """Probe each configured xAI key with a 1-token call to find the one that works."""
+    import os as _os
+    if _os.environ.get("GROK_ALLOW_PAID", "").strip() != "1" and _os.environ.get("XAI_CASH_ALLOWED", "").strip() != "1":
+        return {"schema": "grok_rightsize.probe.v1", "results": [],
+                "note": "grok_route.v1: probes blocked — cash endpoint not armed (GROK_ALLOW_PAID=1 / XAI_CASH_ALLOWED=1)"}
     results: list[dict[str, Any]] = []
     for env_name, key in xai_key_chain():
         try:
@@ -319,6 +323,16 @@ def call_grok(
                               cost_est_usd=0, latency_ms=0,
                               error="No XAI_API_KEY in environment")
 
+    # grok_route.v1 (operator law 09-05, re-mints the 08-11 GROK_ALLOW_PAID steal):
+    # cash endpoint BLOCKED unless explicitly armed (GROK_ALLOW_PAID=1 or
+    # XAI_CASH_ALLOWED=1). Subscription lanes first: grok CLI / AOS / supergrok front-end.
+    import os as _os
+    if _os.environ.get("GROK_ALLOW_PAID", "").strip() != "1" and _os.environ.get("XAI_CASH_ALLOWED", "").strip() != "1":
+        return GrokCallResult(ok=False, content="", model="", tier="",
+                              tokens_prompt=0, tokens_completion=0, tokens_total=0,
+                              cost_est_usd=0, latency_ms=0,
+                              error="grok_route.v1: cash API blocked (arm GROK_ALLOW_PAID=1 or XAI_CASH_ALLOWED=1); use grok CLI / AOS / supergrok front-end")
+
     # Rightsize
     budget = budget_for(goal, force_tier=tier)
     model = budget["model"]
@@ -477,7 +491,39 @@ def call_grok_free(
     except Exception as e:
         fe_err = str(e)[:200]
 
-    # 2) Paid API — GATED OFF by default (protect the $10 credit).
+    # 2) Headless subscription harness. The browser seat can be unavailable
+    # while the installed Grok CLI is healthy; do not jump straight from that
+    # condition to a paid API call.
+    try:
+        from harness.grok_cli import escalate_via_harness, harness_available
+        if harness_available():
+            h = escalate_via_harness(
+                goal=goal,
+                context=context,
+                warm=True,
+                max_turns=4,
+                timeout=min(int(timeout or 180), 240),
+            )
+            if h.get("ok"):
+                content = str(h.get("deliverable") or h.get("summary") or "")
+                if content.strip():
+                    return {
+                        "ok": True,
+                        "content": content,
+                        "model": "grok-cli-headless",
+                        "tier": "subscription-cli",
+                        "cost_est_usd": 0.0,
+                        "cost_basis": "subscription seat; no per-call estimate",
+                        "key_env": "harness",
+                        "harness": True,
+                        "surface": "grok-cli-headless",
+                        "error": "",
+                    }
+            fe_err = f"browser unavailable; harness failed: {h.get('error') or h.get('summary') or 'no output'}"
+    except Exception as e:
+        fe_err = f"browser/harness unavailable: {str(e)[:200]}"
+
+    # 3) Paid API — GATED OFF by default (protect the $10 credit).
     allow = os.environ.get("GROK_ALLOW_PAID", "").strip().lower() in ("1", "true", "yes")
     if not (force_paid or allow):
         return {"ok": False, "content": "", "model": "grok-supergrok-frontend",

@@ -16,8 +16,11 @@ CLI:  python -m mag.surface_steal "<question>"
 """
 from __future__ import annotations
 
+import hashlib
+import json
 import re
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -81,12 +84,32 @@ def lingering(limit: int = 6) -> list[str]:
 
 def surface(question: str, limit: int = 5) -> dict[str, Any]:
     """The self-steal: what we already know + what's lingering about this ask."""
-    return {
+    result = {
         "ok": True, "schema": SCHEMA, "ask": question,
         "already_known": related_nodes(question, limit),
         "matched_steals": steal_docs(question, limit),
         "lingering_directions": lingering(limit),
     }
+    # The surface is invoked conversationally and previously left no durable
+    # receipt, which made self_steal report a live path as stale.  Record only
+    # bounded metadata and a question fingerprint; never copy the ask into the
+    # maintenance ledger.
+    try:
+        STEAL_DIR.mkdir(parents=True, exist_ok=True)
+        receipt = {
+            "schema": "surface_steal.receipt.v1",
+            "ts": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            "ask_sha256": hashlib.sha256((question or "").encode("utf-8")).hexdigest()[:16],
+            "limit": int(limit),
+            "known_n": len(result["already_known"]),
+            "matched_n": len(result["matched_steals"]),
+            "lingering_n": len(result["lingering_directions"]),
+        }
+        with (STEAL_DIR / "surface_receipts.jsonl").open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(receipt, ensure_ascii=False) + "\n")
+    except OSError:
+        pass
+    return result
 
 
 def main(argv: list[str] | None = None) -> int:

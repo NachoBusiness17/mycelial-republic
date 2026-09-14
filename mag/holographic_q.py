@@ -373,8 +373,11 @@ def reconstitute_q(verkle_tail: int = 50) -> list[QKnot]:
 
     # ── Secondary: Verkle chain (crash recovery — log unavailable) ──
     if not q_knots:
+        # The Q log is the primary source, but recovery must fall back to the
+        # actual biography chain.  The old placeholder path made this branch
+        # silently return an empty lattice after a log loss.
         verkle_entries = _read_jsonl(
-            ROOT / "memory" / "biography" / "# CHAIN_QUERY_MIGRATION_NEEDED: replace with chain.tail() or chain.by_type()",
+            ROOT / "memory" / "biography" / "verkle_chain.jsonl",
             tail=verkle_tail,
         )
         for entry in verkle_entries:
@@ -417,9 +420,11 @@ def reconstitute_q(verkle_tail: int = 50) -> list[QKnot]:
     q_knots.sort(key=lambda k: (k.q_session, k.q_sequence))
 
     # Cross-verify: mark knots whose Verkle root appears in the chain
+    # Use the full chain for verification.  A short tail can mislabel an old,
+    # valid Q knot as unverified simply because it fell outside the window.
     verkle_entries = _read_jsonl(
-        ROOT / "memory" / "biography" / "# CHAIN_QUERY_MIGRATION_NEEDED: replace with chain.tail() or chain.by_type()",
-        tail=verkle_tail,
+        ROOT / "memory" / "biography" / "verkle_chain.jsonl",
+        tail=0,
     )
     verkle_roots_in_chain = {e.get("verkle_root", "") for e in verkle_entries if e.get("verkle_root")}
     chain_session_ids = {e.get("session_id", "") for e in verkle_entries}
@@ -535,9 +540,12 @@ def decipher_q_context(q_knot: QKnot, verkle_proof: str = "") -> dict[str, Any]:
     Returns:
         Deciphered context if proof is valid, else error.
     """
-    # Verify the intent_hash against the context_hash
-    # In production, this would verify the Merkle proof against the verkle_root
-    context_valid = bool(verkle_proof) or q_knot.verkle_root
+    # A root is an address, not a proof.  Accept only a proof receipt that
+    # explicitly verified and is anchored to this knot's committed root.
+    proof = verkle_proof if isinstance(verkle_proof, dict) else {}
+    context_valid = bool(proof.get("verified")) and (
+        not q_knot.verkle_root or proof.get("root") == q_knot.verkle_root
+    )
 
     if not context_valid:
         return {
@@ -553,6 +561,7 @@ def decipher_q_context(q_knot: QKnot, verkle_proof: str = "") -> dict[str, Any]:
         "q_session": q_knot.q_session,
         "q_sequence": q_knot.q_sequence,
         "intent_verified": True,
+        "proof_verified": True,
         "steer_vector": q_knot.steer_vector,
         "measurement_axes": q_knot.measurement_axes,
         "agent_assignments": q_knot.agent_assignments,

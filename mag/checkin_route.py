@@ -138,7 +138,7 @@ def probe_router_network() -> dict[str, Any]:
         out["dash"] = {
             "ok": False,
             "error": str(exc)[:160],
-            "tip": "python main.py lab  # or mag.cmd doctor",
+            "tip": "mag.cmd doctor  # venv read, no spawn; do not host python main.py lab",
         }
 
     # Ollama
@@ -201,7 +201,10 @@ def probe_router_network() -> dict[str, Any]:
 
     # Tips for operator / Grok
     if not out.get("dash", {}).get("ok"):
-        out["tips"].append("Dash down — start lab before remote orchestrated UI.")
+        out["tips"].append(
+            "Dash down — mag.cmd doctor first (no spawn). "
+            "If still dead AND docker works: docker compose restart mag. Not host python main.py lab."
+        )
     if not out.get("ollama", {}).get("ok"):
         out["tips"].append("Ollama down — local janitor seats will fail.")
     prov = out.get("providers") or {}

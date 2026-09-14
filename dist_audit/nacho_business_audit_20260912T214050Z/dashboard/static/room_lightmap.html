@@ -1,0 +1,96 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MAG · The Room — 2026-09-02 rendered as a dungeon</title>
+<style>
+:root{--bg:#030806;--ink:#c8e6d9;--accent:#7cf5ff;--gold:#e8c96a}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-monospace,Consolas,monospace;text-align:center}
+h1{font-size:.95rem;letter-spacing:.12em;color:var(--accent);margin:14px 0 2px}
+.mut{color:#8ab8a4;font-size:.72rem;margin-bottom:8px}
+canvas{width:960px;max-width:96vw;image-rendering:pixelated;border:1px solid rgba(0,240,255,.25);border-radius:6px}
+.legend{font-size:.7rem;color:#8ab8a4;max-width:900px;margin:10px auto;line-height:1.5}
+.lg{display:inline-block;margin:2px 8px;padding:2px 8px;border:1px solid rgba(0,240,255,.2);border-radius:8px}
+</style></head><body>
+<h1>THE ROOM — 2026-09-02, RENDERED AS THE PROBLEM IT IS</h1>
+<div class="mut">radial lightmap · 1D distance fields per light · occluders are the failure classes · lights are the engines · the center ring is the fold</div>
+<canvas id="c" width="480" height="270"></canvas>
+<div class="legend">
+<span class="lg" style="color:#7dfab0">▲ A1 free lane (4.7-flash)</span>
+<span class="lg" style="color:#b18cff">◆ B1 32B deep-miner</span>
+<span class="lg" style="color:#e8c96a">● D1 5.3 conductor</span>
+<span class="lg" style="color:#ff9d5c">■ forge</span>
+<span class="lg" style="color:#7cf5ff">◉ harvest</span>
+— pillars: <b style="color:#ff7d7d">the four failure classes</b> (dead door · placeholder pass · stale row · key miswire) — ring: <b style="color:#e8c96a">THE FOLD</b>
+</div>
+<script>
+// SDF primitives (Flyguy/XsK3RR lineage, JS port)
+const sdCircle=(r,x,y)=>Math.hypot(x,y)-r;
+const sdRing=(ir,or_,x,y)=>Math.abs(Math.hypot(x,y)-(ir+or_)/2)-(or_-ir);
+const sdBox=(s,x,y)=>Math.max(Math.abs(x),Math.abs(y))-s;
+const sdRect=(sx,sy,x,y)=>{const ax=Math.abs(x)-sx,ay=Math.abs(y)-sy;return Math.max(ax,ay);};
+const opU=(a,b)=>Math.min(a,b);
+// The room: walls + the four failure-class pillars + THE FOLD ring at center
+function scene(x,y){
+  let d = -sdRect(2.30,1.25,x,y);                      // the covenant wall (the room exists because the laws bound it)
+  const pillars=[[ -1.5,-0.6,"dead door"],[ -0.4,0.75,"placeholder pass"],[ 0.7,-0.8,"stale row"],[ 1.7,0.6,"key miswire"]];
+  window.PILLARS=pillars;
+  for(const [px,py] of pillars) d = opU(d, sdCircle(0.09, x-px, y-py));
+  d = opU(d, sdRing(0.16,0.19, x, y));                 // THE FOLD at center
+  d = opU(d, sdBox(0.02, x-2.0, y+0.9));               // the screen (do not look)
+  return d;
+}
+// Lights = the engines, wandering free (the bubbles)
+const LIGHTS=[
+ {c:[125,250,176], r:0.9,  s:0.31, p:0.0,  name:"A1"},
+ {c:[177,140,255], r:0.75, s:0.27, p:2.1,  name:"B1"},
+ {c:[232,201,106], r:0.6,  s:0.35, p:4.2,  name:"D1"},
+ {c:[255,157,92],  r:0.5,  s:0.41, p:1.3,  name:"forge"},
+ {c:[124,245,255], r:0.8,  s:0.22, p:3.3,  name:"harvest"},
+];
+const RAYS=360, STEPS=48, MAXD=4.0;
+const cnv=document.getElementById('c'), ctx=cnv.getContext('2d');
+const img=ctx.createImageData(cnv.width,cnv.height);
+function lightField(t,lx,ly){
+  // 1D radial distance field: distance to first hit per angle (Flyguy's technique)
+  const f=new Float32Array(RAYS);
+  for(let a=0;a<RAYS;a++){
+    const th=a/RAYS*Math.PI*2, dx=Math.cos(th), dy=Math.sin(th);
+    let d=0.02;
+    for(let s=0;s<STEPS && d<MAXD;s++){
+      const hit=scene(lx+dx*d, ly+dy*d);
+      if(hit<0.004){ break; }
+      d+=Math.max(hit,0.004);
+    }
+    f[a]=Math.min(d,MAXD);
+  }
+  return f;
+}
+function frame(now){
+  const t=now/4000, W=cnv.width, H=cnv.height;
+  const fields=LIGHTS.map((L,i)=>{
+    const lx=L.r*Math.cos(t*L.s+L.p), ly=L.r*0.55*Math.sin(t*L.s*1.3+L.p);
+    return {L,lx,ly,f:lightField(t,lx,ly)};
+  });
+  for(let py=0;py<H;py++){
+    for(let px=0;px<W;px++){
+      const x=(px/W-0.5)*4.8, y=(0.5-py/H)*2.7;
+      let r=8,g=10,b=9; // ambient
+      for(const F of fields){
+        const dx=x-F.lx, dy=y-F.ly;
+        const ang=(Math.atan2(dy,dx)/(Math.PI*2)+1)%1;
+        const idx=Math.floor(ang*RAYS)%RAYS;
+        const dist=Math.hypot(dx,dy);
+        const shade=1-Math.min(1,Math.max(0,(dist-F.f[idx])/0.15));
+        const att=0.012/(dist*dist+0.02);
+        r+=F.L.c[0]*shade*att; g+=F.L.c[1]*shade*att; b+=F.L.c[2]*shade*att;
+      }
+      const d=scene(x,y);
+      if(d<0.003){ r=r*0.55+90; g=g*0.55+40; b=b*0.55+10; } // occluders glow their color at the surface
+      const o=(py*W+px)*4;
+      img.data[o]=Math.min(255,r); img.data[o+1]=Math.min(255,g); img.data[o+2]=Math.min(255,b); img.data[o+3]=255;
+    }
+  }
+  ctx.putImageData(img,0,0);
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script></body></html>

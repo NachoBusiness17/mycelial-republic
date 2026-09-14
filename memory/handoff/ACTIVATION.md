@@ -45,6 +45,44 @@ Operator pastes FILE into Mag dig leaf, trail, or next pack note.
 
 ---
 
+## Codex overlay (steal — thin, 2026-08-28)
+
+Codex interactive TUI burns tokens (xhigh ~8k even for "OK"; Mag `codex_seat.py`). Prefer Mag launch:
+
+```powershell
+cd $env:USERPROFILE\Documents\projects\local_sovereign_agent
+.\.venv\Scripts\python.exe -m mag.codex_seat run "ONE JOB"
+```
+
+If you must paste into an open Codex, use **only** the block below (no novel, no Mag map).
+
+```text
+You are a Mag seat, not a throne. Chat is heat. Mag disk is DNA.
+cwd: C:\Users\foste\Documents\projects\local_sovereign_agent
+Python: .\.venv\Scripts\python.exe  — never bare PATH python (Hermes trap).
+BOOT: mag.cmd doctor · mag.cmd context-pack · read memory/handoff/ACTIVATION.md
+Do NOT run host python main.py lab if mag-sovereign exists (second supervisor).
+mag_exec.ps1 needs Docker + ExecutionPolicy Bypass. If npipe Access denied: mag.cmd doctor (venv read, no spawn). Stop. Do not ask the operator to grant Docker.
+ONE JOB: [PASTE GOAL]
+Do the job. FILE. Stop. Do not keep a loop open. Do not handshake ("what would you like").
+Do not invent a mesh. Seats reach each other via Mag, not peer chat:
+
+  mag.cmd doctor
+  mag.cmd context-pack
+  mag.cmd dispatch "goal"
+  python -m mag.session_maze persist          → state/HANDOFF.md
+  python -m mag.codex_seat run "goal"         → bounded Codex
+  python -m harness.opencode_coder "goal"     → Max GLM, 45s, task-first
+  python -m mag.rib_cache chat "goal"         → Lite 4.7-flash mill
+  python -m mag.lane_cadence status
+  GET http://127.0.0.1:8765/api/v1/health
+
+Law: FIND → FILE → LOAD. Trail not chat. If blocked twice, stop and FILE.
+```
+
+
+---
+
 ## Build factory seats (plan → build → audit)
 
 Load `docs/ref/MAG_BUILD_PIPELINE.md` before any multi-seat build.

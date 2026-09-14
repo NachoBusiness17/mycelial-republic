@@ -69,17 +69,25 @@ def _enum() -> list[dict[str, Any]]:
     try:
         import psutil  # type: ignore
         import time as _t
-        for proc in psutil.process_iter(["pid", "name", "cmdline", "create_time", "ppid"]):
+        from mag.source_trace import _bounded_process_call
+
+        # Do not use process_iter(attrs=...) here. One protected Windows PID
+        # can make psutil materialize create_time/cmdline before yielding and
+        # block the loop breaker. Optional fields are independently bounded.
+        for proc in psutil.process_iter():
             try:
-                name = (proc.info.get("name") or "").lower()
+                name_value = proc.name()
+                name = (name_value or "").lower()
                 if name not in ("python.exe", "pythonw.exe"):
                     continue
-                cmd = " ".join(proc.info.get("cmdline") or [])
+                cmd = " ".join(_bounded_process_call(proc.cmdline, default=[]) or [])
                 if not any(m in cmd for m in _MAG) or "loop_breaker" in cmd:
                     continue
-                out.append({"pid": proc.info["pid"], "ppid": proc.info.get("ppid"),
+                ppid = _bounded_process_call(proc.ppid, default=None)
+                created = _bounded_process_call(proc.create_time, default=None)
+                out.append({"pid": proc.pid, "ppid": ppid,
                             "cmd": cmd[:300], "sig": _normalize(cmd),
-                            "age_s": round(_t.time() - (proc.info.get("create_time") or _t.time()))})
+                            "age_s": round(_t.time() - (created or _t.time()))})
             except Exception:
                 continue
     except ImportError:
@@ -93,7 +101,7 @@ def _enum() -> list[dict[str, Any]]:
                             "Where-Object { $_.Name -in @('python.exe','pythonw.exe') } | "
                             "Select-Object ProcessId,ParentProcessId,CreationDate,CommandLine | "
                             "ConvertTo-Json -Compress"],
-                           capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30,
+                           capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=5,
                            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0)
         try:
             import time as _t

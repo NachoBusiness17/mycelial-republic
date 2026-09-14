@@ -44,22 +44,26 @@ def _isolate():
     import tempfile
     tmp = tempfile.mkdtemp()
     old_qdir, old_tdir = orc.QUEUE_DIR, orc.TASK_DIR
-    old_spawn = orc.spawn_task
+    old_spawn, old_provider_tripped = orc.spawn_task, orc._provider_tripped
     orc.QUEUE_DIR = orc.Path(tmp) / "queue"
     orc.TASK_DIR = orc.Path(tmp) / "tasks"
     orc.QUEUE_DIR.mkdir(parents=True, exist_ok=True)
     orc.TASK_DIR.mkdir(parents=True, exist_ok=True)
     orc.spawn_task = _fake_spawn
-    return old_qdir, old_tdir, old_spawn
+    # The test queue is hermetic; do not let the live provider-failure ledger
+    # settle fake rows before the fake spawn hook can observe them.
+    orc._provider_tripped = lambda _provider: False
+    return old_qdir, old_tdir, old_spawn, old_provider_tripped
 
 
-def _restore(old_qdir, old_tdir, old_spawn):
-    orc.QUEUE_DIR, orc.TASK_DIR, orc.spawn_task = old_qdir, old_tdir, old_spawn
+def _restore(old_qdir, old_tdir, old_spawn, old_provider_tripped):
+    orc.QUEUE_DIR, orc.TASK_DIR = old_qdir, old_tdir
+    orc.spawn_task, orc._provider_tripped = old_spawn, old_provider_tripped
 
 
 def test_enqueue_and_drain_sequential():
     """Two queued goals drain one at a time, auto-advancing on completion."""
-    old_qdir, old_tdir, old_spawn = _isolate()
+    old_qdir, old_tdir, old_spawn, old_provider_tripped = _isolate()
     try:
         q1 = orc.enqueue("goal one", tag="q-test")
         q2 = orc.enqueue("goal two", tag="q-test")
@@ -99,12 +103,12 @@ def test_enqueue_and_drain_sequential():
         assert st["counts"].get("done", 0) == 2, f"counts: {st['counts']}"
         print("PASS test_enqueue_and_drain_sequential", st["counts"])
     finally:
-        _restore(old_qdir, old_tdir, old_spawn)
+        _restore(old_qdir, old_tdir, old_spawn, old_provider_tripped)
 
 
 def test_enqueue_dedupes_same_goal():
     """Second enqueue with same normalized goal is refused."""
-    old_qdir, old_tdir, old_spawn = _isolate()
+    old_qdir, old_tdir, old_spawn, old_provider_tripped = _isolate()
     try:
         q1 = orc.enqueue("[test] dedupe smoke", tag="q-test")
         assert q1.get("ok")
@@ -114,12 +118,12 @@ def test_enqueue_dedupes_same_goal():
         assert q2.get("existing_queue_id") == q1.get("queue_id")
         print("PASS test_enqueue_dedupes_same_goal")
     finally:
-        _restore(old_qdir, old_tdir, old_spawn)
+        _restore(old_qdir, old_tdir, old_spawn, old_provider_tripped)
 
 
 def test_drain_skips_when_running():
     """drain_once does NOT spawn a second task while one is live."""
-    old_qdir, old_tdir, old_spawn = _isolate()
+    old_qdir, old_tdir, old_spawn, old_provider_tripped = _isolate()
     try:
         orc.enqueue("only goal", tag="q-test")
         r1 = orc.drain_once(force=True)
@@ -132,12 +136,12 @@ def test_drain_skips_when_running():
         assert len(running) == 1, f"expected exactly 1 running: {entries}"
         print("PASS test_drain_skips_when_running")
     finally:
-        _restore(old_qdir, old_tdir, old_spawn)
+        _restore(old_qdir, old_tdir, old_spawn, old_provider_tripped)
 
 
 def test_queue_status_counts():
     """queue_status reports queued/running/done counts correctly."""
-    old_qdir, old_tdir, old_spawn = _isolate()
+    old_qdir, old_tdir, old_spawn, old_provider_tripped = _isolate()
     try:
         orc.enqueue("a", tag="q-test")
         orc.enqueue("b", tag="q-test")
@@ -147,4 +151,26 @@ def test_queue_status_counts():
         assert st["running_task_id"] is None
         print("PASS test_queue_status_counts", st["counts"])
     finally:
-        _restore(old_qdir, old_tdir, old_spawn)
+        _restore(old_qdir, old_tdir, old_spawn, old_provider_tripped)
+
+
+def test_ollama_breaker_recovers_when_local_lane_is_ready(monkeypatch):
+    """A stale Ollama failure run must not permanently block a healthy sidecar."""
+    old_failures = orc._provider_failures
+    old_ready = getattr(orc, "_provider_tripped", None)
+    try:
+        monkeypatch.setattr(orc, "_provider_failures", lambda _provider: orc.BREAKER_CONSECUTIVE)
+        monkeypatch.setattr(orc, "ollama_tags", None, raising=False)
+
+        # Inject the registry probe at the import boundary used by the
+        # implementation; no network or live ledger is involved in this test.
+        import models.registry as registry
+        monkeypatch.setattr(registry, "ollama_tags", lambda timeout=2.0: ["qwen2.5-coder:7b"])
+
+        assert orc._provider_tripped("ollama") is False
+        assert orc._provider_tripped("deepseek") is True
+        print("PASS test_ollama_breaker_recovers_when_local_lane_is_ready")
+    finally:
+        orc._provider_failures = old_failures
+        if old_ready is not None:
+            orc._provider_tripped = old_ready

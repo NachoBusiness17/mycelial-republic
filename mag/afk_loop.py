@@ -56,6 +56,12 @@ def _now() -> str:
 def _operator_afk() -> bool:
     """AFK = operator not actively coding (MAG_OPERATOR_ACTIVE unset/false)."""
     try:
+        from mag.operator_mode import pause_reason
+        if pause_reason():
+            return False
+    except Exception:
+        pass
+    try:
         from mag.preferences import operator_status
         return not bool((operator_status() or {}).get("operator_active"))
     except Exception:

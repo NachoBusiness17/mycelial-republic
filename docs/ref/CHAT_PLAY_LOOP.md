@@ -6,9 +6,10 @@
 ## How to play (voice window)
 
 1. Open **http://127.0.0.1:8765/voice** (lab must be up: `python main.py lab`)  
-2. Say or type: **classic one**  
+2. Say or type: **classic one** (keep) or **water one** (hydraulic keep)  
 3. **I'm Ash a greedy fighter** (or **random classic**)  
 4. Moves: **go north**, **look**, **help**, **inventory**, **attack**, **rest**  
+   Water: **go west**, **open valve**, **wait**, **pour bucket** (cheat — not a win)  
 5. Pause: **quit game**  
 
 Sticky in-game: while a campaign is active, non-moves stay in the keep (no RAM sludge).

@@ -426,7 +426,19 @@ def _artifacts(
 
 
 def append_diary_to_verkle(leaf: dict[str, Any]) -> dict[str, Any]:
-    """Append diary_node_leaf onto shared Verkle chain + tip (same as session knots)."""
+    """Append a diary leaf through the same single-writer boundary as session knots."""
+    # This path historically copied the chain rewrite logic instead of calling
+    # verkle_knot.append_verkle_knot because diary leaves carry extra fields.
+    # Keep that shape, but make the mutation participate in the canonical lock;
+    # otherwise a diary seal can race a normal append and publish a stale root.
+    from mag.verkle_knot import verkle_lock
+
+    with verkle_lock():
+        return _append_diary_to_verkle_unlocked(leaf)
+
+
+def _append_diary_to_verkle_unlocked(leaf: dict[str, Any]) -> dict[str, Any]:
+    """Locked implementation for :func:`append_diary_to_verkle`."""
     from mag.verkle_knot import (
         BIO,
         CHAIN,

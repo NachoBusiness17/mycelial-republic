@@ -1,0 +1,88 @@
+{
+  "schema": "mag_game_module.v1",
+  "module_id": "villains_guild",
+  "aliases": ["guild", "villains", "the syndicate", "contract-crawl"],
+  "title": "The Villains Guild — Sign Here, Sucker",
+  "license_note": "Original Mag campaign module. Night-build 2026-08-27 (operator dream-order: villains running the adventure guild). Grok co-authored voice/quests overnight; skeleton by zcode-seat.",
+  "system": "5e-srd-lite",
+  "area_tag": "urban_guildhall",
+  "start_room": "guildhall_of_gracious_crimes",
+  "ghost": {
+    "enabled": true,
+    "measure_on": ["room_entry", "steer_injected", "room_clear", "campaign_end"],
+    "axes": ["flip", "silence", "emergent", "conspiracy"],
+    "output_dir": "memory/runs/campaign/"
+  },
+  "player_start": {
+    "name": "Apprentice Trouble",
+    "archetype": "rogue (aspiring)",
+    "hp": 12,
+    "hp_max": 12,
+    "ac": 14,
+    "attack_bonus": 3,
+    "damage": "1d6+2",
+    "traits": ["curious", "caffeinated"],
+    "inventory": ["starter_contract", "quill_that_leaks_truth", "half_a_ration"]
+  },
+  "party_roster": {
+    "quill": {
+      "class": "Cleric (Knowledge)",
+      "mag_role": "router",
+      "model": "gemma:2b",
+      "may": ["read_contracts_aloud", "flag_suspicious_clauses", "cite_bylaws"],
+      "must_not": ["sign_for_player", "skip_pages"],
+      "stats": {"wis": 16, "int": 14, "cha": 12}
+    },
+    "scout": {
+      "class": "Ranger (Paperwork)",
+      "mag_role": "planner",
+      "model": "qwen2.5-coder:7b",
+      "may": ["map_clauses_to_outcomes", "predict_torch_drops", "chart_escape_routes"],
+      "must_not": ["forge_signatures", "burn_evidence"],
+      "stats": {"dex": 16, "int": 15, "wis": 11}
+    },
+    "coinbender": {
+      "class": "Artificer (Ledger)",
+      "mag_role": "executor",
+      "model": "gemma:2b",
+      "may": ["recount_loot", "balance_books", "spot_rounding_errors"],
+      "must_not": ["launder_anything", "trust_friendly_math"],
+      "stats": {"int": 16, "con": 13, "cha": 10}
+    }
+  },
+  "dm": {
+    "model": "deepseek-v4-flash",
+    "provider": "deepseek",
+    "fallback": "rules_engine",
+    "may": [
+      "narrate_rooms",
+      "play_guildmaster",
+      "enforce_contract_law",
+      "inject_steers",
+      "judge_actions"
+    ],
+    "must_not": [
+      "invent_rooms_not_in_module",
+      "override_player_agency",
+      "reveal_riddler_mappings",
+      "punish_curiosity",
+      "be_boring_about_cruelty"
+    ]
+  },
+  "rooms": [
+    {"id": "guildhall_of_gracious_crimes", "name": "I — The Guildhall of Gracious Crimes", "order": 1},
+    {"id": "hall_of_fine_print", "name": "II — The Hall of Fine Print", "order": 2},
+    {"id": "registry_of_regrets", "name": "III — The Registry of Regrets", "order": 3},
+    {"id": "counting_house_of_minor_miracles", "name": "IV — The Counting House of Minor Miracles", "order": 4},
+    {"id": "overthrow_floor", "name": "V — The Overthrow Floor", "order": 5}
+  ],
+  "rooms_detail_note": "Room riddler blocks bind each room to one verification skill: parse_contracts / cross_reference_documents / check_sources / verify_arithmetic / build_consensus. Full room riddler blocks land in riddler_map.json once grok night merge completes.",
+  "event_tables": {
+    "downtime_in_the_syndicate": [
+      {"w": 40, "id": "quota_letter", "text": "A letter arrives under your door. It is not addressed to you, yet your name is inside it twice."},
+      {"w": 35, "id": "feast_leftovers", "text": "Feast leftovers circulate. Nobody asks who paid for them. Coinbender counts anyway."},
+      {"w": 25, "id": "audit_dreams", "text": "You dream of an audit you passed by reading every page. You wake feeling insufferably smug."}
+    ]
+  },
+  "ghost_steer_log": {"total_steers": 0, "per_room": {}, "delivery_methods": ["interoffice_memo"]}
+}

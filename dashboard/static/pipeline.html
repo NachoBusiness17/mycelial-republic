@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PIPELINE — the shader cartridges</title>
+<style>
+  html,body{margin:0;background:#070b10;color:#c9d3e0;font:13px/1.4 ui-monospace,Consolas,monospace;overflow:hidden}
+  #c{display:block;width:100vw;height:100vh}
+  #ui{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#070b10f6;z-index:4}
+  #ui h1{color:#e8b45a;letter-spacing:3px;font-size:15px;margin:0 0 4px}
+  #ui .sub{color:#66738a;font-size:11px;margin-bottom:20px;text-align:center;max-width:560px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:6px 0}
+  .car{width:300px;padding:10px 14px;background:#0d141d;border:1px solid #1b2532;border-radius:10px;cursor:pointer}
+  .car:hover{border-color:#7cf5ff;background:#101a26}
+  .car.on{border-color:#e8b45a}
+  .car b{color:#7cf5ff;font-size:12px}
+  .car .lic{color:#66738a;font-size:10px;margin-top:2px}
+  .car .role{font-size:9px;color:#e8b45a;letter-spacing:1px}
+  .lbl{color:#66738a;font-size:10px;margin:14px 0 4px;letter-spacing:1px}
+  .track{padding:7px 14px;margin:3px;background:#0d141d;border:1px solid #1b2532;border-radius:8px;cursor:pointer;font-size:11px}
+  .track.on{border-color:#e8b45a;color:#e8b45a}
+  #status{margin-top:16px;color:#e8b45a;font-size:12px;min-height:18px}
+  #hud{position:fixed;top:0;left:0;right:0;padding:8px 12px;display:flex;gap:16px;font-size:11px;z-index:3;
+       background:linear-gradient(#070b10ee,#070b1000);pointer-events:none}
+  #hud b{color:#7cf5ff}
+  .home{position:fixed;bottom:10px;right:12px;z-index:7}
+  .home a{color:#334;text-decoration:none}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud" style="display:none">
+  <b id="cname">—</b>
+  <span>BPM <b id="bpm" style="color:#7cf5ff">—</b></span>
+  <span>ENERGY <b id="en" style="color:#7cf5ff">—</b></span>
+  <span>DAY <b id="day" style="color:#e8b45a">—</b></span>
+  <span style="color:#66738a">ESC = back to deck</span>
+</div>
+<div id="ui">
+  <h1>PIPELINE — the shader cartridges</h1>
+  <div class="sub">any GLSL fragment with mainImage() is a cartridge. uniforms injected: iTime · iResolution · iChannel0 (music FFT) · uBass · uEnergy · uDay. post-cartridges receive the previous pass in iChannel0.</div>
+  <div class="lbl">SCENE CARTRIDGES — click to run</div>
+  <div class="row" id="scenes"></div>
+  <div class="lbl">POST — chains after any scene</div>
+  <div class="row" id="posts"></div>
+  <div class="lbl">SOUNDTRACK</div>
+  <div class="row" id="audio"></div>
+  <div id="status"></div>
+</div>
+<div class="home"><a href="/">⌂ home</a></div>
+<script>
+/* PIPELINE — the interchangeable shader cartridge system (2026-09-08).
+   Contract: a cartridge = GLSL with mainImage(out vec4,in vec2). The runner injects
+   the uniform bus and chains post cartridges after scenes. F-P1: new shader runs
+   with zero code changes. */
+const cv=document.getElementById('c');
+const gl=cv.getContext('webgl2');
+const $=id=>document.getElementById(id);
+function fit(){cv.width=innerWidth;cv.height=innerHeight;gl.viewport(0,0,cv.width,cv.height);}
+addEventListener('resize',fit);
+addEventListener('error',e=>{document.title='ERR: '+e.message+' @ line '+(e.lineno||'?');});
+
+let MANIFEST=null;
+const ORIGIN=Date.UTC(2026,7,25);
+const DAY=Math.max(1,Math.floor((Date.now()-ORIGIN)/86400000));
+$('day').textContent='14';
+
+const WRAP_TOP=`#version 300 es
+precision highp float;
+uniform vec2 iResolution;uniform float iTime;uniform vec2 iMouse;
+uniform sampler2D iChannel0;uniform float uBass;uniform float uEnergy;uniform float uDay;
+uniform float uBPM;uniform float uSeed;uniform int iFrame;
+out vec4 fragColor;
+`;
+const WRAP_BOT=`void main(){vec4 fc=vec4(0.);mainImage(fc,gl_FragCoord.xy);fragColor=fc;}`;
+
+function makeProgram(fsSource){
+  // ANGLE chokes on non-ASCII even inside comments — sanitize at assembly
+  const full=(WRAP_TOP+fsSource+WRAP_BOT).replace(/[^\x00-\x7F]/g,'-');
+  const vs=`#version 300 es
+void main(){vec2 p=vec2((gl_VertexID<<1)&2,gl_VertexID&2);gl_Position=vec4(p*2.-1.,0,1);}`;
+  const mk=(t,src)=>{const sh=gl.createShader(t);gl.shaderSource(sh,src);gl.compileShader(sh);
+    if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS)){const log=gl.getShaderInfoLog(sh);window.__lastLog=log;document.title='ERR: '+log.slice(0,70);console.error(log);return null;}return sh;};
+  const v=mk(gl.VERTEX_SHADER,vs),f=mk(gl.FRAGMENT_SHADER,full);
+  if(!v||!f)return null;
+  const p=gl.createProgram();gl.attachShader(p,v);gl.attachShader(p,f);gl.linkProgram(p);
+  if(!gl.getProgramParameter(p,gl.LINK_STATUS)){document.title='ERR: link';return null;}
+  return p;
+}
+function makeTarget(w,h){
+  const tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tex);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA8,w,h,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  const fb=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,fb);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,tex,0);
+  gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+  return {tex,fb,w,h};
+}
+
+const TRACKS=['suno/genesis.mp3','suno/aerodynamic.mp3','suno/flat_beat.mp3','suno/dance.mp3'];
+const TRACK_NAMES=['GENESIS — Justice','AERODYNAMIC — Daft Punk Rmx','FLAT BEAT — Mr. Oizo','D.A.N.C.E. — MSTRKRFT Rmx'];
+let AC=null,analyzer=null,srcNode=null,freqTex=null,freqData=null,trackIdx=0;
+let audio={bass:0,energy:0};
+
+function wireAudio(){
+  if(!AC){AC=new (window.AudioContext||window.webkitAudioContext)();
+    analyzer=AC.createAnalyser();analyzer.fftSize=256;freqData=new Uint8Array(analyzer.frequencyBinCount);
+    freqTex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,freqTex);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+    freqData=new Uint8Array(128);}
+  return AC.resume();
+}
+async function playTrack(idx){
+  trackIdx=idx;
+  if(srcNode){try{srcNode.stop();}catch(e){}}
+  srcNode=AC.createBufferSource();
+  const raw=await (await fetch(TRACKS[idx])).arrayBuffer();
+  srcNode.buffer=await AC.decodeAudioData(raw);
+  srcNode.connect(analyzer);srcNode.loop=true;srcNode.start();
+}
+
+let scene=null,sceneName='',post=null,postName='none';
+let uniforms={};
+function useCartridge(id){
+  const car=MANIFEST.cartridges.find(c=>c.id===id);
+  if(!car){$('status').textContent='cartridge not found: '+id;return;}
+  fetch('shaders/'+car.file).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}).then(src=>{
+    const p=makeProgram(src);
+    if(!p){$('status').textContent=car.title+' — compile failed (see title)';return;}
+    scene=p;sceneName=car.title;
+    for(const n of ['iResolution','iTime','iMouse','iChannel0','uBass','uEnergy','uDay'])U[n]=gl.getUniformLocation(p,n);
+    $('cname').textContent=car.title;
+    $('status').textContent='RUNNING: '+car.title+' ('+car.license+')';
+  }).catch(e=>{$('status').textContent='load failed: '+e;});
+}
+let U={};
+function usePost(id){
+  if(id==='none'){post=null;postName='none';return;}
+  const car=MANIFEST.cartridges.find(c=>c.id===id);
+  if(!car)return;
+  fetch('shaders/'+car.file).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}).then(src=>{
+    const p=makeProgram(src);
+    if(!p)return;
+    post=p;postName=car.title;
+    for(const n of ['iResolution','iTime','iChannel0'])U['post_'+n]=gl.getUniformLocation(p,n);
+  }).catch(()=>{});
+}
+
+let mouse=[0,0,0,0];
+addEventListener('mousemove',e=>{mouse=[e.clientX,e.clientY,1,0];});
+addEventListener('keydown',e=>{if(e.key==='Escape'){$('ui').style.display='flex';playing=false;}});
+
+let playing=false;
+let sceneFBO=null,sceneTex=null,frameCount=0;
+function ensureTarget(){
+  if(!sceneFBO||sceneFBO.w!==cv.width||sceneFBO.h!==cv.height){
+    if(sceneFBO){gl.deleteTexture(sceneFBO.tex);gl.deleteFramebuffer(sceneFBO.fb);}
+    const tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tex);
+    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA8,cv.width,cv.height,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+    const fb=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,fb);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,tex,0);
+    gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+    sceneFBO={tex,fb,w:cv.width,h:cv.height};
+  }
+}
+let UPOST={};
+function usePost(id){
+  if(id==='none'){post=null;postName='none';UPOST={};return;}
+  const car=MANIFEST.cartridges.find(c=>c.id===id);
+  if(!car)return;
+  fetch('shaders/'+car.file).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.text();}).then(src=>{
+    const p=makeProgram(src);
+    if(!p)return;
+    post=p;postName=car.title;
+    UPOST={};for(const n of ['iResolution','iTime','iChannel0','iFrame'])UPOST[n]=gl.getUniformLocation(p,n);
+  }).catch(()=>{});
+}
+let frameN=0;
+function loop(now){
+  if(playing&&scene){
+    ensureTarget();
+    frameN++;
+    // pass 1: scene → offscreen (post target) or screen (no post)
+    gl.bindFramebuffer(gl.FRAMEBUFFER,post?sceneFBO.fb:null);
+    gl.useProgram(scene);
+    gl.uniform2f(U.iResolution,cv.width,cv.height);
+    gl.uniform1f(U.iTime,(now-startedAt)/1000);
+    gl.uniform2f(U.iMouse,mouse[0],mouse[1]);
+    gl.uniform1i(U.iFrame,frameN);
+    gl.uniform1f(U.uBass,audio.bass);
+    gl.uniform1f(U.uEnergy,audio.energy);
+    gl.uniform1f(U.uDay,DAY);
+    gl.uniform1f(U.uBPM,CARBPM||125);
+    gl.uniform1f(U.uSeed,5346.0);
+    gl.activeTexture(gl.TEXTURE0);
+    if(analyzer){analyzer.getByteFrequencyData(freqData);
+      gl.bindTexture(gl.TEXTURE_2D,freqTex);
+      gl.texImage2D(gl.TEXTURE_2D,0,gl.R8,128,1,0,gl.RED,gl.UNSIGNED_BYTE,freqData);
+      let b=0;for(let i=0;i<8;i++)b+=freqData[i];audio.bass=audio.bass*.8+(b/(8*255))*.2;
+      let e=0;for(let i=0;i<128;i++)e+=freqData[i];audio.energy=audio.energy*.8+(e/(128*255))*.2;}
+    gl.bindTexture(gl.TEXTURE_2D,freqTex);
+    gl.drawArrays(gl.TRIANGLES,0,3);
+    // pass 2: post reads the scene texture → screen
+    if(post){
+      gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+      gl.useProgram(post);
+      gl.uniform2f(UPOST.iResolution,cv.width,cv.height);
+      gl.uniform1f(UPOST.iTime,(now-startedAt)/1000);
+      gl.uniform1i(UPOST.iFrame,frameN);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D,sceneFBO.tex);
+      gl.uniform1i(UPOST.iChannel0,0);
+      gl.drawArrays(gl.TRIANGLES,0,3);
+    }
+    const be=document.getElementById('bpm');
+    if(be)be.textContent=(audio.bass*100).toFixed(0);
+    const en=document.getElementById('en');
+    if(en)en.textContent=(audio.energy*100).toFixed(0);
+  }
+  requestAnimationFrame(loop);
+}
+let startedAt=performance.now();
+
+/* deck UI */
+async function boot(){
+  if(!gl){$('status').textContent='webgl2 required';return;}
+  fit();
+  MANIFEST=await (await fetch('shaders/library/manifest.json')).json();
+  const scenes=$('scenes'),posts=$('posts'),au=$('audio');
+  MANIFEST.cartridges.filter(c=>c.role==='scene').forEach(c=>{
+    const d=document.createElement('div');d.className='car';
+    d.innerHTML='<span class="role">SCENE</span><br><b>'+c.title+'</b><div class="lic">'+c.author+' · '+c.license+'</div>';
+    d.onclick=()=>{document.querySelectorAll('#scenes .car').forEach(x=>x.classList.remove('on'));d.classList.add('on');
+      playing=false;wireAudio().then(()=>{useCartridge(c.id);playing=true;});};
+    scenes.appendChild(d);
+  });
+  MANIFEST.cartridges.filter(c=>c.role==='post').forEach(c=>{
+    const d=document.createElement('div');d.className='car';
+    d.innerHTML='<span class="role">POST</span><br><b>'+c.title+'</b><div class="lic">'+c.license+'</div>';
+    d.onclick=()=>{document.querySelectorAll('#posts .car').forEach(x=>x.classList.remove('on'));d.classList.add('on');
+      usePost(c.id);};
+    posts.appendChild(d);
+  });
+  TRACKS.forEach((t,i)=>{
+    const d=document.createElement('div');d.className='track';d.textContent=TRACK_NAMES[i];
+    d.onclick=async()=>{await wireAudio();await playTrack(i);
+      document.querySelectorAll('#audio .track').forEach(x=>x.classList.remove('on'));d.classList.add('on');};
+    au.appendChild(d);
+  });
+  $('status').textContent=MANIFEST.cartridges.length+' cartridges loaded. the pipeline is live.';
+  requestAnimationFrame(loop);
+}
+boot();
+</script>
+</body>
+</html>

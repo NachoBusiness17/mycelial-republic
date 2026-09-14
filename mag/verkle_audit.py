@@ -3,7 +3,7 @@
 Law: session DNA lives in memory/biography/ — this module reads and reports;
 instrument lattice (memory/improve/blast/lattice/) is separate.
 
-CLI: python main.py verkle-audit [--full] [--synth] [--reconcile] [--dry]
+CLI: python main.py verkle-audit [--full] [--synth] [--reconcile] [--dry] [--fix]
 """
 from __future__ import annotations
 
@@ -108,8 +108,15 @@ def _improve_candidates(*, statuses: set[str] | None = None) -> list[dict[str, A
     return out
 
 
-def verkle_gaps() -> list[dict[str, Any]]:
-    """Actionable gaps from session DNA + lattice store."""
+def verkle_gaps(*, deep: bool = False) -> list[dict[str, Any]]:
+    """Actionable gaps from session DNA + lattice store.
+
+    The default is a control-plane scan: it only reads bounded metadata and
+    never opens every knot JSON.  Reading the full knot corpus is useful for a
+    deliberate forensic audit, but it must not happen implicitly from health
+    enforcement, queue admission, or a status page.  Callers that explicitly
+    request a full audit pass ``deep=True``.
+    """
     gaps: list[dict[str, Any]] = []
     tip = _read_json(TIP)
     n_leaves = int(tip.get("n_leaves") or 0)
@@ -146,33 +153,41 @@ def verkle_gaps() -> list[dict[str, Any]]:
             }
         )
 
-    null_theme = 0
-    for kf in knot_files:
-        k = _read_json(kf)
-        if not k.get("dominant_theme"):
-            null_theme += 1
-    if null_theme:
-        gaps.append(
-            {
-                "kind": "theme_signal",
-                "severity": "info",
-                "detail": f"{null_theme}/{len(knot_files)} knots lack dominant_theme",
-                "action": "python main.py verkle-audit --synth",
-            }
-        )
-
-    residual_files = sorted(RESIDUAL.glob("*.json")) if RESIDUAL.is_dir() else []
-    for rf in residual_files:
-        sid = rf.stem
-        if not any(sid in (str(k.name)) for k in knot_files):
+    if deep:
+        null_theme = 0
+        knot_session_ids: set[str] = set()
+        for kf in knot_files:
+            k = _read_json(kf)
+            if k.get("session_id"):
+                knot_session_ids.add(str(k["session_id"]))
+            if not k.get("dominant_theme"):
+                null_theme += 1
+        if null_theme:
             gaps.append(
                 {
-                    "kind": "orphan_residual",
-                    "severity": "warn",
-                    "detail": f"residual without knot: {rf.name}",
-                    "action": f"summarize-session for {sid}",
+                    "kind": "theme_signal",
+                    "severity": "info",
+                    "detail": f"{null_theme}/{len(knot_files)} knots lack dominant_theme",
+                    "action": "python main.py verkle-audit --synth",
                 }
             )
+
+        residual_files = sorted(RESIDUAL.glob("*.json")) if RESIDUAL.is_dir() else []
+        for rf in residual_files:
+            sid = rf.stem
+            # Knot filenames intentionally truncate session ids for Windows-safe
+            # paths, so compare against the session_id stored in each knot. The
+            # previous substring scan was O(residuals * knots) and made a normal
+            # audit quadratic on the live corpus.
+            if sid not in knot_session_ids:
+                gaps.append(
+                    {
+                        "kind": "orphan_residual",
+                        "severity": "warn",
+                        "detail": f"residual without knot: {rf.name}",
+                        "action": f"summarize-session for {sid}",
+                    }
+                )
 
     return gaps
 
@@ -300,13 +315,14 @@ def run_audit(
     reconcile: bool = True,
     backfill_lattice: bool = False,
     dry: bool = False,
+    fix: bool = False,
 ) -> dict[str, Any]:
     """Full deterministic audit; optional synth + lattice backfill."""
     from mag.verkle_knot import evolution_summary
 
     tip = _read_json(TIP)
     evo = evolution_summary()
-    gaps = verkle_gaps()
+    gaps = verkle_gaps(deep=full)
 
     lattice_summary: dict[str, Any] = {}
     try:
@@ -327,6 +343,18 @@ def run_audit(
             lattice_summary = lattice_summary_fn()
         except Exception:
             pass
+
+    fix_out: dict[str, Any] | None = None
+    if fix:
+        # The sanctioned auto-heal: repair ONLY a stale tip bookmark after
+        # proving the chain rows are internally consistent. Never rewrites,
+        # reorders, or drops chain rows (see verkle_knot.repair_tip_if_consistent).
+        try:
+            from mag.verkle_knot import repair_tip_if_consistent
+
+            fix_out = repair_tip_if_consistent()
+        except Exception as e:
+            fix_out = {"ok": False, "repaired": False, "error": str(e)}
 
     reconcile_out: dict[str, Any] | None = None
     if reconcile:
@@ -356,6 +384,7 @@ def run_audit(
         "autorun_goals": autorun_goals,
         "reconcile": reconcile_out,
         "backfill": backfill_result,
+        "fix": fix_out,
         "synth": synth_out,
         "full": full,
         "dry": dry,
@@ -382,6 +411,12 @@ def _cli(argv: list[str] | None) -> int:
     p.add_argument("--reconcile", action="store_true", default=True, help="Include ticket reconciliation")
     p.add_argument("--no-reconcile", action="store_true", help="Skip ticket reconciliation")
     p.add_argument("--backfill", action="store_true", help="Run lattice-backfill before audit")
+    p.add_argument(
+        "--fix",
+        action="store_true",
+        help="Auto-heal: repair a stale tip bookmark via repair_tip_if_consistent() "
+        "(chain rows are never rewritten; refuses if rows fail integrity)",
+    )
     p.add_argument("--dry", action="store_true", help="Plan only; no writes or LLM")
     args = p.parse_args(argv)
 
@@ -391,6 +426,14 @@ def _cli(argv: list[str] | None) -> int:
         reconcile=not args.no_reconcile,
         backfill_lattice=args.backfill or args.full,
         dry=args.dry,
+        fix=args.fix,
     )
     print(json.dumps(res, indent=2, ensure_ascii=False, default=str))
-    return 0 if res.get("ok") else 1
+    ok = bool(res.get("ok")) and not (
+        args.fix and res.get("fix") and not res["fix"].get("ok")
+    )
+    return 0 if ok else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(_cli(None))

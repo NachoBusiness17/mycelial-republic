@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Armory — 116 steal tools</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;background:#0a0e14;color:#e6edf3;font-family:system-ui}
+  header{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;padding:14px 22px;border-bottom:1px solid #1b2430}
+  header h1{font-size:1.1rem;color:#e6c07a;letter-spacing:.5px}
+  header .sub{color:#8b949e;font-size:.8rem;font-style:italic}
+  header .meta{color:#7fb2ff;font-size:.8rem;font-family:monospace;margin-left:auto}
+  #search{width:100%;padding:10px 16px;font-size:.95rem;background:#0d1117;color:#e6edf3;border:1px solid #30363d;border-radius:10px;margin:14px 22px 0;width:calc(100% - 44px)}
+  #grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;padding:16px 22px;overflow-y:auto}
+  .card{background:linear-gradient(170deg,#161b22,#0d1117);border:1px solid #21262d;border-radius:12px;padding:14px 16px;cursor:pointer;transition:border-color .15s,transform .1s}
+  .card:hover{border-color:#2f7a4a;transform:translateY(-1px)}
+  .card .th{font-weight:bold;color:#e6edf3;font-size:.98rem;margin-bottom:3px}
+  .card .inv{font-size:.74rem;color:#7dffb0;font-family:monospace;margin-bottom:7px}
+  .card .mech{font-size:.8rem;color:#9aa4b2;line-height:1.45}
+  .card .file{font-size:.68rem;color:#5b6b7a;font-family:monospace;margin-top:8px}
+  #detail{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:50}
+  #detail.open{display:flex}
+  .panel{background:linear-gradient(170deg,#1c2a20,#0f1a13);border:1px solid #2f7a4a;border-radius:16px;padding:26px 30px;max-width:620px;max-height:80vh;overflow-y:auto;box-shadow:0 12px 60px rgba(0,0,0,.7)}
+  .panel .th{font-size:1.2rem;font-weight:bold;color:#e6edf3}
+  .panel .inv{color:#7dffb0;font-family:monospace;font-size:.85rem;margin:6px 0 14px}
+  .panel .mech{font-size:.95rem;line-height:1.6;color:#d8f5e0}
+  .panel .file{font-family:monospace;color:#5b6b7a;font-size:.75rem;margin-top:14px}
+  .panel .close{margin-top:16px;background:linear-gradient(#39d57a,#1c9c50);border:none;color:#0d2416;padding:10px 18px;border-radius:8px;cursor:pointer;font-weight:bold}
+  footer{padding:8px 22px;color:#5b6b7a;font-size:.72rem;font-style:italic;border-top:1px solid #1b2430}
+</style>
+</head>
+<body>
+  <header>
+    <h1>🧰 The Armory</h1>
+    <div class="sub">every steal we've taken, as a reachable tool — hover nothing, click to read it</div>
+    <div class="meta" id="meta">…</div>
+  </header>
+  <input id="search" placeholder="search the armory — theme, mechanism, file…" />
+  <div id="grid"></div>
+  <div id="detail"><div class="panel" id="panel"></div></div>
+  <footer>The shape is never stored — only the corpus. Reuse: mag/steal_tools.</footer>
+
+<script src="steal_tools_data.js"></script>
+<script>
+const grid = document.getElementById('grid');
+const meta = document.getElementById('meta');
+const detail = document.getElementById('detail');
+const panel = document.getElementById('panel');
+const search = document.getElementById('search');
+const data = STEAL_TOOLS_DATA || [];
+
+meta.textContent = data.length + ' steal tools · the corpus as a wall';
+function card(t){
+  const c = document.createElement('div');
+  c.className = 'card';
+  c.innerHTML = `<div class="th">${t.theme}</div><div class="inv">${t.invariant}</div>`+
+    `<div class="mech">${(t.mechanism||'…').slice(0,140)}</div><div class="file">${t.file}</div>`;
+  c.onclick = ()=>{ panel.innerHTML =
+    `<div class="th">${t.theme}</div><div class="inv">${t.invariant}</div>`+
+    `<div class="mech">${t.mechanism||'(no mechanism extracted)'}</div>`+
+    `<div class="file">${t.file}</div>`+
+    `<button class="close" onclick="document.getElementById('detail').classList.remove('open')">close</button>`;
+    detail.classList.add('open'); };
+  return c;
+}
+function render(q){
+  grid.innerHTML = '';
+  const ql = (q||'').toLowerCase();
+  const list = ql ? data.filter(t=> (t.theme+' '+t.invariant+' '+t.mechanism+' '+t.file).toLowerCase().includes(ql)) : data;
+  list.forEach(t=>grid.appendChild(card(t)));
+  meta.textContent = data.length + ' tools' + (ql ? ` · ${list.length} match "${q}"` : '');
+}
+search.addEventListener('input', ()=>render(search.value));
+render();
+</script>
+</body>
+</html>

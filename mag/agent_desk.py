@@ -23,6 +23,14 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _display_path(path: Path) -> str:
+    """Render real or test/alternate-root paths without assuming containment."""
+    try:
+        return str(path.relative_to(ROOT)).replace("\\", "/")
+    except ValueError:
+        return str(path).replace("\\", "/")
+
+
 def read_desk() -> dict[str, Any]:
     text = ""
     if DESK_PATH.is_file():
@@ -30,7 +38,7 @@ def read_desk() -> dict[str, Any]:
     return {
         "ok": True,
         "schema": SCHEMA,
-        "path": str(DESK_PATH.relative_to(ROOT)).replace("\\", "/"),
+        "path": _display_path(DESK_PATH),
         "text": text,
         "updated": _now() if text else None,
         "local_session": LOCAL_SESSION,

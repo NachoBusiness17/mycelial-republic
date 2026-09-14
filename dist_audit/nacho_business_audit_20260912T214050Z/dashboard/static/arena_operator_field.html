@@ -1,0 +1,225 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OPERATOR FIELD · B1a — lights are vector operators, the marble has momentum</title>
+<style>
+:root{--bg:#030806;--ink:#c8e6d9;--accent:#7cf5ff;--gold:#e8c96a}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-monospace,Consolas,monospace;text-align:center}
+h1{font-size:.95rem;letter-spacing:.1em;color:var(--accent);margin:12px 0 2px}
+.mut{font-size:.7rem;color:#8ab8a4;margin-bottom:6px}
+#stack{position:relative;width:480px;height:270px;margin:0 auto;max-width:96vw}
+#stack canvas{position:absolute;inset:0;width:480px;height:270px;border:1px solid rgba(0,240,255,.25);border-radius:6px;image-rendering:pixelated}
+#ui{position:relative}
+.stats{font-size:.78rem;margin:8px auto;max-width:900px}
+.stats b{color:var(--gold)}
+.g{color:#7dfab0}.d{color:#ff9d5c}.m{color:#e8c96a}
+button{background:#0a1412;color:var(--accent);border:1px solid rgba(0,240,255,.3);border-radius:8px;padding:6px 14px;font-family:inherit;font-size:.75rem;cursor:pointer;margin:4px}
+.ok{color:#7dfab0}.bad{color:#ff6b6b}
+</style></head><body>
+<h1>OPERATOR FIELD B1a — ∇ wells · ∇· sources · ∇× vortices · ∇² flesh</h1>
+<div class="mut">the Philbrick sheet, rendered: every light is an op-amp cell, the shader is the adder · arrow keys tilt the whole field (your hand = bias voltage) · GPU renders the field, CPU navigates the same math · divergence receipt live</div>
+<div id="stack"><canvas id="gl" width="480" height="270"></canvas><canvas id="ov" width="480" height="270"></canvas></div>
+<div id="ui">
+<button id="reset">NEW RUN</button> <button id="addM">+1 marble ∇</button> <button id="addS">+1 stepper</button> <button id="addD">+1 dumb</button>
+</div>
+<div class="stats" id="stats"></div>
+<div class="mut">FALSIFIER: marble (momentum + operators) vs stepper (field descent) vs dumb (bounce) · GPU/CPU divergence must stay under ε or the GPU field is a costume · tilt with arrow keys / WASD</div>
+<script>
+"use strict";
+// ==== WORLD (same invariant space as maze_arena.html) ====
+const W=480,H=270,GW=2,GH=2.7;
+const WALLS=[ // [cx,cy,halfw,halfh] — identical to maze_arena.html
+ [0.5,0.5,0.03,1.2],[0.25,0.30,0.20,0.03],[0.25,0.72,0.20,0.03],
+ [0.50,0.50,0.03,0.28],[0.75,0.30,0.20,0.03],[0.75,0.72,0.20,0.03],
+ [0.12,0.52,0.03,0.22],[0.88,0.50,0.03,0.22],[0.62,0.14,0.03,0.16],[0.38,0.88,0.03,0.16]
+].map(w=>[w[0]*2,w[1]*2.7,w[2]*2,w[3]*2.7]);
+const MARG=0.012;
+function sdf(x,y){let d=1e9;for(const[cx,cy,hw,hh]of WALLS){const ax=Math.abs(x-cx)-hw,ay=Math.abs(y-cy)-hh;d=Math.min(d,Math.max(ax,ay));}return d;}
+// ==== FIELD — the op-amp sheet (CPU mirror of the GLSL below) ====
+// lights: [x,y,strength(+hill/-pit),radius] ; cheese = the one pit (divergence sink)
+const CHEESE={x:1.2,y:1.35,R:0.06};
+const LIGHTS=[ // cheese pit + one source (repeller) + one far well
+ [CHEESE.x,CHEESE.y,-1.0,0.30],
+ [1.78,0.55, 0.85,0.30],
+ [0.30,2.25, 0.55,0.28]
+];
+const VORTEX={x:1.05,y:2.05,r0:0.30,s:0.55,w:0.10}; // curl cell — the tornado
+let TILT=[0,0]; // player bias voltage (arrow keys)
+function field(x,y){ // scalar field, mirrored EXACTLY in GLSL
+  let f=0.12*TILT[0]*x+0.12*TILT[1]*y;
+  for(const[lx,ly,s,r]of LIGHTS){const dx=x-lx,dy=y-ly;f+=s*Math.exp(-(dx*dx+dy*dy)/(r*r));}
+  const dx=x-VORTEX.x,dy=y-VORTEX.y,d=Math.sqrt(dx*dx+dy*dy);
+  f+=VORTEX.s*Math.exp(-((d-VORTEX.r0)*(d-VORTEX.r0))/(VORTEX.w*VORTEX.w)); // curl shows as a ring
+  return f;
+}
+function force(x,y){ // -∇f (finite diff) + curl tangential — mirrored in spirit by GLSL
+  const e=0.004;
+  const gx=(field(x+e,y)-field(x-e,y))/(2*e), gy=(field(x,y+e)-field(x,y-e))/(2*e);
+  let fx=-gx,fy=-gy;
+  const dx=x-VORTEX.x,dy=y-VORTEX.y,d=Math.sqrt(dx*dx+dy*dy)+1e-6;
+  const fall=VORTEX.s*Math.exp(-((d-VORTEX.r0)*(d-VORTEX.r0))/(VORTEX.w*VORTEX.w))/(d);
+  fx+=-dy*fall*0.9; fy+=dx*fall*0.9; // tangential swirl
+  return[fx,fy];
+}
+// ==== GPU — the adder (WebGL1, raw, zero deps) ====
+const glc=document.getElementById('gl');const gl=glc.getContext('webgl',{antialias:false});
+const VS="attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}";
+// fragment: mirrors field() exactly — tilt plane + Gaussian cells + curl ring; R channel encodes f for the receipt
+const FS_REAL=`
+precision mediump float;
+uniform vec2 u_res;uniform vec2 u_tilt;
+uniform vec4 u_walls[10]; // cx,cy,hw,hh
+uniform vec4 u_lights[3]; // x,y,strength,radius
+uniform vec4 u_vortex;    // x,y,r0,strength
+float sdf(vec2 p){float d=1e9;
+ for(int i=0;i<10;i++){vec4 w=u_walls[i];vec2 a=abs(p-w.xy)-w.zw;d=min(d,max(a.x,a.y));}
+ return d;}
+float field(vec2 p){float f=0.12*u_tilt.x*p.x+0.12*u_tilt.y*p.y;
+ for(int i=0;i<3;i++){vec4 L=u_lights[i];vec2 dv=p-L.xy;f+=L.z*exp(-dot(dv,dv)/(L.w*L.w));}
+ vec2 dv=p-u_vortex.xy;float d=length(dv);
+ f+=u_vortex.w*exp(-((d-u_vortex.z)*(d-u_vortex.z))/0.01);
+ return f;}
+void main(){
+ vec2 p=vec2(gl_FragCoord.x/u_res.x*2.0,(u_res.y-gl_FragCoord.y)/u_res.y*2.7);
+ float f=field(p);
+ vec3 col=vec3(0.012,0.031,0.024);
+ col+=vec3(0.10,0.35,0.55)*clamp(f*0.9,0.0,1.2);          // light flesh
+ col+=vec3(0.55,0.12,0.08)*clamp(-f*0.9,0.0,1.2);          // pits glow red-orange
+ if(sdf(p)<0.012)col=vec3(0.05,0.09,0.08);                 // walls
+ gl_FragColor=vec4(clamp(0.5+f*0.5,0.0,1.0),clamp(col.g,0.,1.),clamp(col.b,0.,1.),1.0);
+}`;
+function sh(t,src){const s=gl.createShader(t);gl.shaderSource(s,src);gl.compileShader(s);
+ if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))console.error(gl.getShaderInfoLog(s));return s;}
+const prog=gl.createProgram();
+gl.attachShader(prog,sh(gl.VERTEX_SHADER,VS));gl.attachShader(prog,sh(gl.FRAGMENT_SHADER,FS_REAL));
+gl.linkProgram(prog);gl.useProgram(prog);
+const buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,-1,1,1,-1,1,1]),gl.STATIC_DRAW);
+const loc=gl.getAttribLocation(prog,'p');gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+const U={res:gl.getUniformLocation(prog,'u_res'),tilt:gl.getUniformLocation(prog,'u_tilt'),
+ walls:gl.getUniformLocation(prog,'u_walls'),lights:gl.getUniformLocation(prog,'u_lights'),vortex:gl.getUniformLocation(prog,'u_vortex')};
+function drawGL(){
+ gl.viewport(0,0,W,H);
+ gl.uniform2f(U.res,W,H);gl.uniform2f(U.tilt,TILT[0],TILT[1]);
+ const walls=new Float32Array(40);WALLS.forEach((w,i)=>walls.set(w,i*4));
+ gl.uniform4fv(U.walls,walls);
+ const li=new Float32Array(12);LIGHTS.forEach((l,i)=>li.set(l,i*4));
+ gl.uniform4fv(U.lights,li);
+ gl.uniform4f(U.vortex,VORTEX.x,VORTEX.y,VORTEX.r0,VORTEX.s);
+ gl.drawArrays(gl.TRIANGLES,0,6);
+}
+// ==== DIVERGENCE RECEIPT — GPU vs CPU, 12 points, every frame ====
+const SAMPLES=[];for(let i=0;i<12;i++){const x=0.2+ (i%4)*0.45,y=0.4+Math.floor(i/4)*0.85;
+ if(sdf(x,y)>=MARG)SAMPLES.push([x,y]);}
+let divMax=1;
+function checkDiv(){
+ drawGL();
+ const px=new Uint8Array(4);
+ let mx=0;
+ for(const[x,y]of SAMPLES){
+  const expect=Math.max(0,Math.min(1,0.5+field(x,y)*0.5));
+  gl.readPixels(Math.floor(x/2*W),Math.floor(H-(y/2.7*H)),1,1,gl.RGBA,gl.UNSIGNED_BYTE,px);
+  const got=px[0]/255;const d=Math.abs(expect-got);if(d>mx)mx=d;
+ }
+ divMax=mx;
+}
+// ==== AGENTS ====
+class Marble{ // momentum + full operator force
+ constructor(){this.x=0.15;this.y=1.35;this.vx=0;this.vy=0;this.trail=[];this.steps=0;this.done=false;this.kind='marble';}
+ step(){
+  if(this.done)return;this.steps++;
+  const[fx,fy]=force(this.x,this.y);
+  this.vx+=fx*0.0016;this.vy+=fy*0.0011;
+  this.vx*=0.985;this.vy*=0.985;
+  let nx=this.x+this.vx,ny=this.y+this.vy;
+  if(sdf(nx,ny)>=MARG){this.x=nx;this.y=ny;}
+  else{ // bounce: reflect velocity about wall normal (sdf grad)
+   const e=0.004;const gx=(sdf(nx+e,ny)-sdf(nx-e,ny))/(2*e),gy=(sdf(nx,ny+e)-sdf(nx,ny-e))/(2*e);
+   const gl2=Math.hypot(gx,gy)+1e-9;const nxn=gx/gl2,nyn=gy/gl2;
+   const dot=this.vx*nxn+this.vy*nyn;
+   this.vx-=2*dot*nxn*0.7;this.vy-=2*dot*nyn*0.7;
+  }
+  if(this.steps%5===0)this.trail.push([this.x,this.y]);
+  if(this.trail.length>120)this.trail.shift();
+  if(Math.hypot(this.x-CHEESE.x,this.y-CHEESE.y)<CHEESE.R)this.done=true;
+ }
+}
+class Stepper{ // field descent, no momentum (the arena's GPS walker, reading THIS field)
+ constructor(){this.x=0.15;this.y=1.35;this.trail=[];this.steps=0;this.done=false;this.kind='stepper';}
+ step(){
+  if(this.done)return;this.steps++;
+  const e=0.02;let best=field(this.x,this.y),bx=0,by=0;
+  for(let a=0;a<8;a++){const th=a/8*6.2832;const v=field(this.x+Math.cos(th)*e,this.y+Math.sin(th)*e*1.35);
+   if(v<best){best=v;bx=Math.cos(th);by=Math.sin(th);}}
+  const sp=0.012;const nx=this.x+bx*sp,ny=this.y+by*sp*1.35;
+  if(sdf(nx,ny)>=MARG){this.x=nx;this.y=ny;}
+  if(this.steps%6===0)this.trail.push([this.x,this.y]);
+  if(this.trail.length>150)this.trail.shift();
+  if(Math.hypot(this.x-CHEESE.x,this.y-CHEESE.y)<CHEESE.R)this.done=true;
+ }
+}
+class Dumb{
+ constructor(){this.x=0.15;this.y=1.35;this.a=Math.random()*6.28;this.trail=[];this.steps=0;this.done=false;this.kind='dumb';}
+ step(){
+  if(this.done)return;this.steps++;
+  const sp=0.012;const nx=this.x+Math.cos(this.a)*sp,ny=this.y+Math.sin(this.a)*sp*1.35;
+  if(sdf(nx,ny)>=MARG){this.x=nx;this.y=ny;}else{this.a+=Math.random()*2-1;this.a=this.a%6.28;}
+  if(this.steps%6===0)this.trail.push([this.x,this.y]);
+  if(this.trail.length>150)this.trail.shift();
+  if(Math.hypot(this.x-CHEESE.x,this.y-CHEESE.y)<CHEESE.R)this.done=true;
+ }
+}
+let agents=[];
+function seed(){agents=[new Marble(),new Marble(),new Stepper(),new Dumb()];}
+seed();
+// ==== OVERLAY ====
+const ov=document.getElementById('ov'),ctx=ov.getContext('2d');
+function drawOverlay(){
+ ctx.clearRect(0,0,W,H);
+ const kindCol={marble:'#e8c96a',stepper:'#7dfab0',dumb:'#ff9d5c'};
+ for(const a of agents){
+  ctx.strokeStyle=kindCol[a.kind];ctx.lineWidth=0.6;ctx.globalAlpha=0.55;ctx.beginPath();
+  for(let i=0;i<a.trail.length;i++){const px=a.trail[i][0]/2*W,py=a.trail[i][1]/2.7*H;i?ctx.lineTo(px,py):ctx.moveTo(px,py);}
+  ctx.stroke();ctx.globalAlpha=1;
+  const px=a.x/2*W,py=a.y/2.7*H;
+  if(a.kind==='marble'){ // the marble: a sphere with a specular — Marble Madness nod
+   const g=ctx.createRadialGradient(px-1.5,py-1.5,0.5,px,py,4);
+   g.addColorStop(0,'#fff7d9');g.addColorStop(1,'#b8860b');
+   ctx.fillStyle=g;ctx.beginPath();ctx.arc(px,py,3.4,0,7);ctx.fill();
+  }else{ctx.fillStyle=kindCol[a.kind];ctx.fillRect(px-1.5,py-1.5,3,3);}
+ }
+ ctx.fillStyle='#e8c96a';ctx.beginPath();ctx.arc(CHEESE.x/2*W,CHEESE.y/2.7*H,CHEESE.R/2*W*0.7,0,7);ctx.fill();
+}
+// ==== TILT (the player's bias voltage) ====
+const keys={};
+addEventListener('keydown',e=>{keys[e.key]=true;if(e.key.startsWith('Arrow'))e.preventDefault();});
+addEventListener('keyup',e=>{keys[e.key]=false;});
+function tiltStep(){
+ let tx=0,ty=0;
+ if(keys.ArrowLeft||keys.a)tx-=1;if(keys.ArrowRight||keys.d)tx+=1;
+ if(keys.ArrowUp||keys.w)ty-=1;if(keys.ArrowDown||keys.s)ty+=1;
+ TILT[0]=Math.max(-3,Math.min(3,TILT[0]*0.9+tx*0.3));
+ TILT[1]=Math.max(-3,Math.min(3,TILT[1]*0.9+ty*0.3));
+}
+// ==== FRAME ====
+let tick=0;
+function frame(){
+ tick++;tiltStep();
+ for(const a of agents)a.step();
+ drawGL();checkDiv();drawOverlay();
+ const done=k=>agents.filter(a=>a.kind===k&&a.done).length;
+ const cnt=k=>agents.filter(a=>a.kind===k).length;
+ const avg=k=>{const d=agents.filter(a=>a.kind===k&&a.done);return d.length?Math.round(d.reduce((s,x)=>s+x.steps,0)/d.length):0;};
+ document.getElementById('stats').innerHTML=
+  'tick '+tick+' · <span class="m">MARBLES '+done('marble')+'/'+cnt('marble')+' (avg '+avg('marble')+')</span>'+
+  ' · <span class="g">STEPPER '+done('stepper')+'/'+cnt('stepper')+' (avg '+avg('stepper')+')</span>'+
+  ' · <span class="d">DUMB '+done('dumb')+'/'+cnt('dumb')+' (avg '+avg('dumb')+')</span>'+
+  ' · tilt '+TILT.map(v=>v.toFixed(1))+
+  ' · GPU/CPU Δ <span class="'+(divMax<0.02?'ok':'bad')+'">'+divMax.toFixed(4)+(divMax<0.02?' PASS':' FAIL')+'</span>';
+ requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+document.getElementById('reset').onclick=()=>{agents=[];seed();};
+document.getElementById('addM').onclick=()=>agents.push(new Marble());
+document.getElementById('addS').onclick=()=>agents.push(new Stepper());
+document.getElementById('addD').onclick=()=>agents.push(new Dumb());
+</script></body></html>

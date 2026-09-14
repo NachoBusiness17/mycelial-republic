@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Percolation at criticality</title>
+    <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../styles.css">
+    <script>
+    window.MathJax = { tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] }, chtml: { scale: 0.98 } };
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js" async></script>
+    <style>
+        .sp code, .sp pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.92em; }
+        .sp pre { overflow-x: auto; padding: 0.8em 1em; background: rgba(127,127,127,0.08); border-radius: 6px; }
+        .sp table { border-collapse: collapse; margin: 1em 0; }
+        .sp td, .sp th { padding: 0.35em 0.8em; border-bottom: 1px solid rgba(127,127,127,0.35); text-align: left; vertical-align: top; }
+        .sp ul { padding-left: 1.3em; }
+        .sp li { margin-bottom: 0.5em; }
+        .sp .note { opacity: 0.85; }
+        header .byline { margin: 0.2em 0 0; font-size: 1.02em; opacity: 0.9; }
+        .updated { margin: 0.35em 0 0; font-size: 0.88em; opacity: 0.7; }
+        .standing { border-left: 3px solid var(--link); padding: 0.1em 0 0.1em 1em; margin: 1.4em 0; }
+        .standing h3 { margin: 0 0 0.4em; font-size: 1.02em; }
+
+        :root {
+            --perc-lattice: #f3efe6;
+            --perc-closed: #e2e8f0;
+            --perc-open: #6f7782;
+            --perc-cluster: #2f004f;
+            --perc-seed: #47769f;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --perc-lattice: #29272b;
+                --perc-closed: #2b323c;
+                --perc-open: #737b86;
+                --perc-cluster: #f0d8ff;
+                --perc-seed: #47769f;
+            }
+        }
+
+        .panels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.1em; margin: 1.2em 0 0.6em; }
+        @media (min-width: 1100px) { main.sp figure { width: 118%; margin-left: -9%; } }
+        @media (max-width: 620px) { .panels { grid-template-columns: minmax(0, 1fr); } }
+        .panel { border: 1px solid var(--border); border-radius: 8px; padding: 0.7em 0.7em 0.55em; background: var(--surface); }
+        .panel canvas { width: 100%; max-width: 420px; height: auto; display: block; margin: 0 auto; border-radius: 4px; }
+        .ctl { position: relative; max-width: 420px; margin: 0.55em auto 0.3em; }
+        .ctl input[type=range] { width: 100%; margin: 0; accent-color: var(--link); display: block; }
+        .ctl .mark { position: absolute; top: -2px; width: 2px; height: 18px; background: var(--text);
+                     opacity: 0.6; pointer-events: none; }
+        .pnow { float: right; font-variant-numeric: tabular-nums;
+                font-family: ui-monospace, SFMono-Regular, Menlo, monospace; opacity: 0.8; }
+        .panel h3 { margin: 0 0 0.15em; font-size: 1.02em; }
+        .panel .legend { display: flex; flex-wrap: wrap; gap: 0.25em 0.75em; max-width: 420px;
+                         margin: 0.45em auto 0.1em; padding: 0; list-style: none; font-size: 0.78em; }
+        .panel .legend li { display: inline-flex; align-items: center; gap: 0.3em; margin: 0; }
+        .legend-swatch { width: 0.72em; height: 0.72em; border-radius: 2px; flex: 0 0 auto; }
+        .legend-swatch.lattice { background: var(--perc-lattice); border: 1px solid var(--border); }
+        .legend-swatch.closed { background: var(--perc-closed); }
+        .legend-swatch.open { background: var(--perc-open); }
+        .legend-swatch.cluster { background: var(--perc-cluster); }
+        .legend-swatch.seed { background: var(--perc-seed); }
+        .panel .pc { margin: 0.45em 0 0.1em; font-size: 0.88em; opacity: 0.85; font-variant-numeric: tabular-nums; }
+        .panel .status { margin: 0.1em 0 0; font-size: 0.86em; }
+        .tag { display: inline-block; padding: 0.05em 0.5em; border-radius: 999px; font-size: 0.8em;
+               border: 1px solid var(--border); }
+        .tag.done { border-color: var(--pill-journal); color: var(--pill-journal); }
+        .tag.here { border-color: var(--pill-default); color: var(--pill-default); }
+        .controls { display: flex; align-items: center; gap: 0.8em; flex-wrap: wrap; margin: 0.4em 0 0.2em; }
+        .controls input[type=range] { flex: 1 1 220px; min-width: 180px; accent-color: var(--link); }
+        .controls button { padding: 0.28em 0.9em; border-radius: 6px; border: 1px solid var(--border);
+                           background: var(--surface); color: var(--text); cursor: pointer; font: inherit; }
+        .controls button:hover { border-color: var(--link); color: var(--link); }
+        .readout { font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+        figcaption { font-size: 0.9em; opacity: 0.85; margin-top: 0.5em; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Percolation at criticality</h1>
+        <p class="byline">Mathematics generated by ChatGPT 5.6, prompted by Ahmed Bou-Rabee, with exposition and formalization support by Claude Opus 5.</p>
+        <p class="updated">Last updated 5 September 2026</p>
+    </header>
+
+    <main class="sp">
+        <section>
+            <p>In Bernoulli bond percolation on \(\mathbb{Z}^d\), each edge is open with probability \(p\), independently
+            of the other edges. The open clusters are the connected components formed by the open edges. In Bernoulli
+            site percolation, each site is open with probability \(p\), independently of the other sites, and the open
+            clusters are the connected components of the open sites. In either model, \(\theta(p)\) is the probability
+            that the origin lies in an infinite open cluster.</p>
+            <p>Opening more edges or sites can only enlarge clusters, so \(\theta\) is nondecreasing. There is a critical
+            probability \(p_c\) with \(\theta(p)=0\) below it and \(\theta(p)&gt;0\) above it. The question is what
+            happens at \(p_c\) itself.</p>
+            <p>In two dimensions, \(\theta(p_c)=0\) has been known for decades. For bond percolation the conclusion follows from two theorems:
+            <a href="https://doi.org/10.1017/S0305004100034241">Harris</a> proved that the percolation probability
+            vanishes at \(p=1/2\), and <a href="https://doi.org/10.1007/BF01197577">Kesten</a> proved that \(1/2\) is the
+            critical probability. For site percolation, <a href="https://doi.org/10.1007/BF00535742">Russo</a>
+            proved continuity of \(\theta\) on all of \([0,1]\).
+            Both proofs use methods specific to two dimensions.</p>
+            <p>In three or more dimensions, \(\theta(p_c)=0\) for bond percolation follows from Anthropic's
+            <a href="https://github.com/anthropics/formal-math/tree/795efb86f191735c5481675763537cfb4ff37e55/percolation">machine-checked
+            proof</a> of Conjecture 3 of <a href="https://arxiv.org/abs/2401.12397">Kozma and Nitzan</a>. Anthropic's proof settled
+            dimensions three to ten, the only cases then open: \(\theta(p_c)=0\) for bond percolation was already known by the lace expansion for
+            \(d\geq19\) by <a href="https://doi.org/10.1007/BF02108785">Hara and Slade</a> and for \(d\geq11\) by
+            <a href="https://doi.org/10.1214/17-EJP56">Fitzner and van der Hofstad</a>.</p>
+            <p>For site percolation, the sufficiently high-dimensional result also goes back to
+            <a href="https://doi.org/10.1007/BF02108785">Hara and Slade (1990)</a>: on p. 335 they explicitly state
+            that their method applies to site percolation and yields the same results, including continuity at criticality.
+            <a href="https://doi.org/10.1007/s10955-020-02607-y">Heydenreich and Matzke (2020)</a> later gave a detailed
+            site-percolation lace-expansion proof; their Theorem 1.1 establishes the triangle condition and Section 1.3
+            states the consequence \(\theta(p_c)=0\). The proof presented here establishes \(\theta(p_c)=0\) for site
+            percolation for every \(d\geq3\), including the previously unresolved low-dimensional cases. It extends
+            the conditioned-covariance and first-contact strategy of Anthropic's bond proof to independent hyperedges, and
+            first proves inequality (1) below for every finite independent hyperedge model. Applying that inequality to
+            the incidence representation of site percolation supplies the connection estimate used in the
+            block-renormalization argument. The
+            <a href="../kn1-verification-b80e9/">companion page</a> treats the remaining conjectures and questions of the
+            <a href="https://arxiv.org/abs/2401.12397">Kozma and Nitzan</a> paper.</p>
+        </section>
+
+        <section>
+            <h2>Simulations</h2>
+            <figure>
+                <div class="panels" id="panels"></div>
+                <div class="controls">
+                    <button id="playBtn" type="button">Pause</button>
+                    <span class="note">Each picture has its own slider. Press pause and drag one to
+                    hold that lattice at a chosen \(p\).</span>
+                </div>
+                <figcaption>Gray is the open structure, purple the open cluster of the center. The three-dimensional
+                pictures draw that cluster alone. Each site and each edge carries a fixed random number and is open when
+                it falls below \(p\), so the pictures grow as the sliders move and never rearrange.</figcaption>
+            </figure>
+        </section>
+
+        <section>
+            <h2>One inequality for both models</h2>
+            <p><a href="https://doi.org/10.1063/1.1703746">Fisher</a> observed that bond percolation on a graph is site
+            percolation on the graph whose vertices are its edges, two of them adjacent when they share an endpoint. The
+            converse fails: <a href="https://arxiv.org/abs/2404.08873">Gladkov and Zimin</a> proved that bond percolation
+            cannot simulate site percolation even approximately, already near a vertex of degree three. This rules out
+            a general reduction by independent-bond gadgets. It does not establish how difficult it is to extend a
+            particular proof; here the covariance and first-contact arguments are extended to independent hyperedges.</p>
+            <p>Take a finite set of sites and a finite set of labels, attach to each
+            label a set of sites, and declare each label open independently of the others. Two sites are connected when a
+            chain of open labels joins them, consecutive labels in the chain sharing a site.</p>
+            <p>Attaching every label to exactly two sites makes the labels edges, and the structure is bond percolation.
+            Giving each site a label of its own, attached to that site and to one extra point on each edge at it, makes a
+            label open exactly when its site is open, and two distinct sites are connected in the structure exactly when
+            they are connected in site percolation. This realizes both models as special cases.</p>
+            <p>The inequality proved here is that for a nonempty set \(A\) of sites and sites \(o\) and \(b\),
+            \[
+              \mathbb{P}(o \leftrightarrow b,\ o \leftrightarrow A)
+                \;\ge\; \mathbb{P}(o \leftrightarrow A)\,\min_{a \in A}\mathbb{P}(a \leftrightarrow b). \tag{1} \]
+            Read from the right, it says that reaching \(A\) and then continuing to \(b\) from the least favorable point
+            of \(A\) is no better than reaching \(b\) directly. What Kozma and Nitzan conjectured is the corresponding
+            statement for a finite graph, which is the case of labels attached to two sites:
+            \[
+              \mathbb{P}(o \leftrightarrow b)
+                \;\ge\; \mathbb{P}(o \leftrightarrow A)\,\min_{a \in A}\mathbb{P}(a \leftrightarrow b). \tag{2} \]
+            Inequality (1) generalizes (2) in two ways: a label may be attached to any number of sites, and the event
+            \(\{o \leftrightarrow A\}\) is kept on the left. Discarding that event gives (2) in the bond case. The site
+            representation gives the corresponding site inequality.</p>
+            <p>This comparison is with the original conjecture. The full inequality (1), including the intersection
+            on the left, already follows in the bond model from (GEN) in the
+            <a href="https://github.com/anthropics/formal-math/blob/795efb86f191735c5481675763537cfb4ff37e55/percolation/summary.tex">preceding proof</a>:
+            take the increasing cluster function \(F(K)=\mathbf1_{\{b\in K\}}\), then bound its first-contact weighted
+            sum by the minimum over \(A\). The contributions here are the extension of that machinery to hyperedges
+            and the site-specific lattice construction.</p>
+            <p>A union bound over \(A\) gives an error proportional to
+            \(|A|\), and the sets \(A\) the lattice argument produces are the faces of large blocks, whose size grows
+            without bound. Inequality (1) has no factor of \(|A|\).</p>
+        </section>
+
+        <section>
+            <h2>Proof of the finite inequality</h2>
+
+            <h3>Failure of positive association under conditioning</h3>
+            <p>Harris's inequality states that two increasing events under a product measure are positively associated.
+            A more flexible form is the four functions theorem of
+            <a href="https://doi.org/10.1007/BF00536201">Ahlswede and Daykin</a>: if four nonnegative functions of a set
+            satisfy
+            \[
+              f_1(I)\,f_2(J) \;\le\; f_3(I \cup J)\,f_4(I \cap J)
+            \]
+            for every pair \(I,J\), then the same inequality holds for their sums over all sets.</p>
+            <p>Positive association need not survive conditioning on a disconnection event. On the path
+            \(x - z - y\) with both edges open with probability \(1/2\), conditioned on \(x\) not reaching \(y\), the two
+            edges are open with conditional probability \(1/3\) each and never together. Two increasing events have
+            negative conditional covariance.</p>
+
+            <h3>Conditional association of clusters</h3>
+            <p><a href="https://doi.org/10.1002/rsa.20102">van den Berg, H&auml;ggstr&ouml;m and Kahn</a> proved conditional
+            association for increasing functions of a cluster in ordinary bond percolation. The proof here extends this
+            statement to finite independent hyperedge models. It proceeds by induction on the number of sites, exposing
+            the labels meeting a fixed set \(Z\) and applying the four functions theorem to their subsets.</p>
+            <p>Write \(T(I)\) for the sites outside \(Z\) reached by the exposed open labels \(I\).
+            This record can lose label information even in an ordinary graph. For example, take
+            \(Z=\{z_1,z_2\}\) and two edges \(e_1=\{z_1,u\}\), \(e_2=\{z_2,u\}\).
+            Both singleton label sets have trace \(\{u\}\), although their intersection is empty. In general,
+            \[
+              T(I \cup J) = T(I) \cup T(J), \qquad T(I \cap J) \subseteq T(I) \cap T(J),
+            \]
+            and the second inclusion can be strict. For a fixed \(Z\) in ordinary bond percolation, however,
+            different outside vertices are reached directly from \(Z\) through disjoint groups of independent boundary
+            edges. Their reached/not-reached indicators have a product distribution, which is the property used in
+            the original cluster-association proof. A hyperedge can reach several outside vertices at once, so this
+            product structure can fail. The hyperedge induction applies the four functions theorem
+            to the label sets themselves, with their unions, intersections, and product weights. Hyperedge labels
+            remain distinct even when their incident vertex sets coincide, including after vertices are deleted.</p>
+
+            <h3>Conditional covariance inequalities</h3>
+            <p>The induction first takes label probabilities strictly between zero and one. Fix a site \(x\), a set
+            \(Y\) with \(x\notin Y\), and an increasing function \(f\) of the cluster's vertex set. The disconnection
+            event then has positive probability. Write
+            \[
+              \kappa(u) \;=\; \operatorname{Cov}\bigl(f(C_x),\ \mathbf{1}\{u \leftrightarrow x\}
+                \ \big|\ x \nleftrightarrow Y \bigr).
+            \]
+            Take distinct sites \(o,v\) outside \(Y\cup\{x\}\) and distinct auxiliary sites
+            \(d_1,\dots,d_\ell\) outside \(Y\cup\{x,o,v\}\). For any function \(h\) of a site, define
+            \[
+              c_j(u)=\mathbb P\bigl(d_j\leftrightarrow u\mid
+                d_j\nleftrightarrow Y\cup\{x,d_1,\dots,d_{j-1}\}\bigr),\qquad
+              h^{[0]}=h,\quad h^{[j]}(u)=h^{[j-1]}(u)-c_j(u)h^{[j-1]}(d_j).
+            \]
+            The theorem states
+            \[
+              \kappa^{[\ell]}(o) \;\ge\; \lambda\,\kappa^{[\ell]}(v),
+            \]
+            where \(\lambda=\mathbb P(v\leftrightarrow o\mid
+            v\nleftrightarrow Y\cup\{x,d_1,\dots,d_\ell\})\). With
+            no auxiliary sites, the theorem compares the two nonnegative conditioned covariances. The successive
+            subtraction terms permit induction on the intermediate sites.</p>
+            <p>The conditioned covariance inequality is proved by strong induction on \(\ell\).
+            Exposing the cluster of \(Y\) leaves independent models on the surviving structures.
+            The law of total covariance also contributes the covariance of conditional means; exposure alone
+            does not identify the original covariance with an average of the remaining covariances.
+            A two-block resampling and telescoping argument handles this contribution. The sites
+            \(d_j\) are then removed one at a time by an exact identity, and the error each removal makes is itself a
+            conditioned covariance with a shorter list, so the induction hypothesis applies to it. The remaining term is a
+            comparison of averaged expressions; the four functions theorem controls their products and supplies the required global coefficient.
+            The last two steps use inequalities about two clusters, including a
+            form of Harris's inequality valid at a stopping time of an exploration.</p>
+
+            <h3>Induction on the intermediate set</h3>
+            <p>Inequality (1) follows by induction on the size of \(A\). Order the sites of \(A\) by the unconditional
+            mean of the increasing cluster function, and in each configuration select the first one that the source reaches. Every configuration
+            in which the source reaches \(A\) selects exactly one site, so these events form a partition. No error is
+            summed over \(A\), and the estimate does not degrade as \(A\) grows. After clearing conditioning denominators, continuity extends the final finite inequality to label probabilities zero and one.</p>
+        </section>
+
+        <section>
+            <h2>From (1) to the lattice</h2>
+            <p>Start from \(0&lt;p&lt;1\) and assume \(\theta(p)&gt;0\). Uniqueness and large-box estimates supply the
+            finite connection events used below. The passage to \(\mathbb{Z}^d\) is a renormalization. Arrange blocks of a fixed size,
+            declare a block occupied when a prescribed connection occurs inside it, and compare the occupied blocks with
+            site percolation on a coarse lattice whose sites are the blocks. If the occupied blocks percolate on the
+            coarse lattice, the open structure percolates on \(\mathbb{Z}^d\).</p>
+            <p>The required estimate states that a block already known to be occupied is joined to a neighboring block
+            with conditional probability close to one, given everything examined so far.</p>
+            <p><a href="https://doi.org/10.1098/rspa.1990.0100">Grimmett and Marstrand</a> obtain the required neighboring-block estimate by
+            sprinkling. They open further sites, working at
+            \(p+\gamma\) rather than at \(p\), and conclude that percolation at \(p\) forces percolation in a slab of
+            finite width at \(p+\gamma\), for every \(\gamma&gt;0\). They state that they cannot take \(\gamma=0\), and
+            at \(p=p_c\) this only gives a slab percolating at \(p_c+\gamma\).</p>
+            <p>Inequality (1) supplies the gluing step without sprinkling. The shell estimates give a high probability
+            of reaching an open contact whose conditional probability of continuing to a finite target set is close to one.
+            After fixing a shell pattern, retain the contacts \(A\) with that reliability. Earlier observations fix sites
+            open or closed, and the remaining coordinates have a product law. To apply the single-target inequality,
+            adjoin an auxiliary vertex \(b\), fixed open and adjacent to the target set. Connection to \(b\) now means
+            connection to some open site of that set. The source is also fixed open. Apply (1) under this conditional
+            product law, then average over shell patterns.</p>
+            <p>The exploration maintains these bounds after every permitted history. Each pending destination has
+            one designated predecessor, and stopping rules protect the unread sites needed for its next move.
+            Successful moves record actual open paths. A failed examination can also disable nearby moves, so
+            the comparison includes this bounded local damage: it retains vertices of a high-density independent
+            field only when their required nearby trials succeed. Disjoint \(3\times3\) blocks give a
+            supercritical independent comparison when the failure probability is sufficiently small.</p>
+            <p>Fix the geometry and the finite list of prototype events used in these estimates. Their strict
+            probability bounds persist at one common \(q&lt;p\) by finite-event continuity. Translation invariance
+            supplies the same estimates at every location, and the exploration invariants apply them after every
+            permitted history. The construction at \(q\) gives \(\theta(q)&gt;0\). Assuming \(\theta(p_c)&gt;0\) and applying this at \(p=p_c\)
+            contradicts the definition of \(p_c\), proving \(\theta(p_c)=0\).</p>
+            <p>The Lean declaration assumes \(d\geq3\). For \(d=2\), the slab
+            \(\mathbb{Z}^2 \times \{0,\dots,k\}^{d-2}\) is the full plane, so the slab construction gives no reduction. The planar
+            site result is Russo's theorem.</p>
+        </section>
+
+        <section>
+            <h2>Lean formalization</h2>
+            <p>The finite hyperedge inequality, incidence representation of site percolation, block construction, parameter decrease, and criticality argument are formalized in Lean 4 with Mathlib. The hyperedge model, the connection events, the
+            percolation probability and the critical parameter are definitions in the files; the critical parameter is
+            proved to lie in \([0,1]\), so \(\theta(p_c)\) is defined and the conclusion needs no side condition.</p>
+            <p>The Lean development also proves the monotonicity and finite-event continuity estimates used in the block
+            construction and in the decrease from \(p\) to \(q&lt;p\).</p>
+
+            <div class="standing">
+            <h3>Verified statements</h3>
+            <p>Inequality (1) is proved in Lean for arbitrary finite independent hyperedge models. Lean also proves
+            \(\theta(p_c)=0\) for site percolation on \(\mathbb Z^d\) for every \(d\geq3\), with no mathematical
+            hypothesis other than \(3\leq d\). Every local Lean file used in this proof was compiled again from source.
+            A separate check reported the public statement</p>
+            <pre>&#8704; (d : &#8469;), 3 &#8804; d &#8594; thetaSite d (criticalProbSiteI d) = 0</pre>
+            <p>After unfolding the definitions of <code>thetaSite</code> and the lattice graph, the conclusion is</p>
+            <pre>&#8704; (d : &#8469;), 3 &#8804; d &#8594;
+  (prodBernoulli fun _ =&gt; criticalProbSiteI d).real
+    {&#969; | {y | 0 &#8712; &#969; &#8743;
+             (SimpleGraph.fromRel fun x y =&gt;
+                (SimpleGraph.hasse (Fin d &#8594; &#8484;)).Adj x y &#8743;
+                x &#8712; &#969; &#8743; y &#8712; &#969;).Reachable 0 y}.Infinite}
+  = 0</pre>
+            <p>The companion theorem <code>site_phase_transition</code> proves \(0&lt;p_c&lt;1\), vanishing of
+            \(\theta\) at and below \(p_c\), and positivity at some parameter below one.</p>
+            <p>Lean lists exactly the axioms <code>propext</code>, <code>Classical.choice</code>, and
+            <code>Quot.sound</code>. The Lean files used in the proof contain no
+            <code>sorry</code>, <code>admit</code>, <code>native_decide</code>, or added axiom.</p>
+            <p>Nothing here is assumed and nothing is conjectured. The result is unconditional.</p>
+            <p>The classical statement \(\theta(p_c)=0\) for two-dimensional site percolation is not part of this Lean declaration.</p>
+            </div>
+
+            <h2>Source files and verification</h2>
+            <table>
+                <tbody>
+                <tr><td><a href="https://github.com/nitromannitol/percolation-after-anthropic">percolation-after-anthropic</a></td>
+                    <td>The separate public code repository, organized into
+                    <a href="https://github.com/nitromannitol/percolation-after-anthropic/tree/main/KNConjectures">KN-Conjectures: proofs and counterexamples</a> and
+                    <a href="https://github.com/nitromannitol/percolation-after-anthropic/tree/main/Hypergraph">hypergraphs and site percolation</a>, with pinned
+                    dependencies, build instructions, and <a href="https://github.com/nitromannitol/percolation-after-anthropic/blob/main/VERIFICATION.md">verification results</a>.</td></tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+<script>
+(function () {
+  "use strict";
+
+  function rng(seed) {
+    var a = seed >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function fill(n, seed) {
+    var r = rng(seed), u = new Float32Array(n), i;
+    for (i = 0; i < n; i++) u[i] = r();
+    return u;
+  }
+  function css(name, fallback) {
+    var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return v || fallback;
+  }
+
+  var SPECS = [
+    { id: "b2", title: "Bond percolation on \\(\\mathbb{Z}^2\\)", dim: 2, kind: "bond",
+      pc: 0.5, pcText: "\\(p_c = 1/2\\)", status: "Known: Harris and Kesten.", tag: "done", tagText: "settled" },
+    { id: "s2", title: "Site percolation on \\(\\mathbb{Z}^2\\)", dim: 2, kind: "site",
+      pc: 0.592746, pcText: "\\(p_c \\approx 0.5927\\)", status: "Known: Russo.", tag: "done", tagText: "settled" },
+    { id: "b3", title: "Bond percolation on \\(\\mathbb{Z}^3\\)", dim: 3, kind: "bond",
+      pc: 0.248812, pcText: "\\(p_c \\approx 0.2488\\)", status: 'Known in every dimension: <a href="https://github.com/anthropics/formal-math/tree/795efb86f191735c5481675763537cfb4ff37e55/percolation">Anthropic\'s Lean proof</a>.', tag: "done", tagText: "settled" },
+    { id: "s3", title: "Site percolation on \\(\\mathbb{Z}^3\\)", dim: 3, kind: "site",
+      pc: 0.311608, pcText: "\\(p_c \\approx 0.3116\\)", status: "Proved here, and checked in Lean.", tag: "here", tagText: "new" }
+  ];
+
+  var N2 = 75, M3 = 21, PSTART = 0.225, PMAX = 0.75;
+  var panels = document.getElementById("panels");
+  var models = [];
+
+  function legendMarkup(spec) {
+    var items;
+    if (spec.dim === 3) {
+      items = [["lattice", "box frame"], ["cluster", "tracked cluster"], ["seed", "center seed"]];
+    } else {
+      var noun = spec.kind === "site" ? "site" : "bond";
+      items = [["lattice", "lattice"], ["closed", "closed " + noun], ["open", "open " + noun],
+               ["cluster", "tracked cluster"], ["seed", "center seed"]];
+    }
+    return '<ul class="legend" aria-label="Canvas legend">' + items.map(function (item) {
+      return '<li><span class="legend-swatch ' + item[0] + '" aria-hidden="true"></span>' + item[1] + '</li>';
+    }).join("") + '</ul>';
+  }
+
+  SPECS.forEach(function (spec, idx) {
+    var d = document.createElement("div");
+    d.className = "panel";
+    d.innerHTML = '<h3>' + spec.title + '</h3>' +
+      '<canvas id="c_' + spec.id + '"></canvas>' +
+      legendMarkup(spec) +
+      '<div class="ctl"><input type="range" min="0" max="' + Math.round(PMAX * 1000) +
+        '" value="' + Math.round(PSTART * 1000) + '" step="1" aria-label="parameter p"><span class="mark" style="left:' +
+        (100 * spec.pc / PMAX).toFixed(2) + '%"></span></div>' +
+      '<p class="pc">' + spec.pcText + ' &nbsp;<span class="tag ' + spec.tag + '">' + spec.tagText +
+        '</span><span class="pnow">p = <b>0.000</b></span></p>' +
+      '<p class="status">' + spec.status + '</p>';
+    panels.appendChild(d);
+
+    var cv = d.querySelector("canvas");
+    var m = { spec: spec, panel: d, canvas: cv, ctx: cv.getContext("2d"), angle: 0.6 + 0.3 * idx };
+
+    if (spec.dim === 2) {
+      m.n = N2;
+      if (spec.kind === "site") { m.u = fill(N2 * N2, 1000 + idx); m.u[(((N2 - 1) >> 1)) * N2 + ((N2 - 1) >> 1)] = 0; }
+      else { m.uh = fill(N2 * N2, 2000 + idx); m.uv = fill(N2 * N2, 3000 + idx); }
+    } else {
+      m.n = M3;
+      if (spec.kind === "site") { m.u = fill(M3 * M3 * M3, 4000 + idx);
+          var hc = (M3 - 1) >> 1; m.u[(hc * M3 + hc) * M3 + hc] = 0; }
+      else {
+        m.ux = fill(M3 * M3 * M3, 5000 + idx);
+        m.uy = fill(M3 * M3 * M3, 6000 + idx);
+        m.uz = fill(M3 * M3 * M3, 7000 + idx);
+      }
+    }
+    models.push(m);
+  });
+
+  function resize() {
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    models.forEach(function (m) {
+      var w = m.canvas.clientWidth || CW;
+      m.canvas.width = Math.round(w * dpr);
+      m.canvas.height = Math.round(w * dpr);
+      m.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      m.cssw = w;
+    });
+  }
+
+  // ---- cluster computation ----------------------------------------------
+  function cluster2site(m, p) {
+    var n = m.n, u = m.u, seen = new Uint8Array(n * n), c = ((n - 1) >> 1), s = c * n + c;
+    var out = [];
+    if (u[s] >= p) return out;
+    var st = [s]; seen[s] = 1;
+    while (st.length) {
+      var v = st.pop(); out.push(v);
+      var x = v % n, y = (v - x) / n, k, nx, ny, w;
+      for (k = 0; k < 4; k++) {
+        nx = x + (k === 0 ? 1 : k === 1 ? -1 : 0);
+        ny = y + (k === 2 ? 1 : k === 3 ? -1 : 0);
+        if (nx < 0 || ny < 0 || nx >= n || ny >= n) continue;
+        w = ny * n + nx;
+        if (!seen[w] && u[w] < p) { seen[w] = 1; st.push(w); }
+      }
+    }
+    return out;
+  }
+
+  function cluster2bond(m, p) {
+    var n = m.n, uh = m.uh, uv = m.uv, seen = new Uint8Array(n * n);
+    var c = ((n - 1) >> 1), s = c * n + c, edges = [];
+    var st = [s]; seen[s] = 1;
+    while (st.length) {
+      var v = st.pop(), x = v % n, y = (v - x) / n;
+      if (x + 1 < n && uh[v] < p && !seen[y * n + x + 1]) { seen[y * n + x + 1] = 1; st.push(y * n + x + 1); }
+      if (x - 1 >= 0 && uh[v - 1] < p && !seen[y * n + x - 1]) { seen[y * n + x - 1] = 1; st.push(y * n + x - 1); }
+      if (y + 1 < n && uv[v] < p && !seen[(y + 1) * n + x]) { seen[(y + 1) * n + x] = 1; st.push((y + 1) * n + x); }
+      if (y - 1 >= 0 && uv[v - n] < p && !seen[(y - 1) * n + x]) { seen[(y - 1) * n + x] = 1; st.push((y - 1) * n + x); }
+    }
+    var x2, y2, v2;
+    for (y2 = 0; y2 < n; y2++) for (x2 = 0; x2 < n; x2++) {
+      v2 = y2 * n + x2;
+      if (x2 + 1 < n && uh[v2] < p && seen[v2]) edges.push([x2, y2, x2 + 1, y2]);
+      if (y2 + 1 < n && uv[v2] < p && seen[v2]) edges.push([x2, y2, x2, y2 + 1]);
+    }
+    return edges;
+  }
+
+  function cluster3site(m, p) {
+    var n = m.n, u = m.u, n2 = n * n, seen = new Uint8Array(n * n2);
+    var c = ((n - 1) >> 1), s = (c * n + c) * n + c, out = [];
+    if (u[s] >= p) return out;
+    var st = [s]; seen[s] = 1;
+    while (st.length) {
+      var v = st.pop(); out.push(v);
+      var x = v % n, y = ((v - x) / n) % n, z = (v - x - y * n) / n2, k, nx, ny, nz, w;
+      for (k = 0; k < 6; k++) {
+        nx = x + (k === 0 ? 1 : k === 1 ? -1 : 0);
+        ny = y + (k === 2 ? 1 : k === 3 ? -1 : 0);
+        nz = z + (k === 4 ? 1 : k === 5 ? -1 : 0);
+        if (nx < 0 || ny < 0 || nz < 0 || nx >= n || ny >= n || nz >= n) continue;
+        w = (nz * n + ny) * n + nx;
+        if (!seen[w] && u[w] < p) { seen[w] = 1; st.push(w); }
+      }
+    }
+    return out;
+  }
+
+  function cluster3bond(m, p) {
+    var n = m.n, n2 = n * n, ux = m.ux, uy = m.uy, uz = m.uz, seen = new Uint8Array(n * n2);
+    var c = ((n - 1) >> 1), s = (c * n + c) * n + c, st = [s], edges = [];
+    seen[s] = 1;
+    while (st.length) {
+      var v = st.pop(), x = v % n, y = ((v - x) / n) % n, z = (v - x - y * n) / n2;
+      if (x + 1 < n && ux[v] < p && !seen[v + 1]) { seen[v + 1] = 1; st.push(v + 1); }
+      if (x - 1 >= 0 && ux[v - 1] < p && !seen[v - 1]) { seen[v - 1] = 1; st.push(v - 1); }
+      if (y + 1 < n && uy[v] < p && !seen[v + n]) { seen[v + n] = 1; st.push(v + n); }
+      if (y - 1 >= 0 && uy[v - n] < p && !seen[v - n]) { seen[v - n] = 1; st.push(v - n); }
+      if (z + 1 < n && uz[v] < p && !seen[v + n2]) { seen[v + n2] = 1; st.push(v + n2); }
+      if (z - 1 >= 0 && uz[v - n2] < p && !seen[v - n2]) { seen[v - n2] = 1; st.push(v - n2); }
+    }
+    var v2, x2, y2, z2;
+    for (v2 = 0; v2 < n * n2; v2++) {
+      if (!seen[v2]) continue;
+      x2 = v2 % n; y2 = ((v2 - x2) / n) % n; z2 = (v2 - x2 - y2 * n) / n2;
+      if (x2 + 1 < n && ux[v2] < p) edges.push([x2, y2, z2, x2 + 1, y2, z2]);
+      if (y2 + 1 < n && uy[v2] < p) edges.push([x2, y2, z2, x2, y2 + 1, z2]);
+      if (z2 + 1 < n && uz[v2] < p) edges.push([x2, y2, z2, x2, y2, z2 + 1]);
+    }
+    return edges;
+  }
+
+  // ---- drawing -----------------------------------------------------------
+  var COL = {};
+  function readColors() {
+    COL.bg = css("--surface", "#fff");
+    COL.lattice = css("--perc-lattice", "#f3efe6");
+    COL.closed = css("--perc-closed", "#e2e8f0");
+    COL.open = css("--perc-open", "#6f7782");
+    COL.cluster = css("--perc-cluster", "#2f004f");
+    COL.seed = css("--perc-seed", "#47769f");
+  }
+  readColors();
+
+  function draw2site(m, p) {
+    var ctx = m.ctx, W = m.cssw, n = m.n, pad = 8, cell = (W - 2 * pad) / n, i, x, y;
+    ctx.fillStyle = COL.bg; ctx.fillRect(0, 0, W, W);
+    ctx.fillStyle = COL.lattice; ctx.fillRect(pad, pad, n * cell, n * cell);
+    ctx.fillStyle = COL.closed;
+    for (i = 0; i < n * n; i++) {
+      x = i % n; y = (i - x) / n;
+      ctx.fillRect(pad + x * cell + 0.5, pad + y * cell + 0.5, cell - 1, cell - 1);
+    }
+    ctx.fillStyle = COL.open;
+    for (i = 0; i < n * n; i++) {
+      if (m.u[i] >= p) continue;
+      x = i % n; y = (i - x) / n;
+      ctx.fillRect(pad + x * cell + 0.5, pad + y * cell + 0.5, cell - 1, cell - 1);
+    }
+    var cl = cluster2site(m, p);
+    ctx.fillStyle = COL.cluster;
+    for (i = 0; i < cl.length; i++) {
+      x = cl[i] % n; y = (cl[i] - x) / n;
+      ctx.fillRect(pad + x * cell + 0.5, pad + y * cell + 0.5, cell - 1, cell - 1);
+    }
+    var c = (n - 1) >> 1;
+    ctx.fillStyle = COL.seed;
+    ctx.fillRect(pad + c * cell + 0.5, pad + c * cell + 0.5, cell - 1, cell - 1);
+    return cl.length;
+  }
+
+  function draw2bond(m, p) {
+    var ctx = m.ctx, W = m.cssw, n = m.n, pad = 10, cell = (W - 2 * pad) / (n - 1), i, x, y;
+    ctx.fillStyle = COL.bg; ctx.fillRect(0, 0, W, W);
+    ctx.lineWidth = 0.65; ctx.strokeStyle = COL.closed; ctx.beginPath();
+    for (y = 0; y < n; y++) for (x = 0; x < n; x++) {
+      if (x + 1 < n) { ctx.moveTo(pad + x * cell, pad + y * cell); ctx.lineTo(pad + (x + 1) * cell, pad + y * cell); }
+      if (y + 1 < n) { ctx.moveTo(pad + x * cell, pad + y * cell); ctx.lineTo(pad + x * cell, pad + (y + 1) * cell); }
+    }
+    ctx.stroke();
+    ctx.fillStyle = COL.lattice;
+    for (y = 0; y < n; y++) for (x = 0; x < n; x++) {
+      ctx.fillRect(pad + x * cell - 0.4, pad + y * cell - 0.4, 0.8, 0.8);
+    }
+    ctx.lineWidth = 1.15; ctx.strokeStyle = COL.open; ctx.beginPath();
+    for (y = 0; y < n; y++) for (x = 0; x < n; x++) {
+      i = y * n + x;
+      if (x + 1 < n && m.uh[i] < p) { ctx.moveTo(pad + x * cell, pad + y * cell); ctx.lineTo(pad + (x + 1) * cell, pad + y * cell); }
+      if (y + 1 < n && m.uv[i] < p) { ctx.moveTo(pad + x * cell, pad + y * cell); ctx.lineTo(pad + x * cell, pad + (y + 1) * cell); }
+    }
+    ctx.stroke();
+    var es = cluster2bond(m, p);
+    ctx.lineWidth = 2.3; ctx.strokeStyle = COL.cluster; ctx.beginPath();
+    for (i = 0; i < es.length; i++) {
+      ctx.moveTo(pad + es[i][0] * cell, pad + es[i][1] * cell);
+      ctx.lineTo(pad + es[i][2] * cell, pad + es[i][3] * cell);
+    }
+    ctx.stroke();
+    var c = (n - 1) >> 1;
+    ctx.fillStyle = COL.seed; ctx.beginPath();
+    ctx.arc(pad + c * cell, pad + c * cell, 2.6, 0, 2 * Math.PI); ctx.fill();
+    return es.length;
+  }
+
+  var SIN_E = Math.sin(0.5236), COS_E = Math.cos(0.5236); // 30 degrees
+
+  function proj(x, y, z, m, W) {
+    var n = m.n, h = (n - 1) / 2, ca = Math.cos(m.angle), sa = Math.sin(m.angle);
+    var X = (x - h) * ca - (y - h) * sa, Y = (x - h) * sa + (y - h) * ca, Z = z - h;
+    var s = (W - 24) / (n * 1.55);
+    return [W / 2 + X * s, W / 2 + (Y * SIN_E - Z * COS_E) * s, Y * COS_E + Z * SIN_E];
+  }
+
+  function drawBox(m, W) {
+    var ctx = m.ctx, n = m.n, c = [[0,0,0],[n-1,0,0],[n-1,n-1,0],[0,n-1,0],[0,0,n-1],[n-1,0,n-1],[n-1,n-1,n-1],[0,n-1,n-1]];
+    var e = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]], i, a, b;
+    ctx.strokeStyle = COL.lattice; ctx.lineWidth = 0.8; ctx.beginPath();
+    for (i = 0; i < e.length; i++) {
+      a = proj(c[e[i][0]][0], c[e[i][0]][1], c[e[i][0]][2], m, W);
+      b = proj(c[e[i][1]][0], c[e[i][1]][1], c[e[i][1]][2], m, W);
+      ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]);
+    }
+    ctx.stroke();
+  }
+
+  function draw3site(m, p) {
+    var ctx = m.ctx, W = m.cssw, n = m.n, n2 = n * n;
+    ctx.fillStyle = COL.bg; ctx.fillRect(0, 0, W, W);
+    drawBox(m, W);
+    var cl = cluster3site(m, p), present = new Uint8Array(n * n2), pts = [], segs = [];
+    var i, v, x, y, z, q, q2;
+    for (i = 0; i < cl.length; i++) present[cl[i]] = 1;
+    for (i = 0; i < cl.length; i++) {
+      v = cl[i]; x = v % n; y = ((v - x) / n) % n; z = (v - x - y * n) / n2;
+      q = proj(x, y, z, m, W); pts.push(q);
+      if (x + 1 < n && present[v + 1]) {
+        q2 = proj(x + 1, y, z, m, W); segs.push([q, q2, (q[2] + q2[2]) / 2]);
+      }
+      if (y + 1 < n && present[v + n]) {
+        q2 = proj(x, y + 1, z, m, W); segs.push([q, q2, (q[2] + q2[2]) / 2]);
+      }
+      if (z + 1 < n && present[v + n2]) {
+        q2 = proj(x, y, z + 1, m, W); segs.push([q, q2, (q[2] + q2[2]) / 2]);
+      }
+    }
+    segs.sort(function (a, b) { return a[2] - b[2]; });
+    ctx.strokeStyle = COL.cluster; ctx.lineWidth = 1.15;
+    for (i = 0; i < segs.length; i++) {
+      ctx.beginPath(); ctx.moveTo(segs[i][0][0], segs[i][0][1]);
+      ctx.lineTo(segs[i][1][0], segs[i][1][1]); ctx.stroke();
+    }
+    pts.sort(function (a, b) { return a[2] - b[2]; });
+    var sz = Math.max(2.5, (W - 24) / (n * 3.1));
+    ctx.fillStyle = COL.cluster;
+    for (i = 0; i < pts.length; i++) {
+      ctx.fillRect(pts[i][0] - sz / 2, pts[i][1] - sz / 2, sz, sz);
+    }
+    var h = (n - 1) >> 1, center = proj(h, h, h, m, W);
+    ctx.fillStyle = COL.seed;
+    ctx.fillRect(center[0] - sz * 0.65, center[1] - sz * 0.65, sz * 1.3, sz * 1.3);
+    return cl.length;
+  }
+
+  function draw3bond(m, p) {
+    var ctx = m.ctx, W = m.cssw;
+    ctx.fillStyle = COL.bg; ctx.fillRect(0, 0, W, W);
+    drawBox(m, W);
+    var es = cluster3bond(m, p), segs = [], i, a, b;
+    for (i = 0; i < es.length; i++) {
+      a = proj(es[i][0], es[i][1], es[i][2], m, W);
+      b = proj(es[i][3], es[i][4], es[i][5], m, W);
+      segs.push([a, b, (a[2] + b[2]) / 2]);
+    }
+    segs.sort(function (u, v) { return u[2] - v[2]; });
+    ctx.strokeStyle = COL.cluster; ctx.lineWidth = 1.35;
+    for (i = 0; i < segs.length; i++) {
+      ctx.beginPath(); ctx.moveTo(segs[i][0][0], segs[i][0][1]);
+      ctx.lineTo(segs[i][1][0], segs[i][1][1]); ctx.stroke();
+    }
+    var h = (m.n - 1) >> 1, center = proj(h, h, h, m, W);
+    ctx.fillStyle = COL.seed; ctx.beginPath();
+    ctx.arc(center[0], center[1], 3, 0, 2 * Math.PI); ctx.fill();
+    return es.length;
+  }
+
+  function drawAll(p) {
+    models.forEach(function (m) {
+      if (m.spec.dim === 2) {
+        if (m.spec.kind === "site") draw2site(m, p); else draw2bond(m, p);
+      } else {
+        if (m.spec.kind === "site") draw3site(m, p); else draw3bond(m, p);
+      }
+    });
+  }
+
+  // ---- animation ---------------------------------------------------------
+  var playBtn = document.getElementById("playBtn"),
+      reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+      playing = !reduce, hold = 0;
+
+  models.forEach(function (m) {
+    m.slider = m.panel.querySelector("input[type=range]");
+    m.out = m.panel.querySelector(".pnow b");
+    m.p = PSTART * 1000;
+    m.slider.addEventListener("input", function () {
+      playing = false; playBtn.textContent = "Play";
+      m.p = Number(m.slider.value);
+      drawOne(m);
+    });
+  });
+
+  function drawOne(m) {
+    var p = m.p / 1000;
+    m.out.textContent = p.toFixed(3);
+    if (m.spec.dim === 2) {
+      if (m.spec.kind === "site") draw2site(m, p); else draw2bond(m, p);
+    } else {
+      if (m.spec.kind === "site") draw3site(m, p); else draw3bond(m, p);
+    }
+  }
+
+  function drawAll() { models.forEach(drawOne); }
+
+  function syncSliders() {
+    models.forEach(function (m) { m.slider.value = String(Math.round(m.p)); });
+  }
+
+  playBtn.textContent = playing ? "Pause" : "Play";
+  playBtn.addEventListener("click", function () {
+    playing = !playing;
+    playBtn.textContent = playing ? "Pause" : "Play";
+  });
+
+  function frame() {
+    if (playing) {
+      if (hold > 0) { hold--; if (hold === 0) models.forEach(function (m) { m.p = PSTART * 1000; }); }
+      else {
+        models.forEach(function (m) { m.p = Math.min(m.p + 1.35, PMAX * 1000); });
+        if (models[0].p >= PMAX * 1000) hold = 110;
+      }
+      models.forEach(function (m) { if (m.spec.dim === 3) m.angle += 0.0045; });
+      syncSliders();
+      drawAll();
+    } else {
+      var moved = false;
+      models.forEach(function (m) { if (m.spec.dim === 3) { m.angle += 0.0045; moved = true; } });
+      if (moved) drawAll();
+    }
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener("resize", function () { resize(); drawAll(); });
+  if (window.matchMedia) {
+    var mq = window.matchMedia("(prefers-color-scheme: dark)");
+    if (mq.addEventListener) mq.addEventListener("change", function () { readColors(); drawAll(); });
+  }
+
+  resize();
+  drawAll();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

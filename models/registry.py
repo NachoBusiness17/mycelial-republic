@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import json
+import threading
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -30,6 +32,11 @@ _ALIASES: dict[str, str] = {
     "orchestrator": "router",
     "biographer": "worker",
 }
+
+_TAGS_CACHE: dict[str, tuple[float, list[str]]] = {}
+_TAGS_CACHE_LOCK = threading.Lock()
+_TAGS_CACHE_TTL = 2.0
+_TAGS_FAILURE_TTL = 5.0
 
 
 def _load_local_models() -> dict[str, str]:
@@ -79,17 +86,56 @@ def ollama_base_url() -> str:
     try:
         from config import ollama_base
 
-        return ollama_base()
+        base = ollama_base()
     except Exception:
-        return "http://127.0.0.1:11434"
+        base = "http://127.0.0.1:11434"
+    # OLLAMA_HOST is shared with the OpenAI-compatible chat client, which
+    # commonly carries /v1.  Registry callers use native /api endpoints and
+    # must never construct /v1/api/tags or /v1/api/embeddings.
+    base = str(base or "").rstrip("/")
+    return base[:-3].rstrip("/") if base.lower().endswith("/v1") else base
 
 
 def ollama_tags(timeout: float = 3.0) -> list[str]:
+    """Read local model tags with a hard observer deadline.
+
+    urllib's timeout does not always cover Windows DNS resolution. Run the
+    optional probe on a daemon thread so an absent Docker hostname cannot hold
+    a context build or ghost reply hostage; cache both success and failure for
+    a short interval so a cold local service is not hammered by nested probes.
+    """
     try:
-        base = ollama_base_url()
-        with urllib.request.urlopen(f"{base}/api/tags", timeout=timeout) as r:
-            data = json.loads(r.read().decode("utf-8"))
-        return [str(m.get("name") or "") for m in (data.get("models") or []) if m.get("name")]
+        base = ollama_base_url().rstrip("/")
+        now = time.monotonic()
+        with _TAGS_CACHE_LOCK:
+            cached = _TAGS_CACHE.get(base)
+        if cached and now - cached[0] < (_TAGS_CACHE_TTL if cached[1] else _TAGS_FAILURE_TTL):
+            return list(cached[1])
+
+        hard_timeout = min(max(float(timeout), 0.1), 1.0)
+        done = threading.Event()
+        result: list[list[str]] = []
+
+        def _fetch() -> None:
+            try:
+                with urllib.request.urlopen(f"{base}/api/tags", timeout=hard_timeout) as r:
+                    data = json.loads(r.read().decode("utf-8"))
+                result.append([
+                    str(m.get("name") or "")
+                    for m in (data.get("models") or [])
+                    if m.get("name")
+                ])
+            except Exception:
+                result.append([])
+            finally:
+                done.set()
+
+        threading.Thread(target=_fetch, name="ollama-tags-probe", daemon=True).start()
+        done.wait(hard_timeout)
+        tags = result[0] if result else []
+        with _TAGS_CACHE_LOCK:
+            _TAGS_CACHE[base] = (time.monotonic(), list(tags))
+        return tags
     except Exception:
         return []
 

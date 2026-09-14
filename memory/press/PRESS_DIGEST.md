@@ -1,8 +1,8 @@
-# PRESS DIGEST 2026-08-17T21:10:58.798883Z
+# PRESS DIGEST 2026-09-14T07:00:05.383029Z
 
-## Pressing: [failure] recurring failure x112
+## Pressing: [scrum] [mag] [janitor] Dossier sanitization: strip API keys + system-reminder sludge from dossier .md files. Write clean to memory/biography/clean/. $0.
 
-_run_shell:c73866f2f1b5_
+_auto-synced from queue/todo.md_
 
 ### Rashomon (cheap perspectives)
 - I saw the light first. Then the shove. Then three windows. Broth first.

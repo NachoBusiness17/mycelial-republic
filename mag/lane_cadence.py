@@ -143,6 +143,35 @@ def cooldown(lane: str) -> int:
     return 0
 
 
+GLM_FLASH_FREE = "glm-4.7-flash"      # official Z.ai: free in/cached/out
+GLM_FLASH_CLERK = "glm-4.5-flash"     # free, cap 2, calmer pool
+GLM_FLASHX_PAID = "glm-4.7-flashx"    # $0.07 — never the free mill
+
+
+def pick_free_glm(lane: str = "z_ai3") -> str:
+    """Cadence for free 4.7-flash cache mining (operator 2026-08-28).
+
+    Ride glm-4.7-flash when the funded API lane is calm (cooldown 0, last
+    error not 1305). Drop to glm-4.5-flash while the global 4.7-flash pool
+    is congested. Never glm-4.7-flashx. Never a coding-plan key — those
+    hang on raw /paas/v4.
+
+    Uses lane_cadence.cooldown + last error from the fuel_feed profile.
+    """
+    if cooldown(lane) > 0:
+        return GLM_FLASH_CLERK
+    rows = _ledger_rows()
+    for r in reversed(rows):
+        if r.get("lane") != lane:
+            continue
+        if r.get("ok"):
+            return GLM_FLASH_FREE
+        if _is_overload(str(r.get("error") or "")):
+            return GLM_FLASH_CLERK
+        return GLM_FLASH_CLERK
+    return GLM_FLASH_FREE
+
+
 def brake_after() -> int:
     """Free-rotation failures (within a 10-min window) before the paid brake may fire."""
     rows = _ledger_rows()

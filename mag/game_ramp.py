@@ -163,7 +163,11 @@ def roguelite(action: str = "descend") -> dict[str, Any]:
     else:
         reply = f"roguelite: {action} is not a dungeon action (descend / die)."
     return {"ok": True, "schema": SCHEMA, "tier": "roguelite", "action": action,
-            "reply": reply, "depth": depth if action != "descend" else depth + 1, "best": best}
+            "reply": reply,
+            # Receipts describe the post-transition world.  Death starts a fresh run,
+            # so do not leak the pre-reset depth in the returned state.
+            "depth": 0 if action == "die" else (depth + 1 if action == "descend" else depth),
+            "best": best}
 
 
 def _next_open() -> dict[str, Any] | None:

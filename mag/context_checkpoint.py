@@ -78,6 +78,7 @@ class ContextCheckpoint:
             "verkle_knot_id": self.verkle_knot_id,
             "key_decisions": self.key_decisions,
             "pending_questions": self.pending_questions,
+            "state_snapshot": self.state_snapshot,
             "ts": self.ts,
         }
 

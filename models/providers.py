@@ -254,10 +254,14 @@ def chat_provider(
     *,
     model: str | None = None,
     temperature: float = 0.2,
-    max_tokens: int = 1024,
+    # 08-29 operator order: mine the ceiling by default — the API allows 131072,
+    # default 65536. Callers opt DOWN (JSON verbs, probes); never up from crumbs.
+    max_tokens: int = 65536,
     tier: str = "T1",
     session_id: str = "",
     thinking: bool | None = None,
+    timeout: int | None = None,
+    allow_peak: bool = False,
 ) -> dict[str, Any]:
     """Chat a named provider; records quota usage.
 
@@ -275,6 +279,17 @@ def chat_provider(
     if not pcfg:
         return {"ok": False, "error": f"unknown provider {provider_id}"}
 
+    # Coding-plan keys (Lite/Pro/Max) hang on raw /paas/v4 (90s timeout, 1305/1302).
+    # They are OpenCode/Claude-Code harness only. Fail fast so the fleet can burst.
+    if pcfg.get("opencode_only"):
+        return {
+            "ok": False,
+            "error": "opencode_only: coding-plan key refused on raw /paas/v4 "
+                     "(hangs/1305). Use harness.opencode_coder or burst_mill(deepseek).",
+            "provider": provider_id,
+            "burst_hint": "deepseek",
+        }
+
     # tier gate
     never = set((load_providers().get("defaults") or {}).get("never_remote_tiers") or ["T0", "T1"])
     if tier in never and not pcfg.get("free_local"):
@@ -284,7 +299,8 @@ def chat_provider(
     # genuinely PAID providers (paid:true in providers.yaml) defer during DeepSeek peak hours
     # (weekday Beijing 09-12/14-18 = 2x) so paid volume naturally falls in the off-peak window
     # and free lanes carry peak. MAG_ALLOW_PEAK=1 overrides. Never breaks the loop (try/except).
-    if pcfg.get("paid"):
+    # Burst-on-timeout (2026-08-28) passes allow_peak=True so a stalled Z.ai mill can fire.
+    if pcfg.get("paid") and not allow_peak:
         try:
             from mag.offpeak import defer_if_peak
             d = defer_if_peak()
@@ -358,8 +374,9 @@ def chat_provider(
             headers[str(hk)] = str(hv)
         req = urllib.request.Request(url, data=body, headers=headers, method="POST")
         t0 = time.perf_counter()
+        to = timeout if timeout is not None else int(pcfg.get("timeout_seconds") or 90)
         try:
-            with urllib.request.urlopen(req, timeout=90) as r:
+            with urllib.request.urlopen(req, timeout=to) as r:
                 data = json.loads(r.read().decode("utf-8"))
             lat_ms = int((time.perf_counter() - t0) * 1000)
             choice = (data.get("choices") or [{}])[0]
@@ -379,6 +396,7 @@ def chat_provider(
             if _looks_degenerate(text):
                 record_usage(
                     provider_id, model=str(model), ok=False,
+                    session_id=session_id,
                     meta={"degenerate": True, "key_idx": ki},
                 )
                 return {
@@ -424,6 +442,7 @@ def chat_provider(
             last_err = f"HTTP {e.code}: {err}"
             record_usage(
                 provider_id, model=str(model or ""), ok=False,
+                session_id=session_id,
                 meta={"http": e.code, "key_idx": ki},
             )
             if e.code in (401, 403, 429) and ki + 1 < len(keys):
@@ -433,6 +452,7 @@ def chat_provider(
             last_err = str(e)[:200]
             record_usage(
                 provider_id, model=str(model or ""), ok=False,
+                session_id=session_id,
                 meta={"error": str(e)[:200], "key_idx": ki},
             )
             if ki + 1 < len(keys):
@@ -440,6 +460,54 @@ def chat_provider(
             return {"ok": False, "error": last_err, "provider": provider_id, "key_idx": ki}
     return {"ok": False, "error": last_err, "provider": provider_id}
 
+
+def should_burst(err: str) -> bool:
+    """True when a free/Z.ai lane failed in a way that should fire the paid mill."""
+    e = (err or "").lower()
+    return any(
+        s in e
+        for s in (
+            "timed out",
+            "timeout",
+            "opencode_only",
+            "1305",
+            "1302",
+            "concurrency timeout",
+            "overloaded",
+            "empty content",
+        )
+    )
+
+
+def burst_mill(
+    system: str,
+    user: str,
+    *,
+    # same 08-29 rightsize: default to the ceiling, callers opt down
+    max_tokens: int = 65536,
+    reason: str = "",
+) -> dict[str, Any]:
+    """Paid DeepSeek-v4-flash mill when Z.ai coding-plan/Lite stalls.
+
+    Operator 2026-08-28: Max/Lite plans hang on raw API and never burst to
+    models we already pay for. allow_peak=True so a stall during 2x hours
+    still ships; timeout 45s so a second hang cannot eat the beat.
+    """
+    r = chat_provider(
+        "deepseek",
+        system,
+        user,
+        model="deepseek-v4-flash",
+        thinking=False,
+        max_tokens=max_tokens,
+        tier="T2",
+        allow_peak=True,
+        timeout=45,
+    )
+    r["burst"] = True
+    r["burst_reason"] = (reason or "")[:160]
+    r["burst_provider"] = "deepseek"
+    return r
 
 
 def _consume_sse(r, on_stream) -> dict[str, Any]:
@@ -604,6 +672,7 @@ def chat_messages(
             if _looks_degenerate(text or ""):
                 record_usage(
                     provider_id, model=str(model), ok=False,
+                    session_id=session_id,
                     meta={"degenerate": True, "key_idx": ki},
                 )
                 return {
@@ -643,6 +712,7 @@ def chat_messages(
             last_err = f"HTTP {e.code}: {err}"
             record_usage(
                 provider_id, model=str(model or ""), ok=False,
+                session_id=session_id,
                 meta={"http": e.code, "key_idx": ki},
             )
             if e.code in (401, 403, 429) and ki + 1 < len(keys):
@@ -652,6 +722,7 @@ def chat_messages(
             last_err = str(e)[:200]
             record_usage(
                 provider_id, model=str(model or ""), ok=False,
+                session_id=session_id,
                 meta={"error": str(e)[:200], "key_idx": ki},
             )
             if ki + 1 < len(keys):

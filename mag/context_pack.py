@@ -244,6 +244,28 @@ def _clip(path: Path, n: int) -> str:
     return path.read_text(encoding="utf-8", errors="replace")[:n]
 
 
+def _full_context_limit() -> int:
+    """Hard ceiling for the explicit full-context escape hatch.
+
+    Full mode is an operator choice, not permission to submit an unbounded
+    transcript.  Keep the escape hatch useful while ensuring one oversized
+    board cannot consume the entire model window.
+    """
+    try:
+        value = int(os.environ.get("MAG_FULL_CONTEXT_MAX_CHARS", "48000"))
+    except (TypeError, ValueError):
+        value = 48000
+    return min(200000, max(8000, value))
+
+
+def _head_tail(text: str, limit: int) -> str:
+    if len(text) <= limit:
+        return text
+    head = max(1, int(limit * 0.72))
+    tail = max(1, limit - head - 40)
+    return text[:head] + "\n…(full-context ceiling; middle omitted)…\n" + text[-tail:]
+
+
 def _rib_doctrine(max_chars: int = 2800) -> str:
     """Load the RIB doctrine (the system's understanding) into stateless-agent context.
 
@@ -329,6 +351,7 @@ def build_context_pack(
     max_live: int | None = None,
     max_bonds: int | None = None,
     refresh_bonds: bool = False,
+    fast: bool = False,
 ) -> dict[str, Any]:
     cfg = MODE_CONFIG[_normalize_mode(mode)]
     mode = _normalize_mode(mode)
@@ -336,12 +359,32 @@ def build_context_pack(
     max_brief = max_brief if max_brief is not None else int(cfg["max_brief"])
     max_live = max_live if max_live is not None else int(cfg["max_live"])
     max_bonds = max_bonds if max_bonds is not None else int(cfg["max_bonds"])
-    from mag.health import sanity
     from mag.lanes import latest_brief_text
     from models.multi_smoke import last_smoke
     from models.registry import inventory
 
-    s = sanity()
+    # Queue admission must not refresh the live health surface.  A full pack
+    # can still request a fresh sanity probe, but a fast pack is used by the
+    # control plane before enqueue and therefore reads only the last durable
+    # nervous receipt (or its minimal stale fallback).
+    cached_glance: dict[str, Any] | None = None
+    if fast:
+        try:
+            from mag.nervous_system import glance_cached
+
+            cached_glance = glance_cached(max_age_s=30.0, refresh=False)
+            body = cached_glance.get("body") or {}
+            s = {
+                "status": "up" if cached_glance.get("integral_ok") else "unknown",
+                "recording": {"live_stale": None},
+                "integral": {"port_8765": body.get("dashboard_8765")},
+            }
+        except Exception:
+            s = {"status": "unknown", "recording": {}, "integral": {}}
+    else:
+        from mag.health import sanity
+
+        s = sanity()
     brief = latest_brief_text()[:max_brief]
     live = _clip(ROOT / "memory" / "live_from_grok.md", max_live)
     att = _clip(ROOT / "memory" / "attention.md", 600)
@@ -448,7 +491,7 @@ def build_context_pack(
                 "updated_minute": tip.get("updated_minute"),
             }
         res_dir = ROOT / "memory" / "biography" / "residual"
-        if res_dir.is_dir():
+        if res_dir.is_dir() and not fast:
             for p in res_dir.glob("*.json"):
                 try:
                     o = json.loads(p.read_text(encoding="utf-8", errors="replace"))
@@ -498,7 +541,7 @@ def build_context_pack(
     try:
         from mag.nervous_system import pack_excerpt
 
-        nervous = pack_excerpt()
+        nervous = pack_excerpt(cached_glance) if fast else pack_excerpt()
     except Exception as e:
         nervous = {"schema": "nervous_system.v1", "error": str(e)}
 
@@ -677,17 +720,18 @@ def build_context_pack(
         },
     }
     if _env_on("MAG_FULL_CONTEXT") and mode == "full":
+        full_limit = _full_context_limit()
         pack["full_context"] = True
-        pack["pack_max_chars"] = None
+        pack["pack_max_chars"] = full_limit
         try:
             from mag.party_subchain import mount as _ps_mount
             _m = _ps_mount(full=True)
-            pack["subchain_full"] = _m.get("transcript") or ""
+            pack["subchain_full"] = _head_tail(str(_m.get("transcript") or ""), full_limit)
             pack["subchain_n"] = _m.get("n")
             pack["subchain_full_flag"] = bool(_m.get("full"))
         except Exception as exc:
             pack["subchain_full"] = f"(mount failed: {exc})"
-        pack["doctrine"] = _rib_doctrine(max_chars=10_000_000)
+        pack["doctrine"] = _rib_doctrine(max_chars=min(12000, full_limit // 3))
         try:
             from mag import game_world as _gw
             st = getattr(_gw, "status", None) or getattr(_gw, "world_status", None)
@@ -725,7 +769,7 @@ def format_context_pack_text(
     mode = _normalize_mode(mode or p.get("mode"))
     cfg = MODE_CONFIG[mode]
     if _env_on("MAG_FULL_CONTEXT") and mode == "full":
-        max_chars = None
+        max_chars = _full_context_limit()
     elif max_chars is None:
         max_chars = int(cfg.get("max_chars") or 4500)
     compact_ns = bool(cfg.get("compact_nervous"))

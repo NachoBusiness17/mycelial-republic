@@ -28,7 +28,9 @@ container there are no windows, period.
 from __future__ import annotations
 
 import json
+import os
 import sys
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -49,9 +51,14 @@ SCHEMA = "swarm_worker.v1"
 SWARM_DIR = ROOT / "memory" / "runs" / "swarm_worker"
 QUEUE_DIR = SWARM_DIR / "queue"
 RESULTS_DIR = SWARM_DIR / "results"
-DEFAULT_PROVIDER = "z_ai"  # FREE CACHE LANE is the default carrier (2026-08-25, operator: "free tiers sit unused").
-# Bulk/agentic drains ride glm-4.7-flash (free at all tiers, ~97-99% cache on the frozen RIB),
-# concurrency-gated (flash=1). deepseek stays the PAID BRAKE: explicit provider only, for tasks
+DEFAULT_PROVIDER = "cerebras"  # 2026-09-05: Lite UNHOOKED from the default (operator: "the lite
+# subscription key is fucking me again — I bet subagents are running it automatically").
+# Confirmed: every task without an explicit provider rode the metered Lite pool (10K credits/wk
+# — promo verdict 09-05 falsified the $0-lane belief) and died mid-week twice. ZAI_LITE_LAW
+# order restored: cerebras (largest free cap) -> groq -> Lite burst-only under the
+# mag/lite_guard.py daily pacing ceiling (law 15). z_ai2 (Pro) stays PARKED by the 06:5x
+# ruling — reserve only, never the default again without a fresh ruling.
+# deepseek stays the PAID BRAKE: explicit provider only, for tasks
 # that truly need it. The bill was $4/day riding deepseek by default — that was the leak.
 MAX_PER_PASS = 8  # rightsized: how many tasks one CronJob pass may execute
 
@@ -149,6 +156,51 @@ def _next_task(skip_ids: set[str] | None = None) -> dict[str, Any] | None:
             t["_file"] = p
             return t
     return None
+
+
+_CLAIM_STALE_SECONDS = 900.0
+
+
+def _claim_queued_file(path: Path, task: dict[str, Any]) -> bool:
+    """Compare-and-set a queued task to running across local/cluster workers.
+
+    Selection is intentionally cheap and may race. The adjacent O_EXCL claim
+    marker makes the status transition one-winner, so two consumers cannot both
+    execute the same JSON task after reading it as queued.
+    """
+    marker = path.with_suffix(".claim")
+    fd = None
+    try:
+        try:
+            fd = os.open(str(marker), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.write(fd, json.dumps({"pid": os.getpid(), "ts": time.time()}).encode("utf-8"))
+        except FileExistsError:
+            try:
+                if time.time() - marker.stat().st_mtime > _CLAIM_STALE_SECONDS:
+                    marker.unlink()
+            except OSError:
+                pass
+            return False
+        try:
+            current = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return False
+        if current.get("status") != "queued":
+            return False
+        task["status"] = "running"
+        task["started_at"] = _now()
+        path.write_text(json.dumps(task, ensure_ascii=False, indent=2), encoding="utf-8")
+        return True
+    finally:
+        if fd is not None:
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+        try:
+            marker.unlink()
+        except OSError:
+            pass
 
 
 def _tool_context(task: dict[str, Any]) -> str:
@@ -255,23 +307,47 @@ def _execute(task: dict[str, Any]) -> tuple[str, int]:
             82,
         )
     goal = str(task.get("goal") or "")
-    field = _tool_context(task)
-    if field:
-        goal = f"{field}\n\nTASK: {goal}"
-    cmd = [headless.PYTHON, str(ROOT / "main.py"), "agent", "--query", goal,
-           "--provider", str(task.get("provider") or DEFAULT_PROVIDER)]
+    provider = str(task.get("provider") or DEFAULT_PROVIDER)
+    if provider == "z_ai3":  # Lite burst only — law 15 pacing ceiling (mag/lite_guard.py)
+        from mag import lite_guard
+        g = lite_guard.check("swarm")
+        if not g["ok"]:
+            return (f"skipped: {g['deny']}", 82)
+        lite_guard.record("swarm", tokens=150_000,
+                          note="flat est per swarm agent task (multi-turn loop, conservative)")
     model = task.get("model")
-    if model:
-        cmd += ["--model", str(model)]
+    # Research receipts do not need the interactive tool schema or steering
+    # loop.  Keep the worker's context bounded and use the one-shot seat so a
+    # stale research item cannot consume a full 360/720 second agent process.
+    depth, _ = _task_tier(goal)
+    bounded_research = str(task.get("domain") or "").lower() == "research" or depth == "research"
+    if bounded_research:
+        if len(goal) > 6000:
+            goal = "[bounded tail of oversized research goal]\n" + goal[-6000:]
+        cmd = [headless.PYTHON, "-m", "mag.research_worker", "--goal", goal,
+               "--provider", provider]
+        if model:
+            cmd += ["--model", str(model)]
+        timeout = 300
+    else:
+        field = _tool_context(task)
+        if field:
+            goal = f"{field}\n\nTASK: {goal}"
+        cmd = [headless.PYTHON, str(ROOT / "main.py"), "agent", "--query", goal,
+               "--provider", provider]
+        if model:
+            cmd += ["--model", str(model)]
+        timeout = 720 if provider in ("deepseek", "deepseek_overmind") else 360
+    env = headless._spawn_env()
+    env["MAG_TASK_ID"] = str(task.get("task_id") or "swarm-worker")
     try:
         # run_headless (NOT run_py): `cmd` ALREADY starts with headless.PYTHON, and run_py would
         # PREPEND it again -> `python python main.py` -> instant ModuleNotFoundError (the 8-fail
         # swarm bug). run_headless passes the full command through as-is (windowless).
         # 2026-08-25 (drain wall): the paid brake (deepseek) gets a longer leash — heavy research
         # on it measured past 360s. Free lanes keep 360s; brake gets 720s.
-        brake = str(task.get("provider") or "") in ("deepseek", "deepseek_overmind")
         r = headless.run_headless(cmd, capture_output=True, text=True,
-                                  timeout=720 if brake else 360, cwd=str(ROOT))
+                                  timeout=timeout, cwd=str(ROOT), env=env)
         out = r.stdout or ""
         err = r.stderr or ""
         # prefer stderr when the agent failed (that's where the diagnosis lives)
@@ -293,7 +369,13 @@ def run_once(*, max_per_pass: int = MAX_PER_PASS) -> dict[str, Any]:
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     done, failed, skipped, results = 0, 0, 0, []
     skip_ids: set[str] = set()
-    for _ in range(max_per_pass):
+    # 2026-08-27 zcode seat: gated tasks must NOT consume the pass budget — head-of-line
+    # blocking let ~594 gated old tasks starve every fresh queueing (beats reported
+    # skipped=N forever). Only done+failed count toward max_per_pass; the scan is capped
+    # at 4x so an all-gated queue still terminates.
+    attempts, attempts_max = 0, max_per_pass * 4
+    while (done + failed) < max_per_pass and attempts < attempts_max:
+        attempts += 1
         task = _next_task(skip_ids=skip_ids)
         if task is None:
             break
@@ -327,9 +409,12 @@ def run_once(*, max_per_pass: int = MAX_PER_PASS) -> dict[str, Any]:
                 "provider": gate.get("lane") or task.get("provider"),
             })
             continue
-        task["status"] = "running"
-        task["started_at"] = _now()  # stale-sweep basis (2026-08-25): never sweep a fresh pickup
-        f.write_text(json.dumps(task, ensure_ascii=False, indent=2), encoding="utf-8")
+        if not _claim_queued_file(f, task):
+            skip_ids.add(str(task.get("task_id") or ""))
+            skipped += 1
+            results.append({"task_id": task.get("task_id"), "ok": False,
+                            "skipped": "claim_lost", "detail": "another worker claimed task"})
+            continue
         # CONCURRENCY GATE (2026-08-25, z.ai rate limits = in-flight, flash=1 / glm-4.7=2):
         # hold the model's slot for the WHOLE execution so cross-process callers (drain +
         # autonomous driver + probes) never exceed the cap — the 1305 wall, stopped at the
@@ -501,8 +586,12 @@ def run_rightsized_once(*, max_per_pass: int = MAX_PER_PASS) -> dict[str, Any]:
             results.append({"task_id": tid, "ok": False, "tier": depth, "path": path, "abandoned": True})
             done += 1
             continue
-        task["status"] = "running"
-        f.write_text(json.dumps(task, ensure_ascii=False, indent=2), encoding="utf-8")
+        if not _claim_queued_file(f, task):
+            skip_ids.add(tid)
+            skipped += 1
+            results.append({"task_id": tid, "ok": False, "tier": depth, "path": path,
+                            "skipped": "claim_lost", "detail": "another worker claimed task"})
+            continue
         before = _billable_snapshot()
         if path == "local":
             # deterministic/RIB work: resolve locally, NO deep model run (honest — not frontier output)

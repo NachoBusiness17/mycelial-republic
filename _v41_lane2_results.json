@@ -1,0 +1,169 @@
+[
+ {
+  "arm": "A_bare",
+  "run": 1,
+  "ok": true,
+  "error": "",
+  "latency_ms": 4500,
+  "provider": "deepseek",
+  "model": "deepseek-v4-flash",
+  "usage": {
+   "prompt_tokens": 23,
+   "completion_tokens": 707,
+   "total_tokens": 730,
+   "prompt_tokens_details": {
+    "cached_tokens": 0
+   },
+   "prompt_cache_hit_tokens": 0,
+   "prompt_cache_miss_tokens": 23
+  },
+  "text": "# Longest Palindromic Substring in O(n²)\n\nHere's a clean implementation using the **expand-around-center** approach, which runs in O(n²) time and O(1) space:\n\n```python\ndef longest_palindromic_substring(s: str) -> str:\n    \"\"\"\n    Find the longest palindromic substring in s.\n    \n    Time complexity:  O(n²)\n    Space complexity: O(1)\n    \"\"\"\n    if not s:\n        return \"\"\n    \n    start, end = 0, 0  # Track the best palindrome found so far\n    \n    def expand_around_center(left: int, right: int) -> int:\n        \"\"\"Expand outward while characters match; return the palindrome length.\"\"\"\n        while left >= 0 and right < len(s) and s[left] == s[right]:\n            left -= 1\n            right += 1\n        # After the loop, (left+1, right-1) is the valid palindrome range\n        return right - left - 1\n    \n    for i in range(len(s)):\n        # Odd-length palindromes (single character center)\n        len1 = expand_around_center(i, i)\n        # Even-length palindromes (two-character center)\n        len2 = expand_around_center(i, i + 1)\n        \n        max_len = max(len1, len2)\n        \n        if max_len > end - start:\n            # Compute the start index from the center and length\n            start = i - (max_len - 1) // 2\n            end = i + max_len // 2\n    \n    return s[start:end + 1]\n```\n\n## How It Works\n\nFor each index `i` in the string, we treat it as the **center** of a potential palindrome and expand outward:\n\n1. **Odd-length palindromes** — center is a single character (`i, i`), e.g. `\"aba\"`.\n2. **Even-length palindromes** — center is between two characters (`i, i+1`), e.g. `\"abba\"`.\n\nWe track the longest palindrome found and return the corresponding slice.\n\n## Example Usage\n\n```python\nprint(longest_palindromic_substring(\"babad\"))    # \"bab\" (or \"aba\")\nprint(longest_palindromic_substring(\"cbbd\"))     # \"bb\"\nprint(longest_palindromic_substring(\"racecar\"))  # \"racecar\"\nprint(longest_palindromic_substring(\"\"))         # \"\"\nprint(longest_palindromic_substring(\"a\"))        # \"a\"\n```\n\n## Complexity Analysis\n\n| Metric | Value | Why |\n|--------|-------|-----|\n| **Time** | O(n²) | `n` centers × up to `n/2` expansion steps each |\n| **Space** | O(1) | Only a few integer variables; no extra data structures |\n\n## Why Not Other Approaches?\n\n- **Brute force** (check every substring): O(n³) — too slow.\n- **Dynamic programming**: O(n²) time but O(n²) space — worse memory.\n- **Manacher's algorithm**: O(n) time — faster, but more complex and not required here.\n\nThe expand-around-center method is the sweet spot: simple, O(n²) time, and constant extra space.",
+  "battery": {
+   "compiles": true,
+   "fn_name": "longest_palindromic_substring",
+   "fails": [],
+   "n2000_seconds": 0.0,
+   "code_lines": 27
+  }
+ },
+ {
+  "arm": "A_bare",
+  "run": 2,
+  "ok": true,
+  "error": "",
+  "latency_ms": 3522,
+  "provider": "deepseek",
+  "model": "deepseek-v4-flash",
+  "usage": {
+   "prompt_tokens": 23,
+   "completion_tokens": 601,
+   "total_tokens": 624,
+   "prompt_tokens_details": {
+    "cached_tokens": 0
+   },
+   "prompt_cache_hit_tokens": 0,
+   "prompt_cache_miss_tokens": 23
+  },
+  "text": "# Longest Palindromic Substring in O(n²)\n\nHere's a clean implementation using the **expand-around-center** approach, which runs in O(n²) time and O(1) extra space:\n\n```python\ndef longest_palindromic_substring(s: str) -> str:\n    \"\"\"\n    Find the longest palindromic substring in s.\n    \n    Time complexity:  O(n²)\n    Space complexity: O(1)  (excluding the output string)\n    \"\"\"\n    if not s:\n        return \"\"\n\n    start, end = 0, 0  # bounds of the best palindrome found so far\n\n    def expand(left: int, right: int) -> int:\n        \"\"\"Expand around center (left, right) and return the palindrome length.\"\"\"\n        while left >= 0 and right < len(s) and s[left] == s[right]:\n            left -= 1\n            right += 1\n        # After the loop, (left, right) are one step outside the palindrome.\n        return right - left - 1\n\n    for i in range(len(s)):\n        # Odd-length palindromes: center is a single character\n        len1 = expand(i, i)\n        # Even-length palindromes: center is between two characters\n        len2 = expand(i, i + 1)\n        best = max(len1, len2)\n\n        if best > end - start:\n            # Compute the start index from the center and length\n            start = i - (best - 1) // 2\n            end = i + best // 2\n\n    return s[start:end + 1]\n```\n\n## How it works\n\nEvery palindrome has a **center**. There are `2n - 1` possible centers:\n- `n` centers at individual characters (odd-length palindromes)\n- `n - 1` centers between adjacent characters (even-length palindromes)\n\nFor each center, we expand outward while the characters match. Each expansion takes O(n) in the worst case, and we do it for O(n) centers → **O(n²) total**.\n\n## Example usage\n\n```python\nprint(longest_palindromic_substring(\"babad\"))    # \"bab\" (or \"aba\")\nprint(longest_palindromic_substring(\"cbbd\"))     # \"bb\"\nprint(longest_palindromic_substring(\"forgeeksskeegfor\"))  # \"geeksskeeg\"\nprint(longest_palindromic_substring(\"a\"))        # \"a\"\nprint(longest_palindromic_substring(\"\"))         # \"\"\n```\n\n## Why not Manacher's algorithm?\n\nManacher's algorithm solves this in **O(n)**, but it's significantly more complex. The expand-around-center approach above is the standard O(n²) solution — simple, readable, and fast enough for most practical inputs.",
+  "battery": {
+   "compiles": true,
+   "fn_name": "longest_palindromic_substring",
+   "fails": [],
+   "n2000_seconds": 0.0,
+   "code_lines": 27
+  }
+ },
+ {
+  "arm": "B_minimal",
+  "run": 1,
+  "ok": true,
+  "error": "",
+  "latency_ms": 3606,
+  "provider": "deepseek",
+  "model": "deepseek-v4-flash",
+  "usage": {
+   "prompt_tokens": 31,
+   "completion_tokens": 653,
+   "total_tokens": 684,
+   "prompt_tokens_details": {
+    "cached_tokens": 0
+   },
+   "prompt_cache_hit_tokens": 0,
+   "prompt_cache_miss_tokens": 31
+  },
+  "text": "# Longest Palindromic Substring (O(n²))\n\nHere's a clean implementation using the **expand around center** approach, which runs in O(n²) time and O(1) space.\n\n```python\ndef longest_palindromic_substring(s: str) -> str:\n    \"\"\"\n    Find the longest palindromic substring in s.\n    \n    Time complexity:  O(n^2)\n    Space complexity: O(1)  (excluding the output string)\n    \"\"\"\n    if not s:\n        return \"\"\n\n    start, end = 0, 0  # bounds of the best palindrome found so far\n\n    def expand(left: int, right: int) -> int:\n        \"\"\"Expand around (left, right) and return the palindrome's right index.\"\"\"\n        while left >= 0 and right < len(s) and s[left] == s[right]:\n            left -= 1\n            right += 1\n        # Loop exits one step too far; step back.\n        return right - 1\n\n    for i in range(len(s)):\n        # Odd-length palindromes: center is a single character\n        right_odd = expand(i, i)\n        # Even-length palindromes: center is between two characters\n        right_even = expand(i, i + 1)\n\n        # Pick whichever expansion reached further\n        right = max(right_odd, right_even)\n        if right - i > end - start:\n            start = i - (right - i)\n            end = right\n\n    return s[start:end + 1]\n```\n\n## How it works\n\nEvery palindrome has a **center**:\n\n- **Odd length** (e.g. `\"aba\"`): center is a single character at index `i`.\n- **Even length** (e.g. `\"abba\"`): center is the gap between indices `i` and `i+1`.\n\nFor each of the `2n - 1` possible centers, we expand outward while the characters match. Each expansion is O(n), giving **O(n²)** overall.\n\n## Example\n\n```python\nprint(longest_palindromic_substring(\"babad\"))   # \"bab\"  (or \"aba\")\nprint(longest_palindromic_substring(\"cbbd\"))    # \"bb\"\nprint(longest_palindromic_substring(\"forgeeksskeegfor\"))  # \"geeksskeeg\"\nprint(longest_palindromic_substring(\"a\"))       # \"a\"\nprint(longest_palindromic_substring(\"\"))        # \"\"\n```\n\n## Notes\n\n- **Why not brute force?** Checking all O(n²) substrings and verifying each in O(n) gives O(n³). Expanding around centers avoids the redundant re-checking.\n- **Why not Manacher's?** Manacher's algorithm solves this in O(n), but it's more complex. The expand-around-center method is the standard O(n²) solution and is much easier to reason about.\n- **Ties:** When multiple palindromes share the maximum length, this returns the first one encountered (leftmost center).",
+  "battery": {
+   "compiles": true,
+   "fn_name": "longest_palindromic_substring",
+   "fails": [
+    "'cbbd': got 'cbb', want one of ['bb']",
+    "'bananas': got 'ana', want one of ['anana']",
+    "'forgeeksskeegfor': got 'rgeeksskeeg', want one of ['geeksskeeg']",
+    "'aaaa': got '', want one of ['aaaa']"
+   ],
+   "n2000_seconds": 0.0,
+   "code_lines": 27
+  }
+ },
+ {
+  "arm": "B_minimal",
+  "run": 2,
+  "ok": true,
+  "error": "",
+  "latency_ms": 3872,
+  "provider": "deepseek",
+  "model": "deepseek-v4-flash",
+  "usage": {
+   "prompt_tokens": 31,
+   "completion_tokens": 731,
+   "total_tokens": 762,
+   "prompt_tokens_details": {
+    "cached_tokens": 0
+   },
+   "prompt_cache_hit_tokens": 0,
+   "prompt_cache_miss_tokens": 31
+  },
+  "text": "# Longest Palindromic Substring (O(n²))\n\nHere's an efficient solution using the **expand-around-center** technique, which runs in O(n²) time and O(1) space.\n\n```python\ndef longest_palindromic_substring(s: str) -> str:\n    \"\"\"\n    Find the longest palindromic substring in s.\n    \n    Uses the expand-around-center approach:\n    - For each of the 2n-1 possible centers (n single chars + n-1 gaps),\n      expand outward while characters match.\n    \n    Time complexity:  O(n²)\n    Space complexity: O(1)  (excluding the output string)\n    \"\"\"\n    if not s:\n        return \"\"\n\n    start, end = 0, 0  # bounds of the best palindrome found so far\n\n    def expand(left: int, right: int) -> int:\n        \"\"\"Expand around (left, right) and return the length of the palindrome.\"\"\"\n        while left >= 0 and right < len(s) and s[left] == s[right]:\n            left -= 1\n            right += 1\n        # After the loop, (left, right) are one step outside the palindrome.\n        return right - left - 1\n\n    for i in range(len(s)):\n        # Odd-length palindromes: center is a single character\n        len1 = expand(i, i)\n        # Even-length palindromes: center is between two characters\n        len2 = expand(i, i + 1)\n        best = max(len1, len2)\n\n        if best > end - start:\n            # Compute the new start/end from the center i and length `best`\n            start = i - (best - 1) // 2\n            end = i + best // 2\n\n    return s[start:end + 1]\n```\n\n## How It Works\n\nEvery palindrome has a **center**, which is either:\n- A single character (odd-length palindrome, e.g. `\"aba\"` centered at `b`)\n- A gap between two characters (even-length palindrome, e.g. `\"abba\"` centered between the two `b`s)\n\nThere are `2n - 1` such centers. For each one, we expand outward as long as the characters on both sides match. This gives us:\n\n- **Outer loop:** `n` iterations\n- **Inner expansion:** up to `n/2` steps per center\n\nTotal: **O(n²)** time, **O(1)** extra space.\n\n## Example Usage\n\n```python\nprint(longest_palindromic_substring(\"babad\"))    # \"bab\" (or \"aba\")\nprint(longest_palindromic_substring(\"cbbd\"))     # \"bb\"\nprint(longest_palindromic_substring(\"racecar\"))  # \"racecar\"\nprint(longest_palindromic_substring(\"abacdfgdcaba\"))  # \"aba\"\nprint(longest_palindromic_substring(\"\"))         # \"\"\n```\n\n## Why Not Dynamic Programming?\n\nThe classic DP solution also runs in O(n²) time but uses **O(n²) space** for the table. Expand-around-center achieves the same time complexity with constant extra space, making it the preferred approach unless you need the DP table for other purposes.\n\n> **Note:** Manacher's algorithm solves this in O(n) time, but it's significantly more complex. For most practical purposes, O(n²) is more than sufficient.",
+  "battery": {
+   "compiles": true,
+   "fn_name": "longest_palindromic_substring",
+   "fails": [],
+   "n2000_seconds": 0.0,
+   "code_lines": 30
+  }
+ },
+ {
+  "arm": "C_loaded",
+  "run": 1,
+  "ok": true,
+  "error": "",
+  "latency_ms": 6296,
+  "provider": "deepseek",
+  "model": "deepseek-v4-flash",
+  "usage": {
+   "prompt_tokens": 77,
+   "completion_tokens": 1237,
+   "total_tokens": 1314,
+   "prompt_tokens_details": {
+    "cached_tokens": 0
+   },
+   "prompt_cache_hit_tokens": 0,
+   "prompt_cache_miss_tokens": 77
+  },
+  "text": "# Longest Palindromic Substring — O(n²) Solution\n\n## Approach\n\nThe most intuitive O(n²) approach is **expand around center**. Every palindrome has a center, which is either:\n\n- A single character (odd-length palindrome, e.g. `\"aba\"` centered at `'b'`)\n- A gap between two characters (even-length palindrome, e.g. `\"abba\"` centered between the two `'b'`s)\n\nFor a string of length `n`, there are `2n - 1` possible centers. Expanding outward from each center takes O(n) time in the worst case, giving **O(n²) time** and **O(1) extra space**.\n\nThis is strictly better than the naive O(n³) brute-force (check every substring) and avoids the O(n) space overhead of Manacher's algorithm when O(n²) is acceptable.\n\n## Implementation\n\n```python\ndef longest_palindromic_substring(s: str) -> str:\n    \"\"\"\n    Return the longest palindromic substring of ``s``.\n\n    Uses the \"expand around center\" technique: for each of the ``2n - 1``\n    possible palindrome centers (``n`` single characters and ``n - 1`` gaps\n    between adjacent characters), expand outward while the characters match,\n    tracking the longest palindrome found.\n\n    Args:\n        s: The input string. May be empty.\n\n    Returns:\n        The longest palindromic substring of ``s``. If multiple palindromes\n        of maximal length exist, the first one encountered (leftmost) is\n        returned. Returns ``\"\"`` when ``s`` is empty.\n\n    Time complexity:\n        O(n^2) — O(n) centers, each expanded in O(n) worst case.\n\n    Space complexity:\n        O(1) auxiliary space (the returned substring is not counted).\n\n    Examples:\n        >>> longest_palindromic_substring(\"babad\")\n        'bab'\n        >>> longest_palindromic_substring(\"cbbd\")\n        'bb'\n        >>> longest_palindromic_substring(\"\")\n        ''\n        >>> longest_palindromic_substring(\"a\")\n        'a'\n    \"\"\"\n    if not s:\n        return \"\"\n\n    n = len(s)\n    # Track the best palindrome as a half-open interval [start, end).\n    best_start, best_end = 0, 1\n\n    def expand(left: int, right: int) -> tuple[int, int]:\n        \"\"\"Expand around (left, right) and return the maximal [start, end).\"\"\"\n        while left >= 0 and right < n and s[left] == s[right]:\n            left -= 1\n            right += 1\n        # Loop exits one step past the valid palindrome.\n        return left + 1, right\n\n    for center in range(n):\n        # Odd-length palindrome centered on a single character.\n        start, end = expand(center, center)\n        if end - start > best_end - best_start:\n            best_start, best_end = start, end\n\n        # Even-length palindrome centered between two characters.\n        start, end = expand(center, center + 1)\n        if end - start > best_end - best_start:\n            best_start, best_end = start, end\n\n    return s[best_start:best_end]\n```\n\n## Why This Works\n\n**Correctness.** Every palindrome in `s` has a unique center. For an odd-length palindrome of length `2k+1`, the center is the middle character at index `c`, and the palindrome spans `[c-k, c+k]`. For an even-length palindrome of length `2k`, the center is the gap between indices `c-1` and `c`, spanning `[c-k, c+k-1]`. By expanding from every one of the `2n-1` centers until characters mismatch, we discover the maximal palindrome for each center. The global maximum over all centers is therefore the longest palindromic substring.\n\n**Tie-breaking.** We only update `best_*` on a strict `>` comparison, so the leftmost maximal palindrome wins. This matches the conventional expectation for inputs like `\"babad\"` → `\"bab\"` (not `\"aba\"`).\n\n## Edge Cases Handled\n\n| Input | Output | Reason |\n|---|---|---|\n| `\"\"` | `\"\"` | Early return guards against empty input. |\n| `\"a\"` | `\"a\"` | Single char is trivially a palindrome. |\n| `\"ab\"` | `\"a\"` | No palindrome longer than 1; leftmost wins. |\n| `\"aaaa\"` | `\"aaaa\"` | Even-length expansion from the middle gap. |\n| `\"abcba\"` | `\"abcba\"` | Odd-length expansion from `'c'`. |\n| `\"abacdfgdcaba\"` | `\"aba\"` | Multiple candidates; leftmost maximal returned. |\n\n## Complexity Analysis\n\n- **Time:** The outer loop runs `n` times. Each `expand` call performs at most `n/2` comparisons before hitting a boundary or mismatch, so each center costs O(n). Total: **O(n²)**.\n- **Space:** Only a constant number of integer indices are maintained; the recursion-free implementation uses **O(1)** auxiliary space.\n\n## Alternative: Dynamic Programming\n\nFor completeness, the same problem can be solved with a DP table `dp[i][j] = True` iff `s[i:j+1]` is a palindrome, using the recurrence `dp[i][j] = (s[i] == s[j]) and (j - i < 2 or dp[i+1][j-1])`. That is also O(n²) time but uses **O(n²) space**, so expand-around-center is preferable when memory matters.",
+  "battery": {
+   "compiles": true,
+   "fn_name": "longest_palindromic_substring",
+   "fails": [],
+   "n2000_seconds": 0.0,
+   "code_lines": 49
+  }
+ },
+ {
+  "arm": "C_loaded",
+  "run": 2,
+  "ok": true,
+  "error": "",
+  "latency_ms": 5995,
+  "provider": "deepseek",
+  "model": "deepseek-v4-flash",
+  "usage": {
+   "prompt_tokens": 77,
+   "completion_tokens": 1396,
+   "total_tokens": 1473,
+   "prompt_tokens_details": {
+    "cached_tokens": 0
+   },
+   "prompt_cache_hit_tokens": 0,
+   "prompt_cache_miss_tokens": 77
+  },
+  "text": "# Longest Palindromic Substring — O(n²) Solution\n\nBelow is a production-ready implementation using the **expand-around-center** technique, which achieves O(n²) time and O(1) extra space.\n\n## Approach\n\nA palindrome mirrors around its center. There are `2n - 1` possible centers:\n- **`n` odd-length centers** (single character, e.g. `\"aba\"` centered at `'b'`)\n- **`n - 1` even-length centers** (between two characters, e.g. `\"abba\"` centered between the two `'b'`s)\n\nFor each center, we expand outward while characters match, tracking the longest palindrome found.\n\n## Implementation\n\n```python\ndef longest_palindromic_substring(s: str) -> str:\n    \"\"\"\n    Find the longest palindromic substring in ``s`` using the\n    expand-around-center technique.\n\n    A palindrome mirrors around its center, so there are ``2n - 1``\n    possible centers to consider: ``n`` odd-length centers (a single\n    character) and ``n - 1`` even-length centers (between two characters).\n    For each center we expand outward while the characters match, keeping\n    track of the longest palindrome seen.\n\n    Time complexity:  O(n²) — O(n) centers, each expanding up to O(n).\n    Space complexity: O(1) extra space (the returned slice is O(n)).\n\n    Args:\n        s: The input string. May be empty.\n\n    Returns:\n        The longest palindromic substring of ``s``. If multiple palindromes\n        share the maximum length, the one whose center is encountered first\n        (leftmost) is returned. Returns ``\"\"`` when ``s`` is empty.\n\n    Examples:\n        >>> longest_palindromic_substring(\"babad\")\n        'bab'\n        >>> longest_palindromic_substring(\"cbbd\")\n        'bb'\n        >>> longest_palindromic_substring(\"\")\n        ''\n        >>> longest_palindromic_substring(\"a\")\n        'a'\n    \"\"\"\n    if not s:\n        return \"\"\n\n    n = len(s)\n    # Track the best result as (start, end) indices, end-exclusive.\n    best_start, best_end = 0, 1\n\n    def expand(left: int, right: int) -> tuple[int, int]:\n        \"\"\"Expand around (left, right) and return the maximal [start, end).\"\"\"\n        while left >= 0 and right < n and s[left] == s[right]:\n            left -= 1\n            right += 1\n        # Loop exits one step past the valid palindrome; step back.\n        return left + 1, right\n\n    for i in range(n):\n        # Odd-length palindromes: center on a single character.\n        start, end = expand(i, i)\n        if end - start > best_end - best_start:\n            best_start, best_end = start, end\n\n        # Even-length palindromes: center between i and i + 1.\n        start, end = expand(i, i + 1)\n        if end - start > best_end - best_start:\n            best_start, best_end = start, end\n\n    return s[best_start:best_end]\n```\n\n## Why This Works\n\n**Correctness.** Every palindrome has a unique center. By expanding from each of the `2n - 1` centers as far as possible, we are guaranteed to discover the maximal palindrome for that center. Taking the maximum over all centers therefore yields the globally longest palindromic substring.\n\n**Complexity.**\n- **Time:** There are `2n - 1` centers. Each expansion performs at most `n/2` comparisons before hitting a boundary or a mismatch, giving `O(n)` per center and `O(n²)` overall.\n- **Space:** Only a constant number of integer variables are used; the recursion-free loop keeps the call stack flat. The returned substring is `O(n)` but is required output.\n\n## Edge Cases Handled\n\n| Input | Output | Reason |\n|-------|--------|--------|\n| `\"\"` | `\"\"` | Guard clause returns early. |\n| `\"a\"` | `\"a\"` | Single char is trivially a palindrome. |\n| `\"ab\"` | `\"a\"` | No palindrome longer than 1; leftmost wins. |\n| `\"cbbd\"` | `\"bb\"` | Even-length center detected. |\n| `\"aaaa\"` | `\"aaaa\"` | Expansion runs to the string boundary. |\n| `\"abcba\"` | `\"abcba\"` | Odd-length center at `'c'`. |\n\n## Alternative: Dynamic Programming (also O(n²))\n\nFor completeness, here is the DP formulation, which uses O(n²) space and is often easier to reason about but less memory-efficient:\n\n```python\ndef longest_palindromic_substring_dp(s: str) -> str:\n    \"\"\"\n    Find the longest palindromic substring using bottom-up dynamic programming.\n\n    ``dp[i][j]`` is True iff ``s[i:j+1]`` is a palindrome. The recurrence is::\n\n        dp[i][j] = (s[i] == s[j]) and (j - i < 2 or dp[i + 1][j - 1])\n\n    Time complexity:  O(n²).\n    Space complexity: O(n²) — use the expand-around-center version for O(1).\n    \"\"\"\n    if not s:\n        return \"\"\n\n    n = len(s)\n    dp = [[False] * n for _ in range(n)]\n    best_start, best_len = 0, 1\n\n    for i in range(n):\n        dp[i][i] = True\n\n    for length in range(2, n + 1):\n        for i in range(n - length + 1):\n            j = i + length - 1\n            if s[i] == s[j] and (length == 2 or dp[i + 1][j - 1]):\n                dp[i][j] = True\n                if length > best_len:\n                    best_start, best_len = i, length\n\n    return s[best_start:best_start + best_len]\n```\n\n## Recommendation\n\nUse **`longest_palindromic_substring`** (expand-around-center) in production: it matches the DP solution's O(n²) time while using O(1) auxiliary space, and it typically runs faster in practice due to better cache locality and early termination on mismatches.",
+  "battery": {
+   "compiles": true,
+   "fn_name": "longest_palindromic_substring",
+   "fails": [],
+   "n2000_seconds": 0.0,
+   "code_lines": 49
+  }
+ }
+]

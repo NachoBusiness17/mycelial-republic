@@ -1,0 +1,15 @@
+# Warm blade image — bind Mag ollama plant (HOW_TO_RUN_BRAIN_BOX: ollama/ollama:latest for ssh6).
+# Snapshot step is OPERATOR-GO (spends). This file is the recipe only.
+FROM ollama/ollama:latest
+USER root
+RUN apt-get update -qq && apt-get install -y -qq git python3 \
+    && rm -rf /var/lib/apt/lists/*
+COPY state/vast/blade_templates.json /opt/mag/blade_templates.json
+COPY docker/warm_preload.sh /opt/mag/warm_preload.sh
+RUN chmod +x /opt/mag/warm_preload.sh
+ENV OLLAMA_HOST=0.0.0.0:11434
+ENV OLLAMA_CONTEXT_LENGTH=4096
+ENV BLADE_TEMPLATES=/opt/mag/blade_templates.json
+# Serve first so pulls have an API; preload writes /root/status.json phases for boot_watcher.
+ENTRYPOINT ["/bin/bash", "-c", "echo '{\"phase\": \"boot\"}' > /root/status.json; ollama serve & sleep 4; /opt/mag/warm_preload.sh; wait"]
+EXPOSE 11434

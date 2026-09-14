@@ -33,6 +33,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+import threading
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -96,26 +97,61 @@ def _boot_of(cmd: str) -> str:
     return ""
 
 
+def _bounded_process_call(fn: Any, *, timeout: float = 0.25, default: Any = None) -> Any:
+    """Read optional process metadata without letting a protected PID block us."""
+    done = threading.Event()
+    box: list[Any] = []
+
+    def _run() -> None:
+        try:
+            box.append(fn())
+        except Exception:
+            box.append(default)
+        finally:
+            done.set()
+
+    threading.Thread(target=_run, name="source-trace-probe", daemon=True).start()
+    if not done.wait(timeout):
+        return default
+    return box[0] if box else default
+
+
 def _enum() -> list[dict[str, Any]]:
     """Enumerate running python/pythonw processes (psutil preferred, else CIM)."""
     out: list[dict[str, Any]] = []
     try:
         import psutil  # type: ignore
-        for proc in psutil.process_iter(["pid", "name", "cmdline", "create_time", "ppid"]):
+        # Do not ask process_iter(attrs=...) for cmdline: on Windows psutil
+        # materializes every requested field before yielding the process, and
+        # one protected/system process can block or raise outside our loop.
+        # Fetch fields independently so a denied cmdline/env only degrades one
+        # record instead of taking down the observer.
+        for proc in psutil.process_iter():
             try:
-                name = (proc.info.get("name") or "").lower()
+                name_value = proc.name()
+                name = (name_value or "").lower()
                 if name not in ("python.exe", "pythonw.exe"):
                     continue
+                cmdline = _bounded_process_call(proc.cmdline, default=[]) or []
+                try:
+                    ppid = proc.ppid()
+                except Exception:
+                    ppid = None
+                env = dict(_bounded_process_call(proc.environ, default={}) or {})
                 out.append({
-                    "pid": proc.info["pid"], "ppid": proc.info.get("ppid"),
-                    "name": proc.info["name"],
-                    "cmd": " ".join(proc.info.get("cmdline") or [])[:400],
-                    "env": dict((proc.environ() or {})),
+                    "pid": proc.pid, "ppid": ppid,
+                    "name": name_value,
+                    "cmd": " ".join(cmdline)[:400],
+                    "env": env,
                 })
             except Exception:
                 continue
         return out
     except ImportError:
+        pass
+    except Exception:
+        # psutil itself can fail during enumeration if a process exits between
+        # snapshots. Fall through to the bounded CIM observer.
         pass
     # psutil absent (the 2026-08-10 reality) -> reliable CIM fallback.
     # NB single-quoted Where-Object (no nested double quotes) — the old
@@ -127,7 +163,7 @@ def _enum() -> list[dict[str, Any]]:
                             "Select-Object ProcessId,ParentProcessId,Name,CommandLine | "
                             "ConvertTo-Json -Compress"],
                            capture_output=True, text=True, encoding="utf-8", errors="replace",
-                           timeout=30,
+                           timeout=5,
                            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0)
         data = json.loads(r.stdout.strip())
         if isinstance(data, dict):
@@ -164,25 +200,27 @@ def _cmd_invariant(cmd: str) -> str:
 def dedupe_uv_pairs(procs: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Collapse the Windows venv-shim -> uv-cpython pair into ONE logical process.
 
-    FLOCKING DEDUP (2026-08-10, steal of mag/flock_scheduler — the dedupe we built
-    2026-08-09): embed each proc's cmd-invariant into invariant space and single-link
-    cluster (`flock_scheduler._embed` + `_clusters`) — identical/near-identical cmd =
-    ONE flock. Within a flock, collapse ONLY the strict 1:1 parent->single-child twin
-    (venv shim -> uv child, same invariant). Real sibling duplicates (a respawner
-    spawning N identical children) have NO such 1:1 lineage and are KEPT, so a genuine
-    storm stays visible. Without this a healthy single stack reads as a 2x-duplicate
-    runaway (the false 'multi_boot: 8 roots' seen 2026-08-10).
+    FLOCKING DEDUP (2026-08-10): group by the normalized command invariant.
+    This observer must remain deterministic and $0; invoking the flock
+    scheduler here used to call Ollama over HTTP for every process and could
+    hold sensing for 30+ seconds. Within an exact-invariant group, collapse
+    ONLY the strict 1:1 parent->single-child twin (venv shim -> uv child). Real
+    sibling duplicates (a respawner spawning N identical children) have NO such
+    1:1 lineage and are KEPT, so a genuine storm stays visible.
     """
-    from mag import flock_scheduler as fs
     if not procs:
         return procs
     invs = [_cmd_invariant(p.get("cmd") or "") for p in procs]
-    groups = fs._clusters([fs._embed(iv) for iv in invs], radius=0.2)
+    groups_by_invariant: dict[str, list[int]] = {}
+    for i, invariant in enumerate(invs):
+        # An unavailable/denied command line is not evidence of identity.
+        if invariant:
+            groups_by_invariant.setdefault(invariant, []).append(i)
     children_of: dict[int, list[dict[str, Any]]] = {}
     for p in procs:
         children_of.setdefault(p.get("ppid"), []).append(p)
     twins: set[int] = set()
-    for g in groups:
+    for g in groups_by_invariant.values():
         cluster = [procs[i] for i in g]
         cby = {p["pid"]: p for p in cluster}
         for p in cluster:

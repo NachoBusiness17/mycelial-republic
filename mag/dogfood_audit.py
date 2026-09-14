@@ -143,6 +143,80 @@ def audit() -> dict[str, Any]:
                 "loops": fc.get("n_loops") or len(fc.get("loops", []) or [])}
     probes["dirac_loop"] = _dirac
 
+    # --- read_archive (lossless, bounded dereference) ---
+    # This is deliberately a one-line read of the trajectory tape.  It proves
+    # the archive tool is exercised by the audit loop without loading a large
+    # transcript or asking a model to summarize it.
+    def _read_archive():
+        from mag.read_archive import deref
+        tape = ROOT / "watch" / "openclaw_traj.jsonl"
+        if not tape.is_file():
+            raise FileNotFoundError(tape)
+        result = deref(tape, 1, 1)
+        receipt_dir = ROOT / "memory" / "runs" / "read_archive"
+        receipt_dir.mkdir(parents=True, exist_ok=True)
+        receipt = {
+            "schema": "read_archive.receipt.v1",
+            "ts": _now(),
+            "ok": bool(result.get("ok") and result.get("returned") == 1),
+            "span": result.get("span"),
+            "sha256": result.get("sha256"),
+            "bounded": result.get("bounded"),
+            "caller": "mag.dogfood_audit",
+        }
+        with (receipt_dir / "receipts.jsonl").open("a", encoding="utf-8") as fh:
+            fh.write(json.dumps(receipt, ensure_ascii=False, sort_keys=True) + "\n")
+        if not receipt["ok"]:
+            raise ValueError("archive dereference did not return exactly one line")
+        return {"returned": result.get("returned"), "bounded": result.get("bounded"),
+                "sha256": result.get("sha256")}
+    probes["read_archive.deref"] = _read_archive
+
+    # --- session_bridge (deterministic cross-session relay) ---
+    # Exercise the real relay API.  The relay writes a bounded receipt of its own;
+    # message bodies are deliberately not copied into the audit report.
+    def _session_bridge():
+        bridge = __import__("mag.session_bridge", fromlist=["relay"])
+        result = bridge.relay()
+        if not result.get("ok"):
+            raise ValueError("session bridge relay returned not-ok")
+        return {"sessions_found": result.get("sessions_found"),
+                "messages": result.get("messages")}
+
+    probes["session_bridge.relay"] = _session_bridge
+
+    # --- ask_router (local ranking feedback loop) ---
+    # Keep the cadence probe deterministic: route lane math and write its receipt,
+    # but do not spend on memlance or Verkle subprocesses during self-audit.
+    def _ask_router():
+        router = __import__("mag.ask_router", fromlist=["route"])
+        result = router.route("dogfood route health", dry=True, lanes="ollama,openrouter,zai")
+        if not result.get("ok") or not result.get("decision", {}).get("cascade"):
+            raise ValueError("ask router did not produce a lane cascade")
+        return {"dry": result.get("dry"),
+                "cascade": result.get("decision", {}).get("cascade"),
+                "ledger_rows": result.get("ledger_rows")}
+
+    probes["ask_router.route"] = _ask_router
+
+    # --- harness health (one explicitly scoped positive authority path) ---
+    def _harness_health():
+        harness = __import__("mag.harness", fromlist=["health_check"])
+        result = harness.health_check()
+        if not result.get("ok"):
+            raise ValueError(f"harness health failed: {result.get('error') or result.get('broker_status')}")
+        return {"authority_status": result.get("authority_status"),
+                "broker_status": result.get("broker_status")}
+
+    probes["harness.health"] = _harness_health
+
+    # --- fireball_cycle (map -> audit -> basecamp -> receipt) ---
+    def _fireball_cycle():
+        f = __import__("mag.fireball_cycle", fromlist=["run"])
+        result = f.run("dogfood mapped organs")
+        return {"cycle_ok": result.get("ok"), "steps": result.get("steps")}
+    probes["fireball_cycle"] = _fireball_cycle
+
     # --- shader_bus (swarm register + bus encode/decode roundtrip) ---
     def _shader():
         sb = __import__("mag.shader_bus", fromlist=["render", "register_frame"])

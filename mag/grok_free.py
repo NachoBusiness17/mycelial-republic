@@ -113,7 +113,8 @@ def capture(goal: str, *, context: str = "") -> dict[str, Any]:
     try:
         from mag.grok_rightsize import call_grok_free
         r = call_grok_free(goal, context=ctx)
-        _log_usage(surface="cli", ok=bool(r.get("ok")), cost=r.get("cost_est_usd", 0.0),
+        _log_usage(surface=r.get("surface") or "cli", ok=bool(r.get("ok")),
+                   cost=r.get("cost_est_usd", 0.0),
                    fallback=not bool(r.get("harness")))
         # fold the free capture's answer back into the grok_free lens corpus (compounding)
         folded = {}

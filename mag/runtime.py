@@ -53,16 +53,17 @@ def read_heartbeat() -> dict[str, Any]:
         except ValueError:
             age = None
     alive = age is not None and age < 90  # stale if no beat in 90s
+    note = "Integral process is up."
+    if not alive:
+        from mag.health import reconnect_plan
+
+        note = str(reconnect_plan().get("stale_note") or "")
     return {
         "ok": True,
         "alive": alive,
         "age_seconds": age,
         **data,
-        "note": (
-            "Integral process is up."
-            if alive
-            else "Heartbeat stale — watcher/Mag likely killed. Run: python main.py lab"
-        ),
+        "note": note,
     }
 
 

@@ -11,6 +11,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -41,6 +42,7 @@ def escalate_via_harness(
     *,
     goal: str,
     context: str = "",
+    warm: bool = True,
     cwd: Path | None = None,
     max_turns: int = 12,
     yolo: bool = False,
@@ -48,7 +50,12 @@ def escalate_via_harness(
     handoff_id: str | None = None,
     timeout: int = 600,
 ) -> dict[str, Any]:
-    """Run one headless Grok harness turn. Returns structured result dict."""
+    """Run one headless Grok harness turn. Returns structured result dict.
+
+    warm=True (default) mounts the WARM CACHE RIB (mag.grok_warm_rib) on the call: the same frozen
+    standing prefix every call, so the grok CLI cache stays hot and each ask is only the delta.
+    Falls back silently if the warm rib is unavailable — never breaks a call.
+    """
     grok = find_grok()
     if not grok:
         return {
@@ -59,6 +66,17 @@ def escalate_via_harness(
 
     cwd = cwd or ROOT
     handoff_id = handoff_id or datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S-harness")
+
+    # WARM CACHE RIB — mount the frozen standing prefix (stable across calls = the cache hit).
+    if warm:
+        try:
+            sys.path.insert(0, str(ROOT))
+            from mag.grok_warm_rib import inject as _warm_inject
+            warm_block = _warm_inject(context)
+            if warm_block and warm_block.strip():
+                context = warm_block
+        except Exception:
+            pass  # warm rib unavailable -> keep current behavior, never break a call
     prompt = f"""You are the specialist lane for Sovereign Mag (local companion).
 
 ## Goal

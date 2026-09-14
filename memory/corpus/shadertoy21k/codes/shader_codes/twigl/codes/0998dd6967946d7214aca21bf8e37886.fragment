@@ -1,0 +1,32 @@
+void rot(inout vec2 p, float a){
+  p=vec2(cos(a)*p.x+sin(a)*p.y, -sin(a)*p.x+cos(a)*p.y);
+}
+
+float dodec(vec3 p,float r){
+  // http://ynomura.dip.jp/archives/2009/08/20.html
+  // 正20面体の頂点座標は正12面体の法線。
+  float G=(1.+sqrt(5.))/2.; //（＝黄金比）
+  vec3 v0=normalize(vec3(G,1,0)),v1=v0;
+  v1.x*=-1.;
+  float d=0.;
+  d=max(d,abs(dot(p,v0)));
+  d=max(d,abs(dot(p,v0.yzx)));
+  d=max(d,abs(dot(p,v0.zxy)));
+  d=max(d,abs(dot(p,v1)));
+  d=max(d,abs(dot(p,v1.yzx)));
+  d=max(d,abs(dot(p,v1.zxy)));
+	return d-r;
+}
+
+void main(){
+  float i,g,e;
+  for(i=0.;++i<50.;){
+    vec3 p=g*normalize(vec3((gl_FragCoord.xy-.5*r)/r.y,1));
+    p.z-=3.;
+    rot(p.xy,t);
+    rot(p.yz,t);
+    g+=e=dodec(p,1.);
+    if(e<.001)break;
+  }
+  o+=3./i;  
+}

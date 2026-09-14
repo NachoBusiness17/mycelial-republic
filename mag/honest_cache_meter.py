@@ -325,6 +325,174 @@ CREATE TABLE IF NOT EXISTS capture_duplicates (
 class CacheMeter:
     def __init__(self, db_path: str = DEFAULT_DB):
         self.db_path = str(db_path)
+        Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
         self.conn = sqlite3.connect(self.db_path, isolation_level=None)
         self.conn.executescript(SCHEMA_SQL)
-        for card
+        for card in DEFAULT_RATE_CARDS:
+            self.conn.execute(
+                "INSERT OR IGNORE INTO rate_cards(name,effective_from,spec) VALUES(?,?,?)",
+                (card.name, card.effective_from, json.dumps(asdict(card), sort_keys=True)),
+            )
+
+    def close(self) -> None:
+        self.conn.close()
+
+    def _card(self, model: str, day: str) -> RateCard:
+        name = "default"
+        lower = (model or "").lower()
+        for prefix, candidate in MODEL_PREFIX_TO_CARD:
+            if lower.startswith(prefix):
+                name = candidate
+                break
+        rows = self.conn.execute(
+            "SELECT spec FROM rate_cards WHERE name=? AND effective_from<=? "
+            "ORDER BY effective_from DESC LIMIT 1", (name, day)
+        ).fetchall()
+        if not rows:
+            return next((c for c in DEFAULT_RATE_CARDS if c.name == name), DEFAULT_RATE_CARDS[0])
+        return RateCard(**json.loads(rows[0][0]))
+
+    def _failure(self, day: str, reason: str) -> None:
+        self.conn.execute(
+            "INSERT INTO capture_failures(day,reason,count) VALUES(?,?,1) "
+            "ON CONFLICT(day,reason) DO UPDATE SET count=count+1",
+            (day, reason),
+        )
+
+    def capture(
+        self,
+        provider: str,
+        model: str,
+        response: Any,
+        *,
+        response_id: str | None = None,
+        ts: str | None = None,
+    ) -> dict[str, Any]:
+        """Capture one provider response, returning a durable receipt."""
+        payload = _payload_of(response)
+        stamp = ts or utc_now_iso()
+        day = stamp[:10]
+        try:
+            usage = normalize_usage(payload)
+        except UsageParseError as exc:
+            self._failure(day, str(exc)[:240])
+            raise
+        rid = str(response_id or payload.get("id") or payload.get("response_id") or "").strip()
+        has_id = bool(rid)
+        if not rid:
+            rid = "missing:" + uuid.uuid4().hex
+        card = self._card(model, day)
+        billed = cost_usd(card, usage)
+        try:
+            self.conn.execute(
+                "INSERT INTO responses(ts,day,provider,model,response_id,has_provider_id,"
+                "input_tokens,cache_read_tokens,cache_write_tokens,output_tokens,rate_card,"
+                "billed_usd,raw_usage) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (stamp, day, provider, model, rid, int(has_id), usage.input_tokens,
+                 usage.cache_read_tokens, usage.cache_write_tokens, usage.output_tokens,
+                 card.name, billed, json.dumps(payload, ensure_ascii=False, sort_keys=True)),
+            )
+        except sqlite3.IntegrityError:
+            self.conn.execute(
+                "INSERT INTO capture_duplicates(day,count) VALUES(?,1) "
+                "ON CONFLICT(day) DO UPDATE SET count=count+1", (day,)
+            )
+            return {"ok": True, "deduped": True, "provider": provider, "response_id": rid}
+        return {
+            "ok": True, "deduped": False, "provider": provider, "model": model,
+            "response_id": rid, "has_provider_id": has_id,
+            "usage": asdict(usage), "rate_card": card.name, "billed_usd": billed,
+        }
+
+    def report(self, day: str | None = None) -> dict[str, Any]:
+        day = day or today_str()
+        row = self.conn.execute(
+            "SELECT COUNT(*),COALESCE(SUM(input_tokens),0),COALESCE(SUM(cache_read_tokens),0),"
+            "COALESCE(SUM(cache_write_tokens),0),COALESCE(SUM(output_tokens),0),"
+            "COALESCE(SUM(billed_usd),0) FROM responses WHERE day=?", (day,)
+        ).fetchone()
+        n = int(row[0] or 0)
+        inp, read, write, out = [int(row[i] or 0) for i in range(1, 5)]
+        billed = float(row[5] or 0.0)
+        total_input = inp + read + write
+        hit = read / total_input if total_input else 0.0
+        coverage_row = self.conn.execute(
+            "SELECT COALESCE(SUM(cache_read_tokens>0),0) FROM responses WHERE day=?", (day,)
+        ).fetchone()
+        coverage = float(coverage_row[0] or 0) / n if n else 0.0
+        counterfactual = 0.0
+        for provider, model, i, r, w, o, _card_name in self.conn.execute(
+            "SELECT provider,model,input_tokens,cache_read_tokens,cache_write_tokens,"
+            "output_tokens,rate_card FROM responses WHERE day=?", (day,)
+        ):
+            card = self._card(model, day)
+            counterfactual += counterfactual_cost_usd(card, Usage(i, r, w, o))
+        result = {
+            "schema": "honest_cache_meter.report.v1", "day": day, "responses": n,
+            "input_tokens": inp, "cache_read_tokens": read, "cache_write_tokens": write,
+            "output_tokens": out, "hit_tok": hit, "coverage": coverage,
+            "metered_usd": billed, "counterfactual_usd": counterfactual,
+            "savings_usd": counterfactual - billed,
+        }
+        self.conn.execute(
+            "INSERT OR REPLACE INTO reports(day,payload,created_at) VALUES(?,?,?)",
+            (day, json.dumps(result, sort_keys=True), utc_now_iso()),
+        )
+        return result
+
+    def invoice(self, day: str, amount: float, source: str = "operator") -> dict[str, Any]:
+        self.conn.execute(
+            "INSERT OR REPLACE INTO invoices(day,invoiced_usd,source,loaded_at) VALUES(?,?,?,?)",
+            (day, float(amount), source, utc_now_iso()),
+        )
+        return {"ok": True, "day": day, "invoiced_usd": float(amount), "source": source}
+
+    def reconcile(self, day: str | None = None, tolerance: float = 0.05) -> dict[str, Any]:
+        day = day or yesterday_str()
+        report = self.report(day)
+        row = self.conn.execute("SELECT invoiced_usd,source FROM invoices WHERE day=?", (day,)).fetchone()
+        if not row:
+            return {"ok": False, "code": EXIT_NO_INVOICE, "day": day, "report": report,
+                    "error": "no invoice loaded"}
+        drift = report["metered_usd"] - float(row[0])
+        denom = max(abs(float(row[0])), 1e-12)
+        within = abs(drift) <= tolerance * denom
+        return {"ok": within, "code": EXIT_OK if within else EXIT_DRIFT, "day": day,
+                "metered_usd": report["metered_usd"], "invoiced_usd": float(row[0]),
+                "drift_usd": drift, "drift_frac": drift / denom, "source": row[1]}
+
+
+def capture_anthropic_response(meter: CacheMeter, model: str, response: Any, **kwargs: Any) -> dict[str, Any]:
+    return meter.capture("anthropic", model, response, **kwargs)
+
+
+def capture_openai_response(meter: CacheMeter, model: str, response: Any, **kwargs: Any) -> dict[str, Any]:
+    return meter.capture("openai", model, response, **kwargs)
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(prog="honest_cache_meter")
+    ap.add_argument("command", choices=["report", "invoice", "reconcile"])
+    ap.add_argument("--db", default=DEFAULT_DB)
+    ap.add_argument("--day", default=None)
+    ap.add_argument("--amount", type=float)
+    ap.add_argument("--source", default="operator")
+    args = ap.parse_args(argv)
+    meter = CacheMeter(args.db)
+    try:
+        if args.command == "report":
+            result = meter.report(args.day)
+        elif args.command == "invoice":
+            if args.day is None or args.amount is None:
+                ap.error("invoice requires --day and --amount")
+            result = meter.invoice(args.day, args.amount, args.source)
+        else:
+            result = meter.reconcile(args.day)
+        print(json.dumps(result, indent=2, ensure_ascii=False))
+        return int(result.get("code", EXIT_OK))
+    finally:
+        meter.close()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

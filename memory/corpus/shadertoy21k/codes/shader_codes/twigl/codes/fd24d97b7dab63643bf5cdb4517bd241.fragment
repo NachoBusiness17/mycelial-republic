@@ -1,0 +1,24 @@
+void rot(inout vec3 p,vec3 a,float t){
+  a=normalize(a);
+  vec3 u=cross(a,p),v=cross(u,a);
+  p=u*cos(t)+v*sin(t)+a*dot(p,a);   
+}
+
+float map(vec3 p){
+  p=abs(p);
+  if(p.x<p.z)p.xz=p.zx;
+	if(p.y<p.z)p.yz=p.zy;
+ 	if(p.x<p.y)p.xy=p.yx;
+  return dot(p,normalize(vec3(1,2,1)))-1.;
+}
+
+void main(){
+  float i,g,e=1.;
+  for(i=0.;++i<50.&&e>.001;){
+    vec3 p=g*normalize(vec3((gl_FragCoord.xy-.5*r)/r.y,1));
+    p.z-=6.;
+    rot(p,vec3(1,2,3),t);
+    g+=e=map(p);
+  }
+  o+=3./i;  
+}

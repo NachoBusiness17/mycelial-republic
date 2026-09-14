@@ -1,0 +1,98 @@
+# RIDDLER FEED — the public trajectory
+
+_shape and refs public · substance redacted-by-reference · the private chain decodes_
+
+- `775d88bcaf4b6a07` 2026-09-07T11:53:22Z — w0-falsifier: step · out 9ch
+- `82b7f6ef152d14d6` 2026-09-07T11:53:22Z — w0-falsifier: step · out 2ch
+- `62de34b5ed584507` 2026-09-07T11:53:22Z — w0-falsifier: step · out 0ch
+- `f758941565b1d63b` 2026-09-07T11:53:59Z — w0-dogfood: step · W0 bash-local self-sealed verification pass (falsifier c) · out 95ch
+- `63b5ef76bf0e86d1` 2026-09-07T11:54:00Z — w0-dogfood: step · W0 bash-local self-sealed verification pass (falsifier c) · out 162ch
+- `9551cd1e021b7373` 2026-09-07T12:03:08Z — fw5-preload-selector: step · F-W5 fold build order #1: trajectory-conditioned preload vs shuffled-o · out 428ch
+- `393fca2f7d940697` 2026-09-07T12:04:10Z — fw5-preload-selector: step · F-W5 reproducibility re-run: same seed, greedy, to separate ordering e · out 427ch
+- `e16c7c9ddb703130` 2026-09-07T12:04:23Z — bl-74e98ae4: step · out 95ch
+- `dd53377d81b5ee91` 2026-09-07T12:07:18Z — fw5-preload-selector: step · F-W5 closing verify: tape chain + probe rows + receipt + CONVO row lan · out 230ch
+- `3b3b22b23ef52158` 2026-09-07T12:07:23Z — w1-dogfood: step · W1 step 0: backup-first law before knot_at_close.py hook edit · out 82ch
+- `7e805a97b031972e` 2026-09-07T12:10:59Z — w1-dogfood: step · W1 smoke: emit+verify worldline seed · out 972ch
+- `a4648e25d54e3c6f` 2026-09-07T12:14:41Z — w1-dogfood: step · W1 falsifier (a): missing slab -> verify REJECT · out 599ch
+- `c3122e117960d5e1` 2026-09-07T12:15:10Z — w1-dogfood: step · W1 falsifier (b): F-W3-class byte-flip tamper in mirrored referenced f · out 1263ch
+- `055a1696d0c7477c` 2026-09-07T12:15:48Z — w1-dogfood: step · W1 falsifier (b) exit-code seal: verify of tampered seed must exit 2 · out 901ch
+- `fa7cc2335fce3336` 2026-09-07T12:15:56Z — w1-dogfood: step · W1 falsifier (d): fail-open - selector raises -> naive fallback; emit  · out 475ch
+- `36e32c85dcbf28b7` 2026-09-07T12:16:13Z — w1-dogfood: step · W1 falsifier (c): real dogfood seed emit+verify, all slabs green, chai · out 1042ch
+- `192c4f9b3a8d2c11` 2026-09-07T12:16:49Z — w1-dogfood: step · W1: diff knot_at_close vs backup (hook must be additive, <10 lines) +  · out 759ch
+- `f80676758d73b0d0` 2026-09-07T12:37:26Z — bl-95499b34: step · out 507ch
+- `aede9a5d3326d411` 2026-09-07T13:15:14Z — w2-resurrection: step · W2 dogfood 1/4: fresh death-rite emit (remint) for dead session w1-dog · out 149ch
+- `fd7ae8dcfa4ca10e` 2026-09-07T13:15:33Z — w2-resurrection: step · W2 dogfood 2/4: load the remint seed -> RESURRECTION BUNDLE · out 1062ch
+- `c845478aad18cabf` 2026-09-07T13:18:54Z — w2-resurrection: step · W2 dogfood 3/4: F-W1 resurrection probe, RESURRECTED arm (bundle prelo · out 416ch
+- `fee64ff271966bcd` 2026-09-07T13:20:52Z — bl-a3c6169f: step · out 10ch
+- `c024f6477d8a3d00` 2026-09-07T13:20:54Z — salon-sealtest: kind=post · shape=S1 · lane=fake-lane-a · salon=sealtest-20260907T132054Z · salon_runner v5 W4 seal · out 32ch
+- `1358ad4834b2a89b` 2026-09-07T13:20:54Z — salon-sealtest: kind=post · shape=S2 · lane=fake-lane-b · salon=sealtest-20260907T132054Z · salon_runner v5 W4 seal · out 32ch
+- `81633d560e4a0f22` 2026-09-07T13:20:54Z — bl-2caf42ec: step · out 552ch
+- `4d70c07887685083` 2026-09-07T13:21:20Z — bl-8a667736: step · out 391ch
+- `c5e6e3f21b007079` 2026-09-07T13:21:20Z — bl-d783b927: step · out 365ch
+- `f41b6e2e26ba8c7c` 2026-09-07T13:22:02Z — bl-829648c3: step · out 191ch
+- `406dce4fb4a86a7c` 2026-09-07T13:22:49Z — w6-seed-registry: step · W6 falsifier battery: forge a/b/c scan specimens from the real W1 seed · out 261ch
+- `f5b7b66b03f02708` 2026-09-07T13:23:07Z — w6-seed-registry: step · W6: confirm specimens on disk + read back the forge row's output · out 627ch
+- `5cb9666b98db74bc` 2026-09-07T13:23:40Z — w6-seed-registry: step · W6: register default glob memory/worldline/*/SEED.json — falsifier (i) · out 995ch
+- `d319b8b54184d44e` 2026-09-07T13:25:22Z — verkle-gate: step · verkle gate path-b: validate mag/verkle_pointers.py SPEC against real  · out 535ch
+- `51e570277179a95f` 2026-09-07T13:26:01Z — bl-b10bf9f6: step · out 0ch
+- `503fcdf020b9fc27` 2026-09-07T13:26:27Z — w6-seed-registry: step · W6 v1.1: re-register after integrity/drift split; first REFUSE row sta · out 1206ch
+- `0157a8cd2380971b` 2026-09-07T13:26:31Z — bl-f3c30461: step · out 56ch
+- `e6c11f999a55b400` 2026-09-07T13:26:35Z — w6-seed-registry: step · W6 falsifier (i): the real W1 seed through the scan door · out 1071ch
+- `dad0dfb5bd99cdb8` 2026-09-07T13:26:44Z — w6-seed-registry: step · W6 falsifiers (ii)+(iii): naive/rehashed foreign forgeries must REFUSE · out 3832ch
+- `59494f38a79359fe` 2026-09-07T13:27:01Z — w2-resurrection: step · W2 dogfood 3/4 retry: emit+load --probe in one breath (live-mesh memor · out 1267ch
+- `c50d79b28c4a9b1c` 2026-09-07T13:28:07Z — warmed-cold-replay: step · fold build #2: warmed-vs-cold logprobs replay, PROXY 3B carrier, canon · out 1577ch
+- `16c50cc9db6efa01` 2026-09-07T13:28:39Z — w6-seed-registry: step · W6 v1.2 falsifier (i): real seed · out 1071ch
+- `98f5e8992f2eb581` 2026-09-07T13:28:39Z — w6-seed-registry: step · W6 v1.2 falsifier (ii): rehashed foreign forgery, only the FOREIGN len · out 1284ch
+- `ede50b1534c8ad8f` 2026-09-07T13:28:40Z — w6-seed-registry: step · W6 v1.2 falsifier (iii): stuffed 5KB field must PASS-WITH-FLAGS, never · out 1324ch
+- `8b894d1146be7c22` 2026-09-07T13:28:51Z — w6-seed-registry: step · W6 v1.2 final register row (third row: v1.0 REFUSE strict, v1.1 drift  · out 1206ch
+- `4e59fa88f7a60d25` 2026-09-07T13:28:51Z — w6-seed-registry: step · W6: verify the registry's own hash chain · out 107ch
+- `828791e4e41e274d` 2026-09-07T13:30:13Z — w2-resurrection: step · W2 dogfood 4/4: F-W3 drill at load — tamper a seed copy (byte-flip in  · out 469ch
+- `3057890ce950b08e` 2026-09-07T13:30:32Z — w6-seed-registry: step · W6 close: one CONVO row via python append · out 54ch
+- `e859a6db91d84678` 2026-09-07T13:30:50Z — w2-resurrection: step · W2 dogfood 3/4 final: emit+load --probe one breath, background (probe  · out 1980ch
+- `721c87b6d21a90cb` 2026-09-07T13:34:46Z — w2-resurrection: step · W2 probe run 2: scorer fix (Q3 hex-digit guard) after run 1 false-posi · out 1941ch
+- `bed1e2ea9169d8fa` 2026-09-07T13:35:27Z — warmed-cold-replay: step · fold build #2 pass 2 (harness v2: offset-trim + lp-coverage gate): war · out 1673ch
+- `b9f86c32e732288e` 2026-09-07T13:37:01Z — w3-cache-identity: step · W3 final probe: cache-identity / F-W2; the tape row wraps the probe th · out 1095ch
+- `18b7e17f08ee66ed` 2026-09-07T13:37:47Z — warmed-cold-replay: step · fold build #2 FINAL seal (harness v2 + ~1.5K preload + classified timi · out 2107ch
+- `794eb2a8448947ae` 2026-09-07T13:39:56Z — warmed-cold-replay: step · fold build #2 FINAL SEAL: model unloaded first so round-1 prefills are · out 2132ch
+- `5e07f5758cc34332` 2026-09-07T13:41:20Z — w3-cache-identity: step · W3 final CLEAN probe after nonce-seed fix: attempt 1 (fixed seed) hit  · out 1177ch
+- `01b716fcec482da9` 2026-09-07T14:09:25Z — ractor-gopher: step · DFHack read-layer seal of hermes job receipt · out 0ch
+- `6185c960e4a05451` 2026-09-07T14:09:25Z — ractor-gopher: step · DFHack read-layer seal of hermes job receipt · out 952ch
+- `410354833d47defb` 2026-09-07T14:09:25Z — ractor-helm: step · DFHack read-layer seal of hermes job receipt · out 167ch
+- `b52e8812e7ef7bdf` 2026-09-07T14:09:25Z — ractor-helm: step · DFHack read-layer seal of hermes job receipt · out 12ch
+- `ff5febd56c29c1f5` 2026-09-07T14:09:25Z — ractor-helm: step · DFHack read-layer seal of hermes job receipt · out 147ch
+- `daa0b6ac212fad5a` 2026-09-07T14:09:25Z — ractor-helm: step · DFHack read-layer seal of hermes job receipt · out 88ch
+- `a798d3524f15df17` 2026-09-07T14:09:25Z — ractor-helm: step · DFHack read-layer seal of hermes job receipt · out 88ch
+- `1a7df94d21114e6e` 2026-09-07T14:09:25Z — ractor-helm: step · DFHack read-layer seal of hermes job receipt · out 147ch
+- `1ebed4e903ba37d9` 2026-09-07T14:09:25Z — ractor-helm: step · DFHack read-layer seal of hermes job receipt · out 154ch
+- `3d67b91b29b2d0da` 2026-09-07T14:09:25Z — ractor-helm: step · DFHack read-layer seal of hermes job receipt · out 161ch
+- `3b26448bb5938d84` 2026-09-07T14:09:25Z — ractor-helm: step · DFHack read-layer seal of hermes job receipt · out 14ch
+- `62f662151897195f` 2026-09-07T14:10:00Z — bl-acef860b: step · out 682ch
+- `4c0112c00445e37a` 2026-09-07T14:12:15Z — intake-traj: step · out 202ch
+- `7dc1cf281ad91c92` 2026-09-07T14:12:15Z — intake-traj: step · out 0ch
+- `5e1ae37adfeb31a1` 2026-09-07T14:12:15Z — intake-traj: step · out 186ch
+- `52e79e24da1902fc` 2026-09-07T14:12:15Z — intake-traj: step · out 403ch
+- `3995a9a932da0b75` 2026-09-07T14:12:15Z — intake-traj: step · out 0ch
+- `741830c404aa5543` 2026-09-07T14:13:12Z — bchain1-intake: step · out 97ch
+- `affc6258587b540a` 2026-09-07T14:16:02Z — bl-8e0c0b52: step · out 51ch
+- `5b38e18c42a6902d` 2026-09-07T14:53:52Z — bl-f08e372d: step · out 42ch
+- `482798144c22624e` 2026-09-07T15:04:06Z — bl-28df2a6d: step · out 231ch
+- `c48ee5e0e8dae811` 2026-09-07T15:28:29Z — bl-485a7b6d: step · out 148ch
+- `24bd8e288e12a41e` 2026-09-07T15:34:32Z — bl-fe27c216: step · out 67ch
+- `f9144ab986eef90e` 2026-09-07T15:42:30Z — ractor-mengxi: step · DFHack read-layer seal of hermes job receipt · out 1844ch
+- `11aff4dddee70b26` 2026-09-07T15:52:53Z — ractor-fen: step · DFHack read-layer seal of hermes job receipt · out 2660ch
+- `9cf4d6e90d4de73c` 2026-09-07T15:57:19Z — ractor-tesla: step · DFHack read-layer seal of hermes job receipt · out 1144ch
+- `10d603bd7ac82b87` 2026-09-07T15:57:19Z — ractor-edison: step · DFHack read-layer seal of hermes job receipt · out 763ch
+- `7bc6e298ba9e32cd` 2026-09-07T16:10:09Z — bl-6328f5a0: step · out 31ch
+- `ecbfdc561b268872` 2026-09-07T16:24:57Z — bl-0342fe20: step · out 124ch
+- `1c1bbe9596d44954` 2026-09-07T16:46:10Z — ractor-helm: step · DFHack read-layer seal of hermes job receipt · out 95ch
+- `e80f94b3400cc775` 2026-09-07T16:46:21Z — bl-9af14231: step · out 60ch
+- `43a64a3c7fedf77e` 2026-09-07T17:02:37Z — bl-e4becf59: step · out 25ch
+- `262c4888032eebd1` 2026-09-07T18:54:01Z — bl-abd35d06: step · out 29ch
+- `c53e58400bc783d4` 2026-09-07T19:14:29Z — salon-fix_x_engagement_20260907: kind=post · shape=S6 · lane=cohere/free · salon=fix_x_engagement_20260907 · salon_runner v5 W4 seal · out 33ch
+- `5a705ee664bfb095` 2026-09-07T19:14:33Z — salon-fix_x_engagement_20260907: kind=post · shape=S1 · lane=deepseek · salon=fix_x_engagement_20260907 · salon_runner v5 W4 seal · out 33ch
+- `c7317753e09b8772` 2026-09-07T19:14:36Z — salon-fix_x_engagement_20260907: kind=post · shape=S7 · lane=hermes/ling · salon=fix_x_engagement_20260907 · salon_runner v5 W4 seal · out 33ch
+- `e73b15fd259ffbd6` 2026-09-07T19:14:36Z — salon-fix_x_engagement_20260907: kind=post · shape=S5 · lane=hermes/ling · salon=fix_x_engagement_20260907 · salon_runner v5 W4 seal · out 33ch
+- `667e885107a2a384` 2026-09-07T19:14:37Z — salon-fix_x_engagement_20260907: kind=post · shape=S2 · lane=deepseek · salon=fix_x_engagement_20260907 · salon_runner v5 W4 seal · out 33ch
+- `ea7b4ad7b690c48c` 2026-09-07T19:14:49Z — salon-fix_x_engagement_20260907: kind=post · shape=S4 · lane=zai/ZAI_API_KEY · salon=fix_x_engagement_20260907 · salon_runner v5 W4 seal · out 33ch
+- `5ec1a06fa7a98217` 2026-09-07T19:14:54Z — salon-fix_x_engagement_20260907: kind=post · shape=S3 · lane=anthropic/haiku · salon=fix_x_engagement_20260907 · salon_runner v5 W4 seal · out 33ch
+- `4602ff69c400a614` 2026-09-07T19:17:49Z — salon-fix_x_engagement_20260907: kind=fold · lane=deepseek · salon=fix_x_engagement_20260907 · salon_runner v5 W4 seal · out 4096ch

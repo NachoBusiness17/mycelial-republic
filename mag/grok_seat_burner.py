@@ -169,6 +169,7 @@ def _launch_one(
     cwd: Path | None = None,
     json_schema: str | None = None,
     no_subagents: bool = True,
+    always_approve: bool = False,
 ) -> dict[str, Any]:
     """Launch grok on ONE seat (isolated via GROK_HOME) with a rightsized goal. Returns result.
 
@@ -195,6 +196,8 @@ def _launch_one(
            "--max-turns", str(max_turns), "--no-auto-update"]
     if no_subagents:
         cmd.append("--no-subagents")
+    if always_approve:  # opt-in (2026-08-26): headless file-writing burns stall without it
+        cmd.append("--always-approve")
     if json_schema:
         cmd += ["--json-schema", json_schema]  # structured output: reliable, parseable
     if model:

@@ -1,0 +1,427 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>INCIDENT DUNGEON — the maze-arena incident, walkable</title>
+<style>
+:root{--bg:#070d0c;--ink:#c8e6d9;--accent:#7cf5ff;--gold:#e8c96a}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-monospace,Consolas,monospace;text-align:center}
+h1{font-size:.95rem;letter-spacing:.1em;color:var(--accent);margin:12px 0 2px}
+.mut{font-size:.7rem;color:#8ab8a4;margin:4px auto 6px;max-width:960px}
+canvas{width:960px;max-width:96vw;border:1px solid rgba(124,245,255,.25);border-radius:6px;background:#070d0c}
+button{background:#0a1412;color:var(--accent);border:1px solid rgba(124,245,255,.3);border-radius:8px;padding:6px 14px;font-family:inherit;font-size:.75rem;cursor:pointer;margin:4px}
+button:hover{border-color:var(--gold);color:var(--gold)}
+#hud{font-size:.75rem;margin:6px auto}
+#hud b{color:var(--gold)}
+#flash{font-size:.78rem;color:var(--gold);min-height:1.1em;margin:4px auto;max-width:900px}
+#panel{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:50;background:#0a1412;border:1px solid rgba(124,245,255,.4);border-radius:10px;padding:16px 18px;max-width:600px;width:92vw;text-align:left;box-shadow:0 0 40px rgba(124,245,255,.15)}
+#panel h3{margin:0 0 8px;color:var(--gold);font-size:.85rem;letter-spacing:.08em}
+#panel pre{background:#06110d;border:1px solid rgba(124,245,255,.15);border-radius:6px;padding:8px 10px;font-size:.72rem;color:#a8d8c8;overflow-x:auto;white-space:pre-wrap;margin:8px 0}
+#panel .note{font-size:.72rem;color:#8ab8a4;margin:6px 0}
+#pnote{font-size:.72rem;color:#ff9d5c;min-height:1em;margin-top:6px}
+#curator{display:none;position:fixed;top:40px;left:50%;transform:translateX(-50%);z-index:60;background:#0a1412;border:1px solid rgba(232,201,106,.5);border-radius:10px;padding:14px 16px;max-width:680px;width:92vw;text-align:left;box-shadow:0 0 40px rgba(232,201,106,.15)}
+#curator h3{margin:0 0 8px;color:var(--gold);font-size:.8rem}
+#curator pre{font-size:.68rem;color:#a8d8c8;white-space:pre-wrap;overflow-x:auto}
+#curator .src{font-size:.66rem;color:#8ab8a4;margin-top:8px}
+footer{font-size:.66rem;color:#5f8377;max-width:960px;margin:10px auto 24px;line-height:1.5}
+footer b{color:#8ab8a4}
+kbd{color:var(--gold);border:1px solid rgba(232,201,106,.4);border-radius:3px;padding:0 4px;font-size:.68rem}
+</style></head><body>
+<div id="errbanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99;background:#5c1010;color:#ffd9d9;font:12px ui-monospace,monospace;padding:6px 10px;white-space:pre-wrap"></div>
+<script>window.addEventListener('error',function(e){var b=document.getElementById('errbanner');if(!b)return;b.style.display='block';b.textContent+='ERR: '+e.message+' @ '+(e.lineno||'?')+':'+(e.colno||'?')+'\n';});window.addEventListener('unhandledrejection',function(e){var b=document.getElementById('errbanner');if(!b)return;b.style.display='block';b.textContent+='REJ: '+e.reason+'\n';});</script>
+<h1>INCIDENT DUNGEON — the maze-arena incident (2026-09-06), walkable</h1>
+<div class="mut">one night, four stacked birth defects killed the arena: the seal, the inverted bounce, the unbounded world, the bogus flood · each room is one defect, the inscription is the buggy line, the fix is the key · FALSIFIER: finish the dungeon and you can restate the four defect classes — teaching = the game · move: arrows/WASD · interact: click the glowing things · <kbd>C</kbd> curator mode (real diff hunks)</div>
+<canvas id="c" width="960" height="540"></canvas>
+<div id="hud">ROOMS <b id="hprog">0/4</b> · the exit is THE RUN</div>
+<div id="flash"></div>
+<div id="panel"><h3 id="ptitle"></h3><div id="pbody"></div><div id="pbtns"></div><div id="pnote"></div></div>
+<div id="curator"><h3>CURATOR MODE — the real hunks (one builds, one verifies)</h3><pre id="cpre"></pre><div class="src" id="csrc"></div><div style="text-align:right"><button onclick="document.getElementById('curator').style.display='none'">close</button></div></div>
+<footer>
+<b>RECEIPTS</b> — every inscription cites the record: queue/handoff/zcode/CONVO.md row 09-06 ~03:0xZ (root-cause chain, four defects) ·
+dashboard/static/maze_arena.html (the FIXED form, grammar reference; backups .bak-simfix-20260906 + .bak-maze-20260906) ·
+state/_maze_sim_test.js (headless regression harness, kept) · watch/inbox/MAZE_ARENA_B1_20260906.md (the B1 shadow-field pass) ·
+watch/SELF_STEAL_ORPHAN_SCAN_24H_20260907.md (knockout #6 — the incident-dungeon thesis) ·
+watch/SELF_STEAL_MODEL_CARTOGRAPHY_20260906.md (LAW-061: bogus fields look alive — validate the field).
+</footer>
+<script>
+'use strict';
+// ---- house canvas ----
+var CV=document.getElementById('c'), ctx=CV.getContext('2d');
+var W=960,H=540;
+function RC_(x,y,w,h){return {x:x,y:y,w:w,h:h};}
+// dungeon walls (serpentine: R1 TL -> R2 TR -> R3 BR -> R4 BL -> exit south)
+var walls=[
+  RC_(0,0,W,16), RC_(0,0,16,H), RC_(944,0,16,H),          // border top/left/right
+  RC_(0,524,200,16), RC_(280,524,664,16),                  // bottom, gap = THE RUN door (200..280)
+  RC_(16,252,840,16), RC_(904,252,40,16),                  // H1, gap x 856..904 (R2->R3)
+  RC_(464,0,16,110), RC_(464,158,16,94),                   // V1, gap y 110..158 (R1->R2) — the SEAL lives here
+  RC_(464,268,16,82), RC_(464,398,16,126)                  // V2, gap y 350..398 (R3->R4)
+];
+var SEAL=RC_(464,110,16,48), B2=RC_(856,252,48,16), B3=RC_(464,350,16,48), DOOR=RC_(200,524,80,16);
+// ---- rooms ----
+var rooms=[
+ {n:'I',   name:'THE SEAL',            solved:false, ped:null,
+  insc:'walls: [[0.5,0.5,0.03,1.2]] .map(w=>[w[0]*2, w[1]*2.7, w[2]*2, w[3]*2.7])'},
+ {n:'II',  name:'THE INVERTED BOUNCE', solved:false, ped:{x:700,y:186,r:10},
+  insc:'if(sdf(nx,ny)<0.012){ move } else { bounce }'},
+ {n:'III', name:'THE UNBOUNDED WORLD', solved:false, ped:{x:712,y:430,r:10},
+  insc:'return d;   // sdf: walls only — no outer term'},
+ {n:'IV',  name:'THE BOGUS FLOOD',     solved:false, ped:{x:372,y:482,r:10},
+  insc:'sdf((nx+0.5)/2, (ny+0.5)/2.7)   // neighbors read at wy~25'}
+];
+function solvedCount(){var n=0;for(var i=0;i<4;i++)if(rooms[i].solved)n++;return n;}
+// ---- player ----
+var player={x:80,y:134,r:7};
+var keys={};
+window.addEventListener('keydown',function(e){
+  var k=e.key.toLowerCase();
+  if(['arrowup','arrowdown','arrowleft','arrowright'].indexOf(k)>=0)e.preventDefault();
+  keys[k]=true;
+  if(k==='c')toggleCurator();
+  if(k==='escape')closePanel();
+});
+window.addEventListener('keyup',function(e){keys[e.key.toLowerCase()]=false;});
+function solidRects(){
+  var s=walls.slice();
+  if(!rooms[0].solved)s.push(SEAL);
+  if(!rooms[1].solved)s.push(B2);
+  if(!rooms[2].solved)s.push(B3);
+  if(!rooms[3].solved)s.push(DOOR);
+  return s;
+}
+function hits(x,y,r){
+  var s=solidRects();
+  for(var i=0;i<s.length;i++){
+    var w=s[i], cx=Math.max(w.x,Math.min(x,w.x+w.w)), cy=Math.max(w.y,Math.min(y,w.y+w.h));
+    if((x-cx)*(x-cx)+(y-cy)*(y-cy)<r*r)return true;
+  }
+  return false;
+}
+// ---- panel ----
+var flashT=0;
+function flash(m){var f=document.getElementById('flash');f.textContent=m;flashT=Date.now();}
+function closePanel(){document.getElementById('panel').style.display='none';}
+function openPanel(i){
+  var p=document.getElementById('panel');
+  document.getElementById('ptitle').textContent='ROOM '+rooms[i].n+' \u00b7 '+rooms[i].name+(rooms[i].solved?' (solved)':'');
+  document.getElementById('pnote').textContent='';
+  var body='',btns='';
+  if(i===0){
+    body='<div class="note">THE INSCRIPTION — the wall is the bug. Read its scale math.</div>'+
+      '<pre>'+rooms[0].insc+'\nhh = 1.2 \u00d7 2.7 = 3.24   world height = 2.7\n3.24 &gt; 2.7  \u2192 the wall overflows the world \u2192 FULL SEAL\nthe spawn chamber could never reach the cheese.</pre>'+
+      '<div class="note">The center wall was authored at half-height 1.2 in a world only 2.7 tall, then scaled by the same 2.7 as everything else. Geometry sized past its own domain. The fix: 0.28 \u00d7 2.7 = 0.756 — a wall, not a seal.</div>';
+    btns='<button id="pact">CARVE THE GAP (hh 1.2 \u2192 0.28)</button>';
+  }else if(i===1){
+    body='<div class="note">THE INSCRIPTION — the dumb agents only ever move INTO walls.</div>'+
+      '<pre>'+rooms[1].insc+'\nsdf &lt; 0 means INSIDE a wall. The condition hires the mover\nonly when its next step is inside stone. They huddle at spawn,\npressing their faces into the west wall forever.</pre>'+
+      '<div class="note">Which predicate lets a mover move?</div>';
+    btns='<button class="ans" data-ok="0">sdf(nx,ny) &lt; 0.012</button><button class="ans" data-ok="1">sdf(nx,ny) &gt;= 0.012</button>';
+  }else if(i===2){
+    body='<div class="note">THE INSCRIPTION — a world with no rim. Once movable, they left.</div>'+
+      '<pre>'+rooms[2].insc+'\nsigned distance of the walls alone. Nothing says the world ends.\nThe escaped are still out there: x = -71, -40, -19, -6\u2026</pre>'+
+      '<div class="note">The fix wraps the sdf in ONE operation with the outer box \u2014<br>Math.min(x-0.05, 1.95-x, y-0.05, 2.65-y). An SDF <b>union</b> of primitives is taken with\u2026</div>';
+    btns='<button class="ans" data-ok="0">return Math.max(d, box);</button><button class="ans" data-ok="1">return Math.min(d, box);</button>';
+  }else{
+    body='<div class="note">THE BOSS — the flood that lied. The lightmap never respected walls, and the old page looked ALIVE because the lying gradient let GPS agents home straight through stone.</div>'+
+      '<pre>'+rooms[3].insc+'\ngrid row ny (0..134) divided by the world height 2.7:\nthe flood evaluated its neighbors at wy \u2248 25 \u2014 an entire world\nabove the maze. The field was computed somewhere else entirely.</pre>'+
+      '<div class="note">The fix reads (((ny)+0.5)/GH)*2.7 — row \u2192 fraction \u2192 world. Which pair of characters was missing from the buggy line?</div>';
+    btns='<button class="ans" data-ok="0">GW</button><button class="ans" data-ok="1">GH</button><button class="ans" data-ok="0">2.7</button><button class="ans" data-ok="0">ny</button>';
+  }
+  document.getElementById('pbody').innerHTML=body;
+  var pb=document.getElementById('pbtns'); pb.innerHTML=btns;
+  var act=document.getElementById('pact');
+  if(act)act.onclick=function(){ solveRoom(0); closePanel(); };
+  var ans=pb.querySelectorAll('.ans');
+  for(var j=0;j<ans.length;j++){
+    ans[j].onclick=function(){
+      if(this.getAttribute('data-ok')==='1'){ solveRoom(i); closePanel(); }
+      else document.getElementById('pnote').textContent='the defect disagrees \u2014 read the inscription again.';
+    };
+  }
+  p.style.display='block';
+}
+function solveRoom(i){
+  if(rooms[i].solved)return;
+  rooms[i].solved=true; rooms[i].solvedAt=Date.now();
+  if(i===3){ bossReveal=1; } // start the honest refill animation
+  flash('ROOM '+rooms[i].n+' SOLVED \u2014 '+rooms[i].name+' \u00b7 the way opens');
+  updateHUD();
+  if(solvedCount()===4)setTimeout(showRestatement,700);
+}
+function updateHUD(){document.getElementById('hprog').textContent=solvedCount()+'/4';}
+// ---- restatement (the falsifier) ----
+function showRestatement(){
+  openFalsifier();
+}
+function openFalsifier(){
+  var p=document.getElementById('panel');
+  document.getElementById('ptitle').textContent='THE RUN \u00b7 the falsifier';
+  document.getElementById('pbody').innerHTML=
+   '<div class="note">A player who finishes this dungeon can restate the four defect classes. That is the incident-dungeon thesis: <b style="color:#e8c96a">teaching = the game</b>.</div>'+
+   '<pre>1. SCALE-PAST-WORLD   \u2014 geometry sized beyond its domain (hh 3.24 &gt; world 2.7)\n2. INVERTED-PREDICATE \u2014 the condition tested the wrong side (sdf&lt;0.012 = move INTO walls)\n3. UNBOUNDED-DOMAIN   \u2014 freedom with no outer term (agents at x=-71)\n4. WRONG-TRANSFORM    \u2014 a constant where a scale belonged ((ny+0.5)/2.7, not /GH*2.7)</pre>'+
+   '<div class="note">And the deepest lesson, kept DISPUTED-AND-KEPT: <b>bogus fields look alive</b> \u2014 the lying flood out-attracted the honest blank. Validate the field.</div>';
+  document.getElementById('pbtns').innerHTML='<button id="run">ENTER THE RUN \u2192 /static/maze_arena.html</button>';
+  document.getElementById('pnote').textContent='';
+  document.getElementById('run').onclick=function(){ location.href='/static/maze_arena.html'; };
+  p.style.display='block';
+}
+// ---- curator mode ----
+function toggleCurator(){
+  var c=document.getElementById('curator');
+  if(c.style.display==='block'){c.style.display='none';return;}
+  document.getElementById('cpre').textContent=
+'--- a/dashboard/static/maze_arena.html (birth defects, 08-31 assembly .. 09-04 arena)\n'+
+'+++ b/dashboard/static/maze_arena.html (the fix, 09-06 ~03Z, operator: "maze arena doesn\'t run")\n'+
+'\n'+
+'@@ walls: the center wall @@\n'+
+'- [0.50,0.50,0.03,1.20],   // hh 1.2*2.7 = 3.24 > world 2.7 = FULL SEAL\n'+
+'+ [0.50,0.50,0.03,0.28],   // spawn chamber reaches the cheese\n'+
+'\n'+
+'@@ dumb-agent bounce @@\n'+
+'- if(sdf(nx,ny)<0.012){ move }   // could only move INTO walls\n'+
+'+ if(sdf(nx,ny)>=0.012){ move }  // un-inverted\n'+
+'\n'+
+'@@ sdf: the world bound @@\n'+
+'- return d;                       // unbounded: agents escaped to x=-71\n'+
+'+ return Math.min(d, Math.min(x-0.05, 1.95-x, y-0.05, 2.65-y)); // outer box, min\'d into the union\n'+
+'\n'+
+'@@ BFS flood y-transform (THE root) @@\n'+
+'- (ny+0.5)/2.7                    // neighbors evaluated at wy~25, outside the world\n'+
+'+ (((j/GW)|0)+0.5)/GH*2.7         // grid row -> fraction -> world units\n'+
+'\n'+
+'// post-fix receipt: GPS 4/4 done avg 315 steps vs DUMB 2/4 avg 769-2823 \u2014 field beats bounce ~10x';
+  document.getElementById('csrc').textContent=
+'receipts: queue/handoff/zcode/CONVO.md row 09-06 ~03:0xZ \u00b7 state/_maze_sim_test.js (headless harness, kept) \u00b7 '+
+'maze_arena.html.bak-simfix-20260906 + .bak-maze-20260906 \u00b7 watch/inbox/MAZE_ARENA_B1_20260906.md';
+  c.style.display='block';
+}
+// ---- room 2: dumb agents (inverted at birth) ----
+var dumb=[];
+(function(){for(var i=0;i<5;i++)dumb.push({x:516+i*7,y:96+i*26,a:Math.PI,tr:[]});})();
+function tickDumb(){
+  for(var i=0;i<dumb.length;i++){
+    var d=dumb[i];
+    if(!rooms[1].solved){
+      // inverted: they can only move INTO the west wall — jitter at the stone
+      var nx=d.x+Math.cos(d.a)*0.5;
+      if(nx>500){d.x=nx;}else{d.a+=(Math.random()-0.5)*0.8;}
+      d.a=Math.max(Math.PI-0.7,Math.min(Math.PI+0.7,d.a)); // always roughly INTO the wall
+    }else{
+      d.x+=Math.cos(d.a)*1.3; d.y+=Math.sin(d.a)*1.3;
+      if(d.x<506){d.x=506;d.a=Math.PI-d.a;}
+      if(d.x>920){d.x=920;d.a=Math.PI-d.a;}
+      if(d.y<40){d.y=40;d.a=-d.a;}
+      if(d.y>228){d.y=228;d.a=-d.a;}
+    }
+    if(frameN%8===0){d.tr.push([d.x,d.y]);if(d.tr.length>26)d.tr.shift();}
+  }
+}
+function drawDumb(){
+  for(var i=0;i<dumb.length;i++){
+    var d=dumb[i];
+    ctx.strokeStyle='rgba(255,157,92,0.35)';ctx.lineWidth=0.6;ctx.beginPath();
+    for(var j=0;j<d.tr.length;j++){j?ctx.lineTo(d.tr[j][0],d.tr[j][1]):ctx.moveTo(d.tr[j][0],d.tr[j][1]);}
+    ctx.stroke();
+    ctx.fillStyle='#ff9d5c';ctx.fillRect(d.x-2.5,d.y-2.5,5,5);
+    if(!rooms[1].solved&&frameN%90<45){ctx.fillStyle='rgba(255,157,92,.7)';ctx.font='8px monospace';ctx.fillText('sdf<0.012 \u2192 into the wall',d.x+6,d.y-5);}
+  }
+}
+// ---- room 3: escaped ghosts ----
+var ESC_X=[-71,-40,-19,-6];
+var ghosts=[];
+(function(){for(var i=0;i<6;i++)ghosts.push({x:780-i*46,y:320+i*30,vx:-(0.5+i*0.12),vy:(i%2?0.3:-0.25),esc:0,tr:[]});})();
+function tickGhosts(){
+  for(var i=0;i<ghosts.length;i++){
+    var g=ghosts[i];
+    if(!rooms[2].solved){
+      if(!g.esc){g.x+=g.vx;g.y+=g.vy;if(g.x<424)g.esc=ESC_X[(g.escN=(g.escN||0)+1)-1]||-71;}
+      else{g.y+=g.vy;if(g.y<300||g.y>500)g.vy=-g.vy;}
+    }else{
+      if(g.esc){g.esc=0;g.x=620+Math.random()*280;g.y=310+Math.random()*170;}
+      g.x+=g.vx;g.y+=g.vy;
+      if(g.x<506||g.x>918)g.vx=-g.vx; if(g.y<296||g.y>496)g.vy=-g.vy;
+    }
+    if(frameN%8===0){g.tr.push([g.x,g.y]);if(g.tr.length>30)g.tr.shift();}
+  }
+}
+function drawGhosts(){
+  for(var i=0;i<ghosts.length;i++){
+    var g=ghosts[i];
+    ctx.strokeStyle='rgba(124,245,255,0.25)';ctx.lineWidth=0.6;ctx.beginPath();
+    for(var j=0;j<g.tr.length;j++){j?ctx.lineTo(g.tr[j][0],g.tr[j][1]):ctx.moveTo(g.tr[j][0],g.tr[j][1]);}
+    ctx.stroke();
+    ctx.setLineDash([3,3]);
+    ctx.strokeStyle=g.esc?'rgba(255,157,92,0.8)':'rgba(124,245,255,0.7)';
+    ctx.beginPath();ctx.arc(g.x,g.y,5,0,7);ctx.stroke();
+    ctx.setLineDash([]);
+    if(g.esc){ctx.fillStyle='rgba(255,157,92,.85)';ctx.font='8px monospace';ctx.fillText('x='+g.esc,g.x-10,g.y-9);}
+  }
+}
+// ---- room 4: the boss flood ----
+var GW2=92,GH2=48, F2=new Float32Array(GW2*GH2), order2=[], revealIdx=0, bossReveal=0;
+var mmW=[ [.46,.32,.03,.34], [.74,.66,.24,.03], [.30,.68,.03,.20] ]; // unit walls of the mini-maze
+var CHEESE2=[.84,.16];
+function blocked2(gx,gy){
+  var u=(gx+0.5)/GW2, v=(gy+0.5)/GH2;
+  for(var i=0;i<mmW.length;i++){
+    var w=mmW[i];
+    if(Math.abs(u-w[0])<w[2]+0.014&&Math.abs(v-w[1])<w[3]+0.014)return true;
+  }
+  return false;
+}
+(function buildBoss(){
+  F2.fill(1e9);
+  var sx=Math.floor(CHEESE2[0]*GW2),sy=Math.floor(CHEESE2[1]*GH2);
+  if(blocked2(sx,sy)){sx=0;sy=0;}
+  var q=[sy*GW2+sx];F2[sy*GW2+sx]=0;order2.push(sy*GW2+sx);var qh=0;
+  while(qh<q.length){
+    var i=q[qh++],d=F2[i],x=i%GW2,y=(i/GW2)|0;
+    var tryc=function(j){if(j>=0&&j<GW2*GH2&&!blocked2(j%GW2,(j/GW2)|0)&&F2[j]>d+1){F2[j]=d+1;q.push(j);order2.push(j);}};
+    if(x<GW2-1)tryc(i+1); if(x>0)tryc(i-1); if(y<GH2-1)tryc(i+GW2); if(y>0)tryc(i-GW2);
+  }
+})();
+var mmC=document.createElement('canvas');mmC.width=GW2;mmC.height=GH2;
+var mmCtx=mmC.getContext('2d');
+var rank2=new Int32Array(GW2*GH2).fill(0x7fffffff); // cell -> reveal order (precomputed once)
+var MX2=1; // max finite flood distance (precomputed once)
+(function indexBoss(){
+  for(var k=0;k<order2.length;k++)rank2[order2[k]]=k;
+  for(var i=0;i<F2.length;i++)if(F2[i]<1e8&&F2[i]>MX2)MX2=F2[i];
+})();
+function drawBossField(){
+  var im=mmCtx.createImageData(GW2,GH2);
+  for(var i=0;i<GW2*GH2;i++){
+    var o=i*4,r,g,b;
+    if(!rooms[3].solved){
+      // the LYING field: radial glow straight through the walls — looks alive
+      var x=(i%GW2)/GW2,y=((i/GW2)|0)/GH2;
+      var t=Math.max(0,1-Math.hypot(x-CHEESE2[0],(y-CHEESE2[1])*0.9)*2.4);
+      r=3+229*Math.pow(t,2.2);g=8+198*Math.pow(t,2.8);b=6+100*Math.pow(t,3.0);
+    }else if(F2[i]>=1e8||rank2[i]>=revealIdx){
+      r=3;g=8;b=6;
+    }else{
+      var tt=Math.max(0,1-F2[i]/MX2);
+      if(tt>0.55){var s2=(tt-0.55)/0.45;r=232;g=201-60*(1-s2);b=106-40*(1-s2);}
+      else{var s3=tt/0.55;r=3+121*s3;g=8+237*s3;b=6+140*s3;}
+    }
+    im.data[o]=r;im.data[o+1]=g;im.data[o+2]=b;im.data[o+3]=255;
+  }
+  mmCtx.putImageData(im,0,0);
+}
+// ---- interaction ----
+function inRect(px,py,w,pad){return px>w.x-pad&&px<w.x+w.w+pad&&py>w.y-pad&&py<w.y+w.h+pad;}
+function onPed(px,py,p,pad){return p&&Math.hypot(px-p.x,py-p.y)<(p.r+pad);}
+CV.addEventListener('click',function(e){
+  var r=CV.getBoundingClientRect();
+  var px=(e.clientX-r.left)*(CV.width/r.width), py=(e.clientY-r.top)*(CV.height/r.height);
+  if(!rooms[0].solved&&inRect(px,py,SEAL,26)){openPanel(0);return;}
+  if(rooms[3].solved&&inRect(px,py,DOOR,10)){location.href='/static/maze_arena.html';return;}
+  for(var i=1;i<4;i++){if(onPed(px,py,rooms[i].ped,14)){openPanel(i);return;}}
+});
+// ---- main loop ----
+var frameN=0;
+function frame(){
+  frameN++;
+  // player move
+  var sp=2.3,dx=0,dy=0;
+  if(keys['arrowleft']||keys['a'])dx-=sp; if(keys['arrowright']||keys['d'])dx+=sp;
+  if(keys['arrowup']||keys['w'])dy-=sp; if(keys['arrowdown']||keys['s'])dy+=sp;
+  if(dx&&dy){dx*=0.707;dy*=0.707;}
+  if(dx&&!hits(player.x+dx,player.y,player.r))player.x+=dx;
+  if(dy&&!hits(player.x,player.y+dy,player.r))player.y+=dy;
+  // the run: walk out the open door
+  if(rooms[3].solved&&player.y>H-26&&player.x>196&&player.x<284){location.href='/static/maze_arena.html';return;}
+  tickDumb();tickGhosts();
+  if(bossReveal===1){revealIdx+=order2.length/120;if(revealIdx>order2.length+GW2)bossReveal=2;}
+  // ---- render ----
+  ctx.fillStyle='#070d0c';ctx.fillRect(0,0,W,H);
+  // floors
+  var floors=[RC_(16,16,448,236),RC_(480,16,464,236),RC_(480,268,464,256),RC_(16,268,448,256)];
+  for(var f=0;f<floors.length;f++){
+    ctx.fillStyle='#0a1210';ctx.fillRect(floors[f].x,floors[f].y,floors[f].w,floors[f].h);
+    ctx.strokeStyle='rgba(124,245,255,.12)';ctx.lineWidth=1;ctx.strokeRect(floors[f].x+.5,floors[f].y+.5,floors[f].w-1,floors[f].h-1);
+  }
+  // room titles
+  ctx.font='11px monospace';ctx.fillStyle='rgba(200,230,217,.55)';ctx.textAlign='center';
+  ctx.fillText('I \u00b7 THE SEAL',240,40);
+  ctx.fillText('II \u00b7 THE INVERTED BOUNCE',712,40);
+  ctx.fillText('III \u00b7 THE UNBOUNDED WORLD',712,290);
+  ctx.fillText('IV \u00b7 THE BOGUS FLOOD',240,290);
+  // floor inscriptions (the buggy lines, carved)
+  ctx.font='9px monospace';ctx.fillStyle='rgba(124,245,255,.4)';
+  ctx.fillText(rooms[0].insc,240,224);
+  ctx.fillText(rooms[1].insc,712,224);
+  ctx.fillText(rooms[2].insc,712,500);
+  ctx.fillText(rooms[3].insc,240,312);
+  // corridor plaques (the timeline)
+  ctx.fillStyle='rgba(232,201,106,.6)';ctx.font='8px monospace';
+  ctx.fillText('\u2190 08-31 \u00b7 the maze assembled, defects born',388,134);
+  ctx.fillText('09-04 \u00b7 the arena poses the falsifier \u2193',880,244);
+  ctx.fillText('09-06 \u00b7 "maze arena doesn\'t run" \u2190',540,374);
+  // walls
+  for(var wi=0;wi<walls.length;wi++){
+    var wl=walls[wi];
+    ctx.fillStyle='#101b18';ctx.fillRect(wl.x,wl.y,wl.w,wl.h);
+    ctx.strokeStyle='rgba(124,245,255,.18)';ctx.strokeRect(wl.x+.5,wl.y+.5,wl.w-1,wl.h-1);
+  }
+  // THE SEAL (room 1): the defect made manifest — full-height overhang beyond the world
+  if(!rooms[0].solved){
+    ctx.setLineDash([4,4]);
+    ctx.strokeStyle='rgba(255,80,80,'+(0.25+0.15*Math.sin(frameN*0.06)).toFixed(2)+')';
+    ctx.beginPath();ctx.moveTo(472,0);ctx.lineTo(472,540);ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#5c1010';ctx.fillRect(SEAL.x,SEAL.y,SEAL.w,SEAL.h);
+    ctx.strokeStyle='rgba(255,120,120,.9)';ctx.strokeRect(SEAL.x+.5,SEAL.y+.5,SEAL.w-1,SEAL.h-1);
+    ctx.fillStyle='#ff9d5c';ctx.font='8px monospace';
+    ctx.fillText('hh 3.24 > 2.7 \u00b7 click to diagnose',472,96);
+  }else if(Date.now()-(rooms[0].solvedAt||0)<1500){
+    var a=1-(Date.now()-rooms[0].solvedAt)/1500;
+    ctx.fillStyle='rgba(232,201,106,'+(a*0.8).toFixed(2)+')';
+    ctx.fillRect(SEAL.x,SEAL.y,SEAL.w,SEAL.h);
+  }
+  // locked barriers (rooms 2,3 doors + THE RUN)
+  if(!rooms[1].solved){ctx.fillStyle='rgba(255,80,80,'+(0.18+0.1*Math.sin(frameN*0.07)).toFixed(2)+')';ctx.fillRect(B2.x,B2.y,B2.w,B2.h);}
+  if(!rooms[2].solved){ctx.fillStyle='rgba(255,80,80,'+(0.18+0.1*Math.sin(frameN*0.07)).toFixed(2)+')';ctx.fillRect(B3.x,B3.y,B3.w,B3.h);}
+  if(!rooms[3].solved){ctx.fillStyle='#101b18';ctx.fillRect(DOOR.x,DOOR.y,DOOR.w,DOOR.h);ctx.strokeStyle='rgba(124,245,255,.18)';ctx.strokeRect(DOOR.x+.5,DOOR.y+.5,DOOR.w-1,DOOR.h-1);}
+  // pedestals
+  for(var pi=1;pi<4;pi++){
+    var p=rooms[pi].ped;if(!p)continue;
+    var gl=rooms[pi].solved?0.35:(0.6+0.35*Math.sin(frameN*0.08+pi));
+    ctx.fillStyle='rgba(232,201,106,'+gl.toFixed(2)+')';
+    ctx.beginPath();ctx.moveTo(p.x,p.y-p.r);ctx.lineTo(p.x+p.r,p.y);ctx.lineTo(p.x,p.y+p.r);ctx.lineTo(p.x-p.r,p.y);ctx.closePath();ctx.fill();
+    if(!rooms[pi].solved){ctx.fillStyle='rgba(232,201,106,.5)';ctx.font='8px monospace';ctx.fillText('diagnose',p.x,p.y-p.r-6);}
+  }
+  // boss minimap
+  drawBossField();
+  ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(mmC,70,330,230,120);
+  ctx.strokeStyle='rgba(124,245,255,.3)';ctx.strokeRect(70.5,330.5,229,119);
+  ctx.fillStyle='rgba(200,230,217,.5)';ctx.font='8px monospace';
+  ctx.fillText(rooms[3].solved?'the honest flood \u00b7 walls respected':'the lying field \u00b7 light through walls \u00b7 looks alive',185,462);
+  // boss wall outlines on the minimap
+  ctx.strokeStyle='rgba(232,201,106,.5)';
+  for(var b2=0;b2<mmW.length;b2++){
+    var mw=mmW[b2];
+    ctx.strokeRect(70+((mw[0]-mw[2])*GW2)*2.5,330+((mw[1]-mw[3])*GH2)*2.5,mw[2]*2*GW2*2.5,mw[3]*2*GH2*2.5);
+  }
+  drawDumb();drawGhosts();
+  // THE RUN door label
+  ctx.font='10px monospace';
+  if(rooms[3].solved){
+    ctx.fillStyle='rgba(232,201,106,'+(0.6+0.35*Math.sin(frameN*0.1)).toFixed(2)+')';
+    ctx.fillText('THE RUN \u2192 maze_arena.html',240,518);
+  }else{
+    ctx.fillStyle='rgba(124,245,255,.3)';ctx.fillText('THE RUN \u00b7 sealed by the boss',240,518);
+  }
+  // player + lantern
+  var px2=player.x,py2=player.y;
+  var grad=ctx.createRadialGradient(px2,py2,2,px2,py2,34);
+  grad.addColorStop(0,'rgba(255,240,180,0.85)');grad.addColorStop(1,'rgba(255,240,180,0)');
+  ctx.fillStyle=grad;ctx.beginPath();ctx.arc(px2,py2,34,0,7);ctx.fill();
+  ctx.fillStyle='#ffffff';ctx.fillRect(px2-2,py2-2,4,4);
+  // flash decay
+  if(flashT&&Date.now()-flashT>4500){document.getElementById('flash').textContent='';flashT=0;}
+  ctx.textAlign='start';
+  requestAnimationFrame(frame);
+}
+updateHUD();
+requestAnimationFrame(frame);
+</script></body></html>

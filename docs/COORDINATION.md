@@ -1,3 +1,5 @@
+> **Deprecation banner:** cursor lane lapsed 2026-08-27 — current seats are Codex, Grok x2, DeepSeek. See `docs/ref/ZAI_API_EXPERT_REFERENCE.md` for current lanes.
+
 # Cross-seat coordination
 
 Mag routes work by **depth** so Grok, DeepSeek, and local janitors each do what they are good at — without burning tokens on the wrong seat.
@@ -16,16 +18,15 @@ Mag routes work by **depth** so Grok, DeepSeek, and local janitors each do what 
 
 ## Shared visibility
 
-All seats append to **`state/shared_activity.jsonl`**. Every context pack includes the last few rows so DeepSeek agents see what Cursor/Grok/Mag are doing.
+All seats append to **`state/shared_activity.jsonl`**. Every context pack includes the last few rows so Codex, Grok x2, and DeepSeek agents see what the other current lanes are doing.
 
 ```powershell
 # Read feed
 curl -s http://127.0.0.1:8765/api/v1/coordination
 
-# DeepSeek / Cursor bridge
-python watch/cursor_bridge.py activity
-python watch/cursor_bridge.py coordinate "implement lattice query API" --dry
-python watch/cursor_bridge.py coordinate "implement lattice query API" --background
+# DeepSeek / Codex / Grok coordinate. Historical watch/cursor_bridge.py (Cursor lane lapsed 2026-08-27).
+python main.py coordinate "implement lattice query API" --dry
+python main.py coordinate "implement lattice query API" --background
 ```
 
 Post heartbeat from any seat:
@@ -78,18 +79,18 @@ POST /api/v1/coordination  { "seat", "depth", "goal", "status" }
 
 Works inside Docker — activity file lives on mounted `state/` volume.
 
-See also: `memory/improve/SEATS.md`, `docs/ref/SOVEREIGN_STACK.md`, `watch/cursor_bridge.py`.
+See also: `memory/improve/SEATS.md`, `docs/ref/SOVEREIGN_STACK.md`. Historical `watch/cursor_bridge.py` (Cursor lane lapsed 2026-08-27).
 
 ## Peer handoffs (agent ↔ agent)
 
-When a cloud or Cursor agent files work for home PC, use **peer handoff** so every seat sees it in `shared_activity.jsonl` and the handoff queue — not chat scroll.
+When a cloud, Codex, or Grok agent files work for home PC, use **peer handoff** so every seat sees it in `shared_activity.jsonl` and the handoff queue — not chat scroll.
 
 ```powershell
 # Cloud agent files instructions for home PC
 python main.py peer-handoff file ^
   --goal "Run dashboard v3 preview" ^
   --brief "Canvas tab, Shell compose, Trace rail" ^
-  --from cursor-cloud --track dashboard-v3 ^
+  --from grok --track dashboard-v3 ^
   --command ".\scripts\env_switch.ps1 use dashboard-v3" ^
   --command ".\scripts\env_switch.ps1 run dashboard-v3" ^
   --pr https://github.com/NachoBusiness17/Mag/pull/18
@@ -112,7 +113,7 @@ When Mag boots multiple agents, each layer files coordination so every seat read
 |-------|------|-------|
 | **Heart** | Local sovereign — disk, state, active env track | `memory/boot/tripartite_latest.md` |
 | **Mind** | Routing — depth doctrine, peer handoffs, classify | `state/shared_activity.jsonl` |
-| **Body** | Spawned agents — dashboard, scribe, drainer, Cursor, DeepSeek | `mag_launch.py` slots |
+| **Body** | Spawned agents — dashboard, scribe, drainer, Codex, Grok, DeepSeek | `mag_launch.py` slots |
 
 ```powershell
 python main.py boot-coordination          # file heart/mind/body manifest

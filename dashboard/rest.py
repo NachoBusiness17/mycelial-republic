@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import threading
 import time
 import uuid
 from pathlib import Path
@@ -877,15 +878,22 @@ def h_attention_feedback(_p: dict[str, str], body: dict[str, Any] | None) -> tup
     return (200 if result.get("ok") else 400), result
 
 
-def h_home_summary(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
-    """One payload for the Home tab: health, tip, latest bead, loops, economy."""
-    from mag.health import sanity
+# --- home-summary fast path (docfix 2026-09-06) ---
+# The residual dig-edge scan reads every memory/biography/residual/*.json (2,777
+# files). Through the Docker bind mount that is ~21s; native it is <0.1s. That
+# scan (plus mag.health.sanity() ~2s, plus the conditional bonds re-ingest ~7s)
+# used to run INLINE in h_home_summary and stalled the operator's home tab.
+# They now run on a background thread and publish to state/home_cache.json
+# (60s TTL) — the handler never blocks on them.
+_HOME_CACHE_PATH = ROOT / "state" / "home_cache.json"
+_HOME_CACHE_TTL = 60.0
+_home_bg_lock = threading.Lock()
+_home_bg: dict[str, Any] = {"busy": False, "health": None, "dig_edges_n": None, "ts": 0.0}
 
-    health = sanity()
-    tip = _read_json(BIO / "verkle_tip.json") or {}
-    root = str(tip.get("root") or "")
 
-    dig_edges_n = 0
+def _home_dig_edges_scan() -> int:
+    """Count dig-lattice edges across residual/*.json (moved off request path)."""
+    n = 0
     res_dir = BIO / "residual"
     if res_dir.is_dir():
         for p in res_dir.glob("*.json"):
@@ -896,20 +904,97 @@ def h_home_summary(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, 
             kind = str(o.get("kind") or "").lower()
             edges = o.get("edges") if isinstance(o.get("edges"), dict) else {}
             if kind in ("dig_leaf", "dig", "corpus_leaf") or edges.get("dig_leaf"):
-                dig_edges_n += 1
+                n += 1
             digs = edges.get("dig_leaves") or edges.get("related_digs") or []
             if isinstance(digs, list) and digs:
-                dig_edges_n += len(digs)
+                n += len(digs)
+    return n
+
+
+def _home_bg_refresh() -> None:
+    """Recompute the expensive home pieces off the request path."""
+    with _home_bg_lock:
+        if _home_bg["busy"]:
+            return
+        _home_bg["busy"] = True
+
+    def _run() -> None:
+        try:
+            from mag.health import sanity
+
+            health = sanity()
+            dig_edges_n = _home_dig_edges_scan()
+            _home_bg["health"] = health
+            _home_bg["dig_edges_n"] = dig_edges_n
+            _home_bg["ts"] = time.time()
+            try:
+                _HOME_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+                _HOME_CACHE_PATH.write_text(
+                    json.dumps(
+                        {"ts": _home_bg["ts"], "health": health, "dig_edges_n": dig_edges_n},
+                        separators=(",", ":"),
+                    ),
+                    encoding="utf-8",
+                )
+            except OSError:
+                pass
+        except Exception:
+            pass
+        finally:
+            _home_bg["busy"] = False
+
+    threading.Thread(target=_run, name="home-bg-refresh", daemon=True).start()
+
+
+def _home_health_and_digs() -> tuple[dict[str, Any], int]:
+    """Fresh health + dig-edge count without ever blocking the request:
+    60s-TTL file cache, then last-known in-process values, then cheap defaults
+    while the background thread lands the real numbers."""
+    cached = _read_json(_HOME_CACHE_PATH) if _HOME_CACHE_PATH.is_file() else None
+    cache_fresh = (
+        isinstance(cached, dict)
+        and (time.time() - float(cached.get("ts") or 0)) < _HOME_CACHE_TTL
+    )
+    if not cache_fresh:
+        _home_bg_refresh()
+    if cache_fresh and isinstance(cached.get("health"), dict):
+        return cached["health"], int(cached.get("dig_edges_n") or 0)
+    if isinstance(_home_bg["health"], dict):
+        return dict(_home_bg["health"]), int(_home_bg["dig_edges_n"] or 0)
+    if isinstance(cached, dict) and isinstance(cached.get("health"), dict):
+        return cached["health"], int(cached.get("dig_edges_n") or 0)
+    return {}, 0
+
+
+def _home_bonds_ingest_bg() -> None:
+    """BONDS_MD missing means a full re-ingest (multi-second over the bind
+    mount) — run it in the background so /api/home never blocks on it."""
+    def _run() -> None:
+        try:
+            from mag.bonds import ingest_bonds
+
+            ingest_bonds(write=True)
+        except Exception:
+            pass
+
+    threading.Thread(target=_run, name="home-bonds-ingest", daemon=True).start()
+
+
+def h_home_summary(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """One payload for the Home tab: health, tip, latest bead, loops, economy."""
+    health, dig_edges_n = _home_health_and_digs()
+    tip = _read_json(BIO / "verkle_tip.json") or {}
+    root = str(tip.get("root") or "")
 
     bonds: dict[str, Any] = {}
     open_loops: list[str] = []
     residual_bonds: list[str] = []
     next_moves: list[str] = []
     try:
-        from mag.bonds import BONDS_MD, ingest_bonds, load_bonds_json
+        from mag.bonds import BONDS_MD, load_bonds_json
 
         if not BONDS_MD.is_file():
-            ingest_bonds(write=True)
+            _home_bonds_ingest_bg()  # full re-ingest runs off the request path
         bonds = load_bonds_json() or {}
         open_loops = [str(x)[:200] for x in (bonds.get("open_loops") or [])[:8]]
         residual_bonds = [str(x)[:160] for x in (bonds.get("residual_bonds") or [])[:8]]
@@ -2737,6 +2822,12 @@ def h_orchestrator_queue_post(_p: dict[str, str], body: dict[str, Any] | None) -
         goal,
         provider=str(body.get("provider") or "deepseek"),
         tag=str(body.get("tag") or "api"),
+        model=str(body.get("model") or "").strip() or None,
+        timeout=int(body.get("timeout") or 900),
+        priority=int(body.get("priority") or 0),
+        tier=str(body.get("tier") or "").strip() or None,
+        heavy=body.get("heavy") if isinstance(body.get("heavy"), bool) else None,
+        schedule_policy=str(body.get("schedule_policy") or "").strip() or None,
     )
     return 200, {"ok": True, **rec}
 
@@ -2923,6 +3014,13 @@ def h_overview(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict
     from dashboard.server import api_overview
 
     return 200, api_overview()
+
+
+def h_hood(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """GET /api/v1/hood — model trajectory + RIB bus (looking-eye)."""
+    from mag.hood import snapshot
+
+    return 200, snapshot()
 
 
 def h_nervous(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
@@ -3512,6 +3610,31 @@ def h_economy(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]
     except Exception as e:
         snap["chat_prompt_error"] = str(e)
     return 200, snap
+
+
+def h_costs(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """GET cost truth: receipt-derived dollars, free/local work, and unpriced usage."""
+    from mag.cost_truth import snapshot
+
+    try:
+        return 200, snapshot()
+    except Exception as e:
+        return 500, {"ok": False, "schema": "cost_truth.v1", "error": str(e)[:240]}
+
+
+def h_vast_cost_sync(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Read-only Vast billing/instances refresh; never changes instance state."""
+    from mag.vast_cost import sync
+
+    body = body or {}
+    return 200, sync(days=int(body.get("days") or 30), include_instances=body.get("instances", True) is not False)
+
+
+def h_compute_schedule(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Current off-hours policy plus queued heavy-job deferrals."""
+    from mag.off_hours import queue_status
+
+    return 200, queue_status()
 
 
 def h_usage(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
@@ -4788,6 +4911,44 @@ def h_endpoints(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dic
     return 200, out
 
 
+def h_chan_catalog(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """GET /api/v1/chan/catalog — Primer imageboard catalog (4chan-the-game)."""
+    from mag.chan import catalog
+    mill = str((_p or {}).get("all") or "").strip() in ("1", "true", "yes")
+    return 200, catalog(all_threads=mill)
+
+
+def h_chan_thread(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """GET /api/v1/chan/thread/{slug} — one thread, play posts only."""
+    from mag.chan import thread
+    slug = str((_p or {}).get("slug") or "").strip()
+    if not slug:
+        return 400, {"ok": False, "error": "thread slug required"}
+    return 200, thread(slug)
+
+
+def h_chan_post(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """POST /api/v1/chan/post {thread, text, seat, sage} — player move."""
+    from mag.chan import post
+    body = _b or {}
+    slug = str(body.get("thread") or _p.get("thread") or "").strip()
+    text = str(body.get("text") or body.get("comment") or "")
+    seat = str(body.get("seat") or body.get("name") or "anon")
+    sage = bool(body.get("sage"))
+    out = post(slug, text, seat=seat, sage=sage, reply_to=str(body.get("reply_to") or ""))
+    return (200, out) if out.get("ok") else (400, out)
+
+
+def h_chan_wake(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """POST /api/v1/chan/wake {thread} — one Anonymous chorus mouth (Primer voice)."""
+    from mag.chan import wake
+    body = _b or {}
+    slug = str(body.get("thread") or _p.get("thread") or "").strip()
+    if not slug:
+        return 400, {"ok": False, "error": "thread required"}
+    return 200, wake(slug)
+
+
 def h_partner_puppet(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
     """GET /api/v1/partner/puppet — the partner puppeteering surface (invariants + shared history)."""
     try:
@@ -4821,7 +4982,74 @@ def h_partner_puppet_post(_p: dict[str, str], _b: dict[str, Any] | None) -> tupl
                      "status": 500, "detail": "partner surface unavailable"}
 
 
+# --- P0 honest-dark deadline wrapper (2026-09-10, Lane B hang fix) ---
+# These surfaces call into container/scan code that can hang; the endpoint used to
+# hang with them. Deadline: >5s -> return {"ok": false, "stale": true, ...} plus the
+# last good payload if we ever served one. The page degrades, it never hangs.
+_DEADLINE_SECONDS = 5.0
+_STALE_CACHE: dict[str, dict[str, Any]] = {}
+_DL_POOL: list[Any] = []  # lazy ThreadPoolExecutor holder
+
+
+def _dl(key: str, fn: HandlerFn) -> HandlerFn:
+    """Wrap a handler with a hard 5s deadline + stale-cache fallback."""
+
+    def wrapped(p: dict[str, str], b: dict[str, Any] | None) -> tuple[int, dict[str, Any]]:
+        from concurrent.futures import ThreadPoolExecutor
+
+        if not _DL_POOL:
+            _DL_POOL.append(ThreadPoolExecutor(max_workers=8, thread_name_prefix="dl"))
+        fut = _DL_POOL[0].submit(fn, p, b)
+        try:
+            status, payload = fut.result(timeout=_DEADLINE_SECONDS)
+        except Exception as exc:  # includes FuturesTimeout; hung worker thread is abandoned
+            if type(exc).__name__ != "TimeoutError":
+                raise
+            return 503, {"ok": False, "stale": True, "error": "timeout",
+                         "last_known": _STALE_CACHE.get(key)}
+        if isinstance(payload, dict) and payload.get("ok", True):
+            _STALE_CACHE[key] = payload
+        return status, payload
+
+    return wrapped
+
+
+_dl_loop_health = _dl("loop_health", h_loop_health)
+_dl_overview = _dl("overview", h_overview)
+_dl_providers = _dl("providers", h_providers)
+_dl_quota = _dl("quota", h_quota)
+
+
+def h_status(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """GET /api/status — minimal file-on-disk health stub (P0 2026-09-10).
+    No container calls, no subprocess: reads mtimes of ground-truth files only."""
+    import time as _time
+
+    root = Path(__file__).resolve().parent.parent
+    checks: dict[str, Any] = {}
+    now = _time.time()
+    for name, rel in [
+        ("state", "state/CURRENT.md"),
+        ("chain", "memory/biography/verkle_chain.jsonl"),
+        ("queue", "queue"),
+        ("watch", "watch"),
+    ]:
+        try:
+            st = (root / rel).stat()
+            checks[name] = {"ok": True, "mtime": int(st.st_mtime),
+                            "age_s": int(now - st.st_mtime)}
+        except OSError:
+            checks[name] = {"ok": False, "mtime": None, "age_s": None}
+    return 200, {"ok": True, "schema": "status.v1", "service": "dashboard-rest",
+                 "time": int(now), "checks": checks,
+                 "dark": all(not c["ok"] for c in checks.values())}
+
+
 ROUTES: list[tuple[str, str, HandlerFn]] = [
+    ("GET", "/api/v1/chan/catalog", h_chan_catalog),
+    ("GET", "/api/v1/chan/thread/{slug}", h_chan_thread),
+    ("POST", "/api/v1/chan/post", h_chan_post),
+    ("POST", "/api/v1/chan/wake", h_chan_wake),
     ("GET", "/api/v1/partner/puppet", h_partner_puppet),
     ("POST", "/api/v1/partner/puppet", h_partner_puppet_post),
     ("GET", "/api/v1/ecosystem", h_ecosystem),
@@ -4844,7 +5072,7 @@ ROUTES: list[tuple[str, str, HandlerFn]] = [
     ("GET", "/api/pile", h_pile),
     ("GET", "/api/v1/fleet/triad", h_fleet_triad),
     ("GET", "/api/v1/fleet/hypervisor", h_fleet_hypervisor),
-    ("GET", "/api/v1/loop/health", h_loop_health),
+    ("GET", "/api/v1/loop/health", _dl_loop_health),
     ("GET", "/api/v1", h_api_index),
     ("GET", "/api/v1/", h_api_index),
     ("GET", "/api/v1/operator-os", h_operator_os),
@@ -4884,7 +5112,8 @@ ROUTES: list[tuple[str, str, HandlerFn]] = [
     ("GET", "/api/v1/wave", h_wave),
     ("GET", "/api/v1/desk", h_wave),
     ("GET", "/api/v1/ingest", h_ingest),
-    ("GET", "/api/v1/overview", h_overview),
+    ("GET", "/api/v1/overview", _dl_overview),
+    ("GET", "/api/v1/hood", h_hood),
     ("GET", "/api/v1/nervous", h_nervous),
     ("GET", "/api/nervous", h_nervous),
     ("GET", "/api/v1/system-map", h_system_map),
@@ -4988,8 +5217,8 @@ ROUTES: list[tuple[str, str, HandlerFn]] = [
     ("PATCH", "/api/v1/ideas/{id}", h_idea_patch),
     ("POST", "/api/v1/ideas/seed", h_ideas_seed),
     ("GET", "/api/v1/models", h_models),
-    ("GET", "/api/v1/providers", h_providers),
-    ("GET", "/api/v1/quota", h_quota),
+    ("GET", "/api/v1/providers", _dl_providers),
+    ("GET", "/api/v1/quota", _dl_quota),
     ("GET", "/api/v1/providers/local-only", h_local_only_get),
     ("POST", "/api/v1/providers/local-only", h_local_only_post),
     ("GET", "/api/v1/router-status", h_router_status),
@@ -4999,6 +5228,9 @@ ROUTES: list[tuple[str, str, HandlerFn]] = [
     ("GET", "/api/v1/story/file", h_story_file),
     ("GET", "/api/v1/usage", h_usage),
     ("GET", "/api/v1/economy", h_economy),
+    ("GET", "/api/v1/costs", h_costs),
+    ("POST", "/api/v1/costs/vast/sync", h_vast_cost_sync),
+    ("GET", "/api/v1/compute-schedule", h_compute_schedule),
     ("GET", "/api/v1/flow", h_idea_flow),
     ("GET", "/api/v1/brief", h_brief_latest),
     ("GET", "/api/v1/visual/latest", lambda p, b: h_visual({**p, "id": "latest"}, b)),
@@ -5179,16 +5411,22 @@ LEGACY: list[tuple[str, str, HandlerFn]] = [
     ("GET", "/api/board", h_board),
     ("GET", "/api/verkle", h_chain),
     ("GET", "/api/ingest", h_ingest),
-    ("GET", "/api/overview", h_overview),
+    ("GET", "/api/overview", _dl_overview),
+    ("GET", "/api/hood", h_hood),
     ("GET", "/api/home", h_home_summary),
     ("GET", "/api/diary", h_diary),
     ("GET", "/api/story", h_story),
     ("GET", "/api/summary", h_home_summary),
     ("GET", "/api/models", h_models),
-    ("GET", "/api/providers", h_providers),
-    ("GET", "/api/quota", h_quota),
+    ("GET", "/api/providers", _dl_providers),
+    ("GET", "/api/quota", _dl_quota),
+    ("GET", "/api/status", h_status),
+    ("GET", "/api/loop-health", _dl_loop_health),
     ("GET", "/api/usage", h_usage),
     ("GET", "/api/economy", h_economy),
+    ("GET", "/api/costs", h_costs),
+    ("POST", "/api/costs/vast/sync", h_vast_cost_sync),
+    ("GET", "/api/compute-schedule", h_compute_schedule),
     ("GET", "/api/idea-flow", h_idea_flow),
     ("GET", "/api/brief/latest", h_brief_latest),
     ("GET", "/api/visual/latest", lambda p, b: h_visual({**p, "id": "latest"}, b)),

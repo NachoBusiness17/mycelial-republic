@@ -48,17 +48,28 @@ MAX_TOOL_OUTPUT = 8000
 
 
 def ollama_base() -> str:
-    """Ollama HTTP base. Env OLLAMA_HOST or OLLAMA_BASE overrides (Vast tunnel)."""
+    """Native Ollama HTTP base for ``/api/*`` endpoints.
+
+    ``OLLAMA_HOST`` is also used by the OpenAI-compatible chat client, where
+    callers intentionally add ``/v1``.  Normalize that suffix here so native
+    probes, model discovery, embeddings, and generation never accidentally
+    request ``/v1/api/...``.
+    """
     import os
 
     raw = (os.environ.get("OLLAMA_HOST") or os.environ.get("OLLAMA_BASE") or "").strip()
     if not raw:
-        # STRICTLY cluster (headless): no local desktop ollama / runner windows.
-        return "http://ollama:11434"
+        # 2026-09-07 eye migration: host ollama on loopback IS the eye (09-06 audit;
+        # container sidecar retired behind the retired-eye compose profile). Cage
+        # services always set OLLAMA_HOST explicitly, so this default only serves
+        # bare-metal callers.
+        return "http://127.0.0.1:11434"
     if raw.startswith("http://") or raw.startswith("https://"):
-        return raw.rstrip("/")
+        base = raw.rstrip("/")
+        return base[:-3].rstrip("/") if base.lower().endswith("/v1") else base
     # bare host:port
-    return f"http://{raw}".rstrip("/")
+    base = f"http://{raw}".rstrip("/")
+    return base[:-3].rstrip("/") if base.lower().endswith("/v1") else base
 
 
 # Resolved at import for simple callers; prefer ollama_base() when env may change

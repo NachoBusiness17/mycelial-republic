@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spore Form - the horse (attempt 2)</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}html,body{height:100%;background:#0a0806;color:#efe3d0;font-family:Georgia,serif}
+  body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+  canvas{background:#090808;border:1px solid #241a11;border-radius:12px}
+  .cap{color:#9c8570;font-size:.85rem;font-style:italic;max-width:560px;text-align:center;line-height:1.6;padding:0 20px}
+</style>
+</head>
+<body>
+  <canvas id="c" width="520" height="520"></canvas>
+  <div class="cap">The spore, re-run - <b>attempt 2</b>. The fish was beautiful and wrong;
+  attempt 2 is the organism in motion - galloping toward the Republic it was supposed to draw.</div>
+<script>
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+let t=0;
+// closed-form leg: knee lifts & hoof reaches as phase p in [0,1) advances
+function leg(px,py,p,reach,stride){
+  const a=2*Math.PI*p, lift=Math.max(0,Math.sin(a+0.4))*reach;
+  const sw=Math.cos(a)*stride;
+  const kx=px+sw*0.55, ky=py-lift*0.55;
+  const hx=px+sw, hy=py-lift*0.15+Math.max(0,-Math.sin(a))*0.3*stride;
+  return [px,py,kx,ky,hx,hy];
+}
+function line(x1,y1,x2,y2,x3,y3,w){
+  ctx.lineWidth=w; ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.lineTo(x3,y3); ctx.stroke();
+}
+function step(){
+  t += 0.045;
+  ctx.fillStyle="#090808"; ctx.fillRect(0,0,520,520);
+  ctx.strokeStyle="rgba(239,227,208,.72)"; ctx.lineCap="round"; ctx.lineJoin="round";
+  const cx=250, cy=300;
+  // body bounce + pitch: gallop has 2 beats per stride
+  const bounce=Math.sin(t*2)*10, pitch=Math.sin(t*2+1.2)*0.13;
+  const bx=cx, by=cy+bounce, rot=pitch;
+  const cos=Math.cos(rot), sin=Math.sin(rot);
+  function P(x,y){ // rotate+translate local body frame
+    return [bx+(x*cos-y*sin), by+(x*sin+y*cos)];
+  }
+  // spine/neck/head
+  const [sx,sy]=P(-90,0), [nx,ny]=P(70,-34), [hx,hy]=P(112,-52), [mx,my]=P(126,-44);
+  // legs: front pair, hind pair, phase offsets (gallop: LH,RF,LF,RH-ish)
+  const ph=[0.0,0.15,0.5,0.62];
+  const legs=[[-60,10,ph[0],26,44,3.4],[-52,10,ph[1],26,44,3.4],
+              [58,10,ph[2],30,52,4.2],[66,10,ph[3],30,52,4.2]];
+  ctx.strokeStyle="rgba(239,227,208,.5)";
+  for(const l of legs){
+    const [px,py,p,r,s,w]=l;
+    const [ax,ay]=P(px,py);
+    const a=2*Math.PI*p, lift=Math.max(0,Math.sin(a+0.4))*r, sw=Math.cos(a)*s;
+    const [kx,ky]=P(px+sw*0.5, py-lift*0.6);
+    const [hox,hoy]=P(px+sw, py-lift*0.12);
+    line(ax,ay,kx,ky,hox,hoy,w);
+  }
+  // tailbone curve
+  ctx.strokeStyle="rgba(239,227,208,.55)";
+  const [tx,ty]=P(-96,-6);
+  ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(tx,ty);
+  let px=tx, py=ty;
+  for(let i=1;i<=6;i++){
+    const s=i/6, wag=Math.sin(t*3+s*4)*18*s;
+    const wx=tx-70*s, wy=ty-46*s+wag;
+    ctx.lineTo(wx,wy); px=wx; py=wy;
+  }
+  ctx.stroke();
+  // barrel/spine
+  ctx.beginPath(); ctx.moveTo(sx,sy);
+  ctx.quadraticCurveTo(bx,by-16,nx,ny); ctx.lineTo(hx,hy); ctx.stroke();
+  // head/muzzle + ear
+  ctx.beginPath(); ctx.moveTo(nx,ny); ctx.lineTo(hx,hy); ctx.lineTo(mx,my); ctx.stroke();
+  ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(hx,hy); ctx.lineTo(hx-4,hy-14); ctx.stroke();
+  // mane streaming: points along neck, offset by wind
+  ctx.fillStyle="rgba(239,227,208,.85)";
+  for(let i=0;i<=60;i++){
+    const s=i/60, lx=sx+(nx-sx)*s, ly=sy+(ny-sy)*s;
+    const wind=Math.sin(t*4+s*6)*10+s*6;
+    for(let j=0;j<5;j++) ctx.fillRect(lx-wind*0.3-j*1.5, ly-4-j*2.2, 1.4,1.4);
+  }
+  // tail hair streaming
+  for(let i=0;i<=80;i++){
+    const s=i/80, wag=Math.sin(t*3+s*5)*22*s;
+    const wx=tx-70*s, wy=ty-46*s+wag;
+    for(let j=0;j<4;j++) ctx.fillRect(wx-j*1.6, wy-j*1.2,1.4,1.4);
+  }
+  requestAnimationFrame(step);
+}
+step();
+</script>
+</body>
+</html>

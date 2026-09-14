@@ -1,0 +1,36 @@
+{
+  "_readme": "PASTE TARGET: ~/.openclaw/openclaw.json — models.providers block. PROTECTED PATHS: operator applies by hand or via Control UI (gateway config.patch refuses models.providers.*.baseUrl). Audit finding 2026-09-01 06:55Z: 4 of 5 z.ai providers point at GENERAL paas/v4 with coding-plan keys (billing pool unknown; Lite credit pools pristine despite full night of traffic = coding credits NOT consumed on those lanes). Only zai-2 is correctly on the coding endpoint. FIX (per operator law 06:42Z rule 1 'coding endpoint only'): repoint the two Lite-key providers to the coding endpoint. LEAVE zai + zai-pro on paas/v4 — they become the PAYG arms the moment standard keys (nacho $25 / fostertron $9.99) are added as env vars ZAI_PAYG_NACHO_KEY / ZAI_PAYG_FOSTERTRON_KEY and swapped into apiKey.id. Hot-reloads, no restart.",
+  "changes": [
+    {
+      "path": "models.providers.zai-lite.baseUrl",
+      "from": "https://api.z.ai/api/paas/v4",
+      "to": "https://api.z.ai/api/coding/paas/v4",
+      "reason": "Lite key (4f8ac5…KF3A) is a coding-plan key; flash traffic should draw the fresh 10k/wk Lite credits, not an unknown PAYG pool"
+    },
+    {
+      "path": "models.providers.glm53-api.baseUrl",
+      "from": "https://api.z.ai/api/paas/v4",
+      "to": "https://api.z.ai/api/coding/paas/v4",
+      "reason": "same key (3254ac…bXOz, Lite tier); glm53-api is the flash-high lane per operator routing law — belongs on coding endpoint"
+    },
+    {
+      "path": "models.providers.zai.apiKey.id",
+      "from": "ZAI_API_KEY",
+      "to": "ZAI_PAYG_NACHO_KEY",
+      "reason": "OPTIONAL PHASE 2: main zai provider becomes the nacho $25 PAYG arm — only after operator adds the standard (non-coding-plan) key to env",
+      "conditional": true
+    },
+    {
+      "path": "models.providers.zai-pro.apiKey.id",
+      "from": "ZAI_API_KEY_PRO",
+      "to": "ZAI_PAYG_FOSTERTRON_KEY",
+      "reason": "OPTIONAL PHASE 2: fostertron $9.99 becomes the second parallel PAYG arm ('launch our parallel models') — only after operator adds the standard key to env",
+      "conditional": true
+    }
+  ],
+  "end_state": {
+    "coding_endpoint_credits": ["zai-2 (Max, parked till 09-08 reset)", "zai-lite (Lite, fresh 10k/wk)", "glm53-api (Lite, fresh 10k/wk)"],
+    "payg_cash_arms": ["zai → nacho $25 (after key)", "zai-pro → fostertron $9.99 (after key)"],
+    "deepseek": "$24.13 invoiced, unchanged, T2 judge/synthesis"
+  }
+}

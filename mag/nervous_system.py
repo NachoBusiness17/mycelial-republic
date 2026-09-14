@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 import os
 import socket
+import tempfile
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
@@ -90,8 +91,11 @@ def _port_up(host: str, port: int, timeout: float = 0.4) -> bool:
 
 def _ollama_up(timeout: float = 0.8) -> bool:
     try:
-        urllib.request.urlopen("http://127.0.0.1:11434/api/tags", timeout=timeout)
-        return True
+        # Use the shared hard-bounded/cached registry probe; a direct urllib
+        # call here made every glance vulnerable to host/Docker DNS stalls.
+        from models.registry import ollama_tags
+
+        return bool(ollama_tags(timeout=timeout))
     except Exception:
         return False
 
@@ -224,42 +228,71 @@ def write_face(glance: dict[str, Any]) -> Path:
             "",
             "## Reconnect",
             "```",
-            "python main.py lab",
-            "python main.py doctor",
-            "python main.py nervous",
-            "python main.py context-pack",
+            "mag.cmd doctor",
+            "docker compose restart mag",
+            "mag.cmd nervous",
+            "mag.cmd context-pack",
             "```",
             "",
         ]
     )
     FACE_MD.parent.mkdir(parents=True, exist_ok=True)
     FACE_MD.write_text("\n".join(lines), encoding="utf-8")
-    FACE_JSON.write_text(json.dumps(glance, indent=2, default=str), encoding="utf-8")
+    # Keep cached reads coherent while a heartbeat refreshes the face.
+    with tempfile.NamedTemporaryFile(
+        mode="w", encoding="utf-8", dir=str(FACE_JSON.parent),
+        prefix=f".{FACE_JSON.name}.", suffix=".tmp", delete=False,
+    ) as fh:
+        tmp = Path(fh.name)
+        json.dump(glance, fh, indent=2, default=str)
+    try:
+        os.replace(tmp, FACE_JSON)
+    finally:
+        try:
+            tmp.unlink(missing_ok=True)
+        except OSError:
+            pass
     glance["path_md"] = str(FACE_MD)
     glance["path_json"] = str(FACE_JSON)
     return FACE_MD
 
 
-def glance_cached(*, max_age_s: float = 30.0) -> dict[str, Any]:
+def glance_cached(*, max_age_s: float = 30.0, refresh: bool = True) -> dict[str, Any]:
     """Return a cached glance if fresh (< max_age_s), else build a fresh one (writes cache).
 
     HOT-PATH BOUND (2026-08-16): build_glance runs a live probe suite (health.sanity,
     seat_registry live seats, multi_smoke, port probes) that takes ~4.4s. A dashboard /
     status page should NOT re-run that on every request — it made /api/v1/status hang ~8s.
     This returns the last-written face (presence data ≤ max_age_s stale, fine for a status
-    read) and only re-probes when the cache has expired.
+    read) and only re-probes when the cache has expired. ``refresh=False``
+    is for hot observers that must never turn a read into a live probe; they
+    receive the last face with an explicit stale marker.
     """
     import time
     try:
         if FACE_JSON.is_file():
             age_s = time.time() - os.path.getmtime(FACE_JSON)
-            if age_s < max_age_s:
+            if age_s < max_age_s or not refresh:
                 g = json.loads(FACE_JSON.read_text(encoding="utf-8"))
                 g["_cached"] = True
                 g["_cache_age_s"] = round(age_s, 1)
+                g["_cache_stale"] = age_s >= max_age_s
                 return g
     except Exception:
         pass
+    if not refresh:
+        return {
+            "ok": False,
+            "schema": SCHEMA,
+            "_cached": False,
+            "_cache_stale": True,
+            "body": {
+                "dashboard_8765": False,
+                "ollama_11434": False,
+                "integral_ok": False,
+            },
+            "note": "No nervous face receipt exists; live refresh deferred.",
+        }
     g = build_glance(write=True)
     g["_cached"] = False
     return g
@@ -416,13 +449,15 @@ def build_glance(*, write: bool = True) -> dict[str, Any]:
             "Keys: .env presence ≠ shell; Mag loads dotenv. "
             "status=env-only means Mag python can use if values non-empty. "
             "Probe before claim: main.py provider-chat --provider X. "
-            "Dashboard down → python main.py lab"
+            "Dashboard down → mag.cmd doctor (venv read, no spawn). "
+            "If still dead AND docker works: docker compose restart mag. "
+            "Not host python main.py lab."
         ),
         "reconnect": [
-            "python main.py lab",
-            "python main.py doctor",
-            "python main.py nervous",
-            "python main.py context-pack",
+            "mag.cmd doctor",
+            "docker compose restart mag",
+            "mag.cmd nervous",
+            "mag.cmd context-pack",
         ],
         "module": "nervous_system",
         "law": "Trust this JSON + doctor; never invent keys/online from chat.",

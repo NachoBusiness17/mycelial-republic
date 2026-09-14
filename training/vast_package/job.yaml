@@ -1,0 +1,44 @@
+# Mag v5 Vast.ai job spec — QLoRA fine-tune
+# Schema: mag_vast_train.v1 (configs/vast_train.yaml)
+# Task: gemma-2-2b-it, QLoRA 4-bit, LoRA r=16, 150 examples.
+
+schema: mag_vast_train.v1
+as_of: "2026-08-09"
+job_id: vast-lora-gemma2-2b-20260809
+
+base_model: google/gemma-2-2b-it
+quantization: qlora-4bit-nf4
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+
+training:
+  batch_size: 4
+  gradient_accumulation_steps: 2
+  learning_rate: 2.0e-4
+  epochs: 3
+  max_seq_len: 512
+  bf16: true
+
+data:
+  path: train_data.jsonl
+  n_examples: 150
+  tier_max: T2
+
+hardware:
+  min_gpu_ram_gb: 16
+  num_gpus: 1
+  disk_gb: 40
+  image: vastai/base-image:cuda-12.4.1-cudnn-devel-ubuntu22.04
+
+cost:
+  max_usd_per_job: 50.0
+  max_hours_per_job: 24
+  estimated_usd: 0.12
+
+artifact:
+  out_dir: lora_output
+  download_to: memory/training/runs/vast-lora-gemma2-2b-20260809/
+  destroy_after: true

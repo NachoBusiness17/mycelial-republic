@@ -423,10 +423,15 @@ def peers(*, group: str | None = None, live_only: bool = False) -> list[dict[str
 def find_orphans(*, dry: bool = True) -> dict[str, Any]:
     """Detect zombie task records and orphan mailboxes — no orphan processes."""
     orphans: list[dict[str, Any]] = []
+    tasks: list[dict[str, Any]] = []
+    known: set[str] = set()
     try:
         from mag import orchestrator as orc
 
-        for task in orc.list_tasks(limit=100) or []:
+        # Read task records once.  The old implementation rescanned the full
+        # task directory a second time merely to build mailbox membership.
+        tasks = orc.list_tasks(limit=100) or []
+        for task in tasks:
             tid = str(task.get("task_id") or "")
             status = str(task.get("status") or "")
             pid = task.get("pid")
@@ -437,6 +442,9 @@ def find_orphans(*, dry: bool = True) -> dict[str, Any]:
                     "pid": pid,
                     "detail": "running record but pid dead",
                 })
+        task_dir = getattr(orc, "TASK_DIR", None)
+        if task_dir is not None and task_dir.is_dir():
+            known = {p.stem for p in task_dir.glob("*.json") if p.is_file()}
     except Exception as exc:
         return {"ok": False, "error": str(exc), "orphans": []}
 
@@ -445,13 +453,6 @@ def find_orphans(*, dry: bool = True) -> dict[str, Any]:
 
         root = MAIL_ROOT
         if root.is_dir():
-            task_ids = {o.get("task_id") for o in orphans if o.get("task_id")}
-            try:
-                from mag import orchestrator as orc
-
-                known = {str(t.get("task_id")) for t in orc.list_tasks(limit=200)}
-            except Exception:
-                known = set()
             for d in root.iterdir():
                 if not d.is_dir():
                     continue

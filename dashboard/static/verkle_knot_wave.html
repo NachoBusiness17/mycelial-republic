@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Verkle Knot — standing wave</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:radial-gradient(1200px 700px at 50% -10%, #241812 0%, #0a0806 60%, #050302 100%);
+    color:#efe3d0;font-family:Georgia,serif;display:flex;flex-direction:column}
+  header{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;
+    padding:14px 22px;border-bottom:1px solid #241a11}
+  header h1{font-size:1.15rem;color:#e6c07a;letter-spacing:.5px}
+  header .sub{color:#9c8570;font-size:.8rem;font-style:italic}
+  header .meta{color:#7fb2ff;font-size:.78rem;font-family:monospace}
+  #stage{flex:1;position:relative;overflow:hidden}
+  #wave{position:absolute;inset:0;width:100%;height:100%;display:block}
+  #legend{position:absolute;left:14px;bottom:12px;font-size:.72rem;color:#9c8570;line-height:1.6;background:rgba(10,8,6,.6);padding:8px 10px;border-radius:8px;border:1px solid #241a11}
+  #legend b{color:#e6c07a}
+  #readout{position:absolute;right:14px;top:14px;min-width:250px;max-width:300px;font-size:.78rem;
+    line-height:1.6;background:rgba(10,8,6,.82);border:1px solid #2f7a4a;border-radius:10px;padding:12px 14px;
+    color:#d8f5e0;box-shadow:0 6px 24px rgba(0,0,0,.6);display:none}
+  #readout .k-theme{font-size:.95rem;font-weight:bold;margin-bottom:4px}
+  #readout .k-meta{color:#9c8570;font-size:.7rem;font-family:monospace;margin-bottom:6px}
+  #readout .row{display:flex;justify-content:space-between;gap:10px}
+  #readout .row span:first-child{color:#8b949e}
+  #readout .row span:last-child{color:#e6edf3;font-family:monospace}
+  footer{padding:8px 22px;color:#5b4f3f;font-size:.72rem;font-style:italic;border-top:1px solid #1a140e}
+</style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>🧬 The Verkle Knot — the Republic's genome, as a body</h1>
+      <div class="sub">each real knot oscillates · ideas travel the chain via steal · the tip is the head</div>
+    </div>
+    <div class="meta" id="meta">…</div>
+  </header>
+  <div id="stage"><canvas id="wave"></canvas><div id="legend"></div><div id="readout"></div></div>
+  <footer>The shape is never stored — only the chain. Reuse: mag/verkle_render + game_verkle_knots.js.</footer>
+
+<script src="game_verkle_knots.js"></script>
+<script>
+const canvas = document.getElementById("wave");
+const ctx = canvas.getContext("2d");
+let HOVER_PTS = [];   // current knot positions (filled each frame) for hover lookup
+function resize(){
+  const s = document.getElementById("stage");
+  canvas.width = s.clientWidth; canvas.height = s.clientHeight;
+}
+window.addEventListener("resize", resize);
+
+function layout(){
+  const W = canvas.width||900, H = canvas.height||600;
+  const cx = W*0.44, cy = H*0.5, N = VERKLE_KNOTS.length;
+  const step = Math.min(W,H)*0.5/N*0.9;
+  const pts = [];
+  for(let i=0;i<N;i++){ const a=i*2.39996323; const r=16+i*step; pts.push({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r}); }
+  return { pts, W, H, cx, cy };
+}
+function draw(t){
+  resize();
+  const { pts, W, H } = layout();
+  const N = VERKLE_KNOTS.length;
+  ctx.clearRect(0,0,W,H);
+  // chain links
+  ctx.strokeStyle="rgba(127,178,255,.16)"; ctx.lineWidth=1; ctx.beginPath();
+  for(let i=0;i<N-1;i++){ ctx.moveTo(pts[i].x,pts[i].y); ctx.lineTo(pts[i+1].x,pts[i+1].y); }
+  ctx.stroke();
+  // traveling wave-packet (an idea propagating via steal)
+  const wf=(t/4)%1; const wi=wf*(N-1); const wp=pts[Math.floor(wi)]||pts[0];
+  const g=ctx.createRadialGradient(wp.x,wp.y,0,wp.x,wp.y,34);
+  g.addColorStop(0,"rgba(127,255,176,.95)"); g.addColorStop(1,"rgba(127,255,176,0)");
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(wp.x,wp.y,34,0,Math.PI*2); ctx.fill();
+  // the knots: themed color, sized by energy, standing-wave oscillation, residual -> glow halo
+  HOVER_PTS = [];
+  for(let i=0;i<N;i++){
+    const k=VERKLE_KNOTS[i]; const osc=Math.sin(t*0.05+i*0.35);
+    const r=1.6+(k.tension*3)+Math.max(0,osc)*1.6;
+    ctx.globalAlpha=0.45+0.55*Math.abs(osc); ctx.fillStyle=k.color;
+    ctx.beginPath(); ctx.arc(pts[i].x+osc*1.2,pts[i].y,r,0,Math.PI*2); ctx.fill();
+    if(k.residual>0.3){ // residual weight -> a real glow around the knot (it left residue)
+      const hg=ctx.createRadialGradient(pts[i].x,pts[i].y,0,pts[i].x,pts[i].y,6+k.residual*10);
+      hg.addColorStop(0,k.color); hg.addColorStop(1,"rgba(0,0,0,0)");
+      ctx.globalAlpha=Math.min(1,k.residual*0.8); ctx.fillStyle=hg;
+      ctx.beginPath(); ctx.arc(pts[i].x,pts[i].y,6+k.residual*10,0,Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha=1;
+    HOVER_PTS[i]={x:pts[i].x+osc*1.2, y:pts[i].y, r};
+  }
+  // merkle tip (the head)
+  const tip=pts[N-1]||pts[0]; ctx.fillStyle="#fff"; ctx.beginPath(); ctx.arc(tip.x,tip.y,4,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle="rgba(255,255,255,.5)"; ctx.beginPath(); ctx.arc(tip.x,tip.y,8,0,Math.PI*2); ctx.stroke();
+}
+function run(){ requestAnimationFrame(function step(t){ draw(t/60); requestAnimationFrame(step); }); }
+
+document.getElementById("meta").textContent =
+  VERKLE_KNOTS.length + " knots · " + VERKLE_TIP.n_leaves + " leaves · root " + VERKLE_TIP.root.slice(0,12) + "…";
+const themes = {}; VERKLE_KNOTS.forEach(k=>{ themes[k.theme]=themes[k.theme]||k.color; });
+document.getElementById("legend").innerHTML =
+  Object.keys(themes).map(t=>`<span style="color:${themes[t]}">■</span> ${t}`).join(" · ") +
+  ` <b>| hover a knot to read what it was</b>`;
+
+// ── REPRESENTATIVE, not just pretty: hover any knot -> read its REAL identity ──
+const readout = document.getElementById("readout");
+function showKnot(i){
+  const k = VERKLE_KNOTS[i];
+  readout.style.display = "block";
+  readout.innerHTML =
+    `<div class="k-theme" style="color:${k.color}">${k.theme}</div>` +
+    `<div class="k-meta">knot ${i+1}/${VERKLE_KNOTS.length} · leaf ${k.hash} · ${k.ts}</div>` +
+    `<div class="row"><span>session</span><span>${k.session}</span></div>` +
+    `<div class="row"><span>tension</span><span>${k.tension.toFixed(3)}</span></div>` +
+    `<div class="row"><span>dirichlet</span><span>${k.dirichlet.toFixed(3)}</span></div>` +
+    `<div class="row"><span>Q proxy</span><span>${k.q.toFixed(2)}</span></div>` +
+    `<div class="row"><span>residual</span><span>${k.residual.toFixed(3)}</span></div>`;
+}
+canvas.addEventListener("mousemove", e=>{
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX-rect.left, my = e.clientY-rect.top;
+  let best=-1, bd=Infinity;
+  for(let i=0;i<HOVER_PTS.length;i++){ const p=HOVER_PTS[i];
+    const dx=mx-p.x, dy=my-p.y, d2=dx*dx+dy*dy;
+    if(d2<bd && d2<(p.r+10)*(p.r+10)){ bd=d2; best=i; } }
+  if(best>=0) showKnot(best); else readout.style.display="none";
+});
+canvas.addEventListener("mouseleave", ()=>readout.style.display="none");
+
+resize(); run();
+</script>
+</body>
+</html>

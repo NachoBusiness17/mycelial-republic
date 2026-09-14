@@ -1,0 +1,105 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Hermes Dossier V1 — the fold of the wings</title><style>
+body{margin:0;background:#030806;color:#c8e6d9;font-family:ui-monospace,Consolas,monospace}
+.nav{padding:10px 18px;border-bottom:1px solid rgba(0,240,255,.2);background:#0a1412}
+.nav a{color:#7cf5ff;text-decoration:none;font-size:.72rem;margin-right:10px}
+.wrap{max-width:900px;margin:20px auto;padding:0 16px}
+h1{color:#e8c96a;font-size:1.1rem;letter-spacing:.08em}
+pre{white-space:pre-wrap;word-wrap:break-word;font-size:.82rem;line-height:1.55;color:#c8e6d9}
+</style></head><body><div class="nav"><a href="/static/night/index.html">← THE NIGHT BOOK</a><a href="/static/ractor.html">BOARD</a><a href="/static/museum.html">MUSEUM</a></div><div class="wrap"><h1>Hermes Dossier V1 — the fold of the wings</h1><pre># HERMES DEEP STEAL — DOSSIER V1 (2026-09-03, ~03:20Z)
+*The fold of the night's wings: 75 attempts, 34 substantive (45% v0 yield — honest), mined by
+resident gophers A1/B1/E1 across three models. Failures classified at the bottom; they are the
+Sherpa's route table. Extends DEEP_STEAL_SHADERTOY_HORSE lineage; supersedes dossier v0's
+adoption map where contradicted. Wings: watch/hermes_wings/.*
+
+## TOP PATTERNS BY SUBSYSTEM (cited from the wings)
+
+### GATEWAY (the strongest shelf — adopt-grade)
+- **Session hygiene compaction** (gw_run): compaction run against LIVE cached agents —
+  compress context without killing the session. Our resident sessions need exactly this.
+- **Drain control via marker files** (drain_control): no control channel into a running
+  gateway — markers only. Confirms our file-channel law at their production grade.
+- **Lifecycle guard** (cron/lifecycle_guard): agents are FORBIDDEN from scheduling crons that
+  restart/stop/uninstall the gateway. Our covenant enforcement, their implementation.
+- **Authz mixin**: RBAC wrapping every gateway method — permission checks as a mixin layer.
+- **api_server_runs**: durable /v1/runs — start, SSE-stream, poll, RESOLVE APPROVALS, and
+  **steer RUNNING agents** mid-flight with lifecycle cleanup. (The live-steering surface.)
+- **OTLP telemetry with closed vocabularies** (relay_shared_metrics): enumerated states,
+  sources, error classes, delivery outcomes; unknown degrades gracefully. Our board's data
+  contract, their spec.
+
+### STATE (the memory shelf)
+- **State registry** (hermes_state_registry): SQLite SessionDB opens deduped per resolved
+  path, refcounted per GENERATION; generations retire when the file's inode changes
+  (snapshot restore swaps). Generation-scoped connections = our churn_state done right.
+- **Context compressor**: after each turn, absorb the oldest un-summarized exchange into a
+  rolling summary; atomic archive_and_compact; defrag threshold. (The resident-session
+  rotation primitive — wired to agent_cache_pressure's byte bounds.)
+- **Honcho client** (plugins/memory/honcho): memory ops routed through a deterministic
+  server, logged as ONE APPEND-ONLY TAPE. (Our event.v1, their memory plugin.)
+- **memory_manager**: single integration point delegating to registered providers, one
+  external provider max, prefetch/sync/background split, context scrubbing.
+
+### TOOLS / SKILLS (the injection-surface shelf)
+- **Central tool registry**: every tool self-registers schema + handler + toolset + availability
+  at module level; model_tools queries the registry. No parallel data structures.
+- **toolsets.py**: named toolsets as composable lists with `includes` — capabilities as sets.
+- **skills_guard**: REGEX SECURITY SCANNER for externally-sourced skills before install —
+  static analysis for exfiltration patterns. STEAL FOR OUR skill imports (the verb genomes
+  enter through this class of gate).
+- **lazy_deps**: on-demand pip install with venv-scoped or durable modes, security allowlists,
+  platform gates, bytecode warm-up.
+
+### CRON / SCHEDULING
+- **scheduler tick()**: 60-second background cadence, due-jobs fired per tick — the shape of
+  our conductor cadence, production-grade.
+- **NAS one-shot arming** (b1doc_02): agent asks NAS to arm ONE external one-shot per job at
+  its real next-fire time; NAS calls back with short-lived JWT; compare-and-set claim for
+  at-most-once; store-level CAS across replicas. (Distributed cron without double-fire.)
+
+### AGENT / TRANSPORT
+- **providers/base.py ProviderProfile**: a declarative dataclass capturing EVERYTHING about a
+  provider (auth, endpoints, client quirks, vision/reasoning quirks) — transport reads one
+  profile. Our PROVIDER_LANE_MAP as code.
+- **anthropic_message_convert**: external model responses mapped to internal representations
+  with token accounting. The lane-adapter pattern.
+- **batch_runner**: parallel prompt batches across multiprocessing workers, per-task
+  sandboxes, CHECKPOINT/RESUME, trajectory saving, tool-usage stats. (The training
+  pipeline — pairs with trajectory_compressor for the Saleis corpus.)
+
+### PROTOCOLS / META
+- **acp_adapter**: Hermes exposed over the Agent Client Protocol (editor integration).
+- **moa_config**: Mixture-of-Agents presets — advisor models fanned in parallel plus an
+  aggregator; normalized config + slash-command surface. (The salon, productized.)
+- **mcp_serve**: Hermes AS an MCP server. (The mesh-join: our senses could query hermes.)
+- **plugin_lessons RFC**: Pi + OpenCode architectures graded against Hermes ground rules —
+  adopt/adapt/avoid, exactly our steal format.
+
+### MISC (real, smaller)
+- **wake_word**: on-device "Hey Hermes" (three engines, no audio leaves the machine).
+- **managed_uv**: immutable Python-runtime generations with atomic renames + rollback.
+- **evm_client** (optional-skills/blockchain): an EVM client skill — THE TITOR ADJACENCY:
+  chain-write capability already sketched as an optional skill.
+
+## CONTRADICTIONS WITH OUR LAWS
+**None found in the substantive wings.** Append-only tapes, single schedulers, file-channel
+control, bounded caches — the convergence holds at source level. HerMES is law-compatible.
+
+## THE FAILURES (the Sherpa's route table — every way a mine died tonight)
+1. **Free-lane flap**: intermittent empty/short replies on glm-4.7-flash at night congestion.
+   → retry + substance gate caught them; re-queues succeeded.
+2. **MODEL COLLAPSE in long resident sessions**: b1doc_05-14 degraded to "[assistant turn
+   failed]" then gibberish — the 32B session poisoned after ~8 beats. → SESSION ROTATION
+   BEFORE COLLAPSE (detect via output-quality trend; reprint fresh). The Mickey law needs a
+   health trigger, not just death.
+3. **Mount mismatch**: the container gopher cannot read host paths (hermes lives on the host).
+   → stage sources into the repo (the b1_docs pattern) or mount read-only.
+4. **CLI errors under multi-agent config**: "Multiple agents... pass --agent" — fixed tonight
+   (named agents), but two wings died to it first.
+5. **Boilerplate folds**: "I'll help you" replies that folded=True with zero substance — the
+   seat-level quality gate (gate v2) exists because of these.
+
+## MINE SCORE (honest)
+75 attempts → 34 substantive (45%) → ~28 high-quality after gate. The un-mined mountain:
+~400+ files remain un-wingsed. v1 target: 80% yield via rotation-before-collapse, staged
+mounts, and per-engine health routing. The yield curve itself is the Sherpa's first report.
+</pre></div></body></html>

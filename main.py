@@ -1618,6 +1618,19 @@ def main(argv: list[str] | None = None) -> int:
     p_va.add_argument("--dry", action="store_true", help="Plan only; no writes or LLM")
     p_va.add_argument("--no-reconcile", action="store_true", help="Skip ticket reconciliation")
 
+    p_tr = sub.add_parser(
+        "trajectory-rib",
+        help="Compile bounded OpenClaw trajectory spans into a derived RIB",
+    )
+    p_tr.add_argument("--tape", default="watch/openclaw_traj.jsonl")
+    p_tr.add_argument("--output", default="memory/runs/trajectory_rib/compiled.jsonl")
+    p_tr.add_argument("--include-legacy", action="store_true", help="Inventory legacy rows as explicitly unbounded")
+
+    sub.add_parser(
+        "live-ops",
+        help="Write zero-spend lifecycle readiness snapshot; never starts services",
+    )
+
     p_la = sub.add_parser(
         "loop-audit",
         help="Mine autorun/orchestrator trails for wasteful loops (plan theater, stuck queue)",
@@ -2108,6 +2121,16 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_sched.add_argument("text", nargs="?", default="", help="For steer: priority needle or !steer text")
     p_sched.add_argument("--json", action="store_true")
+
+    p_operator = sub.add_parser(
+        "operator-mode",
+        help="Shared durable autonomy switch — status, pause, resume",
+    )
+    p_operator.add_argument("action", choices=["status", "pause", "resume"], nargs="?", default="status")
+    p_operator.add_argument("reason", nargs="*", default=[], help="Pause/resume reason")
+    p_operator.add_argument("--scope", choices=["autonomous", "all_agents"], default="autonomous")
+    p_operator.add_argument("--until", default=None, help="Optional ISO-8601 expiry for a pause")
+    p_operator.add_argument("--json", action="store_true")
 
     p_env = sub.add_parser(
         "env",
@@ -2697,6 +2720,22 @@ def main(argv: list[str] | None = None) -> int:
             backfill_lattice=bool(getattr(args, "backfill", False) or getattr(args, "full", False)),
             dry=bool(getattr(args, "dry", False)),
         )
+        print(json.dumps(res, indent=2, default=str))
+        return 0 if res.get("ok") else 1
+    if args.cmd == "trajectory-rib":
+        from mag.trajectory_rib import compile_tape
+
+        res = compile_tape(
+            tape=args.tape,
+            output=args.output,
+            include_legacy=bool(args.include_legacy),
+        )
+        print(json.dumps(res, indent=2, default=str))
+        return 0 if res.get("ok") else 1
+    if args.cmd == "live-ops":
+        from mag.live_ops_readiness import write_snapshot
+
+        res = write_snapshot()
         print(json.dumps(res, indent=2, default=str))
         return 0 if res.get("ok") else 1
     if args.cmd == "loop-audit":
@@ -3290,6 +3329,32 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 print(_json.dumps(res, indent=2, default=str))
         return 0 if res.get("ok", True) else 1
+    if args.cmd == "operator-mode":
+        import json as _json
+
+        from mag import operator_mode
+
+        action = getattr(args, "action", "status") or "status"
+        if action == "status":
+            res = operator_mode.read()
+        elif action == "pause":
+            reason = " ".join(getattr(args, "reason", []) or []).strip()
+            res = operator_mode.set_paused(
+                reason=reason or "operator requested pause",
+                scope=getattr(args, "scope", "autonomous") or "autonomous",
+                until=getattr(args, "until", None),
+            )
+        else:
+            reason = " ".join(getattr(args, "reason", []) or []).strip()
+            res = operator_mode.resume(reason=reason or "operator resumed autonomous work")
+        if getattr(args, "json", False):
+            print(_json.dumps(res, indent=2, default=str))
+        else:
+            print(f"operator mode: {res.get('effective_mode', res.get('mode'))}")
+            if res.get("reason"):
+                print(f"reason: {res.get('reason')}")
+            print(f"scope: {res.get('scope')} · state: {operator_mode.STATE_PATH}")
+        return 0 if res.get("mode") != "invalid" else 1
     if args.cmd == "unsloth":
         from mag.unsloth_seat import unsloth_start, unsloth_status, unsloth_stop
 

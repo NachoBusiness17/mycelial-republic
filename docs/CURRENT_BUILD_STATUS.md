@@ -47,3 +47,7 @@ The mold release **v4 is shipped**. Its four gates are green:
 Evidence: conductor 10/10; one local steward leaf; a real DeepSeek proof measured at about $0.0167; four green joined T2 examples exported with a SHA-256 manifest.
 
 The next active release is **v5, the pipe**: dry-run the local-model training package first, then prove optional compute and external tool seats without weakening Mag's tier or promotion boundaries.
+# HISTORICAL SNAPSHOT — last updated 2026-08-06
+#
+# This file is not present-tense status. Use `watch/ORPHAN_AUDIT.json`,
+# `mag.openclaw_patches status`, and receipt logs for current state.

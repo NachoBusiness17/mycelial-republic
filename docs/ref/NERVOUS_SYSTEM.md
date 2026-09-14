@@ -16,8 +16,9 @@ Not DNA. Not a second constitution. Viewport + harness edge.
 python main.py nervous          # human glance
 python main.py nervous --json   # full schema
 python main.py context-pack     # L0a = pack_excerpt() from this module
-python main.py lab              # turn dashboard on
-python main.py doctor           # deeper integral
+mag.cmd doctor                  # first grab — venv read, no spawn
+docker compose restart mag      # if dash/heartbeat dead AND docker works
+python main.py lab              # LAST RESORT host supervisor — not default
 ```
 
 ## Key statuses (presence only — never print values)

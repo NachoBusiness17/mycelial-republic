@@ -20,12 +20,12 @@ def brain_pulse() -> dict[str, Any]:
     from mag.decision_framework import decide
     from mag.display import build_display_payload
     from mag.desk_dialogue import read_cursor, read_trust_status
-    from mag.nervous_system import build_glance
+    from mag.nervous_system import glance_cached
     from mag.operator_inbox import status as inbox_status
     from mag.power import stack_status
 
-    display = build_display_payload(event_limit=6)
-    nervous = build_glance(write=False)
+    display = build_display_payload(event_limit=6, fast=True)
+    nervous = glance_cached(max_age_s=30.0, refresh=False)
     inbox = inbox_status()
     framework = decide("", include_breadcrumbs=True)
     power = stack_status()

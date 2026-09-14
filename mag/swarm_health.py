@@ -202,7 +202,11 @@ def health_law(health: dict[str, Any] | None = None, *, apply: bool = False) -> 
         if apply:
             try:
                 from mag.improve_loop import run_improve_cycle
-                run_improve_cycle(source="swarm_health_law")
+                # Health enforcement is itself a control-plane call.  Queue
+                # admission may happen here, but deep pile/spider/nervous
+                # work belongs to the cadence owner and must not block the
+                # law executor.
+                run_improve_cycle(source="swarm_health_law", control_plane=True)
             except Exception:
                 pass
 

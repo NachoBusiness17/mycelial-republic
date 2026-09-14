@@ -1,0 +1,41 @@
+#define rot(a)mat2(cos(a),sin(a),-sin(a),cos(a))
+#define rot90(p) vec2(-p.y,p.x)
+float map(vec3 p)
+{
+  p.xz*=rot(t*.5);
+	p.xy*=rot(t*.5);
+	float d= 1.0;
+	float s=.06;
+	for(int i=0;i<3;i++){
+	  vec3 q=p;
+	  q.x=abs(q.x)-1.0;
+	  d=min(d,length(vec2(length(q.xy)-.25,q.z))-s);
+		float r=1.;
+	  q=p;
+	  q.xy=vec2(atan(q.x,q.y)*r, length(q.xy)-r);
+	  q.x-=clamp(q.x,-1.26,1.26);
+	  d= min(d,length(q)-s);
+	  q=p;
+	  q.xy=vec2(atan(q.x,-q.y)*r, length(q.xy)-r);
+	  q.x-=clamp(q.x,-1.26,1.26);
+	  d= min(d,length(q)-s);
+	  p.xy=rot90(p.xy);
+	  p.yz=rot90(p.yz);
+ 	}
+	return d;
+}
+
+void main(){
+  vec2 uv=(2.*gl_FragCoord.xy-r)/r.y;
+  vec3 ro=vec3(0,0,-3);
+  vec3 rd=normalize(vec3(uv,2));
+  vec3 p;
+  float h=0.,d,i;
+	for(i=1.;i<50.;i++){
+    p=ro+rd*h;    
+		d=map(p);
+  	if(d<.0001)break;
+    h+=d;
+	}
+  o.xyz+=10./i;
+}

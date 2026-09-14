@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import os
 import socket
+import threading
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
@@ -14,6 +15,56 @@ from pathlib import Path
 from typing import Any
 
 from config import ROOT, ollama_base
+
+# Default install is the Docker cage (CONTAINER.md). Host `python main.py lab`
+# is last-resort disposable-dev soil — a second supervisor if mag-sovereign is up.
+# mag.cmd doctor is the first grab: host venv READ of the body. It does not spawn lab.
+# mag_exec needs Docker engine + (on Windows) ExecutionPolicy Bypass; many seats have neither.
+HOST_DOCTOR = "mag.cmd doctor"
+CAGE_DOCTOR = r"powershell -NoProfile -ExecutionPolicy Bypass -File scripts\mag_exec.ps1 doctor"
+CAGE_RESTORE = "docker compose restart mag"
+HOST_LAB_LAST = (
+    "python main.py lab  # LAST RESORT. CONTAINER.md disposable-dev only. "
+    "Second supervisor if mag-sovereign is up — do not grab this first."
+)
+
+
+def in_mag_cage() -> bool:
+    return os.environ.get("MAG_CONTAINER") == "1"
+
+
+def reconnect_plan() -> dict[str, Any]:
+    """What seats should grab first when Mag looks down. Cage, not legacy host lab."""
+    if in_mag_cage():
+        first = "already in mag-sovereign — FILE; host: mag.cmd doctor then docker compose restart mag"
+        command = HOST_DOCTOR
+    else:
+        first = HOST_DOCTOR
+        command = HOST_DOCTOR
+    return {
+        "first": first,
+        "command": command,
+        "cli": HOST_DOCTOR,
+        "doctor": HOST_DOCTOR,
+        "cage_cli": CAGE_DOCTOR,
+        "if_dash_dead_and_docker": CAGE_RESTORE,
+        "catch_up": "mag.cmd catch-up",
+        "probe": "mag.cmd probe-lanes",
+        "legacy_last_resort": HOST_LAB_LAST,
+        "law": (
+            "One supervisor. Mag lives in mag-sovereign. "
+            "mag.cmd doctor reads the body (no spawn). "
+            "mag_exec needs Docker; if npipe/ExecutionPolicy blocks, stay on mag.cmd. "
+            "Host lab is last, not first."
+        ),
+        "stale_note": (
+            "Heartbeat stale — cage lab slot may be wedged. First: mag.cmd doctor "
+            f"(venv read, no spawn). If dash still dead AND docker works: {CAGE_RESTORE}. "
+            "Do not run host python main.py lab (second supervisor). "
+            "Do not wait on Docker access to FILE doctor."
+        ),
+        "commands": [HOST_DOCTOR, CAGE_RESTORE],
+    }
 
 BIO = ROOT / "memory" / "biography"
 LIVE = ROOT / "memory" / "live_from_grok.md"
@@ -58,20 +109,46 @@ def _port_open(host: str = "127.0.0.1", port: int = 8765, timeout: float = 0.4) 
         return False
 
 
+def _bounded_call(fn: Any, *, timeout: float = 0.8, default: Any = None) -> Any:
+    """Bound optional network/DNS observers even when socket timeouts do not."""
+    done = threading.Event()
+    box: list[Any] = []
+
+    def _run() -> None:
+        try:
+            box.append(fn())
+        except Exception:
+            box.append(default)
+        finally:
+            done.set()
+
+    threading.Thread(target=_run, name="health-probe", daemon=True).start()
+    if not done.wait(max(0.1, float(timeout))):
+        return default
+    return box[0] if box else default
+
+
 def _http_ok(url: str, timeout: float = 2.0) -> bool:
-    try:
+    def _probe() -> bool:
         with urllib.request.urlopen(url, timeout=timeout) as r:
             return 200 <= r.status < 300
-    except Exception:
-        return False
+
+    return bool(_bounded_call(_probe, timeout=min(float(timeout), 1.0), default=False))
 
 
 def check_ollama() -> dict[str, Any]:
     try:
-        with urllib.request.urlopen(f"{ollama_base()}/api/tags", timeout=2.0) as r:
-            data = json.loads(r.read().decode("utf-8"))
-        names = [m.get("name") for m in (data.get("models") or [])]
-        return {"ok": True, "models": names, "lane": "L0"}
+        # Reuse the registry's hard-bounded/cached observer. The old direct
+        # urllib probe could stall on an unresolved Docker hostname.
+        from models.registry import ollama_tags
+
+        names = ollama_tags(timeout=0.8)
+        return {
+            "ok": bool(names),
+            "models": names,
+            "lane": "L0",
+            **({} if names else {"note": "Ollama unavailable or no local models are loaded"}),
+        }
     except Exception as e:
         return {"ok": False, "error": str(e), "lane": "L0"}
 
@@ -86,17 +163,18 @@ def check_openrouter() -> dict[str, Any]:
             "note": "Set OPENROUTER_API_KEY to enable free/remote public lanes (T2+ only)",
         }
     # light auth check — list models is enough, no spend
-    try:
+    def _probe() -> bool:
         req = urllib.request.Request(
             "https://openrouter.ai/api/v1/models",
             headers={"Authorization": f"Bearer {key}"},
             method="GET",
         )
-        with urllib.request.urlopen(req, timeout=8) as r:
-            ok = 200 <= r.status < 300
-        return {"ok": ok, "configured": True, "lane": "L1"}
-    except Exception as e:
-        return {"ok": False, "configured": True, "error": str(e)[:200], "lane": "L1"}
+        with urllib.request.urlopen(req, timeout=1.0) as r:
+            return 200 <= r.status < 300
+
+    ok = _bounded_call(_probe, timeout=1.0, default=False)
+    return {"ok": bool(ok), "configured": True, "lane": "L1",
+            **({} if ok else {"note": "OpenRouter probe unavailable or timed out"})}
 
 
 def check_grok_harness() -> dict[str, Any]:
@@ -222,12 +300,7 @@ def sanity() -> dict[str, Any]:
         },
         "missing_while_down": missing,
         "gaps": gap_report(),
-        "reconnect": {
-            "command": "python main.py lab",
-            "catch_up": "python main.py catch-up",
-            "doctor": "python main.py doctor",
-            "probe": "python main.py probe-lanes",
-        },
+        "reconnect": reconnect_plan(),
         "hallucination_guard": {
             "rule": "Trust file ages + probe results, not model claims about being online",
             "tests": [

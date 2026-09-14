@@ -1,0 +1,30 @@
+#define rot(a)mat2(cos(a),sin(a),-sin(a),cos(a))
+float map(vec3 p)
+{
+  p.xz*=rot(t*.5);
+	p.xy*=rot(t*.5);
+	float s=.06;
+	p=abs(p);
+	if(p.x<p.z)p.xz=p.zx;
+	if(p.y<p.z)p.yz=p.zy;
+ 	if(p.x<p.y)p.xy=p.yx;
+	float d= length(vec2(length(p.xy)-1.,p.z))-s;
+	p.x=abs(p.x)-1.0;
+	d= min(d,length(vec2(length(p.xy)-.4,p.z))-s);
+	return d;
+}
+
+void main(){
+  vec2 uv=(2.*gl_FragCoord.xy-r)/r.y;
+  vec3 ro=vec3(0,0,-3);
+  vec3 rd=normalize(vec3(uv,2));
+  vec3 p;
+  float h=0.,d,i;
+	for(i=1.;i<50.;i++){
+    p=ro+rd*h;    
+		d=map(p);
+  	if(d<.0001)break;
+    h+=d;
+	}
+  o.xyz+=10./i;
+}

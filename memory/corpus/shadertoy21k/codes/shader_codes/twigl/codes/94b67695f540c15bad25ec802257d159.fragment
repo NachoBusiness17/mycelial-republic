@@ -1,0 +1,36 @@
+void rot(inout vec2 p, float a){
+  p=vec2(cos(a)*p.x+sin(a)*p.y, -sin(a)*p.x+cos(a)*p.y);
+}
+
+float dodec(vec3 p,float r){
+  float d=0.;
+  vec3 q=normalize(vec3((1.+sqrt(5.))/2.,1,0));
+  for(int i=0;i<3;i++){
+     d=max(d,abs(dot(abs(p),vec3[](q,q.yzx,q.zxy)[i%3])));
+  }
+  return d-r;
+}
+
+float icosa(vec3 p,float r){
+  float d=0.;
+  float G=(1.+sqrt(5.))/2.;
+  vec3 q=normalize(vec3(G,1./G,0));
+  for(int i=0;i<3;i++){
+    d=max(d,abs(dot(abs(p),vec3[](q,q.yzx,q.zxy)[i%3])));
+  }
+  d=max(d,abs(dot(abs(p),normalize(vec3(1)))));
+	return d-r;
+}
+
+void main(){
+  float i,g,e;
+  for(i=0.;++i<50.;){
+    vec3 p=g*normalize(vec3((gl_FragCoord.xy-.5*r)/r.y,1));
+    p.z-=3.5;
+    rot(p.xy,t);
+    rot(p.yz,t);
+    g+=e=(fract(t*.2)<.5)?icosa(p,1.):dodec(p,1.);
+    if(e<.001)break;
+  }
+  o+=3./i;  
+}

@@ -195,6 +195,48 @@ def gather_signals() -> dict[str, Any]:
             out["home_reachable"] = bool(probe_hq().get("reachable"))
         except Exception:
             out["home_reachable"] = False
+    # comms_trail \u2014 the shared-private-language confidence signal (grok spec \u2192 cheap tier
+    # round-trip). Cheap to read (local file globs, no API). The router uses it to decide how much
+    # cheap-tier work to trust: confirmed>0 & pending==0 \u2192 the cheap tier speaks the language
+    # (route cheap with confidence); confirmed==0 \u2192 unproven (be conservative); pending-heavy
+    # \u2192 round-trips in flight (don't over-commit cheap).
+    try:
+        from mag.comms_trail import status as ct_status
+
+        ct = ct_status()
+        confirmed = int(ct.get("confirmed") or 0)
+        pending = int(ct.get("pending") or 0)
+        out["comms_trail"] = {
+            "surfaces": int(ct.get("surfaces") or 0),
+            "confirmed": confirmed,
+            "pending": pending,
+        }
+        if confirmed > 0 and pending == 0:
+            out["cheap_tier_confidence"] = "high"
+        elif confirmed == 0 and pending == 0:
+            out["cheap_tier_confidence"] = "unproven"
+        elif confirmed > 0:
+            out["cheap_tier_confidence"] = "in_flight"
+        else:
+            out["cheap_tier_confidence"] = "unproven"
+    except Exception:
+        out["comms_trail"] = {"surfaces": 0, "confirmed": 0, "pending": 0}
+        out["cheap_tier_confidence"] = "unproven"
+    # comms_trail CONSUMPTION \u2014 the actual mycelium consumption edges (producer -> artifact ->
+    # consumer). Richer than the aggregate confirmed/pending count: it names WHICH seats have a
+    # proven consumption record. The router trusts a seat with proven consumption edges for that
+    # kind of work (a seat that has actually produced/consumed artifacts in the graph).
+    try:
+        from mag.comms_trail import consumption_signal
+
+        cs = consumption_signal()
+        out["comms_consumption"] = {
+            "total_consumption_edges": int(cs.get("total_consumption_edges") or 0),
+            "seats": cs.get("seats") or {},
+            "proven_seats": cs.get("proven_seats") or [],
+        }
+    except Exception:
+        out["comms_consumption"] = {"total_consumption_edges": 0, "seats": {}, "proven_seats": []}
     return out
 
 
@@ -555,7 +597,24 @@ def route(
     # --- local janitor ---
     if seat == "local" or (not force_seat and d in ("scut", "simple_code")):
         seat = "local"
-        prefer = ["deepseek", "deepseek_overmind", "ollama", "groq", "openrouter"]
+        # comms_trail consumption: the shared-private-language confidence signal decides how much
+        # cheap-tier work to trust. high \u2192 the cheap tier has proven it speaks grok's language
+        # (confirmed round-trips, none pending) \u2192 prefer the cheapest local provider (ollama).
+        # unproven/in_flight \u2192 be conservative \u2192 prefer the heavier deepseek tier so a
+        # misread spec doesn't silently land wrong.
+        ctc = str(sig.get("cheap_tier_confidence") or "unproven")
+        # comms_trail CONSUMPTION: a seat with a PROVEN consumption record (actual mycelium
+        # consumption edges) is trusted for that kind of work. If the cheap tier (cheap_swarm /
+        # ollama) has proven consumption, that reinforces the high-confidence cheap route.
+        _cc = sig.get("comms_consumption")
+        proven = _cc.get("proven_seats", []) if isinstance(_cc, dict) else []
+        cheap_proven = any("cheap" in s or "ollama" in s or "local" in s for s in proven)
+        if ctc == "high" or (ctc in ("in_flight", "unproven") and cheap_proven):
+            prefer = ["ollama", "deepseek", "deepseek_overmind", "groq", "openrouter"]
+            why.append("comms_trail=high\u2192cheap" if ctc == "high" else "comms_consumption=cheap_proven")
+        else:
+            prefer = ["deepseek", "deepseek_overmind", "ollama", "groq", "openrouter"]
+            why.append(f"comms_trail={ctc}\u2192conservative")
         pick = pick_provider(job=job if job != "default" else "scut", tier=tier, prefer=prefer)
         if pick.get("ok"):
             if not force_provider:

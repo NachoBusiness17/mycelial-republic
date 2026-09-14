@@ -100,6 +100,33 @@ modules:
     upgrade: "mag_agent_state.v1; new commit = new version leaf; never erase history"
     retrocausal: "Parent chain + residual edges.agent_state; session tip stays sessions-only"
 
+  trajectory_rib:
+    path: mag/trajectory_rib.py
+    also: [docs/ref/TRAJECTORY_RIB_COMPILER_SPEC.md, mag/read_archive.py, mag/trajectory_bounds.py]
+    layer: derived
+    provides: [bounded_trajectory_ir, rib_projection, acceptance_slots]
+    depends_on: [agent_state, run_trail]
+    upgrade: "trajectory_rib.v1; compile only byte/line-verified spans; legacy rows remain evidence"
+    retrocausal: "Recompile future bounded spans; never rewrite the source tape"
+
+  live_ops_readiness:
+    path: mag/live_ops_readiness.py
+    also: [state/LIVE_REPORT.md, mag/process_supervisor.py]
+    layer: viewport
+    provides: [paused_or_live_status, receipt_preflight, observer_only_readiness]
+    depends_on: [agent_state, residual_dna, dashboard]
+    upgrade: "live_ops_readiness.v1; no process starts, provider calls, or secret reads"
+    retrocausal: false
+
+  operator_mode:
+    path: mag/operator_mode.py
+    also: [state/operator_mode.json, state/operator_mode.jsonl]
+    layer: harness
+    provides: [durable_pause, shared_resume, operator_audit_trail]
+    depends_on: [live_ops_readiness, orchestrator]
+    upgrade: "operator_mode.v1; pause autonomy without stopping the controller/UI"
+    retrocausal: false
+
   idea_graph:
     path: mag/idea_graph.py
     also: [memory/ideas/nodes.jsonl, memory/ideas/edges.jsonl, docs/ref/IDEA_GRAPH.md]

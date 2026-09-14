@@ -1,0 +1,59 @@
+void rot(inout vec2 p,float t){
+    p=p*cos(t)+vec2(p.y,-p.x)*sin(t);
+}
+
+// https://shadertoy.com/view/ltf3W2
+#define sabs(p,k)sqrt(p*p+k)
+
+// p-=2.*min(0.,dot(p,v))*v;
+// smooth type
+void sfold(inout vec2 p, vec2 v, float k)
+{
+    float g=dot(p,v);
+    p-=(g-sabs(g,k))*v;
+}
+
+// if(p.x<p.y)p.xy=p.yx;
+// smooth type
+void sfold45(inout vec2 p, float k)
+{
+    vec2 v=normalize(vec2(1,-1));
+    sfold(p,v,k);
+}
+
+float box(vec3 p, vec3 s, float k)
+{
+  p=abs(p)-s;
+  sfold45(p.xz,k);
+  sfold45(p.yz,k);
+	sfold45(p.xy,k);
+	return p.x;
+}
+
+float cylinder(vec3 p, float h, float r, float k)
+{
+  vec2 q=vec2(length(p.xz)-r,abs(p.y)-h);
+  sfold45(q.xy,k);
+  return q.x;
+}
+
+float map(vec3 p){
+  rot(p.xy,t*.5);
+  rot(p.yz,t*.3);
+  return cylinder(p,.5,1.,1e-3);
+}
+
+void main(){
+  vec2 uv=(2.*gl_FragCoord.xy-r)/r.y;
+  vec3 ro=vec3(0,0,-8);
+  vec3 rd=normalize(vec3(uv,3));
+  vec3 p;
+  float h=0.,d,i;
+	for(i=1.;i<100.;i++){
+    p=ro+rd*h*.5;    
+		d=map(p);
+  	if(d<.0001)break;
+    h+=d;
+	}
+  o.xyz+=15./i;
+}

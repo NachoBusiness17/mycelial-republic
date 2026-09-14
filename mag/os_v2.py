@@ -155,7 +155,10 @@ def live_status() -> dict[str, Any]:
     if not compose_ok:
         phoenix.append("compose red — run: python main.py compose-status")
     if (out.get("health") or {}).get("status") != "up":
-        phoenix.append("Mag health not up — python main.py lab")
+        phoenix.append(
+            "Mag health not up — scripts\\mag_exec.ps1 doctor; "
+            "docker compose restart mag (not host python main.py lab)"
+        )
     out["phoenix"] = phoenix
 
     out["ok"] = True

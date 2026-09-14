@@ -128,7 +128,10 @@ def _needs(sanity: dict[str, Any], ensure_ran: bool, ensure_ok: bool | None) -> 
     status = sanity.get("status")
     if status == "down":
         if ensure_ran and not ensure_ok:
-            out.append("lab spawn failed — run: python main.py lab")
+            out.append(
+                "lab spawn failed — cage first: docker compose restart mag "
+                "(not host python main.py lab)"
+            )
         elif not ensure_ran:
             out.append("integral down — run: python main.py boot --ensure")
         else:

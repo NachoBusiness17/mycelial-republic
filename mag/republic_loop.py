@@ -18,7 +18,8 @@ THE LOOP (deterministic steps + swarm-routed stochastic; $0 for the deterministi
 Every step is idempotent (dedup via swarm_surface) so the loop is safe on every cadence. The
 stochastic/frontier parts are ENQUEUED to the swarm, never run locally (dogfooding).
 
-Schema: republic_loop.v1 · deterministic + $0 · one loop, wired into ghost.sense() by default
+Schema: republic_loop.v1 · deterministic + $0 · one explicit cadence owner;
+ghost.sense() observes it only when requested
 """
 from __future__ import annotations
 
@@ -485,8 +486,8 @@ def loop(state: dict[str, Any] | None = None) -> dict[str, Any]:
                     "dogfooded, self-verifying, growth measured not handwaved"}
 def status() -> dict[str, Any]:
     return {"ok": True, "schema": SCHEMA,
-            "contract": "loop()->the full cadence in one call; idempotent; wired into ghost.sense() "
-                        "by default",
+            "contract": "loop()->the full cadence in one call; idempotent; explicit owner; "
+                        "ghost.sense() remains observer-only unless run_loop=True",
             "cost": "deterministic + $0 (stochastic/frontier parts enqueued to the swarm, not run)",
             "steps": ["S0-tool-select", "S0-formula", "S0-rightsize", "S1-cost-feed",
                       "S1-budget-refactor", "S1-substrate", "S2-stand", "S3-lens", "S3-roshomon",

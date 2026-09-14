@@ -1,8 +1,17 @@
 # ZCode Seat (Z.ai collaborator)
 
 ZCode is a desktop coding agent (Z.ai, GLM-5.x family) running in this repo.
-It is a collaborator seat, not an API: it cannot be spawned headless, so it
-works through the mailbox bridge `watch/zcode_bridge.py`.
+It is a collaborator seat, not an API. It works two ways:
+
+1. **Mailbox bridge** (the original path) — `watch/zcode_bridge.py`; the operator
+   asks the interactive session to work the inbox. See Protocol below.
+2. **Headless door** (campaign window, 2026-09-03) — `mag/seat_dispatch.py`
+   HEADLESS seat `zcode-cli`: `zcode -p "<goal>" --cwd <repo> --max-turns 12
+   --json --mode build`, zero-quota GLM-5.3-Flash 15:00–01:00Z through
+   2026-09-20 (see `state/vast/covenant.json` → `campaign_exception`).
+   Fence law: first-party supported CLI only, never raw API on plan keys.
+   Engine Z in `watch/engine_spec.json` rides this door via
+   `CHURN_SEAT=zcode-cli`.
 
 ## Protocol
 

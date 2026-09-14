@@ -1,0 +1,6 @@
+{
+  "situation": "Whether KV caches and multimodal embeddings can be shared across models.",
+  "decision": "KV caches and hidden multimodal embeddings generally CANNOT be shared across different models, quantizations, or model revisions — replicate artifacts, don't reuse them.";
+  "reasoning_physics": "A KV cache is keyed to a specific checkpoint's weights, quantization, engine, template, and adapters; any change invalidates the positional/attention values it encodes. Cross-model KV reuse produces garbage attention. Provenance-hash + replicate is the safe rule.",
+  "source_path": "/mag/docs/ref/GLM_K8S_MCP_DEEP_RESEARCH_20260826.md"
+}

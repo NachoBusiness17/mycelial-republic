@@ -42,6 +42,7 @@ from __future__ import annotations
 
 import json
 import sys
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 try:
@@ -128,8 +129,15 @@ def _load_caps() -> dict[str, int]:
 
 
 def _spend_ledger() -> dict[str, int]:
-    """Count recorded spends per scarce surface (chatgpt etc.) from the allowance ledger."""
+    """Count spends in the current ISO week, not the all-time ledger.
+
+    The ledger is intentionally append-only, but allowance consumption is a
+    weekly window.  Counting every historical row made a healthy reset look
+    permanently exhausted and silently routed frontier work to the cheap tier.
+    """
     counts: dict[str, int] = {}
+    now = datetime.now(timezone.utc)
+    week_start = (now - timedelta(days=now.weekday())).date()
     if ALLOWANCE.is_file():
         for line in ALLOWANCE.read_text(encoding="utf-8", errors="replace").splitlines():
             line = line.strip()
@@ -138,7 +146,12 @@ def _spend_ledger() -> dict[str, int]:
             try:
                 row = json.loads(line)
                 s = row.get("surface", "")
-                if s:
+                stamp = str(row.get("ts") or "")
+                try:
+                    row_date = datetime.fromisoformat(stamp.replace("Z", "+00:00")).date()
+                except (ValueError, TypeError):
+                    row_date = now.date()
+                if s and row_date >= week_start:
                     counts[s] = counts.get(s, 0) + 1
             except Exception:
                 continue
@@ -279,7 +292,10 @@ def recommend(goal: str) -> dict[str, Any]:
     caps = _load_caps()
     surface = r["surface"]
     if r["tier"] == "frontier":
-        order = ["chatgpt", "grok_web", "grok_x"]
+        # The X surface remains visible in the council census, but the
+        # executable delegate path is limited to the two surfaces with a
+        # proven browser driver.  Do not claim a route to an unproven surface.
+        order = ["chatgpt", "grok_web"]
         surface = None
         for s in order:
             cap = caps.get(s, SURFACES[s]["cap"]) or 0

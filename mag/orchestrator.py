@@ -71,6 +71,10 @@ EXTERNAL_NO_REAP_SEATS = {"zcode", "notion", "autoclaw"}  # mailbox seats: human
 
 TERMINAL = {"done", "failed", "timeout", "stalled", "killed", "died"}
 
+_TASK_LIST_CACHE: tuple[str, float, list[dict[str, Any]]] | None = None
+_TASK_LIST_CACHE_LOCK = threading.Lock()
+_TASK_LIST_CACHE_TTL_S = 1.0
+
 
 def timeout_for_goal(goal: str, *, tag: str = "", timeout: int | None = None) -> int:
     """Pick spawn timeout from temperature stacks (adjustable YAML) + size boost.
@@ -216,6 +220,80 @@ def _task_path(task_id: str) -> Path:
     return TASK_DIR / (task_id + ".json")
 
 
+def _active_task_dir() -> Path:
+    """Small durable index containing only non-terminal task ids."""
+    return TASK_DIR / ".active"
+
+
+def _active_marker(task_id: str) -> Path:
+    return _active_task_dir() / (task_id + ".marker")
+
+
+def _rebuild_active_index() -> None:
+    """Build the active index once for legacy task records.
+
+    Older versions stored only one JSON file per task, so the first call has to
+    scan that history once.  The ready sentinel makes that migration one-time;
+    subsequent queue passes read only marker files for live tasks.
+    """
+    active = _active_task_dir()
+    active.mkdir(parents=True, exist_ok=True)
+    ready = active / ".ready"
+    if ready.is_file():
+        return
+    for p in TASK_DIR.glob("*.json"):
+        try:
+            row = json.loads(p.read_text(encoding="utf-8"))
+        except (OSError, ValueError, TypeError):
+            continue
+        if isinstance(row, dict) and row.get("status") not in TERMINAL:
+            task_id = str(row.get("task_id") or p.stem)
+            try:
+                _active_marker(task_id).touch(exist_ok=True)
+            except OSError:
+                pass
+    try:
+        ready.write_text(_now(), encoding="utf-8")
+    except OSError:
+        pass
+
+
+def _active_task_records() -> list[dict[str, Any]]:
+    """Load current task records through the active index, not task history."""
+    _active_task_dir().mkdir(parents=True, exist_ok=True)
+    if not (_active_task_dir() / ".ready").is_file():
+        _rebuild_active_index()
+    out: list[dict[str, Any]] = []
+    for marker in _active_task_dir().glob("*.marker"):
+        task_id = marker.name[:-len(".marker")]
+        task = _load(task_id)
+        if not task or task.get("status") in TERMINAL:
+            try:
+                marker.unlink()
+            except OSError:
+                pass
+            continue
+        out.append(task)
+    return out
+
+
+def _sync_active_marker(task: dict[str, Any]) -> None:
+    task_id = str(task.get("task_id") or "")
+    if not task_id:
+        return
+    marker = _active_marker(task_id)
+    try:
+        if task.get("status") in TERMINAL:
+            marker.unlink(missing_ok=True)
+        else:
+            marker.parent.mkdir(parents=True, exist_ok=True)
+            marker.touch(exist_ok=True)
+    except OSError:
+        # The JSON task record remains authoritative if the tiny acceleration
+        # index cannot be updated (read-only test fixtures, shutdown races).
+        pass
+
+
 def _load(task_id: str) -> dict[str, Any] | None:
     p = _task_path(task_id)
     if not p.is_file():
@@ -227,16 +305,37 @@ def _load(task_id: str) -> dict[str, Any] | None:
 
 
 def _save(task: dict[str, Any]) -> None:
+    global _TASK_LIST_CACHE
     _ensure_dirs()
-    _task_path(task["task_id"]).write_text(
-        json.dumps(task, ensure_ascii=False, indent=2), encoding="utf-8"
+    task["updated_at"] = _now()
+    target = _task_path(task["task_id"])
+    temp = target.with_name(
+        f".{target.name}.{os.getpid()}.{threading.get_ident()}.tmp"
     )
+    try:
+        # Readers never observe a truncated JSON record, and a concurrent
+        # status scan can keep reading the previous complete version while the
+        # replacement is prepared.
+        temp.write_text(
+            json.dumps(task, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        os.replace(temp, target)
+    finally:
+        try:
+            temp.unlink(missing_ok=True)
+        except OSError:
+            pass
+    with _TASK_LIST_CACHE_LOCK:
+        _TASK_LIST_CACHE = None
+    _sync_active_marker(task)
 
 
 def _goal_from_cmd(cmd: list[str] | None) -> str:
     cmd = cmd or []
-    if "--query" in cmd:
-        i = cmd.index("--query")
+    for flag in ("--query", "--goal"):
+        if flag not in cmd:
+            continue
+        i = cmd.index(flag)
         if i + 1 < len(cmd):
             return str(cmd[i + 1])[:240]
     return ""
@@ -518,15 +617,7 @@ def _spawn_cmd(cmd: list[str], *, task_id: str, timeout: int,
 def _running_tasks() -> list[dict[str, Any]]:
     """All non-terminal task records (running/stalled/starting)."""
     _ensure_dirs()
-    out = []
-    for p in TASK_DIR.glob("*.json"):
-        try:
-            t = json.loads(p.read_text(encoding="utf-8"))
-        except Exception:
-            continue
-        if t.get("status") not in TERMINAL:
-            out.append(t)
-    return out
+    return _active_task_records()
 
 
 def spawn_task(goal: str, *, provider: str = "deepseek", model: str | None = None,
@@ -735,6 +826,12 @@ def spawn_task(goal: str, *, provider: str = "deepseek", model: str | None = Non
         pass
     cmd = [headless.PYTHON, str(ROOT / "main.py"), "agent", "--query", goal,
            "--provider", provider]
+    if tag == "self-steal-research":
+        # Research receipts do not need the full interactive tool seat.  The
+        # compact worker avoids loading the entire tool schema/REPL path on a
+        # CPU Ollama lane and exits cleanly after one bounded answer.
+        cmd = [headless.PYTHON, "-m", "mag.research_worker", "--goal", goal,
+               "--provider", provider]
     if build_gate.get("required"):
         cmd += ["--tier", str(build_gate.get("tier") or "T1")]
     if model:
@@ -805,7 +902,8 @@ def queue_has_goal(goal: str) -> bool:
 
 def enqueue(goal: str, *, provider: str = "ollama", model: str | None = None,
             timeout: int = DEFAULT_TIMEOUT, tag: str = "", priority: int = 0,
-            tier: str | None = None, require_build: str | None = None) -> dict[str, Any]:
+            tier: str | None = None, require_build: str | None = None,
+            heavy: bool | None = None, schedule_policy: str | None = None) -> dict[str, Any]:
     """Add a goal to the queue. Returns the queue entry (not yet spawned)."""
     goal = goal.strip()
     if not goal:
@@ -847,6 +945,13 @@ def enqueue(goal: str, *, provider: str = "ollama", model: str | None = None,
         "task_id": None,
         "detail": "",
     }
+    try:
+        from mag.off_hours import decorate
+        decorate(q, heavy=heavy, schedule_policy=schedule_policy)
+    except Exception:
+        q["compute_class"] = "heavy" if heavy else "normal"
+        q["heavy"] = bool(heavy)
+        q["schedule_policy"] = schedule_policy or ("off_hours" if heavy else "anytime")
     try:
         from mag.cost_ledger import task_estimate
 
@@ -965,7 +1070,31 @@ def _provider_failures(provider: str) -> int:
 
 
 def _provider_tripped(provider: str) -> bool:
-    return _provider_failures(provider) >= BREAKER_CONSECUTIVE
+    """Return whether a provider should be skipped by the queue.
+
+    The usage ledger is intentionally append-only, so it can contain a run of
+    failures from before a provider recovered.  Remote providers should remain
+    fail-closed on that evidence.  Ollama is different: it is a local, free
+    lane with a cheap readiness endpoint, so give it an automatic half-open
+    probe before settling queued work.  This prevents a stale breaker from
+    turning a healthy Docker sidecar into a permanent outage while preserving
+    the circuit when the sidecar is actually down or has no models.
+    """
+    failures = _provider_failures(provider)
+    if failures < BREAKER_CONSECUTIVE:
+        return False
+    if str(provider or "").strip().lower() == "ollama":
+        try:
+            from models.registry import ollama_tags
+
+            # registry.ollama_tags() has its own short success/failure cache and
+            # a hard observer deadline, so this check cannot hold the drainer
+            # hostage on Docker DNS or a stopped sidecar.
+            if ollama_tags(timeout=2.0):
+                return False  # half-open: permit one fresh dispatch attempt
+        except Exception:
+            pass
+    return True
 
 
 def _settle_unreachable_queued() -> int:
@@ -1000,7 +1129,7 @@ def _settle_unreachable_queued() -> int:
     return settled
 
 
-def _next_queued() -> dict[str, Any] | None:
+def _next_queued(*, force: bool = False) -> dict[str, Any] | None:
     """Highest-priority queued (not yet running) entry, by tier then priority then age.
 
     Drains tier-by-tier (mission -> research -> maintenance -> filler) so real work is
@@ -1016,6 +1145,21 @@ def _next_queued() -> dict[str, Any] | None:
             continue
         if q.get("status") != "queued":
             continue
+        try:
+            from mag import off_hours
+            decision = off_hours.eligibility(q, force=force)
+            if not decision.get("eligible"):
+                if off_hours.mark_deferred(q, decision):
+                    _queue_save(q)
+                    _trail("queue-defer", q.get("queue_id"), reason=decision.get("reason"),
+                           next_eligible_at=decision.get("next_eligible_at"))
+                continue
+            if off_hours.mark_eligible(q, decision):
+                _queue_save(q)
+        except Exception:
+            # Scheduling is an efficiency guard, never a reason to strand work
+            # if the optional policy module is unavailable.
+            pass
         if best is None:
             best = q
             continue
@@ -1082,17 +1226,63 @@ def _reconcile_queue() -> int:
 
 
 def _running_task_count() -> int:
-    """How many tasks are LIVE right now (non-terminal task records OR queue entries running)."""
-    n = len(_running_tasks())
+    """How many local worker slots are LIVE right now.
+
+    External GUI/mailbox seats are visible in the same task registry, but they
+    do not consume a local subprocess slot. Counting them here made a pair of
+    human-paced seats block every local Ollama recovery task.
+    """
+    live = _running_tasks()
+    local_ids = {str(t.get("task_id") or "") for t in live if not _is_external_task(t)}
+    n = len(local_ids)
     QUEUE_DIR.mkdir(parents=True, exist_ok=True)
     for p in QUEUE_DIR.glob("*.json"):
         try:
             q = json.loads(p.read_text(encoding="utf-8"))
         except Exception:
             continue
-        if q.get("status") == "running" and not any(t.get("task_id") == q.get("task_id") for t in _running_tasks()):
+        if (q.get("status") == "running"
+                and str(q.get("task_id") or "") not in local_ids):
             n += 1
     return n
+
+
+def _provider_running_count(provider: str) -> int:
+    """Count local task processes using one provider (external seats excluded)."""
+    needle = str(provider or "").strip().lower()
+    n = 0
+    for task in _running_tasks():
+        if _is_external_task(task):
+            continue
+        if str(_provider_from_cmd(task.get("cmd")) or "").strip().lower() == needle:
+            n += 1
+    return n
+
+
+def _dispatch_spec(q: dict[str, Any], *, force: bool = False) -> dict[str, Any]:
+    """Resolve execution routing while preserving the queue's original intent."""
+    original = {
+        "provider": q.get("provider") or "deepseek",
+        "model": q.get("model"),
+    }
+    try:
+        from mag.off_hours import dispatch_spec
+
+        resolved = dispatch_spec(q, force=force)
+        if isinstance(resolved, dict):
+            original.update({k: resolved.get(k) for k in ("provider", "model", "lane_id", "rerouted", "original_provider", "original_model") if k in resolved})
+    except Exception:
+        pass
+    return original
+
+
+def _queue_schedule_detail() -> dict[str, Any]:
+    try:
+        from mag.off_hours import queue_status
+
+        return queue_status(queue_dir=QUEUE_DIR)
+    except Exception:
+        return {}
 
 
 def drain_parallel(*, n_agents: int | None = None, force: bool = False,
@@ -1142,18 +1332,31 @@ def drain_parallel(*, n_agents: int | None = None, force: bool = False,
     budget = n_agents - running  # how many more we may spawn this pass
     spawned = []
     while budget > 0:
-        nxt = _next_queued()
+        nxt = _next_queued(force=force)
         if nxt is None:
             break
         qid = nxt["queue_id"]
+        dispatch = _dispatch_spec(nxt, force=force)
+        # Ollama is a single CPU/GPU lane on this host. One active generation
+        # is faster and safer than a self-inflicted model-swap storm. Remote
+        # providers retain the general parallel path.
+        if str(dispatch.get("provider") or "").strip().lower() == "ollama" and _provider_running_count("ollama") >= 1:
+            break
         # cost cap: stop if the batch estimate would exceed the cap (honest).
         if cost_cap_usd is not None:
             est = nxt.get("task_estimate") or {}
+            if dispatch.get("rerouted"):
+                try:
+                    from mag.cost_ledger import task_estimate
+
+                    est = task_estimate(nxt["goal"], provider=dispatch.get("provider"), model=dispatch.get("model"))
+                except Exception:
+                    pass
             est_usd = float(est.get("usd", est.get("cost", 0)) or 0) if isinstance(est, dict) else 0.0
             if est_usd > 0 and est_usd > cost_cap_usd / max(budget, 1):
                 break
-        rec = spawn_task(nxt["goal"], provider=nxt.get("provider") or "deepseek",
-                         model=nxt.get("model"), timeout=int(nxt.get("timeout") or DEFAULT_TIMEOUT),
+        rec = spawn_task(nxt["goal"], provider=dispatch.get("provider") or "deepseek",
+                         model=dispatch.get("model"), timeout=int(nxt.get("timeout") or DEFAULT_TIMEOUT),
                          tag=nxt.get("tag") or "")
         if not rec.get("ok"):
             q = _queue_load(qid) or nxt
@@ -1166,6 +1369,10 @@ def drain_parallel(*, n_agents: int | None = None, force: bool = False,
         q["status"] = "running"
         q["task_id"] = rec["task_id"]
         q["detail"] = "spawned (parallel)"
+        q["dispatch_provider"] = dispatch.get("provider")
+        q["dispatch_model"] = dispatch.get("model")
+        q["dispatch_lane"] = dispatch.get("lane_id")
+        q["dispatch_rerouted"] = bool(dispatch.get("rerouted"))
         q["usage_started_at"] = _now()
         _queue_save(q)
         _trail("queue-start", qid, spawned_task_id=rec["task_id"], mode="parallel")
@@ -1178,9 +1385,12 @@ def drain_parallel(*, n_agents: int | None = None, force: bool = False,
         spawned.append({"queue_id": qid, "task_id": rec["task_id"], "goal": nxt["goal"][:120]})
         budget -= 1
 
+    schedule = _queue_schedule_detail()
+    action = "off_hours_deferred" if not spawned and schedule.get("heavy_deferred") and not schedule.get("normal_queued") else "parallel"
     return {"ok": True, "schema": "orchestrator.parallel_drain.v1",
-            "action": "parallel", "n_agents": n_agents, "running": _running_task_count(),
+            "action": action, "n_agents": n_agents, "running": _running_task_count(),
             "spawned_this_pass": len(spawned), "spawned": spawned,
+            "schedule": schedule,
             "guards": {"spawn_cap": spawn_cap, "cost_cap_usd": cost_cap_usd},
             "note": (f"parallel DeepSeek swarm: up to {n_agents} concurrent flash agents; "
                      f"spawned {len(spawned)} this pass; tier order honored per batch")}
@@ -1226,12 +1436,18 @@ def drain_once(*, force: bool = False) -> dict[str, Any]:
         promote_drainer(top=3, boost=5)
     except Exception:
         pass
-    nxt = _next_queued()
+    nxt = _next_queued(force=force)
     if nxt is None:
-        return {"ok": True, "action": "empty", "detail": "no queued goals"}
+        schedule = _queue_schedule_detail()
+        if schedule.get("heavy_deferred") and not schedule.get("normal_queued"):
+            return {"ok": True, "action": "off_hours_deferred",
+                    "detail": "heavy work is queued for the next off-hours window",
+                    "schedule": schedule}
+        return {"ok": True, "action": "empty", "detail": "no queued goals", "schedule": schedule}
     qid = nxt["queue_id"]
-    rec = spawn_task(nxt["goal"], provider=nxt.get("provider") or "deepseek",
-                     model=nxt.get("model"), timeout=int(nxt.get("timeout") or DEFAULT_TIMEOUT),
+    dispatch = _dispatch_spec(nxt, force=force)
+    rec = spawn_task(nxt["goal"], provider=dispatch.get("provider") or "deepseek",
+                     model=dispatch.get("model"), timeout=int(nxt.get("timeout") or DEFAULT_TIMEOUT),
                      tag=nxt.get("tag") or "")
     if not rec.get("ok"):
         q = _queue_load(qid) or nxt
@@ -1253,6 +1469,10 @@ def drain_once(*, force: bool = False) -> dict[str, Any]:
     q["status"] = "running"
     q["task_id"] = rec["task_id"]
     q["detail"] = "spawned"
+    q["dispatch_provider"] = dispatch.get("provider")
+    q["dispatch_model"] = dispatch.get("model")
+    q["dispatch_lane"] = dispatch.get("lane_id")
+    q["dispatch_rerouted"] = bool(dispatch.get("rerouted"))
     q["usage_started_at"] = _now()
     _queue_save(q)
     _trail("queue-start", qid, spawned_task_id=rec["task_id"])
@@ -1327,17 +1547,56 @@ def queue_status() -> dict[str, Any]:
             "running_task_id": running}
 
 
+def _task_recency(task: dict[str, Any]) -> tuple[str, str]:
+    """Return a filesystem-independent recency key for a task record.
+
+    Status surfaces used to sort every task with ``Path.stat()`` before reading
+    it. On Windows, a concurrently replaced/locked record could make that
+    observer block indefinitely. Task records already carry their lifecycle
+    timestamps, so use those as the source of recency and keep the task id as a
+    deterministic tie-breaker.
+    """
+    stamps = (
+        str(task.get("updated_at") or ""),
+        str(task.get("last_seen_at") or ""),
+        str(task.get("ended_at") or ""),
+        str(task.get("started_at") or ""),
+        str(task.get("created_at") or ""),
+    )
+    return max(stamps), str(task.get("task_id") or "")
+
+
 def list_tasks(limit: int = 20) -> list[dict[str, Any]]:
+    global _TASK_LIST_CACHE
     _ensure_dirs()
-    out: list[dict[str, Any]] = []
-    # IDs are random and therefore not chronological. Fleet/handoff views need
-    # the records most recently written, especially when many old tasks exist.
-    for p in sorted(TASK_DIR.glob("*.json"), key=lambda item: item.stat().st_mtime_ns, reverse=True)[:limit]:
-        try:
-            out.append(json.loads(p.read_text(encoding="utf-8")))
-        except Exception:
-            pass
-    return out
+    if limit <= 0:
+        return []
+    cache_key = str(TASK_DIR)
+    now_mono = time.monotonic()
+    with _TASK_LIST_CACHE_LOCK:
+        cached = _TASK_LIST_CACHE
+        if (cached and cached[0] == cache_key
+                and now_mono - cached[1] < _TASK_LIST_CACHE_TTL_S):
+            return [dict(row) for row in cached[2][:limit]]
+    rows: list[dict[str, Any]] = []
+    # IDs are random and therefore not chronological. Read the lifecycle stamp
+    # already stored in each record instead of stat'ing paths in the hot status
+    # path; this remains safe when another process is atomically replacing one.
+    try:
+        paths = TASK_DIR.glob("*.json")
+        for p in paths:
+            try:
+                row = json.loads(p.read_text(encoding="utf-8"))
+            except (OSError, ValueError, TypeError):
+                continue
+            if isinstance(row, dict):
+                rows.append(row)
+    except OSError:
+        return []
+    rows.sort(key=_task_recency, reverse=True)
+    with _TASK_LIST_CACHE_LOCK:
+        _TASK_LIST_CACHE = (cache_key, time.monotonic(), [dict(row) for row in rows])
+    return rows[:limit]
 
 
 def list_tasks_live(limit: int = 50) -> list[dict[str, Any]]:
@@ -1409,11 +1668,7 @@ def reap_stale() -> dict[str, Any]:
     """Mark running tasks whose pid is dead as died (parent survived a crash)."""
     _ensure_dirs()
     fixed = 0
-    for p in TASK_DIR.glob("*.json"):
-        try:
-            t = json.loads(p.read_text(encoding="utf-8"))
-        except Exception:
-            continue
+    for t in _active_task_records():
         if t.get("status") != "running":
             continue
         pid = t.get("pid")
@@ -1459,11 +1714,7 @@ def reap_completed() -> dict[str, Any]:
     _ensure_dirs()
     fixed = 0
     classified = {"done": 0, "failed": 0, "died": 0}
-    for p in TASK_DIR.glob("*.json"):
-        try:
-            t = json.loads(p.read_text(encoding="utf-8"))
-        except Exception:
-            continue
+    for t in _active_task_records():
         if t.get("status") != "running":
             continue
         pid = t.get("pid")
@@ -1517,11 +1768,7 @@ def respawn_dead(max_per_task: int = 2) -> dict[str, Any]:
     _ensure_dirs()
     reaped = 0
     respawned: list[dict[str, Any]] = []
-    for p in TASK_DIR.glob("*.json"):
-        try:
-            t = json.loads(p.read_text(encoding="utf-8"))
-        except Exception:
-            continue
+    for t in _active_task_records():
         if t.get("status") != "running":
             continue
         pid = t.get("pid")
@@ -1674,6 +1921,8 @@ def main(argv: list[str] | None = None) -> int:
             model = None
             timeout = DEFAULT_TIMEOUT
             tag = ""
+            heavy = None
+            schedule_policy = None
             i = 0
             while i < len(rest):
                 a = rest[i]
@@ -1689,13 +1938,20 @@ def main(argv: list[str] | None = None) -> int:
                     i += 2
                 elif a == "--tag" and i + 1 < len(rest):
                     tag = rest[i + 1]; i += 2
+                elif a == "--heavy":
+                    heavy = True; i += 1
+                elif a == "--anytime":
+                    schedule_policy = "anytime"; i += 1
+                elif a == "--off-hours":
+                    schedule_policy = "off_hours"; i += 1
                 else:
                     goal = (goal + " " + a).strip(); i += 1
             if not goal:
                 print("need a goal")
                 return 2
             q = enqueue(goal, provider=provider, model=model,
-                        timeout=timeout, tag=tag)
+                        timeout=timeout, tag=tag, heavy=heavy,
+                        schedule_policy=schedule_policy)
             print(json.dumps(q, indent=2, default=str))
             return 0 if q.get("ok") else 1
         if sub == "list":

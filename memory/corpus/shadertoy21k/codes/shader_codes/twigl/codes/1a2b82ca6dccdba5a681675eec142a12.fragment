@@ -1,0 +1,40 @@
+precision highp float;
+uniform vec2 resolution;
+uniform float time;
+out vec4 fragColor;
+
+#define rot(a) mat2(cos(a),sin(a),-sin(a),cos(a))
+mat3 lookat(vec3 eye, vec3 target, vec3 up)
+{
+    vec3 w = normalize(target-eye), u = normalize(cross(w,up));
+    return mat3(u,cross(u,w),w);
+}
+
+vec2 intersect(vec3 ro, vec3 rd, vec3 c, float r)
+{
+  vec3 u=cross(c-ro,rd);
+  float h=r*r-dot(u,u);
+  if(h<0.)return vec2(-1);
+  h=sqrt(h);
+  float g=dot(c-ro,rd);
+  float near=g-h;
+	float far=g+h;
+	return vec2(near,far);
+}
+
+void main(){
+    vec2 uv=(gl_FragCoord.xy-.5*resolution.xy)/resolution.y;
+    vec3 rd=normalize(vec3(uv,1));
+    vec3 ro=vec3(0,0,-3);
+    vec3 c=vec3(0);
+    ro.xz*=rot(time);
+    rd=lookat(ro,c,vec3(0,1,0))*rd;
+    float r=1.;
+    vec2 I=intersect(ro,rd,c,r);
+    if(I.x>0.)
+    {
+        vec3 p=ro+I.x*rd;
+        vec3 n=normalize(p-c);
+        fragColor.xyz+=n;
+    }
+}

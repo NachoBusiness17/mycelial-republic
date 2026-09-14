@@ -1,0 +1,1 @@
+float s=.1,a,u,v,i,j,y,Z;vec3 p;p.z=-4.;while(s>.01&&i++<50.)for(p+=normalize(vec3((FC.xy*2.-r)/r.y,a=2.))*s,s=length(p.xz)-.9,j=-9.;j<9.;j++)y=j+fract(t*5.),v=-(rotate2D(y*=.2)*p.zx).x,u=max(abs(p.y-y)-.1,length(p.xz)-2.4),(y=max(u,v))<s?s=y,a=u-v:s;s>j?(o.x=.56),o:o+=a<Z?.9:Z;

@@ -1096,7 +1096,7 @@ async function loadHome() {
     const pct = econ.save_pct != null ? `${econ.save_pct}%` : "—";
     $("#homeEcon").innerHTML = `<b>${esc(String(loc))}</b> local · <b>${esc(
       String(saved)
-    )}</b> saved vs dump · ${esc(pct)} · ${esc(String(econ.turns ?? 0))} turns`;
+    )}</b> counterfactual tokens vs dump · ${esc(pct)} · ${esc(String(econ.turns ?? 0))} turns`;
   }
 
   if ($("#homeSys")) {
@@ -4783,12 +4783,133 @@ function barRow(label, value, max, suffix) {
   </div>`;
 }
 
+function costUsd(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return "—";
+  if (n === 0) return "$0.00";
+  if (Math.abs(n) < 0.01) return `<$0.01`;
+  return `$${n.toFixed(2)}`;
+}
+
+function costCount(value) {
+  const n = Number(value || 0);
+  return Number.isFinite(n) ? n.toLocaleString() : "—";
+}
+
+function costStateText(row) {
+  const state = String(row?.cost_state || "unpriced");
+  if (state === "exact_rate") return "calculated at joined list rate";
+  if (state === "local") return "$0 API cost · energy not measured";
+  if (state === "free_or_quota") return "no local charge recorded · quota/credit basis";
+  if (state === "mixed") return "mixed: calculated + unpriced rows";
+  if (state === "no_usage") return "no metered usage";
+  return "not priced by this receipt ledger";
+}
+
+function renderCostTruth(c) {
+  const stats = $("#costTruthStats");
+  const note = $("#costTruthNote");
+  const schedule = $("#costTruthSchedule");
+  const vast = $("#costTruthVast");
+  const periods = $("#costTruthPeriods");
+  const providers = $("#costTruthProviders");
+  const commitments = $("#costTruthCommitments");
+  if (!c || c.ok === false) {
+    if (stats) stats.innerHTML = `<div class="stat"><b>—</b><span>cost meter unavailable</span></div>`;
+    if (note) note.textContent = c?.error || "No cost receipt snapshot.";
+    return;
+  }
+  const p30 = c.periods?.last_30_days || {};
+  const pAll = c.periods?.all_logged || {};
+  const recurring = c.recurring || {};
+  const compute = c.compute_schedule || {};
+  const vastData = c.vast || {};
+  const vast30 = vastData.periods?.last_30_days || {};
+  const q = c.quality || {};
+  if (stats) {
+    stats.innerHTML = [
+      `<div class="stat"><b>${costUsd(p30.calculated_api_cost_usd)}</b><span>calculated API · 30d</span></div>`,
+      `<div class="stat"><b>${costCount(p30.priced_calls)}/${costCount(p30.calls)}</b><span>exact-rate calls · 30d</span></div>`,
+      `<div class="stat"><b>${costCount(p30.unpriced_calls)}</b><span>unpriced calls · 30d</span></div>`,
+      `<div class="stat"><b>${costCount(p30.accounted_calls)}</b><span>accounted calls · 30d</span></div>`,
+      `<div class="stat"><b>${costCount(p30.billable_tokens)}</b><span>billable tokens · 30d</span></div>`,
+      `<div class="stat"><b>${p30.cache_hit_ratio == null ? "—" : Math.round(p30.cache_hit_ratio * 100) + "%"}</b><span>input cache hit · 30d</span></div>`,
+      `<div class="stat"><b>${recurring.confirmed_monthly_usd == null ? "—" : costUsd(recurring.confirmed_monthly_usd)}</b><span>confirmed seats · /mo</span></div>`,
+      `<div class="stat"><b>${costUsd(vast30.actual_charges_usd)}</b><span>Vast actual · 30d</span></div>`,
+      `<div class="stat"><b>—</b><span>verified outcome cost</span></div>`,
+    ].join("");
+  }
+  if (note) {
+    const split = pAll.split_coverage == null ? "—" : Math.round(pAll.split_coverage * 100) + "%";
+    note.textContent = `Receipt rows ${costCount(q.rows_included)} · cache split observed on ${split} of token rows · latest ${String(q.latest_ts || "unknown").slice(0, 19)} · API invoices joined: no · Vast/subscriptions separate`;
+  }
+  if (schedule) {
+    const inside = Boolean(compute.inside_off_hours);
+    const lane = compute.overnight_lane || {};
+    const next = compute.next_window_start ? String(compute.next_window_start).slice(0, 19).replace("T", " ") : "—";
+    const laneText = lane.provider && lane.model ? `${lane.provider} / ${lane.model}` : "not configured";
+    schedule.innerHTML = `<h3 class="ideas-col-h">Compute schedule · value-aware gate</h3>` +
+      `<p class="muted sm"><strong>${inside ? "Overnight window open" : "Day window"}</strong> · ${esc(compute.timezone || "local time")} · next overnight: ${esc(next)}</p>` +
+      `<div class="row"><span class="k">Queue</span><span class="v">${costCount(compute.normal_queued)} normal now · ${costCount(compute.heavy_queued)} heavy queued · ${costCount(compute.heavy_deferred)} deferred</span></div>` +
+      `<div class="row"><span class="k">Overnight lane</span><span class="v">${esc(laneText)}<br/><span class="muted">Coding/game work waits for this lane; fleet repair, recovery, and health work remains anytime.</span></span></div>`;
+  }
+  if (vast) {
+    const p7 = vastData.periods?.last_7_days || {};
+    const pAllVast = vastData.periods?.all_logged || {};
+    const active = vastData.instances || {};
+    const syncState = vastData.synced_at ? `last sync ${String(vastData.synced_at).slice(0, 19)}` : "not synced";
+    vast.innerHTML = `<h3 class="ideas-col-h">Vast.ai · separate infrastructure meter</h3>` +
+      `<p class="muted sm">${esc(vastData.reachable ? "Read-only charge cache available" : (vastData.error || "No Vast charge cache yet"))} · ${esc(syncState)} · invoice joined: no</p>` +
+      `<div class="row"><span class="k">Last 7 days</span><span class="v">${costUsd(p7.actual_charges_usd)} actual · GPU ${costUsd(p7.gpu_charges_usd)} · storage ${costUsd(p7.storage_charges_usd)} · bandwidth ${costUsd(p7.bandwidth_charges_usd)} · ${costCount(p7.gpu_hours)} GPU hours</span></div>` +
+      `<div class="row"><span class="k">All logged</span><span class="v">${costUsd(pAllVast.actual_charges_usd)} actual · ${costCount(vastData.charges_logged)} charge receipts</span></div>` +
+      `<div class="row"><span class="k">Current exposure</span><span class="v">${costCount(active.active_cached)} active cached instances · ${costUsd(active.estimated_active_hourly_usd)}/hour estimated</span></div>`;
+  }
+  if (periods) {
+    const labels = [
+      ["Today", "today"],
+      ["Last 7 days", "last_7_days"],
+      ["Last 30 days", "last_30_days"],
+      ["All logged", "all_logged"],
+    ];
+    periods.innerHTML = `<h3 class="ideas-col-h">Time windows</h3>` + labels.map(([label, key]) => {
+      const p = c.periods?.[key] || {};
+      const coverage = p.pricing_coverage == null ? "—" : Math.round(p.pricing_coverage * 100) + "%";
+      return `<div class="row"><span class="k">${esc(label)}</span><span class="v">${costUsd(p.calculated_api_cost_usd)} calculated · ${costCount(p.calls)} calls · ${costCount(p.accounted_calls)} accounted · ${costCount(p.billable_tokens)} billable tok · ${esc(coverage)} accounted</span></div>`;
+    }).join("");
+  }
+  if (providers) {
+    providers.innerHTML = `<h3 class="ideas-col-h">Provider receipts · all logged</h3>` +
+      ((c.providers || []).map((p) => {
+        const cache = p.cache_hit_ratio == null ? "—" : Math.round(p.cache_hit_ratio * 100) + "% hit";
+        return `<div class="row"><span class="k">${esc(p.provider || "?")}</span><span class="v">${costUsd(p.calculated_api_cost_usd)} · ${costCount(p.calls)} calls · ${costCount(p.billable_tokens)} billable tok · ${esc(costStateText(p))}<br/><span class="muted">${esc(cache)} · ${costCount(p.accounted_calls)} accounted · ${costCount(p.priced_calls)} exact-rate · ${costCount(p.unpriced_calls)} unpriced · ${costCount(p.failed_calls)} failed</span></span></div>`;
+      }).join("") || `<div class="muted">No provider receipts.</div>`);
+  }
+  if (commitments) {
+    const rows = (recurring.items || []).slice(0, 18);
+    const confirmed = recurring.confirmed_monthly_usd == null ? "—" : costUsd(recurring.confirmed_monthly_usd);
+    const floor = recurring.published_floor_monthly_usd == null ? "—" : costUsd(recurring.published_floor_monthly_usd);
+    const needs = costCount(recurring.needs_confirmation_count || 0);
+    const unknownFloor = recurring.unconfirmed_published_floor_monthly_usd == null ? "—" : costUsd(recurring.unconfirmed_published_floor_monthly_usd);
+    commitments.innerHTML = `<h3 class="ideas-col-h">Recurring subscriptions · excluded from API total</h3><p class="muted sm">Confirmed: <strong>${confirmed}/mo</strong> · minimum tracked commitment: <strong>${floor}/mo</strong> · unconfirmed plans contribute a ${unknownFloor}/mo published floor · ${needs} need plan confirmation. These are separate from invoices and token receipts.</p>` +
+      (rows.map((r) => {
+        const amount = r.monthly_cost_usd == null ? `needs confirmation · floor ${r.published_floor_monthly_usd == null ? "—" : costUsd(r.published_floor_monthly_usd)}/mo` : `${costUsd(r.monthly_cost_usd)}/mo confirmed`;
+        const qty = r.quantity > 1 ? `${costCount(r.quantity)} × ` : "";
+        const options = Object.entries(r.plan_options_monthly_usd || {}).map(([plan, value]) => `${plan} ${costUsd(value)}/mo`).join(" · ");
+        return `<div class="row"><span class="k">${esc(qty + (r.name || r.id || "?"))}</span><span class="v">${esc(amount)} · ${esc(r.price_status || "unknown")} · ${esc(r.verdict || "review")}<br/><span class="muted">${esc(options || "plan options not recorded")} · ${costCount(r.metered_calls_all_time)} related receipt calls</span></span></div>`;
+      }).join("") || `<div class="muted">No recurring subscriptions declared.</div>`);
+  }
+}
+
 async function loadFlow() {
   const meta = $("#flowMeta");
   if (meta) meta.textContent = "Loading…";
   try {
-    const d = await getJSON("/api/idea-flow");
+    const [d, costs] = await Promise.all([
+      getJSON("/api/idea-flow"),
+      getJSON("/api/v1/costs").catch((e) => ({ ok: false, error: String(e.message || e) })),
+    ]);
     if (!d.ok && d.error) throw new Error(d.error);
+    renderCostTruth(costs);
     const pic = d.spend?.combined_picture || {};
     if (meta) {
       meta.textContent = `as of ${String(d.ts || "").slice(0, 19)} · local-first ledger`;
@@ -7061,8 +7182,8 @@ function renderFrameworkReports(reports) {
       if (tm.agents && tm.agents.length) telemetryLines.push(`<li><strong>agents</strong> ${esc(tm.agents.slice(0, 6).join(", "))}</li>`);
       if (tm.frameworks && tm.frameworks.length) telemetryLines.push(`<li><strong>frameworks</strong> ${esc(tm.frameworks.map((f) => f.provider).slice(0, 6).join(", "))}</li>`);
       if (tok.total_tokens != null) telemetryLines.push(`<li><strong>tokens</strong> ${tok.total_tokens} (${tok.prompt_tokens || 0} in / ${tok.completion_tokens || 0} out)</li>`);
-      if (tm.total_est_cost_usd != null) telemetryLines.push(`<li><strong>est cost</strong> $${Number(tm.total_est_cost_usd).toFixed(4)}</li>`);
-      if (tm.savings_tokens != null) telemetryLines.push(`<li><strong>est savings</strong> ${tm.savings_tokens} tok · ≈$${Number(tm.total_est_savings_usd || 0).toFixed(2)}</li>`);
+      if (tm.total_est_cost_usd != null) telemetryLines.push(`<li><strong>legacy estimate</strong> $${Number(tm.total_est_cost_usd).toFixed(4)} · not cost truth</li>`);
+      if (tm.savings_tokens != null) telemetryLines.push(`<li><strong>counterfactual tokens</strong> ${tm.savings_tokens} tok · no invoice/API spend claim</li>`);
       if (tm.experiments && tm.experiments.length) telemetryLines.push(`<li><strong>experiments</strong> ${tm.experiments.length} — ${esc(tm.experiments.slice(0, 6).map((e) => e.name).join(", "))}</li>`);
       if (tm.items && tm.items.length) telemetryLines.push(`<li><strong>items</strong> ${tm.items.length} involved</li>`);
       const detail = esc(r.detail || r.summary || "");
@@ -7396,13 +7517,14 @@ async function loadStatus() {
 
   try {
     await loadPowerPanel();
-    const [router, h, seatsReg] = await Promise.all([
+    const [router, h, seatsReg, costs] = await Promise.all([
       getJSON("/api/v1/router-status").catch((e) => ({
         ok: false,
         error: String(e.message || e),
       })),
       getJSON("/api/v1/home").catch(() => ({})),
       loadSeatsPanel(),
+      getJSON("/api/v1/costs").catch(() => ({})),
     ]);
 
     if (head) {
@@ -7424,6 +7546,7 @@ async function loadStatus() {
     const ingest = router.ingest || {};
     const mem = router.memory || {};
     const usage = router.usage_today || {};
+    const todayCosts = costs.periods?.today || {};
 
     if (summary) {
       summary.innerHTML = `
@@ -7494,17 +7617,17 @@ async function loadStatus() {
         "Grok escalations (Mag)",
         `${usage.grok_escalations ?? 0} / ${usage.grok_escalation_budget ?? "—"}`,
       ],
-      [
-        "Grok TUI plan %",
-        "not visible to Mag — check x.com / grok UI",
-      ],
+      ["Calculated API cost today", `${costUsd(todayCosts.calculated_api_cost_usd)} · ${costCount(todayCosts.priced_calls)}/${costCount(todayCosts.calls)} calls exact-rate`],
+      ["Unpriced / plan / unknown calls", `${costCount(todayCosts.unpriced_calls)} · no invoice claim`],
+      ["Billable tokens today", costCount(todayCosts.billable_tokens)],
+      ["Grok TUI / subscriptions", "not metered by Mag"],
       ["Prefer order", (router.prefer_order || []).slice(0, 5).join(" → ") || "—"],
     ]);
     if (pressureEl) {
       const hot = router.pressure || [];
       pressureEl.innerHTML = hot.length
         ? hot.map((p) => `<li class="warn">${esc(p)}</li>`).join("")
-        : `<li class="muted">No Mag-budget pressure above 25%. If Grok UI shows ~30%, that is your TUI subscription — wire usage into Mag or treat it as separate.</li>`;
+        : `<li class="muted">No Mag-budget pressure above 25%. Quota pressure is not dollar spend; vendor dashboards remain the source for plan consumption.</li>`;
     }
 
     kvRows(seats, [
@@ -7624,10 +7747,70 @@ const recent = ingest.recent_urls || [];
           : `<li class="muted">No recent tasks</li>`;
       }
     }
+    await loadHood();
   } catch (e) {
     if (head) head.textContent = "Router status failed";
     if (connHost) connHost.innerHTML = `<p class="muted">${esc(e.message || e)}</p>`;
     kvRows(body, [["Error", e.message || e]]);
+  }
+}
+
+function paintHood(h) {
+  if (!h || h.ok === false) {
+    if ($("#hoodStats")) $("#hoodStats").innerHTML = `<div class="stat"><b>—</b><span>${esc(h?.error || "hood offline")}</span></div>`;
+    return;
+  }
+  const models = h.models || {};
+  const ribs = h.ribs || {};
+  const chan = h.chan || {};
+  const lanes = models.lanes || [];
+  if ($("#hoodStats")) {
+    $("#hoodStats").innerHTML = [
+      `<div class="stat"><b>${esc(models.n ?? "—")}</b><span>calls (tail)</span></div>`,
+      `<div class="stat"><b>${esc(ribs.n_domains ?? "—")}</b><span>RIB domains</span></div>`,
+      `<div class="stat"><b>${esc(chan.n_threads ?? "—")}</b><span>/chan threads</span></div>`,
+      `<div class="stat"><b>${esc((h.traj || {}).n ?? "—")}</b><span>traj tape</span></div>`,
+    ].join("");
+  }
+  if ($("#hoodLanes")) {
+    kvRows($("#hoodLanes"), lanes.slice(0, 8).map((L) => {
+      const hit = (L.cache_hit || 0) + (L.cache_miss || 0);
+      const ratio = hit ? Math.round((L.cache_hit || 0) / hit * 100) + "%" : "—";
+      return [L.lane, `${L.ok}/${L.calls} ok · hit ${ratio}`];
+    }));
+  }
+  if ($("#hoodPath")) {
+    const path = (models.path || []).slice().reverse();
+    $("#hoodPath").innerHTML = path.length
+      ? path.map((p) => {
+          const t = String(p.ts || "").replace("T", " ").slice(11, 19);
+          const tone = p.ok ? "ok" : "warn";
+          return `<li class="${tone}">${esc(t)} · ${esc(p.lane)} · hit ${esc(p.hit)} miss ${esc(p.miss)}</li>`;
+        }).join("")
+      : `<li class="muted">no usage tail</li>`;
+  }
+  if ($("#hoodRibs")) {
+    const ds = ribs.domains || [];
+    $("#hoodRibs").innerHTML = ds.length
+      ? ds.map((d) => `<li><b>${esc(d.domain)}</b> · ${esc(d.n)} ribs · ${esc(String(d.updated || "").slice(0, 19))}<br /><span class="muted">${esc(d.snippet || "")}</span></li>`).join("")
+      : `<li class="muted">no RIBs</li>`;
+  }
+  if ($("#hoodChanSum")) $("#hoodChanSum").textContent = `/chan threads (${chan.n_threads || 0})`;
+  if ($("#hoodChan")) {
+    const ts = chan.threads || [];
+    $("#hoodChan").innerHTML = ts.length
+      ? ts.map((t) => `<li><a href="/chan#${esc(t.slug)}" target="_blank" rel="noopener">/${esc(t.slug)}/</a> · R:${esc(t.replies)}${t.primer ? " · primer" : ""}</li>`).join("")
+      : `<li class="muted">empty board</li>`;
+  }
+}
+
+async function loadHood() {
+  if (!$("#hoodCard") && !$("#hoodStats")) return;
+  try {
+    const h = await getJSON("/api/v1/hood");
+    paintHood(h);
+  } catch (e) {
+    paintHood({ ok: false, error: String(e.message || e) });
   }
 }
 

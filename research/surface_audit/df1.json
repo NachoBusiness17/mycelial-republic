@@ -1,0 +1,173 @@
+[
+ {
+  "surface": "Hypervisor (Home)",
+  "url": "/",
+  "serves": 200,
+  "bytes": 101830,
+  "js_ok": true,
+  "js_note": "only inline block is type=importmap JSON (node --check N/A by design); all real JS is external (visual/board/windows/app/nav.js)",
+  "five": {
+   "happening": "Six-destination model IS live (Home/Projects/History/Run/Library/System tabs, 'Pulse - what actually happened' window) but one of its live reads, /api/probe-status, is stale 2026-07-28 with 8/9 providers false - six-week-old data presented as current.",
+   "matters": "This is the operator's front door; T2 law says its first sentence must be the machine's own 'Mag can/cannot operate because...' - that sentence exists NOWHERE in root.html, app.js, or windows.js (grep = 0 hits).",
+   "decision": "GO a docfix append: wire the operating-because sentence from live bytes (probe-status refresh or cost-truth as_of) before the Sep-20 proof window.",
+   "next": "Home repair lands the T2 line; probe-status endpoint needs a refresh cadence or an honest STALE badge.",
+   "evidence": "dashboard/static/app.js (fetches /api/probe-status, /api/v1/agent/stream, /api/v1/viewports/sync), dashboard/static/windows.js, live curl /api/probe-status ts=2026-07-28T09:50:47Z"
+  },
+  "because": "Mag can operate because Home reads live probe + stream + viewport doors - but today it cannot SAY so, because the T2 sentence is unwired and its probe read is 6 weeks stale.",
+  "verdict": "KEEP",
+  "reason": "It is Home (unique destination-question: 'what matters now') and the destination model landed; two named repairs (T2 sentence, stale probe), not a demotion."
+ },
+ {
+  "surface": "Decks",
+  "url": "/static/decks.html",
+  "serves": 200,
+  "bytes": 10724,
+  "js_ok": true,
+  "five": {
+   "happening": "Card-deck grid over an 872KB live snapshot: door 1 /files/working/decks_snapshot.json serves 200 (872,630 bytes); door 2 /memory/working/decks_snapshot.json 404s harmlessly; offline fallback is honest ('SNAPSHOT OFFLINE - server restart needed').",
+   "matters": "It is the intake/triage board - resnapshot button tells the operator exactly what to re-run when stale.",
+   "decision": "None urgent - door 1 works; optional: repoint or drop the dead /memory/ door 2.",
+   "next": "Open a deck, resnapshot, manage order/stars/bells via localStorage state.",
+   "evidence": "dashboard/static/decks.html loadSnap() doors + live curl /files/working/decks_snapshot.json -> 200 872630"
+  },
+  "because": "Mag can operate because the snapshot door serves real cards and the page degrades honestly when it doesn't.",
+  "verdict": "KEEP",
+  "reason": "Unique destination-question (what cards await triage), five answered from live bytes, honest empty-state."
+ },
+ {
+  "surface": "Day Tool",
+  "url": "/static/daytool.html",
+  "serves": 200,
+  "bytes": 8228,
+  "js_ok": true,
+  "five": {
+   "happening": "Day-work driver: digest from /static/day_work_digest.txt (live, 24,430 bytes, 60s auto-reload) + a dumb lattice stepper over /static/lattices/ (law_lattice.json serves, 30,225 bytes) + an embedded lanes card.",
+   "matters": "This is the operator's daily entry point - digest first, then the dumb-models-do-complex-tasks rig in miniature, then lane status.",
+   "decision": "The page names its own PENDING GOs (tick kill e2c00e27, B2 eyes KEY-gate, omen $10 sherpa-gate, Max #2 hold) - those need operator GO/NO-GO.",
+   "next": "RELOAD digest, load a lattice and STEP x1/x10/x70, jump to lanes.html manager board.",
+   "evidence": "dashboard/static/daytool.html lanes card + DIGEST_URL const, live curl /static/day_work_digest.txt 200 24430, /static/lattices/law_lattice.json 200 30225"
+  },
+  "because": "Mag can operate because the digest door serves and every dead door shows its error inline - never a blank page.",
+  "verdict": "KEEP",
+  "reason": "Unique destination-question (what is today's work), live digest, embedded pending-GO list changes the operator's next command."
+ },
+ {
+  "surface": "Decisions (PDB)",
+  "url": "/static/decisions.html",
+  "serves": 200,
+  "bytes": 1013,
+  "js_ok": true,
+  "five": {
+   "happening": "1KB page rendering decisions.json - 12 open decisions, built TODAY 2026-09-06T02:50Z, unactioned first, each with slug+decision+date.",
+   "matters": "This IS the operator's next-decision backlog (the PDB) - the literal answer to 'what needs my decision'.",
+   "decision": "Work the 12 open rows top-down; first row: TESUJI_DISSECTION_20260831 fold into TRAJECTORY_LENS lineage.",
+   "next": "Read, mark done (ACTIONED flag in JSON), regenerate.",
+   "evidence": "dashboard/static/decisions.html fetch('/static/decisions.json'), live curl 200 3847 bytes, open:12, built 2026-09-06"
+  },
+  "because": "Mag can operate because the decision feed is fresh bytes built today, and the page says 'nothing awaiting a decision' when empty.",
+  "verdict": "KEEP",
+  "reason": "Purest KEEP in the slice: five answered from live bytes and it directly changes the operator's next decision."
+ },
+ {
+  "surface": "Spend (ONE WALL)",
+  "url": "/static/spend.html",
+  "serves": 200,
+  "bytes": 12255,
+  "js_ok": true,
+  "five": {
+   "happening": "Cost truth wall over /api/v1/cost (live, 225,124 bytes, as_of 2026-09-06T06:28Z): caps (hard auto-kill), by-model, by-provider, plans, prepaid float, recharges; polls every 5s.",
+   "matters": "Quota is the scarce unit - this is the only surface answering 'how much do I have left' with receipt-grade bytes.",
+   "decision": "Whether current burn vs caps forces lane rebalancing before the Sep-20 wall.",
+   "next": "Read caps vs used, drill by model/provider, act on any cap breach.",
+   "evidence": "dashboard/static/spend.html fetch(\"/api/v1/cost\"), live curl 200 225124, schema cost_surface.v1 / truth as_of today"
+  },
+  "because": "Mag can operate because cost_enforcer caps are hard auto-kills fed by live receipts - the page shows the envelope, not a promise.",
+  "verdict": "KEEP",
+  "reason": "Unique destination-question (money/quota now), freshest data in the slice (as_of today), drives spend GOs."
+ },
+ {
+  "surface": "Chan (/keep/)",
+  "url": "/chan",
+  "serves": 200,
+  "bytes": 12719,
+  "js_ok": true,
+  "five": {
+   "happening": "Mesh board: /api/v1/chan/catalog?n=80 live (ok:true, board 'keep', 18 threads), plus post/thread/wake doors; canon thread op re-reads the five-document law.",
+   "matters": "It is the fleet's live comms channel - where seats and operator exchange rows the chain later seals.",
+   "decision": "Whether to answer or wake on any of the 18 open threads.",
+   "next": "Read newest threads, post a row, wake a lane.",
+   "evidence": "live curl /api/v1/chan/catalog?n=80 -> 200 10169 (count:18, canon thread), /chan page fetches catalog+post+thread+wake"
+  },
+  "because": "Mag can operate because the chan doors (catalog/post/thread/wake) all answer - the mesh has a working mouth and ear.",
+  "verdict": "KEEP",
+  "reason": "Unique destination-question (what is the fleet saying), all four doors verified live, thread content changes next command."
+ },
+ {
+  "surface": "Ractor Board",
+  "url": "/static/ractor.html",
+  "serves": 200,
+  "bytes": 4102,
+  "js_ok": true,
+  "five": {
+   "happening": "Beat board whose primary door /api/v1/ractor/tail?limit=500 returns 404 - it falls back (once, honestly commented 'pre-restart server') to a FULL fetch of /static/ractor_board.jsonl, which is 713,201,212 bytes: a 713MB download into the browser tab every page load.",
+   "matters": "The intended 'what are the fleet's beats' surface is effectively unusable - the tab will hang or die on the fallback, and the 713MB file itself is an unbounded log on disk.",
+   "decision": "GO one of: serve the tail door (server restart/impl), cap+rotate ractor_board.jsonl, or point the page at a bounded slice.",
+   "next": "Fix the tail door first; counts+status rendering (RUNNING/PENDING/DONE/BLOCKED) is ready and correct once rows arrive.",
+   "evidence": "dashboard/static/ractor.html load() fallback branch; live curl /api/v1/ractor/tail?limit=500 -> 404, /static/ractor_board.jsonl -> 200 713201212"
+  },
+  "because": "Mag can't operate here because the live tail door 404s and the fallback payload is 713MB - the page is honest about the fallback but the bytes make it un-runnable.",
+  "verdict": "KEEP",
+  "reason": "Unique destination-question (fleet beats/status) with correct rendering, but carries the slice's worst structural defect - a repair GO, not a demotion."
+ },
+ {
+  "surface": "Museum",
+  "url": "/static/museum.html",
+  "serves": 200,
+  "bytes": 2264,
+  "js_ok": true,
+  "five": {
+   "happening": "Canon exhibit hall from /static/museum.jsonl (live, 4,098 bytes): poster/song/media exhibits with era+caption+provenance ('exhibits are canon, legends are proposals').",
+   "matters": "It answers 'what has the fleet actually made' with claim-linked artifacts, not decoration - deeds append.",
+   "decision": "None - it is a record; only decision is when to append the next exhibit.",
+   "next": "Append exhibit rows to museum.jsonl; the page renders whatever lands.",
+   "evidence": "dashboard/static/museum.html fetch('/static/museum.jsonl'), live curl 200 4098 (exhibit-000 THE LOST CIVILIZATION onward)"
+  },
+  "because": "Mag can operate because exhibits are plain jsonl rows the cage appends - the hall renders any honest payload and shows 'museum dark: <err>' when not.",
+  "verdict": "KEEP",
+  "reason": "Unique destination-question (canon made artifacts), every exhibit caption is a claim with provenance, honest dark-state."
+ },
+ {
+  "surface": "Night Book",
+  "url": "/static/night/index.html",
+  "serves": 200,
+  "bytes": 3060,
+  "js_ok": true,
+  "five": {
+   "happening": "Static index to the 09-02/03 night-climb corpus: 21 documents (self-steal laws, hermes dossier, mazes, codecs), zero inline JS, links serve (sampled: the_session_self_steal.html 200).",
+   "matters": "It is the History destination - the sealed record of the climb the other surfaces cite.",
+   "decision": "no data - correctly a sealed record; nothing here asks for a decision.",
+   "next": "Read; cross-link exhibits/cards to these docs rather than duplicating them.",
+   "evidence": "dashboard/static/night/index.html (21 doc links), live curl /static/night/the_session_self_steal.html -> 200"
+  },
+  "because": "Mag can operate because the record is plain static files - any seat can read or re-serve it without a process.",
+  "verdict": "KEEP",
+  "reason": "Unique destination-question (what happened that night), all five answered or honestly 'no data' (decision: sealed), zero live-data honesty risk."
+ },
+ {
+  "surface": "The Room (lightmap)",
+  "url": "/static/room_lightmap.html",
+  "serves": 200,
+  "bytes": 4766,
+  "js_ok": true,
+  "five": {
+   "happening": "Canvas SDF lightmap render (Flyguy/XsK3RR lineage, JS port): hardcoded 2026-09-02 scene with legend metaphors (failure-class pillars, THE FOLD). No fetches, no data reads, no live state.",
+   "matters": "It is technique evidence for the shadow-fields arc (1D radial lightmap steal proven in-browser) - but as a nav surface it answers nothing about the fleet NOW.",
+   "decision": "None - nothing on the page can change; the date in its title is already 4 days stale.",
+   "next": "File under LIBRARY as shadow-field evidence next to watch/SHADERTOY_SHADOW_FIELDS_20260903.md; free the nav slot.",
+   "evidence": "dashboard/static/room_lightmap.html - zero fetch/src, scene() hardcoded pillars, title 'MAG - The Room - 2026-09-02'"
+  },
+  "because": "Mag can't operate through this page because it reads no bytes - it is a painting of the room, not the room.",
+  "verdict": "DEMOTE",
+  "reason": "Eye-candy with no live claim link: no fetches, hardcoded scene, stale dated title - genuine technique evidence, so LIBRARY file, not a nav surface."
+ }
+]

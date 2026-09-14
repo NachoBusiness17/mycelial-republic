@@ -1,0 +1,214 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FLEET SYMBOLS — the operator algebra</title>
+<style>
+:root{--bg:#030806;--panel:#051009;--line:#0d2418;--ink:#c8e6d9;--accent:#7cf5ff;--gold:#e8c96a;--red:#ff6b6b;--mut:#8ab8a4;--dim:#6f9b88;--wire:#3f7a5e}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-monospace,Consolas,monospace}
+#wrap{max-width:1080px;margin:0 auto;padding:18px 16px 40px}
+h1{font-size:.85rem;letter-spacing:.1em;color:var(--accent);margin:0 0 2px;font-weight:600}
+.credit{font-size:.68rem;color:#8ab8a4;margin-bottom:16px}
+h2{font-size:.72rem;letter-spacing:.12em;color:var(--gold);margin:24px 0 4px;font-weight:600}
+.sub{font-size:.66rem;color:var(--dim);margin:0 0 10px;line-height:1.5}
+.sub b{color:var(--red)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.cell{border:1px solid var(--line);background:var(--panel);border-radius:4px;padding:10px 12px;display:flex;gap:12px;align-items:center}
+.cell:hover{border-color:#1d4a34}
+.glyph{flex:0 0 auto}.glyph svg{width:90px;height:45px;display:block}
+.c-teal{color:var(--accent)}.c-gold{color:var(--gold)}.c-red{color:var(--red)}
+.txt{min-width:0}
+.name{font-size:.74rem;letter-spacing:.06em;font-weight:600}
+.cmd{font-size:.68rem;color:var(--ink);line-height:1.45;margin-top:3px}
+.anc{font-size:.62rem;color:var(--dim);margin-top:2px}
+.circ{border:1px solid var(--line);background:var(--panel);border-radius:4px;padding:10px 12px}
+.circ h3{margin:0;font-size:.72rem;letter-spacing:.08em;color:var(--accent);font-weight:600}
+.circ .ops{font-size:.62rem;color:var(--dim);margin:3px 0 6px}
+.circ svg{width:100%;height:auto;display:block}
+.circ .gist{font-size:.64rem;color:var(--mut);line-height:1.45;margin-top:6px}
+.circ.refused{border-color:#5a2323}
+.circ.refused h3{color:var(--red)}
+.circ.refused .gist{color:var(--red)}
+.specbox{border:1px solid var(--line);background:var(--panel);border-radius:4px;padding:14px 14px 8px}
+.specbox svg{width:100%;height:auto;display:block}
+.caption{font-size:.68rem;color:var(--mut);padding:10px 2px 6px;border-top:1px solid var(--line);margin-top:6px;line-height:1.5}
+.caption b{color:var(--gold)}
+.note{font-size:.64rem;color:var(--dim);margin-top:16px;line-height:1.5}
+.note code{color:var(--accent)}
+</style></head><body>
+<div id="wrap">
+<h1>FLEET SYMBOLS — THE OPERATOR ALGEBRA</h1>
+<div class="credit">a symbol is a command &middot; Philbrick 1964: ~5 primitives composed into named circuits, every stable circuit closes its loop &middot; phenomena are a continuous spectrum, not bands &middot; v2 — supersedes the icon legend &middot; house dark (field_quills) &middot; numbers: BURST_DOCTRINE_20260903</div>
+
+<!-- primitive glyph library: inline SVG symbols, reuse via <use href="#sym-..."> -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+
+<symbol id="sym-emit" viewBox="0 0 80 40"><!-- radiates light -->
+ <path d="M24,12 L24,32 L42,22 Z" fill="currentColor"/>
+ <path d="M42,12 V32" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+ <path d="M52,15 L61,8" stroke="currentColor" stroke-width="1.6"/>
+ <polyline points="55.2,9.3 61,8 58.3,13.3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+ <path d="M58,19 L67,12" stroke="currentColor" stroke-width="1.6"/>
+ <polyline points="61.2,13.3 67,12 64.3,17.3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+</symbol>
+
+<symbol id="sym-store" viewBox="0 0 80 40"><!-- capacitor plates -->
+ <path d="M33,6 V38 M47,6 V38" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+</symbol>
+
+<symbol id="sym-dissipate" viewBox="0 0 80 40"><!-- resistor zigzag -->
+ <polyline points="14,22 20,9 30,35 40,9 50,35 60,9 66,22" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+</symbol>
+
+<symbol id="sym-gate" viewBox="0 0 80 40"><!-- diode, one-way -->
+ <path d="M27,10 L27,34 L49,22 Z" fill="currentColor"/>
+ <path d="M49,10 V34" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+</symbol>
+
+<symbol id="sym-integrate" viewBox="0 0 80 40"><!-- op-amp integrator: C in feedback -->
+ <path d="M0,22 H22" stroke="currentColor" stroke-width="2"/>
+ <path d="M22,10 V34 L50,22 Z" fill="none" stroke="currentColor" stroke-width="2"/>
+ <path d="M25,14 h5 M27.5,11.5 v5 M25,28 h5" stroke="currentColor" stroke-width="1.4"/>
+ <path d="M50,22 H58" stroke="currentColor" stroke-width="2"/>
+ <path d="M58,22 V8 H42 M34,8 H12 V22" fill="none" stroke="currentColor" stroke-width="1.6"/>
+ <path d="M38,3 V13 M34,3 V13" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+ <circle cx="58" cy="22" r="2" fill="currentColor"/><circle cx="12" cy="22" r="2" fill="currentColor"/>
+</symbol>
+
+<symbol id="sym-differentiate" viewBox="0 0 80 40"><!-- op-amp differentiator: C at input -->
+ <path d="M0,22 H20 M26,22 H30" stroke="currentColor" stroke-width="2"/>
+ <path d="M20,17 V27 M26,17 V27" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+ <path d="M30,10 V34 L58,22 Z" fill="none" stroke="currentColor" stroke-width="2"/>
+ <path d="M33,14 h5 M35.5,11.5 v5 M33,28 h5" stroke="currentColor" stroke-width="1.4"/>
+ <path d="M58,22 H68" stroke="currentColor" stroke-width="2"/>
+ <path d="M68,22 V8 H46 M26,8 H12 V22" fill="none" stroke="currentColor" stroke-width="1.6"/>
+ <polyline points="46,8 42,3 36,13 30,3 26,8" fill="none" stroke="currentColor" stroke-width="1.6"/>
+ <circle cx="68" cy="22" r="2" fill="currentColor"/><circle cx="12" cy="22" r="2" fill="currentColor"/>
+</symbol>
+
+<symbol id="sym-ground" viewBox="0 0 80 40"><!-- the terminator -->
+ <path d="M0,22 H28 M28,22 V27" fill="none" stroke="currentColor" stroke-width="2"/>
+ <path d="M14,27 H42 M19,32 H37 M24,37 H32" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+</symbol>
+
+</defs></svg>
+
+<h2>LAYER 1 — PRIMITIVES (7)</h2>
+<p class="sub">Seven operators, not twelve labels. Each glyph is a verb with an electrical ancestor.</p>
+<div class="grid">
+ <div class="cell" data-symbol="emit"><span class="glyph c-gold"><svg viewBox="0 0 80 40"><use href="#sym-emit"/></svg></span><span class="txt"><span class="name" style="color:var(--gold)">EMIT</span><div class="cmd">publish light others navigate by — frontier pass, room broadcast.</div><div class="anc">ancestor: LED / antenna</div></span></div>
+ <div class="cell" data-symbol="store"><span class="glyph c-gold"><svg viewBox="0 0 80 40"><use href="#sym-store"/></svg></span><span class="txt"><span class="name" style="color:var(--gold)">STORE</span><div class="cmd">bank charge now; spend it free later — KV/prefix cache, 99.5% hit @ ~50K tok/credit.</div><div class="anc">ancestor: capacitor</div></span></div>
+ <div class="cell" data-symbol="dissipate"><span class="glyph c-red"><svg viewBox="0 0 80 40"><use href="#sym-dissipate"/></svg></span><span class="txt"><span class="name" style="color:var(--red)">DISSIPATE</span><div class="cmd">pay the heat — every emit burns output at 3.3x input. max_tokens is a budget line.</div><div class="anc">ancestor: resistor</div></span></div>
+ <div class="cell" data-symbol="gate"><span class="glyph c-teal"><svg viewBox="0 0 80 40"><use href="#sym-gate"/></svg></span><span class="txt"><span class="name" style="color:var(--accent)">GATE</span><div class="cmd">pass only what survives the check; one way, no vibes through.</div><div class="anc">ancestor: diode / falsifier</div></span></div>
+ <div class="cell" data-symbol="integrate"><span class="glyph c-teal"><svg viewBox="0 0 80 40"><use href="#sym-integrate"/></svg></span><span class="txt"><span class="name" style="color:var(--accent)">INTEGRATE</span><div class="cmd">accumulate the running area — totals, not instants; savings compound.</div><div class="anc">ancestor: op-amp integrator</div></span></div>
+ <div class="cell" data-symbol="differentiate"><span class="glyph c-teal"><svg viewBox="0 0 80 40"><use href="#sym-differentiate"/></svg></span><span class="txt"><span class="name" style="color:var(--accent)">DIFFERENTIATE</span><div class="cmd">read the slope — drift, rate, EDG compare; req/s and stale-hash live here.</div><div class="anc">ancestor: op-amp differentiator</div></span></div>
+ <div class="cell" data-symbol="ground"><span class="glyph c-teal"><svg viewBox="0 0 80 40"><use href="#sym-ground"/></svg></span><span class="txt"><span class="name" style="color:var(--accent)">GROUND</span><div class="cmd">terminate where everything returns — 127.0.0.1. Mandatory, or the circuit does not render.</div><div class="anc">ancestor: ground / binding</div></span></div>
+</div>
+
+<h2>LAYER 2 — NAMED CIRCUITS (the Philbrick cookbook)</h2>
+<p class="sub">Fleet behaviors as compositions of primitives. <b>HARD RULE, enforced by the draw code:</b> any circuit whose path does not terminate in GROUND is refused — the ground wire is the launch law; a build without a falsifier doesn't render.</p>
+<div class="grid" id="circuits"></div>
+
+<h2>LAYER 3 — THE HYPERSPECTRAL TRACK</h2>
+<p class="sub">One session, rendered as a continuous spectrum: each phenomenon is a wavelength, intensity is magnitude, savings is the area under the curve.</p>
+<div class="specbox">
+<svg viewBox="0 0 980 250" role="img" aria-label="Hyperspectral track of one model session">
+ <!-- grid -->
+ <g stroke="#0d2418" stroke-width="1">
+  <path d="M40,60 H940 M40,110 H940 M40,160 H940"/>
+ </g>
+ <!-- continuous cache ridge (always on) -->
+ <path d="M50,210 C250,194 620,194 930,210 Z" fill="#7cf5ff" fill-opacity="0.10" stroke="#7cf5ff" stroke-opacity="0.35" stroke-width="1"/>
+ <!-- lambda cache (teal) -->
+ <g fill="#7cf5ff" fill-opacity="0.22" stroke="#7cf5ff" stroke-opacity="0.8" stroke-width="1.4">
+  <path d="M150,210 C175,210 185,95 200,95 C215,95 225,210 250,210 Z"/>
+  <path d="M205,210 C230,210 240,95 255,95 C270,95 280,210 305,210 Z"/>
+  <path d="M260,210 C285,210 295,95 310,95 C325,95 335,210 360,210 Z"/>
+  <path d="M650,210 C675,210 685,110 700,110 C715,110 725,210 750,210 Z"/>
+  <path d="M705,210 C730,210 740,110 755,110 C770,110 780,210 805,210 Z"/>
+ </g>
+ <!-- lambda burn (red) -->
+ <g fill="#ff6b6b" fill-opacity="0.22" stroke="#ff6b6b" stroke-opacity="0.8" stroke-width="1.4">
+  <path d="M370,210 C395,210 405,140 420,140 C435,140 445,210 470,210 Z"/>
+  <path d="M425,210 C450,210 460,140 475,140 C490,140 500,210 525,210 Z"/>
+  <path d="M800,210 C825,210 835,150 850,150 C865,150 875,210 900,210 Z"/>
+ </g>
+ <!-- lambda light (gold) -->
+ <g fill="#e8c96a" fill-opacity="0.22" stroke="#e8c96a" stroke-opacity="0.85" stroke-width="1.4">
+  <path d="M10,210 C40,210 60,115 90,115 C120,115 140,210 170,210 Z"/>
+  <path d="M560,210 C580,210 600,150 620,150 C640,150 660,210 680,210 Z"/>
+ </g>
+ <!-- lambda correction (red, narrow) -->
+ <path d="M530,210 C548,210 551,155 560,155 C569,155 572,210 590,210 Z" fill="#ff6b6b" fill-opacity="0.30" stroke="#ff6b6b" stroke-width="1.6"/>
+ <!-- savings = area under the curve (ink line) -->
+ <path d="M20,210 L150,210 C200,205 240,120 310,120 L420,120 C445,121 470,123 500,123 L640,123 C690,113 740,70 805,70 L840,70 C870,73 900,75 920,76" fill="none" stroke="#c8e6d9" stroke-width="2"/>
+ <circle cx="920" cy="76" r="3" fill="#c8e6d9"/>
+ <!-- baseline + axis -->
+ <path d="M20,210 H940" stroke="#3f7a5e" stroke-width="2"/>
+ <text x="24" y="230" font-size="8" fill="#6f9b88" font-family="ui-monospace,monospace">session start</text>
+ <text x="938" y="230" font-size="8" fill="#6f9b88" text-anchor="end" font-family="ui-monospace,monospace">session t &#8594;</text>
+ <text x="16" y="56" font-size="8" fill="#6f9b88" font-family="ui-monospace,monospace">intensity &#8593;</text>
+ <!-- wavelength chips -->
+ <g font-family="ui-monospace,monospace" font-size="9">
+  <rect x="40" y="24" width="14" height="8" fill="#e8c96a" fill-opacity="0.5"/><text x="58" y="31" fill="#e8c96a">&#955; light</text>
+  <rect x="120" y="24" width="14" height="8" fill="#7cf5ff" fill-opacity="0.5"/><text x="138" y="31" fill="#7cf5ff">&#955; cache</text>
+  <rect x="200" y="24" width="14" height="8" fill="#ff6b6b" fill-opacity="0.5"/><text x="218" y="31" fill="#ff6b6b">&#955; burn</text>
+  <rect x="280" y="24" width="14" height="8" fill="#ff6b6b" fill-opacity="0.7"/><text x="298" y="31" fill="#ff6b6b">&#955; correction</text>
+  <rect x="392" y="24" width="14" height="8" fill="none" stroke="#c8e6d9"/><text x="410" y="31" fill="#c8e6d9">savings (area under the curve)</text>
+ </g>
+ <!-- receipted annotations -->
+ <g font-family="ui-monospace,monospace" font-size="8" fill="#8ab8a4">
+  <text x="255" y="88" text-anchor="middle">cache ×3 — 99.5% @ ~50K tok/credit</text>
+  <text x="472" y="133" text-anchor="middle">burn ×2 — 3.3x out</text>
+  <text x="560" y="148" text-anchor="middle">correction</text>
+  <text x="755" y="103" text-anchor="middle">cache reuse</text>
+  <text x="90" y="108" text-anchor="middle" fill="#e8c96a">frontier light opens</text>
+ </g>
+</svg>
+<div class="caption">RGB is 3 bands; multispectral is N; hyperspectral is continuous. <b>Fleet phenomena are a spectrum.</b> Each wavelength is a primitive at work — gold light, teal cache, red burn, red-spike correction — and the ink line is what the operator keeps: the integrated area. Receipted: 99.5% prefix hit @ ~50K tok/credit; output 3.3x input; harness baseline 0.71; wide lane 50/50 @ p50 1.7s.</div>
+</div>
+
+<div class="note">Reuse: glyphs are inline SVG <code>&lt;symbol&gt;</code>s — <code>&lt;use href="#sym-emit | sym-store | sym-dissipate | sym-gate | sym-integrate | sym-differentiate | sym-ground"&gt;</code>; each primitive card carries a matching <code>data-symbol</code>. The circuit table lives in the page source (<code>CIRCUITS</code>) — add a row and it renders, but only if it grounds. Zero deps, no CDN, loopback-served only. v2 supersedes the 12-icon legend of 2026-09-04.</div>
+</div>
+
+<script>
+"use strict";
+// LAYER 2 — named circuits. HARD RULE: a circuit that does not end in GROUND is refused.
+const GLYPH={emit:"sym-emit",store:"sym-store",dissipate:"sym-dissipate",gate:"sym-gate",integrate:"sym-integrate",differentiate:"sym-differentiate",ground:"sym-ground"};
+const COLOR={emit:"var(--gold)",store:"var(--gold)",dissipate:"var(--red)",gate:"var(--accent)",integrate:"var(--accent)",differentiate:"var(--accent)",ground:"var(--accent)"};
+const CIRCUITS=[
+ {name:"ACCUMULATOR",ops:["store","integrate","ground"],gist:"cache compounds — every hit banks area under the savings curve (99.5% prefix hit)."},
+ {name:"MAX_DISTILL",ops:["gate","integrate","ground"],gist:"frontier search gated to survivors, integrated into cheap eval — the step-down."},
+ {name:"LIGHT THESIS",ops:["emit","store","gate","ground"],gist:"frontier pass → FIELD.json → falsifier → loopback. The full thesis arc."},
+ {name:"BURST LANE",ops:["differentiate","gate","ground"],gist:"read the rate (req/s), gate the wave, land the batch — 50/50 @ p50 1.7s."},
+ {name:"LEG-1 CLAIM ORGAN",ops:["gate","ground"],gist:"claims enter; only Supported passes; everything lands in the room."},
+ {name:"STANDING WAVE MINER",ops:["store","differentiate","gate","ground"],gist:"frozen prefix stored, drift differentiated, single-flight gated — free tokens, thinking-off."},
+ {name:"TOKEN DIET",ops:["dissipate","differentiate","gate","ground"],gist:"measure the burn rate, gate max_tokens, land terse — output is 3.3x."},
+ // deliberate specimen of the refusal rule:
+ {name:"VAPOR CHAT",ops:["emit"],gist:"specimen of the rule — all emit, no ground."}
+];
+function circuitSvg(ops){
+ const n=ops.length,w=n*90+10;
+ let s='<svg viewBox="0 0 '+w+' 44" preserveAspectRatio="xMidYMid meet">';
+ for(let i=0;i<n;i++){
+  const x=5+i*90;
+  if(i<n-1)s+='<path d="M'+(x+81)+',22 H'+(x+89)+'" stroke="#3f7a5e" stroke-width="2" fill="none"/>';
+  s+='<use href="#'+GLYPH[ops[i]]+'" x="'+x+'" y="2" width="80" height="40" style="color:'+COLOR[ops[i]]+'"/>';
+ }
+ return s+'</svg>';
+}
+const host=document.getElementById('circuits');
+let rendered=0,refused=0;
+for(const c of CIRCUITS){
+ if(c.ops[c.ops.length-1]!=='ground'){
+  refused++;
+  const d=document.createElement('div');d.className='circ refused';
+  d.innerHTML='<h3>REFUSED — '+c.name+'</h3><div class="ops">'+c.ops.join(' &#8594; ')+' &#8594; &#8709;</div>'+
+   '<div class="gist">No ground wire: path never lands, so the draw code will not render it. '+c.gist+' A build without a falsifier doesn\'t render — the launch law, enforced structurally.</div>';
+  host.appendChild(d);continue;
+ }
+ rendered++;
+ const d=document.createElement('div');d.className='circ';
+ d.innerHTML='<h3>'+c.name+'</h3><div class="ops">'+c.ops.join(' &#8594; ')+'</div>'+circuitSvg(c.ops)+'<div class="gist">'+c.gist+'</div>';
+ host.appendChild(d);
+}
+</script>
+</body></html>

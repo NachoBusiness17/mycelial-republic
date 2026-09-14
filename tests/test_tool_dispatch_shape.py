@@ -119,3 +119,81 @@ def test_expected_params_lists_flat_names():
     s = _expected_params("write_file")
     assert "path" in s
     assert "content" in s
+
+
+def test_alias_cmd_to_command_run_shell():
+    # Models emit the OpenAI code-interpreter name `cmd` for run_shell's
+    # advertised `command` (25,007 failure_kb rows under one signature,
+    # 2026-08-06 -> 2026-09-11). The advertised name is absent, so the rename
+    # is unambiguous; accepting it beats spending a round on a TypeError.
+    assert _normalize_args("run_shell", {"cmd": "echo hi"}) == {"command": "echo hi"}
+    r = dispatch("run_shell", {"cmd": "echo alias-ok"})
+    assert r["ok"] is True, r
+    assert r["exit_code"] == 0, r
+    assert "alias-ok" in (r.get("output") or "")
+
+
+def test_alias_applies_after_blob_unwrap():
+    # Alias must run AFTER the nested-blob unwrap, or the two defenses do not
+    # compose (the unwrap used to return early).
+    assert _normalize_args("run_shell", {"arguments": '{"cmd": "echo hi"}'}) == {"command": "echo hi"}
+    assert _normalize_args("run_python", {"kwargs": {"python": "print(1)"}}) == {"code": "print(1)"}
+
+
+def test_alias_never_clobbers_advertised_name():
+    # Alias is a fallback only: an explicit correct param always wins.
+    assert _normalize_args("run_shell", {"command": "real", "cmd": "junk"}) == {
+        "command": "real",
+        "cmd": "junk",
+    }
+    # and untouched for tools with no alias entry
+    assert _normalize_args("write_file", {"path": "p", "content": "c"}) == {"path": "p", "content": "c"}
+
+
+def test_refusal_is_not_a_raise():
+    # The backend answers a bad arg shape with {"ok": false, "error": null,
+    # "result": {"ok": false, "error": "bad arguments for <tool>: ..."}}.
+    # Surfacing only the envelope replaces a self-teaching message with the
+    # opaque "backend reported failure" - the exact FKB signature of the
+    # 5-week run_shell loop. The actionable text must reach the model.
+    import httpx
+
+    from mag import agent_cli
+
+    msg = (
+        "bad arguments for run_shell: unexpected keyword argument 'cmd'. "
+        "Expected flat named parameters: command, timeout=60"
+    )
+
+    class _Resp:
+        status_code = 200
+        text = ""
+
+        def json(self):
+            return {"ok": False, "error": None,
+                    "result": {"ok": False, "exit_code": 2, "error": msg}}
+
+    class _Client:
+        def __init__(self, *a, **k):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def post(self, *a, **k):
+            return _Resp()
+
+    real = httpx.Client
+    httpx.Client = _Client
+    try:
+        out = agent_cli._run_tool_http("run_shell", {"cmd": "echo hi"})
+    finally:
+        httpx.Client = real
+
+    assert out["ok"] is False, out
+    assert "unexpected keyword argument 'cmd'" in out["error"], out
+    assert "Expected flat named parameters: command" in out["error"], out
+    assert "backend reported failure" not in out["error"], out

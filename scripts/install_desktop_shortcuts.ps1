@@ -65,4 +65,20 @@ if (Test-Path $stopCmd) {
     New-Shortcut 'Mag Stop (Docker)' "cmd.exe" "/c `"$stopCmd`"" $ico 'Stop Mag Docker stack'
 }
 
+$openclawVbs = Join-Path $PSScriptRoot "openclaw_dash.vbs"
+if (Test-Path $openclawVbs) {
+    New-Shortcut 'Mag OpenClaw' "$env:SystemRoot\System32\wscript.exe" "`"$openclawVbs`"" $ico 'OpenClaw Control UI — docker gateway :18789'
+    $startDir = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs"
+    $sh = New-Object -ComObject WScript.Shell
+    $startLnk = Join-Path $startDir "Mag OpenClaw.lnk"
+    $sc = $sh.CreateShortcut($startLnk)
+    $sc.TargetPath = "$env:SystemRoot\System32\wscript.exe"
+    $sc.Arguments = "`"$openclawVbs`""
+    $sc.WorkingDirectory = $MagRoot
+    if (Test-Path $ico) { $sc.IconLocation = $ico }
+    $sc.Description = "OpenClaw Control UI — docker gateway :18789"
+    $sc.Save()
+    Write-Host "Created $startLnk"
+}
+
 Write-Host 'Done. Daily: Mag ON, work, Mag KILL'

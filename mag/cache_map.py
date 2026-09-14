@@ -19,6 +19,7 @@ Schema: cache_map.v1
 from __future__ import annotations
 
 import argparse
+import heapq
 import json
 import sys
 from collections import defaultdict
@@ -164,23 +165,37 @@ def build_map(*, usage_rows: list[dict[str, Any]] | None = None,
     chain = chain_rows if chain_rows is not None else _read_jsonl(CHAIN)
     rows_remote = [r for r in rows if is_remote(r)]
 
-    # Precompute session windows ONCE (string keys — fast range check, no per-row fromisoformat).
-    windows: list[tuple[str, str, str]] = []
-    for s in chain:
+    # Precompute session windows ONCE.  The old bucket() linearly scanned every
+    # verkle window for every usage row (31k x 2.4k on this checkout), turning a
+    # read-only cache map into an accidental quadratic workload.  Build a
+    # sweep-line index instead: usage timestamps are sorted once, windows enter
+    # by start time, and a max-heap preserves the original "last match wins"
+    # rule for overlapping sessions.
+    windows: list[tuple[str, str, str, int]] = []
+    for ordinal, s in enumerate(chain):
         start = _iso_min(s.get("start_minute"))
         end = _iso_min(s.get("end_minute"))
         if start and end:
-            windows.append((start, end, str((s or {}).get("dominant_theme") or "unmapped")))
+            windows.append((start, end, str((s or {}).get("dominant_theme") or "unmapped"), ordinal))
+    windows.sort(key=lambda w: (w[0], w[3]))
+
+    row_keys = {_iso_min(r.get("ts", "")) for r in rows_remote}
+    row_keys.discard("")
+    window_cursor = 0
+    active: list[tuple[int, str, str]] = []
+    bucket_by_key: dict[str, str] = {}
+    for key in sorted(row_keys):
+        while window_cursor < len(windows) and windows[window_cursor][0] <= key:
+            start, end, theme, ordinal = windows[window_cursor]
+            if end >= start:
+                heapq.heappush(active, (-ordinal, end, theme))
+            window_cursor += 1
+        while active and active[0][1] < key:
+            heapq.heappop(active)
+        bucket_by_key[key] = active[0][2] if active else ""
 
     def bucket(ts: str) -> str:
-        key = _iso_min(ts)
-        if not key:
-            return ""
-        theme = ""
-        for start, end, t in windows:  # append-ordered; last match wins
-            if start <= key <= end:
-                theme = t
-        return theme
+        return bucket_by_key.get(_iso_min(ts), "")
 
     def row_split(r):
         """Return (hit, miss) if this row carries the cache split, else None."""

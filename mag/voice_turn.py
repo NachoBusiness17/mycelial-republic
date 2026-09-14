@@ -1121,8 +1121,11 @@ def handle_voice_turn(body: dict[str, Any] | None) -> dict[str, Any]:
             h.get("id") == "tabletop-dnd" for h in (skills.get("hits") or [])
         ):
             force_new = bool(re.search(r"\b(new game|start over|fresh|new campaign)\b", text, re.I))
+            mod = "classic"
+            if re.search(r"\b(water one|water computer|hydraulic|moniac|lukyanov|tanks)\b", text, re.I):
+                mod = "water_computer"
             out_p = begin_play(
-                module_id="classic",
+                module_id=mod,
                 voice_session_id=game_sid,
                 force_new=force_new,
             )

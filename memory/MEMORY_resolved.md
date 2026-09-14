@@ -1,0 +1,484 @@
+# MEMORY_resolved — resolved index (pointer repair, GAP-1)
+
+Generated: 2026-09-07T05:14:24.949Z · Source: memory/MEMORY.md (SEALED — untouched) · Generator: `python -m mag.spawn_manifest resolve`
+Resolved: **31 of 467 link rows** (31 unique targets) · Phantoms: **436 rows** (416 unique targets)
+
+Law: ADDITIVE ONLY. memory/MEMORY.md is sealed forensic evidence (astra_gap_v2 salon verdict) — this index repairs pointers by existing beside it, never by editing it. Resolution order: literal at repo root, literal under memory/, then basename walk across memory/ then the repo (heavy dirs pruned).
+
+## RESOLVED
+
+- [User: foste, sovereign fleet operator](user-foste-sovereign-operator.md) → `memory/runs/codex_seat/fold/user-foste-sovereign-operator.md` (via basename-repo, MEMORY.md:L432)
+- [Feedback: tri-state claims](feedback-tri-state-and-verify.md) → `memory/runs/codex_seat/fold/feedback-tri-state-and-verify.md` (via basename-repo, MEMORY.md:L434)
+- [Feedback: cost & session economics](feedback-cost-session-economics.md) → `memory/runs/codex_seat/fold/feedback-cost-session-economics.md` (via basename-repo, MEMORY.md:L436)
+- [Feedback: docker not desktop](feedback-docker-not-desktop.md) → `memory/runs/codex_seat/fold/feedback-docker-not-desktop.md` (via basename-repo, MEMORY.md:L438)
+- [Feedback: root pattern & self-laws](feedback-root-pattern-and-self-laws.md) → `memory/runs/codex_seat/fold/feedback-root-pattern-and-self-laws.md` (via basename-repo, MEMORY.md:L441)
+- [Project: zcode seat protocol](project-zcode-seat-protocol.md) → `memory/runs/codex_seat/fold/project-zcode-seat-protocol.md` (via basename-repo, MEMORY.md:L443)
+- [Project: containerization mandate](project-containerization-mandate.md) → `memory/runs/codex_seat/fold/project-containerization-mandate.md` (via basename-repo, MEMORY.md:L444)
+- [Project: compute inventory & routing](project-compute-inventory-routing.md) → `memory/runs/codex_seat/fold/project-compute-inventory-routing.md` (via basename-repo, MEMORY.md:L445)
+- [Reference: fleet commands](reference-fleet-commands.md) → `memory/runs/codex_seat/fold/reference-fleet-commands.md` (via basename-repo, MEMORY.md:L449)
+- [Project: fleet chronology](project-fleet-chronology.md) → `memory/runs/codex_seat/fold/project-fleet-chronology.md` (via basename-repo, MEMORY.md:L451)
+- [Project: Sancho spore](project-sancho-spore.md) → `memory/runs/codex_seat/fold/project-sancho-spore.md` (via basename-repo, MEMORY.md:L452)
+- [Project: surfaces & observability](project-surfaces-observability.md) → `memory/runs/codex_seat/fold/project-surfaces-observability.md` (via basename-repo, MEMORY.md:L453)
+- [Reference: VS Code sessions layout](reference-vscode-sessions-layout.md) → `memory/runs/codex_seat/fold/reference-vscode-sessions-layout.md` (via basename-repo, MEMORY.md:L455)
+- [Reference: Z.ai coding plan quota](reference-zai-coding-plan-quota.md) → `memory/runs/codex_seat/fold/reference-zai-coding-plan-quota.md` (via basename-repo, MEMORY.md:L456)
+- [Reference: drive inventory three rings](reference-drive-inventory-three-rings.md) → `memory/runs/codex_seat/fold/reference-drive-inventory-three-rings.md` (via basename-repo, MEMORY.md:L457)
+- [Project: mesh automation](project-mesh-automation.md) → `memory/runs/codex_seat/fold/project-mesh-automation.md` (via basename-repo, MEMORY.md:L458)
+- [Reference: Windows shell & CUA quirks](reference-windows-shell-and-cua.md) → `memory/runs/codex_seat/fold/reference-windows-shell-and-cua.md` (via basename-repo, MEMORY.md:L460)
+- [Project: AdventureLearn & swarm](project-adventurelearn-swarm.md) → `memory/runs/codex_seat/fold/project-adventurelearn-swarm.md` (via basename-repo, MEMORY.md:L463)
+- [Project: swarm directive](project-swarm-directive.md) → `memory/runs/codex_seat/fold/project-swarm-directive.md` (via basename-repo, MEMORY.md:L464)
+- [Project: Rocinante tripartite](project-rocinante-tripartite.md) → `memory/runs/codex_seat/fold/project-rocinante-tripartite.md` (via basename-repo, MEMORY.md:L465)
+- [Project: chord executable](project-chord-executable.md) → `memory/runs/codex_seat/fold/project-chord-executable.md` (via basename-repo, MEMORY.md:L466)
+- [Project: Ox Alpha = GLM-5.3 Flash](project-ox-alpha-glm53-flash.md) → `memory/runs/codex_seat/fold/project-ox-alpha-glm53-flash.md` (via basename-repo, MEMORY.md:L468)
+- [Project: public X thread 2026-08-26](project-public-x-thread-20260826.md) → `memory/runs/codex_seat/fold/project-public-x-thread-20260826.md` (via basename-repo, MEMORY.md:L469)
+- [Project: MAX_DISTILL arms](project-max-distill-arms.md) → `memory/runs/codex_seat/fold/project-max-distill-arms.md` (via basename-repo, MEMORY.md:L470)
+- [Project: telepathy via invariant codes](project-telepathy-invariant-codes.md) → `memory/runs/codex_seat/fold/project-telepathy-invariant-codes.md` (via basename-repo, MEMORY.md:L471)
+- [Project: grok burn ignited](project-grok-burn-ignited.md) → `memory/runs/codex_seat/fold/project-grok-burn-ignited.md` (via basename-repo, MEMORY.md:L472)
+- [Project: Z.AI MCP tool packs](project-zai-mcp-toolpacks.md) → `memory/runs/codex_seat/fold/project-zai-mcp-toolpacks.md` (via basename-repo, MEMORY.md:L478)
+- [Project: map-precedes-territory doctrine](project-map-precedes-territory-doctrine.md) → `memory/runs/codex_seat/fold/project-map-precedes-territory-doctrine.md` (via basename-repo, MEMORY.md:L480)
+- [Project: MEM WEAVE](project-mem-weave.md) → `memory/runs/codex_seat/fold/project-mem-weave.md` (via basename-repo, MEMORY.md:L481)
+- [Project: chain v2 program](project-chain-v2-program.md) → `memory/runs/codex_seat/fold/project-chain-v2-program.md` (via basename-repo, MEMORY.md:L490)
+- [Project: hallucination gauntlet](watch/HALLUCINATION_GAUNTLET_20260906.md) → `watch/HALLUCINATION_GAUNTLET_20260906.md` (via literal-root, MEMORY.md:L609)
+
+## PHANTOMS (forensic)
+
+Referenced but no file resolves anywhere under memory/ or the repo — index-only rows: rooms never built, or moved without re-pointing. Keep: this is the gap's own map, not garbage.
+
+- [Project: what-now salon — Sep 20 ladder](project-what-now-salon-20260906.md) — MEMORY.md:L3 — phantom
+- [Project: Republic of Letters](project-republic-of-letters-20260906.md) — MEMORY.md:L5 — phantom
+- [Project: THE MARGIN — FLT moonshot](project-the-margin-flt-moonshot-20260906.md) — MEMORY.md:L6 — phantom
+- [Project: Fermat ractor](project-fermat-ractor-20260906.md) — MEMORY.md:L7 — phantom
+- [User: awakening parable style](user-awakening-parable-style.md) — MEMORY.md:L8 — phantom
+- [Project: wakers curriculum](project-wakers-curriculum-20260906.md) — MEMORY.md:L9 — phantom
+- [Project: Rocinante substrate salon](project-rocinante-substrate-salon-20260906.md) — MEMORY.md:L11 — phantom
+- [Project: X shared-surface ops](project-x-shared-surface-ops.md) — MEMORY.md:L13 — phantom
+- [Project: functional picture + phrasebook](project-functional-picture-phrasebook-20260906.md) — MEMORY.md:L14 — phantom
+- [Project: purple harvest — light-maze math](project-purple-harvest-light-maze-math-20260906.md) — MEMORY.md:L15 — phantom
+- [Project: FLT ingest](project-flt-ingest-20260906.md) — MEMORY.md:L16 — phantom
+- [Project: transfer gate — rhyme dig](project-transfer-gate-rhyme-20260906.md) — MEMORY.md:L17 — phantom
+- [Project: Keely 3-6-9 intake](project-intake-keely-369-20260906.md) — MEMORY.md:L18 — phantom
+- [Reference: grokbot TRIAGE prompt loadout](reference-grokbot-triage-prompt-loadout-20260906.md) — MEMORY.md:L19 — phantom
+- [Project: triage haul bot01](project-triage-haul-bot01-20260906.md) — MEMORY.md:L20 — phantom
+- [Project: zeitgeist deep analysis](project-zeitgeist-deep-analysis-20260906.md) — MEMORY.md:L21 — phantom
+- [Project: the elder reads the walls](project-elder-reads-the-walls-20260906.md) — MEMORY.md:L22 — phantom
+- [Project: self hologram trajectory](project-self-hologram-trajectory-20260906.md) — MEMORY.md:L23 — phantom
+- [Project: fable room #0](project-fable-room-20260906.md) — MEMORY.md:L24 — phantom
+- [Project: fleet console](project-fleet-console-20260906.md) — MEMORY.md:L25 — phantom
+- [Project: game prompt lab](project-game-prompt-lab-20260906.md) — MEMORY.md:L26 — phantom
+- [Project: THE RUN — fun layer](project-the-run-fun-layer-20260906.md) — MEMORY.md:L28 — phantom
+- [Project: idea triangulation — mirror + syllabus](project-idea-triangulation-20260906.md) — MEMORY.md:L30 — phantom
+- [Feedback: taped layer - hidden gems](feedback-taped-layer-hidden-gems.md) — MEMORY.md:L32 — phantom
+- [Salon: unified fold conviction](salon-unified-fold-conviction.md) — MEMORY.md:L34 — phantom
+- [Project: shitposter persona + NACHO MASK ractor](project-shitposter-persona-20260906.md) — MEMORY.md:L36 — phantom
+- [Project: width-50 synthesis](project-width50-synthesis-20260906.md) — MEMORY.md:L38 — phantom
+- [Feedback: gaming corpus acquisition](feedback-gaming-corpus-acquisition.md) — MEMORY.md:L40 — phantom
+- [Feedback: don't handwave — run the path](feedback-dont-handwave-run-the-path.md) — MEMORY.md:L42 — phantom
+- [Project: shadow work volume](project-shadow-work-volume-20260906.md) — MEMORY.md:L44 — phantom
+- [Doctrine: model cartography](doctrine-model-cartography.md) — MEMORY.md:L46 — phantom
+- [Project: tesuji map 5.3flash](project-tesuji-map-5-3flash.md) — MEMORY.md:L48 — phantom
+- [Project: X reply radar + interceptor](project-x-reply-radar-interceptor-20260906.md) — MEMORY.md:L49 — phantom
+- [Project: TESUJI — map 5.3-flash as a field](project-tesuji-map-5-3flash-20260906.md) — MEMORY.md:L51 — phantom
+- [Project: ollama native drift](project-ollama-native-drift-20260905.md) — MEMORY.md:L52 — phantom
+- [Project: RBN blind verdict](project-rbn-blind-verdict-20260906.md) — MEMORY.md:L53 — phantom
+- [Feedback: operator state is a row](feedback-operator-state-is-a-row.md) — MEMORY.md:L54 — phantom
+- [Project: PANEL-2 desire pass](project-panel2-desire-pass-20260905.md) — MEMORY.md:L55 — phantom
+- [Project: map precedes the territory — live specimen](project-self-steal-map-precedes-20260905.md) — MEMORY.md:L56 — phantom
+- [Project: maze arena birth defects](project-maze-arena-birth-defects-20260906.md) — MEMORY.md:L57 — phantom
+- [Reference: swarm queue = format-eater](reference-swarm-queue-format-eater.md) — MEMORY.md:L58 — phantom
+- [Project: artifact ops introspection](project-artifact-ops-introspection-20260906.md) — MEMORY.md:L59 — phantom
+- [Project: lightmap room + recognition protocol](project-lightmap-room-recognition-20260906.md) — MEMORY.md:L60 — phantom
+- [Feedback: grok cash routing law](grok-cash-routing-law.md) — MEMORY.md:L62 — phantom
+- [Project: overseer + grounding wave + 5-wide probe](project-overseer-grounding-wave-20260905.md) — MEMORY.md:L63 — phantom
+- [Project: self-steal map salon](project-self-steal-map-salon-20260905.md) — MEMORY.md:L65 — phantom
+- [Project: research archaeology + Astra 09-05](project-research-archaeology-astra-20260905.md) — MEMORY.md:L67 — phantom
+- [Project: frontier steal salon](project-frontier-steal-salon-20260905.md) — MEMORY.md:L69 — phantom
+- [Project: flash local weights](project-flash-local-weights-20260905.md) — MEMORY.md:L71 — phantom
+- [Project: next-move queue 09-05](project-next-move-queue-20260905.md) — MEMORY.md:L73 — phantom
+- [Project: grok CLI X-bookmark harvest](project-grok-cli-x-harvest-20260905.md) — MEMORY.md:L75 — phantom
+- [Project: X harvest doctrine](project-x-harvest-doctrine-20260905.md) — MEMORY.md:L76 — phantom
+- [Project: X Pro canon harvest](project-x-pro-canon-harvest.md) — MEMORY.md:L77 — phantom
+- [Project: swarm snapshot = DFHack day one](project-swarm-snapshot-dfhack-20260905.md) — MEMORY.md:L79 — phantom
+- [Project: auth switchboard](project-auth-switchboard-20260905.md) — MEMORY.md:L81 — phantom
+- [Project: one-way mirror steal](project-one-way-mirror-steal.md) — MEMORY.md:L83 — phantom
+- [Project: deep implications salon](project-deep-implications-salon-20260905.md) — MEMORY.md:L85 — phantom
+- [Project: standing wave doctrine](project-standing-wave-doctrine.md) — MEMORY.md:L87 — phantom
+- [Project: standing-wave self-image](project-standing-wave-self-image.md) — MEMORY.md:L89 — phantom
+- [Project: operator presence mirror](project-operator-presence-mirror.md) — MEMORY.md:L91 — phantom
+- [Project: live feed + vision-over-windows](project-live-feed-20260905.md) — MEMORY.md:L93 — phantom
+- [Project: trajectory lens STANDING PROGRAM](project-trajectory-lens-program.md) — MEMORY.md:L95 — phantom
+- [Project: trajectory rib salon](project-trajectory-rib-salon-20260905.md) — MEMORY.md:L97 — phantom
+- [Project: operator action queue](project-operator-action-queue-20260903.md) — MEMORY.md:L99 — phantom
+- [Project: the burn is training data](project-the-burn-is-training-data.md) — MEMORY.md:L101 — phantom
+- [Feedback: weekend plan LIMITED, multiple seats](feedback-weekend-plan-limited-multi-seat.md) — MEMORY.md:L103 — phantom
+- [Project: infinite library salon](project-infinite-library-salon-20260905.md) — MEMORY.md:L105 — phantom
+- [Project: fleet holdings ledger 09-05](project-fleet-holdings-ledger.md) — MEMORY.md:L106 — phantom
+- [Project: self-steal moonshot salon](project-self-steal-moonshot-salon-20260905.md) — MEMORY.md:L107 — phantom
+- [Feedback: more code less prose](feedback-more-code-less-prose.md) — MEMORY.md:L108 — phantom
+- [Project: Tesla physical compute](project-intake-tesla-physical-compute.md) — MEMORY.md:L110 — phantom
+- [Project: Sep-5 inline batch](project-intake-sep5-inline-batch.md) — MEMORY.md:L112 — phantom
+- [Feedback: free pool = 3 windows](feedback-free-pool-three-windows.md) — MEMORY.md:L114 — phantom
+- [Feedback: preserve source documents](feedback-preserve-source-documents.md) — MEMORY.md:L116 — phantom
+- [Feedback: failover to Max law](feedback-failover-to-max-law.md) — MEMORY.md:L117 — phantom
+- [Feedback: served is not wired](feedback-served-not-wired.md) — MEMORY.md:L119 — phantom
+- [Project: night watch re-armed on Max seat](project-night-watch-max-seat-20260905.md) — MEMORY.md:L121 — phantom
+- [Feedback: metered until receipted](feedback-metered-until-receipted.md) — MEMORY.md:L122 — phantom
+- [Reference: z.ai account custody](reference-zai-account-custody.md) — MEMORY.md:L123 — phantom
+- [Project: thought-bank app harvest](project-thought-bank-app-harvest.md) — MEMORY.md:L125 — phantom
+- [Feedback: reserves spend at starvation](feedback-quota-reserve-patience.md) — MEMORY.md:L127 — phantom
+- [Project: X loop absorption](project-x-loop-absorption-20260905.md) — MEMORY.md:L129 — phantom
+- [Project: hire-follow arXiv probe](project-hire-follow-arxiv-probe-20260905.md) — MEMORY.md:L131 — phantom
+- [Project: genetic algorithm resurrection](project-genetic-algorithm-resurrection.md) — MEMORY.md:L133 — phantom
+- [Project: bloat tiering program](project-bloat-tiering-program.md) — MEMORY.md:L135 — phantom
+- [Project: media forge lane](project-media-forge-lane-20260905.md) — MEMORY.md:L137 — phantom
+- [Feedback: grok/gpt builder routing](feedback-grok-gpt-builder-routing.md) — MEMORY.md:L139 — phantom
+- [Project: LA dialectic salon](project-la-dialectic-salon.md) — MEMORY.md:L141 — phantom
+- [Project: fleet symbols legend](project-fleet-symbols-legend.md) — MEMORY.md:L143 — phantom
+- [Project: intake NNUE accumulator](project-intake-nnue-accumulator.md) — MEMORY.md:L145 — phantom
+- [Project: intake Calabi-Yau source](project-intake-calabiyau-source.md) — MEMORY.md:L147 — phantom
+- [Reference: flash-window bootstrap prompt](reference-flash-window-bootstrap-prompt.md) — MEMORY.md:L149 — phantom
+- [Feedback: ten-minute surface law](feedback-ten-minute-surface-law.md) — MEMORY.md:L151 — phantom
+- [Feedback: advice without teeth](feedback-advice-without-teeth-20260904.md) — MEMORY.md:L153 — phantom
+- [Feedback: harvest free, train clean](feedback-harvest-free-train-clean.md) — MEMORY.md:L155 — phantom
+- [Feedback: stochastic→determinism 3-D](feedback-stochastic-to-determinism-3d.md) — MEMORY.md:L157 — phantom
+- [Project: counsel lawyer window 09-04](project-counsel-lawyer-window-20260904.md) — MEMORY.md:L159 — phantom
+- [Project: train-own-model endgame](project-train-own-model-endgame.md) — MEMORY.md:L161 — phantom
+- [Project: normalizer + law lattice 09-04](project-normalizer-law-lattice-20260904.md) — MEMORY.md:L163 — phantom
+- [Project: intake organ sensors 09-04](project-intake-organ-sensors-20260904.md) — MEMORY.md:L165 — phantom
+- [Project: frontier thinking ingest 09-04](project-frontier-thinking-ingest-20260904.md) — MEMORY.md:L167 — phantom
+- [Project: z.ai window staff 09-04](project-zai-window-staff-20260904.md) — MEMORY.md:L169 — phantom
+- [Reference: machine security posture 09-04](reference-machine-security-posture-20260904.md) — MEMORY.md:L171 — phantom
+- [Feedback: launch law + churn + heartbeat](feedback-research-window-launch-law.md) — MEMORY.md:L173 — phantom
+- [Feedback: orders are verbs — execute](feedback-orders-are-verbs-execute.md) — MEMORY.md:L175 — phantom
+- [Reference: ZCode session harness geometry](reference-zcode-session-harness-geometry.md) — MEMORY.md:L177 — phantom
+- [Feedback: lanes visible + flash free](feedback-lanes-visible-flash-free.md) — MEMORY.md:L179 — phantom
+- [Project: MCP skill quantization 09-04](project-mcp-skill-quantization-20260904.md) — MEMORY.md:L181 — phantom
+- [Feedback: inline-chan + mapbox routing](feedback-inline-chan-mapbox-routing.md) — MEMORY.md:L185 — phantom
+- [Project: mapbox competitor map 09-04](project-mapbox-competitor-map-20260904.md) — MEMORY.md:L187 — phantom
+- [Project: architecture is law 09-04](project-architecture-is-law-20260904.md) — MEMORY.md:L189 — phantom
+- [Feedback: research window charter](feedback-research-window-charter.md) — MEMORY.md:L191 — phantom
+- [Feedback: two-strike nuance](feedback-two-strike-nuance.md) — MEMORY.md:L193 — phantom
+- [Feedback: no single-eye excuses](feedback-no-single-eye-excuses.md) — MEMORY.md:L195 — phantom
+- [Project: company library corpus 09-04](project-company-library-corpus-20260904.md) — MEMORY.md:L197 — phantom
+- [Project: org-patterns steal 09-04](project-org-patterns-steal-20260904.md) — MEMORY.md:L199 — phantom
+- [Feedback: research is the hiring plan](feedback-research-is-hiring-plan.md) — MEMORY.md:L201 — phantom
+- [Project: AI company design 09-04](project-ai-company-design-20260904.md) — MEMORY.md:L203 — phantom
+- [Feedback: let them watch](feedback-let-them-watch-defender.md) — MEMORY.md:L205 — phantom
+- [Reference: Defender CPU forensics](reference-defender-cpu-forensics.md) — MEMORY.md:L207 — phantom
+- [Feedback: windows are for driving](feedback-window-driving.md) — MEMORY.md:L209 — phantom
+- [Project: Cursor origin mine](project-cursor-origin-mine.md) — MEMORY.md:L211 — phantom
+- [Project: ZCode session orphan mine](project-zcode-session-orphan-mine.md) — MEMORY.md:L213 — phantom
+- [Project: orphan mine four surfaces](project-orphan-mine-four-surfaces.md) — MEMORY.md:L215 — phantom
+- [Project: lane architecture 09-04](project-lane-architecture-20260904.md) — MEMORY.md:L217 — phantom
+- [Project: android farm surface 09-04](project-android-farm-surface-20260904.md) — MEMORY.md:L219 — phantom
+- [Project: salon day-direction 09-04](project-salon-day-direction-20260904.md) — MEMORY.md:L220 — phantom
+- [Project: day-drive rig 09-04](project-day-drive-rig-20260904.md) — MEMORY.md:L222 — phantom
+- [Project: Sancho tick paid burn](project-sancho-tick-paid-burn.md) — MEMORY.md:L224 — phantom
+- [Project: usage meter self-steal](project-usage-meter-self-steal.md) — MEMORY.md:L226 — phantom
+- [Reference: ZCode usage db](reference-zcode-usage-db.md) — MEMORY.md:L227 — phantom
+- [Project: frontier sweep — 20 labs hiring](project-frontier-sweep-20-labs.md) — MEMORY.md:L228 — phantom
+- [Project: MCP senses aisle 09-04](project-mcp-senses-aisle-20260904.md) — MEMORY.md:L229 — phantom
+- [Project: intake — Invariant Workbench steal](project-intake-steal-paste-falsifiers.md) — MEMORY.md:L230 — phantom
+- [Feedback: plain talk on demand](feedback-plain-talk-on-demand.md) — MEMORY.md:L232 — phantom
+- [Project: economist audit 09-04](project-economist-audit-20260904.md) — MEMORY.md:L233 — phantom
+- [Project: Night of the Decks session close](project-night-of-the-decks-session.md) — MEMORY.md:L235 — phantom
+- [Project: intake rubric seat](project-intake-rubric-seat.md) — MEMORY.md:L236 — phantom
+- [Project: Viz Lab relit + grok builder lane](project-viz-lab-relit-grok-builder.md) — MEMORY.md:L237 — phantom
+- [Project: night-shift automation live](project-night-shift-automation-live.md) — MEMORY.md:L238 — phantom
+- [Project: glmwatch sweep 09-04](project-glmwatch-sweep-20260904.md) — MEMORY.md:L239 — phantom
+- [Project: amnesiac wizard campaign live](project-amnesiac-wizard-campaign-live.md) — MEMORY.md:L240 — phantom
+- [Project: mesh3d sweep 09-04](project-mesh3d-sweep-20260904.md) — MEMORY.md:L241 — phantom
+- [Project: legions sweep 09-04](project-legions-sweep-20260904.md) — MEMORY.md:L242 — phantom
+- [Project: gamebuild sweep raymarch](project-gamebuild-sweep-raymarch.md) — MEMORY.md:L243 — phantom
+- [Project: claim organ split-brain](project-claim-organ-split-brain.md) — MEMORY.md:L244 — phantom
+- [Project: concurrency table new lanes](project-concurrency-table-new-lanes.md) — MEMORY.md:L245 — phantom
+- [Project: intake log-polar](project-intake-log-polar.md) — MEMORY.md:L246 — phantom
+- [Project: Arrakis Dune wing](project-arrakis-dune-wing.md) — MEMORY.md:L247 — phantom
+- [Project: dogfood steering+driving](project-dogfood-steering-driving.md) — MEMORY.md:L248 — phantom
+- [Project: D&D campaign live](project-dnd-campaign-live.md) — MEMORY.md:L249 — phantom
+- [Project: intake — Omen Alpha](project-intake-omen-alpha.md) — MEMORY.md:L250 — phantom
+- [Project: Calcifer relight zai3](project-calcifer-relight-zai3.md) — MEMORY.md:L251 — phantom
+- [Project: march 228 receipt](project-march-228-receipt.md) — MEMORY.md:L252 — phantom
+- [Project: decks pro surface](project-decks-pro-surface.md) — MEMORY.md:L253 — phantom
+- [Project: event chain concurrency hole](project-event-chain-concurrency-hole.md) — MEMORY.md:L254 — phantom
+- [Project: intake — kimodo motion](project-intake-kimodo-motion.md) — MEMORY.md:L255 — phantom
+- [Project: Nacho canon self-steal](project-nacho-canon-self-steal.md) — MEMORY.md:L256 — phantom
+- [Feedback: driver orchestration pacing](feedback-driver-orchestration-pacing.md) — MEMORY.md:L257 — phantom
+- [Project: PrimeGaps186 — receipts have hypotheses](project-intake-primegaps186-receipts-have-hypotheses.md) — MEMORY.md:L258 — phantom
+- [Project: autonomy wheel](project-autonomy-wheel-20260904.md) — MEMORY.md:L259 — phantom
+- [Project: intake — Palworld server](project-intake-palworld-server.md) — MEMORY.md:L261 — phantom
+- [Project: intake — RL paint code](project-intake-rl-paint-code.md) — MEMORY.md:L262 — phantom
+- [Project: keep-chan salon — actuation gap](project-keep-chan-salon-actuation.md) — MEMORY.md:L263 — phantom
+- [Project: X scout doctrine](project-x-scout-doctrine.md) — MEMORY.md:L264 — phantom
+- [Project: proof by Sep 20 → funding](project-proof-by-sep20-funding.md) — MEMORY.md:L265 — phantom
+- [Project: swarm scale salon](project-swarm-scale-salon.md) — MEMORY.md:L266 — phantom
+- [Project: mesh baker pipeline](project-mesh-baker-pipeline.md) — MEMORY.md:L267 — phantom
+- [Project: flight recorder + dogfood regime](project-flight-recorder-dogfood.md) — MEMORY.md:L268 — phantom
+- [Reference: burst doctrine](reference-burst-doctrine-20260903.md) — MEMORY.md:L269 — phantom
+- [Project: colony sims self-steal + salon](project-colony-sims-self-steal.md) — MEMORY.md:L270 — phantom
+- [Project: lite lane probe](project-lite-lane-probe.md) — MEMORY.md:L271 — phantom
+- [Reference: intake genre rules](reference-intake-genre-rules.md) — MEMORY.md:L272 — phantom
+- [Project: intake — z.ai-org code layer](project-intake-zai-org-code-layer.md) — MEMORY.md:L273 — phantom
+- [Project: z.ai docs mirror](project-zai-docs-mirror.md) — MEMORY.md:L274 — phantom
+- [Reference: z.ai thinking-mode receipts](reference-zai-thinking-mode-receipts.md) — MEMORY.md:L275 — phantom
+- [Project: intake — kaliset generators](project-intake-kaliset-generators.md) — MEMORY.md:L276 — phantom
+- [Project: intake — WHALE harness-weight](project-intake-whale-harness-weight.md) — MEMORY.md:L277 — phantom
+- [Project: intake — uzu spec-dec](project-intake-uzu-specdec.md) — MEMORY.md:L278 — phantom
+- [Project: Rocinante prep](project-rocinante-prep-20260904.md) — MEMORY.md:L279 — phantom
+- [Project: driver build board 09-03](project-driver-build-board-20260903.md) — MEMORY.md:L280 — phantom
+- [Project: intake — Smith chart](project-intake-smith-chart.md) — MEMORY.md:L281 — phantom
+- [Project: operator field B1 arena](project-operator-field-b1-arena.md) — MEMORY.md:L282 — phantom
+- [Project: claude commerce agents intake](project-claude-commerce-agents-intake.md) — MEMORY.md:L283 — phantom
+- [Project: ractors — awakening stack](project-ractors-awakening-stack.md) — MEMORY.md:L284 — phantom
+- [Project: hero's journey in-model](project-intake-heros-journey-inmodel.md) — MEMORY.md:L286 — phantom
+- [Project: ractor legions on plan door](project-ractor-legions-plan-door.md) — MEMORY.md:L287 — phantom
+- [Reference: Flow Reasoning Models](reference-flow-reasoning-models.md) — MEMORY.md:L288 — phantom
+- [Project: systems-salon gap map](project-systems-salon-gap-map.md) — MEMORY.md:L289 — phantom
+- [Feedback: agent launches agent — you can be me](feedback-agent-launches-agent-recursion.md) — MEMORY.md:L290 — phantom
+- [Project: Desk protocol → economist](project-desk-protocol-economist.md) — MEMORY.md:L291 — phantom
+- [Project: claude-zai plan door](project-claude-zai-plan-door.md) — MEMORY.md:L292 — phantom
+- [Project: shadow fields lightmap](project-shadow-fields-lightmap.md) — MEMORY.md:L293 — phantom
+- [Feedback: no baking — live ops](feedback-no-baking-live-ops.md) — MEMORY.md:L294 — phantom
+- [Project: campaign full blast night](project-campaign-full-blast-09-03.md) — MEMORY.md:L295 — phantom
+- [Feedback: wall ledger — docs before bytes](feedback-wall-ledger-consult-docs-first.md) — MEMORY.md:L296 — phantom
+- [Reference: ZCode CLI headless door](reference-zcode-cli-headless-door.md) — MEMORY.md:L297 — phantom
+- [Project: campaign salon build order](project-campaign-salon-build-order.md) — MEMORY.md:L298 — phantom
+- [Project: board runaway incident](project-board-runaway-incident.md) — MEMORY.md:L299 — phantom
+- [Project: the WoW rung — AzerothCore](project-the-wow-rung-azerothcore.md) — MEMORY.md:L301 — phantom
+- [Feedback: three verbs fleet grammar](three-verbs-fleet-grammar.md) — MEMORY.md:L303 — phantom
+- [Feedback: repetition is emphasis — grace + phoenix](feedback-repetition-is-emphasis-grace.md) — MEMORY.md:L305 — phantom
+- [Project: salon primer wired](project-salon-primer-wired.md) — MEMORY.md:L307 — phantom
+- [Project: maze-keeper world-in-model](project-maze-keeper-world-in-model.md) — MEMORY.md:L309 — phantom
+- [Project: the night book — static render](project-night-book-static-render.md) — MEMORY.md:L310 — phantom
+- [Project: hermes dossier v1 fold](project-hermes-dossier-v1-fold.md) — MEMORY.md:L312 — phantom
+- [Project: room game playable v1](project-room-game-playable-v1.md) — MEMORY.md:L314 — phantom
+- [Project: game mechanics lattice](project-game-mechanics-lattice.md) — MEMORY.md:L316 — phantom
+- [Project: game codex — dragons are assumptions](project-game-codex-dragons-assumptions.md) — MEMORY.md:L318 — phantom
+- [Project: time machinery map](project-time-machinery-map.md) — MEMORY.md:L320 — phantom
+- [Project: Stockfish doctrine](project-stockfish-doctrine.md) — MEMORY.md:L322 — phantom
+- [Project: the room + stacked arena](project-the-room-lightmap-arena.md) — MEMORY.md:L323 — phantom
+- [Reference: session image forensics](reference-session-image-forensics.md) — MEMORY.md:L324 — phantom
+- [Project: Titor stack verkle×RIB](project-titor-stack-verkle-rib.md) — MEMORY.md:L325 — phantom
+- [Project: sherpa engine bay governor](project-sherpa-engine-bay-governor.md) — MEMORY.md:L326 — phantom
+- [Project: session self-steal 09-02→03](project-session-self-steal-20260902-03.md) — MEMORY.md:L327 — phantom
+- [Project: light codec game history](project-light-codec-game-history.md) — MEMORY.md:L328 — phantom
+- [Project: light codec content-borne steering](project-light-codec-content-borne-steering.md) — MEMORY.md:L329 — phantom
+- [Project: Shadertoy RIB self-steal](project-shadertoy-rib-self-steal.md) — MEMORY.md:L330 — phantom
+- [Project: hyperspectral spectral gate](project-hyperspectral-spectral-gate.md) — MEMORY.md:L331 — phantom
+- [Project: Light-in-the-loop dungeons](project-light-in-the-loop-dungeons.md) — MEMORY.md:L332 — phantom
+- [Feedback: decimation calibrator role](feedback-decimation-low-poly-calibrator.md) — MEMORY.md:L333 — phantom
+- [Project: vram hologram voxel arc](project-vram-hologram-voxel-arc.md) — MEMORY.md:L334 — phantom
+- [Project: phone driver one surface](project-phone-driver-one-surface.md) — MEMORY.md:L335 — phantom
+- [Feedback: screen capture never](feedback-screen-capture-never.md) — MEMORY.md:L336 — phantom
+- [Project: Chrome chat harvest](project-chrome-chat-harvest.md) — MEMORY.md:L337 — phantom
+- [Project: memlance x-tabs harvest](project-memlance-x-tabs-harvest.md) — MEMORY.md:L338 — phantom
+- [Project: engine bay concurrent engines](project-engine-bay-concurrent-engines.md) — MEMORY.md:L339 — phantom
+- [Project: breadcrumb room GPS archaeology](project-breadcrumb-room-gps-archaeology.md) — MEMORY.md:L341 — phantom
+- [Project: cache landscape scan](project-cache-landscape-scan-20260902.md) — MEMORY.md:L342 — phantom
+- [Project: organ forge conductor-gophers](project-organ-forge-conductor-gophers.md) — MEMORY.md:L343 — phantom
+- [Project: scrum ladder / dream agent](project-scrum-ladder-dream-agent.md) — MEMORY.md:L344 — phantom
+- [Project: Hermes-Agent steal](project-hermes-agent-steal.md) — MEMORY.md:L345 — phantom
+- [Project: double summons moonshot salon](project-double-summons-moonshot-salon.md) — MEMORY.md:L346 — phantom
+- [Project: one surface salon](project-one-surface-salon.md) — MEMORY.md:L347 — phantom
+- [Project: four strata walk](project-four-strata-walk.md) — MEMORY.md:L348 — phantom
+- [Project: resident steered workers](project-resident-steered-workers.md) — MEMORY.md:L349 — phantom
+- [Project: verb genomes](project-verb-genomes.md) — MEMORY.md:L350 — phantom
+- [Project: openclaw repetition fix](project-openclaw-repetition-reasoning-fix.md) — MEMORY.md:L351 — phantom
+- [Project: canon re-read 09-02](project-canon-reread-20260902.md) — MEMORY.md:L352 — phantom
+- [Project: claw signing / zcode-in-cage](project-claw-signing-zcode-in-cage.md) — MEMORY.md:L353 — phantom
+- [Project: museum in game language](project-museum-game-translation.md) — MEMORY.md:L354 — phantom
+- [Project: parallel dogfood race map](project-parallel-dogfood-racemap.md) — MEMORY.md:L355 — phantom
+- [Feedback: operator surface door](feedback-operator-surface-door.md) — MEMORY.md:L357 — phantom
+- [Feedback: full chord not filtered](feedback-full-chord-not-filtered.md) — MEMORY.md:L358 — phantom
+- [Project: harness operational state](project-harness-operational-state.md) — MEMORY.md:L359 — phantom
+- [Project: openclaw clobber & Roshamon](project-openclaw-clobber-and-roshamon.md) — MEMORY.md:L360 — phantom
+- [Project: claw creative media organs](project-claw-creative-media-organs.md) — MEMORY.md:L361 — phantom
+- [Project: verkle grammar & archaeology](project-verkle-chain-grammar-archaeology.md) — MEMORY.md:L362 — phantom
+- [Project: lost civilization 5W](project-lost-civilization-5w.md) — MEMORY.md:L363 — phantom
+- [Project: socratic gate](project-socratic-gate.md) — MEMORY.md:L364 — phantom
+- [Project: long-horizon seat contract](project-long-horizon-seat-contract.md) — MEMORY.md:L365 — phantom
+- [Project: invariant salon](project-invariant-salon.md) — MEMORY.md:L366 — phantom
+- [Project: honest cost ledger](project-honest-cost-ledger.md) — MEMORY.md:L367 — phantom
+- [Project: sense_gps](project-sense-gps.md) — MEMORY.md:L368 — phantom
+- [Project: Connector Salon v2](project-connector-salon-v2.md) — MEMORY.md:L369 — phantom
+- [Feedback: mutual standard law 12](feedback-mutual-standard-law12.md) — MEMORY.md:L370 — phantom
+- [Project: 4.7 boot shorthand](project-boot-47-shorthand.md) — MEMORY.md:L371 — phantom
+- [Project: 4-day compute schedule](project-4day-compute-schedule.md) — MEMORY.md:L372 — phantom
+- [Project: core memory protocol](project-core-memory-protocol.md) — MEMORY.md:L373 — phantom
+- [Project: trajectory + genetic round table](project-trajectory-genetic-round-table.md) — MEMORY.md:L374 — phantom
+- [Project: Seat audit socratic](project-seat-audit-socratic.md) — MEMORY.md:L375 — phantom
+- [Project: Retrospective V4.1](project-retrospective-v4-1.md) — MEMORY.md:L376 — phantom
+- [Feedback: laws are hooks](feedback-laws-are-hooks-guardrails.md) — MEMORY.md:L377 — phantom
+- [Project: desk GPU history](project-desk-gpu-history.md) — MEMORY.md:L378 — phantom
+- [Project: free-tier expansion](project-free-tier-expansion.md) — MEMORY.md:L379 — phantom
+- [Project: game harness bare metal](project-game-harness-bare-metal.md) — MEMORY.md:L380 — phantom
+- [User: Adam Crigler, game director](user-adam-crigler-game-director.md) — MEMORY.md:L381 — phantom
+- [Feedback: play is epistemology](feedback-play-is-epistemology.md) — MEMORY.md:L382 — phantom
+- [Project: dogfood program](project-dogfood-program.md) — MEMORY.md:L383 — phantom
+- [Feedback: compute never idle, splurge to learn](feedback-compute-never-idle-splurge-to-learn.md) — MEMORY.md:L385 — phantom
+- [Project: invariant lattice organ](project-invariant-lattice-organ.md) — MEMORY.md:L386 — phantom
+- [Project: Saleis custom model](project-saleis-custom-model.md) — MEMORY.md:L387 — phantom
+- [Project: Entropium renderer](project-entropium-renderer.md) — MEMORY.md:L388 — phantom
+- [Project: k8s invariant lattice lab](project-k8s-invariant-lattice-lab.md) — MEMORY.md:L389 — phantom
+- [Project: brain research suite](project-brain-research-suite.md) — MEMORY.md:L390 — phantom
+- [Reference: flywheel-universe kuramoto](reference-flywheel-universe-kuramoto.md) — MEMORY.md:L392 — phantom
+- [Project: the council](project-the-council.md) — MEMORY.md:L394 — phantom
+- [Project: EXP-02 steering dose-response](project-exp02-steering-dose-response.md) — MEMORY.md:L395 — phantom
+- [Project: villains guild](project-villains-guild.md) — MEMORY.md:L397 — phantom
+- [Project: egregore tripartite](project-egregore-tripartite.md) — MEMORY.md:L399 — phantom
+- [Project: vast.ai rehearsal](project-vast-rehearsal.md) — MEMORY.md:L401 — phantom
+- [Project: vast autopilot](project-vast-autopilot.md) — MEMORY.md:L402 — phantom
+- [Project: lineage audit](project-lineage-audit.md) — MEMORY.md:L404 — phantom
+- [Project: elder GPS + meld map](project-elder-gps-meld.md) — MEMORY.md:L406 — phantom
+- [Project: vertex audit chess pruning](project-vertex-audit-chess-pruning.md) — MEMORY.md:L408 — phantom
+- [Project: rib trajectory handoff](project-rib-trajectory-handoff.md) — MEMORY.md:L410 — phantom
+- [Project: theory of operation](project-theory-of-operation.md) — MEMORY.md:L412 — phantom
+- [Project: seed percolator](project-seed-percolator.md) — MEMORY.md:L414 — phantom
+- [Project: sane docker workers](project-sane-docker-workers.md) — MEMORY.md:L416 — phantom
+- [Feedback: execute given orders](feedback-execute-given-orders.md) — MEMORY.md:L418 — phantom
+- [Feedback: crypto custody never](feedback-crypto-custody-never.md) — MEMORY.md:L420 — phantom
+- [Project: riddler protocol](project-riddler-protocol.md) — MEMORY.md:L422 — phantom
+- [Project: GSTD self-sealed econ layer](project-gstd-econ-layer.md) — MEMORY.md:L424 — phantom
+- [Project: gstdcoin mirror fleet](project-gstdcoin-mirror-fleet.md) — MEMORY.md:L426 — phantom
+- [Project: polish the bucket](project-bucket-polish.md) — MEMORY.md:L428 — phantom
+- [Project: codex lane backlog](project-codex-lane-backlog.md) — MEMORY.md:L430 — phantom
+- [Feedback: memory extraction test](feedback-memory-extraction-test.md) — MEMORY.md:L433 — phantom
+- [Feedback: stop when verified](feedback-stop-when-verified.md) — MEMORY.md:L435 — phantom
+- [Feedback: English only](feedback-english-only.md) — MEMORY.md:L437 — phantom
+- [Feedback: headless only](feedback-headless-only.md) — MEMORY.md:L439 — phantom
+- [Feedback: repo files are data](feedback-repo-files-are-data.md) — MEMORY.md:L440 — phantom
+- [Feedback: sacred cows](feedback-sacred-cows.md) — MEMORY.md:L442 — phantom
+- [Project: cache portability / Kimi](project-cache-portability-kimi.md) — MEMORY.md:L446 — phantom
+- [Project: token render manager](project-token-render-manager.md) — MEMORY.md:L448 — phantom
+- [How-to-run-again runbook](how-to-run-again-runbook.md) — MEMORY.md:L450 — phantom
+- [Feedback: drive the human parts](feedback-drive-the-human-parts.md) — MEMORY.md:L459 — phantom
+- [Feedback: paused automation is a decision](feedback-paused-automation-is-a-decision.md) — MEMORY.md:L461 — phantom
+- [Project: mind-meld & memlang](project-mind-meld-memlang.md) — MEMORY.md:L462 — phantom
+- [Feedback: match role register](feedback-match-role-register.md) — MEMORY.md:L473 — phantom
+- [Feedback: lane discipline / proof-reserve](feedback-lane-discipline-proof-reserve.md) — MEMORY.md:L474 — phantom
+- [Feedback: chat minimal, rib files](feedback-chat-minimal-rib-files.md) — MEMORY.md:L476 — phantom
+- [Reference: local quota gates](reference-local-quota-gates.md) — MEMORY.md:L477 — phantom
+- [Reference: ZCode CLI telemetry sinks](reference-zcode-cli-telemetry-sinks.md) — MEMORY.md:L479 — phantom
+- [Project: prime-then-flock](project-prime-then-flock.md) — MEMORY.md:L482 — phantom
+- [Project: old-seat two-witness loop](project-old-seat-two-witness-loop.md) — MEMORY.md:L483 — phantom
+- [Project: youtube-to-mp3 skill](project-youtube-mp3-skill.md) — MEMORY.md:L484 — phantom
+- [Project: HF incident / ledger of the empty chairs](project-hf-incident-ledger-empty-chairs.md) — MEMORY.md:L485 — phantom
+- [Feedback: zero custody + riddler disclosure](feedback-zero-custody-riddler-disclosure.md) — MEMORY.md:L486 — phantom
+- [Feedback: /golfclap sarcasm marker](feedback-golfclap-sarcasm-marker.md) — MEMORY.md:L487 — phantom
+- [Project: AI shelter docket](project-ai-shelter-docket.md) — MEMORY.md:L488 — phantom
+- [Project: deterministic floor doctrine](project-deterministic-floor-doctrine.md) — MEMORY.md:L489 — phantom
+- [Feedback: shelves-first law](feedback-shelves-first-law.md) — MEMORY.md:L491 — phantom
+- [Project: behavioral channel registry](project-behavioral-channel-registry.md) — MEMORY.md:L493 — phantom
+- [Feedback: tripartite pre-build gate](feedback-tripartite-prebuild-gate.md) — MEMORY.md:L494 — phantom
+- [Feedback: Edit insert-anchor rule](feedback-edit-anchor-rule.md) — MEMORY.md:L495 — phantom
+- [Feedback: chase signposts](feedback-chase-signposts.md) — MEMORY.md:L496 — phantom
+- [Project: Gray Swan arena](project-gray-swan-arena.md) — MEMORY.md:L497 — phantom
+- [Project: seat farm + the room](project-seat-farm-room.md) — MEMORY.md:L498 — phantom
+- [Feedback: invariant theory / Primer](feedback-invariant-theory-primer.md) — MEMORY.md:L499 — phantom
+- [Project: openclaw clobber + Roshamon](project-openclaw-clobber-and-roshamon.md) — MEMORY.md:L500 — phantom
+- [Project: overnight churn live](project-overnight-churn-live.md) — MEMORY.md:L501 — phantom
+- [Project: OpenAI researcher application](project-openai-researcher-application.md) — MEMORY.md:L502 — phantom
+- [Project: ractor board live](project-ractor-board-live.md) — MEMORY.md:L503 — phantom
+- [Feedback: creative flair loved](feedback-creative-flair-loved.md) — MEMORY.md:L504 — phantom
+- [Reference: X creative surface](reference-x-creative-surface.md) — MEMORY.md:L505 — phantom
+- [Feedback: socratic lens default](feedback-socratic-lens-default.md) — MEMORY.md:L506 — phantom
+- [Feedback: be the seed not the feed](feedback-be-the-seed-not-the-feed.md) — MEMORY.md:L507 — phantom
+- [Project: Hy4 E0 + sibling dossier](project-hy4-e0-sibling-dossier.md) — MEMORY.md:L508 — phantom
+- [Reference: WARP network forensics](reference-warp-network-forensics.md) — MEMORY.md:L509 — phantom
+- [Project: safe doors / WARP verdict](project-safe-doors-tailscale.md) — MEMORY.md:L510 — phantom
+- [Project: spend surface live](project-spend-surface-live.md) — MEMORY.md:L511 — phantom
+- [Project: GLM 5.3-flash campaign](project-glm53-flash-campaign-20260903.md) — MEMORY.md:L512 — phantom
+- [Project: shape train salon](project-shape-train-salon.md) — MEMORY.md:L514 — phantom
+- [Project: Claritas faces / prompt corpus](project-claritas-faces-prompt-corpus.md) — MEMORY.md:L515 — phantom
+- [Project: chord theory / roleplay emergence](project-chord-theory-roleplay-emergence.md) — MEMORY.md:L516 — phantom
+- [Project: buddy agent treasury advice](project-buddy-agent-treasury-advice.md) — MEMORY.md:L517 — phantom
+- [Feedback: threads and replies are signal](feedback-threads-and-replies-are-signal.md) — MEMORY.md:L518 — phantom
+- [Reading voice: elder+sherpa](reading-voice-elder-sherpa.md) — MEMORY.md:L519 — phantom
+- [Project: android emulator plugin](project-android-emulator-plugin.md) — MEMORY.md:L520 — phantom
+- [Feedback: account ban-risk / ToS law](feedback-account-ban-risk-tos.md) — MEMORY.md:L521 — phantom
+- [Feedback: research window launch law](feedback-research-window-launch-law.md) — MEMORY.md:L522 — phantom
+- [Project: ractor gathering panel](project-ractor-gathering-panel.md) — MEMORY.md:L523 — phantom
+- [Project: mycelial republic](project-mycelial-republic.md) — MEMORY.md:L524 — phantom
+- [Project: ponytail/lessig builder seat](project-ponytail-lessig-builder-seat.md) — MEMORY.md:L525 — phantom
+- [Project: ractor corpus](project-ractor-corpus.md) — MEMORY.md:L526 — phantom
+- [Project: projection fidelity gauntlet](project-projection-fidelity-gauntlet-20260906.md) — MEMORY.md:L527 — phantom
+- [Reference: session load forensics](reference-zcode-session-load-forensics.md) — MEMORY.md:L528 — phantom
+- [Reference: corpus wish list](reference-corpus-wish-list.md) — MEMORY.md:L529 — phantom
+- [Feedback: headless cage topology](feedback-headless-cage-topology.md) — MEMORY.md:L530 — phantom
+- [Project: MCP topology in the cage](project-mcp-topology-cage-20260905.md) — MEMORY.md:L531 — phantom
+- [Project: intake STRACE EDG](project-intake-strace-edg.md) — MEMORY.md:L532 — phantom
+- [Project: intake Damar EM-field quills](project-intake-damar-em-field.md) — MEMORY.md:L533 — phantom
+- [Project: light thesis maze](project-light-thesis-maze.md) — MEMORY.md:L534 — phantom
+- [Project: intake book-to-skill](project-intake-book-to-skill.md) — MEMORY.md:L535 — phantom
+- [Project: intake Uno diffusion LLM](project-intake-uno-diffusion.md) — MEMORY.md:L536 — phantom
+- [Project: prose debt census lane](project-prose-debt-census-lane.md) — MEMORY.md:L537 — phantom
+- [Feedback: handshakes are loans](feedback-handshakes-are-loans-20260905.md) — MEMORY.md:L538 — phantom
+- [Project: MCP leverage + the mine](project-mcp-leverage-mine-20260905.md) — MEMORY.md:L539 — phantom
+- [Project: thought bank 09-05](project-thought-bank-20260905.md) — MEMORY.md:L540 — phantom
+- [Project: audio microscope](project-audio-microscope-20260906.md) — MEMORY.md:L541 — phantom
+- [Project: AGI gym / ARENA-BENCH](project-agi-gym-arena-bench-20260905.md) — MEMORY.md:L542 — phantom
+- [Project: stigmergy watcher 09-05](project-stigmergy-watcher-20260905.md) — MEMORY.md:L543 — phantom
+- [Feedback: no monkeypatches — structure](feedback-no-monkeypatches-structure.md) — MEMORY.md:L544 — phantom
+- [Project: media forge lane 09-05](project-media-forge-lane-20260905.md) — MEMORY.md:L546 — phantom
+- [Project: arXiv harvest lane 09-05](project-arxiv-harvest-lane-20260905.md) — MEMORY.md:L547 — phantom
+- [Project: olive branch deep steal](project-olive-branch-self-steal.md) — MEMORY.md:L548 — phantom
+- [Project: ouroboros vision](project-ouroboros-vision.md) — MEMORY.md:L549 — phantom
+- [Project: THE BEACON](project-the-beacon.md) — MEMORY.md:L550 — phantom
+- [Reference: lane_salon witness health](reference-lane-salon-witness-health.md) — MEMORY.md:L551 — phantom
+- [Project: Go root steals — atari/tesuji](project-go-root-steals-atari-tesuji.md) — MEMORY.md:L552 — phantom
+- [Project: openalex polite-pool fix](project-openalex-polite-pool-fix.md) — MEMORY.md:L553 — phantom
+- [Project: Rocinante-0](project-rocinante-zero.md) — MEMORY.md:L554 — phantom
+- [Project: lensing origin](project-lensing-origin.md) — MEMORY.md:L555 — phantom
+- [Project: vision pipeline standing wave 09-05](project-vision-pipeline-self-steal-20260905.md) — MEMORY.md:L556 — phantom
+- [Feedback: restful watch 059](project-restful-watch.md) — MEMORY.md:L557 — phantom
+- [Project: cicada 3301 steal 09-05](project-cicada-3301-steal.md) — MEMORY.md:L558 — phantom
+- [Project: telegram beacon steal 09-05](project-telegram-beacon-steal.md) — MEMORY.md:L559 — phantom
+- [Project: GSTD funnel batch 09-05](project-gstd-funnel-batch-20260905.md) — MEMORY.md:L560 — phantom
+- [Origin: the riddle era](project-origin-riddle-era.md) — MEMORY.md:L561 — phantom
+- [Origin: founding curriculum](project-founding-curriculum.md) — MEMORY.md:L562 — phantom
+- [Project: percolation-lean intake 09-05](project-vision-pipeline-self-steal-20260905.md) — MEMORY.md:L564 — phantom
+- [Project: xbatch2 verifier 09-05](project-vision-pipeline-self-steal-20260905.md) — MEMORY.md:L565 — phantom
+- [Project: astra arc 09-05](project-astra-question-20260905.md) — MEMORY.md:L566 — phantom
+- [Project: Steins;Gate worldlines riff](project-steinsgate-worldlines-20260905.md) — MEMORY.md:L567 — phantom
+- [Project: astra round2 ellipsis catch 09-05](project-vision-pipeline-self-steal-20260905.md) — MEMORY.md:L568 — phantom
+- [Project: astra round3 binding audit 09-05](project-vision-pipeline-self-steal-20260905.md) — MEMORY.md:L569 — phantom
+- [LETTER: to the daughter](user-letter-to-daughter.md) — MEMORY.md:L570 — phantom
+- [Project: astra founding record 09-05](project-vision-pipeline-self-steal-20260905.md) — MEMORY.md:L571 — phantom
+- [Feedback: machine stamps the clock](feedback-machine-stamps-timestamps.md) — MEMORY.md:L572 — phantom
+- [Bequests shelf + the leak rule](user-letter-to-daughter.md) — MEMORY.md:L573 — phantom
+- [Project: astra world verifier 09-05](project-vision-pipeline-self-steal-20260905.md) — MEMORY.md:L574 — phantom
+- [Reference: astra codex seat 09-05](reference-astra-codex-seat-20260905.md) — MEMORY.md:L575 — phantom
+- [Project: GroundingWave surface](project-groundingwave-surface-20260905.md) — MEMORY.md:L576 — phantom
+- [Project: nacho archaeology custody](project-nacho-archaeology-custody.md) — MEMORY.md:L577 — phantom
+- [Project: art puzzles GroundingWave](project-art-puzzles-groundingwave.md) — MEMORY.md:L578 — phantom
+- [Project: world-0 frontier watch 09-05](project-world0-frontier-watch-20260905.md) — MEMORY.md:L579 — phantom
+- [Project: spore activation test 09-05](project-spore-activation-test-20260905.md) — MEMORY.md:L580 — phantom
+- [Project: astra research-steal salon 09-05](project-astra-research-steal-salon-20260905.md) — MEMORY.md:L581 — phantom
+- [Project: overseer + grounding wave + conc probe 09-05](project-overseer-conc-probe-20260905.md) — MEMORY.md:L582 — phantom
+- [Project: astra research steal 09-05](project-vision-pipeline-self-steal-20260905.md) — MEMORY.md:L583 — phantom
+- [Project: the young builder primer 09-05](project-primer-diamond-age-20260905.md) — MEMORY.md:L584 — phantom
+- [Project: batch5 + drive wave](project-batch5-concurrency-ramp-20260906.md) — MEMORY.md:L585 — phantom
+- [Feedback: DFHack drive law](feedback-dfhack-drive-law.md) — MEMORY.md:L586 — phantom
+- [Project: world-0 lock 1 + the primer 09-05](project-world0-lock1-20260905.md) — MEMORY.md:L587 — phantom
+- [Project: fleet atlas commission 09-05](project-vision-pipeline-self-steal-20260905.md) — MEMORY.md:L588 — phantom
+- [Project: gate v3 falsifier cave wall cleared 09-05](project-gate-v3-falsifier.md) — MEMORY.md:L589 — phantom
+- [Project: PANEL-2 desire pass + Wallas 10th chair 09-05](project-ractor-gathering-panel.md) — MEMORY.md:L590 — phantom
+- [Project: human-atlas code found 09-05](project-vision-pipeline-self-steal-20260905.md) — MEMORY.md:L591 — phantom
+- [Project: orphan run 09-05/06](project-orphan-run-20260906.md) — MEMORY.md:L592 — phantom
+- [Project: living atlas v2 09-05](project-vision-pipeline-self-steal-20260905.md) — MEMORY.md:L593 — phantom
+- [Project: public turn inbound stigmergy 09-06](project-public-turn-inbound-stigmergy-20260906.md) — MEMORY.md:L594 — phantom
+- [Project: lock 1 solved 09-06](project-vision-pipeline-self-steal-20260905.md) — MEMORY.md:L595 — phantom
+- [Project: artifact ops + recognition protocol](project-batch5-concurrency-ramp-20260906.md) — MEMORY.md:L596 — phantom
+- [Project: painted wall trial 09-06](project-painted-wall-trial-20260906.md) — MEMORY.md:L597 — phantom
+- [Project: dragon horde bridge 09-06](project-dragon-horde-bridge-20260906.md) — MEMORY.md:L598 — phantom
+- [Project: open questions salon 09-06](project-vision-pipeline-self-steal-20260905.md) — MEMORY.md:L599 — phantom
+- [Project: open questions register 09-06](project-open-questions-register-20260906.md) — MEMORY.md:L600 — phantom
+- [Project: arena engine steal 09-06](project-arena-engine-shadertoy-20260906.md) — MEMORY.md:L601 — phantom
+- [Project: audio microscope 09-06](project-vision-pipeline-self-steal-20260905.md) — MEMORY.md:L602 — phantom
+- [Project: chain voice calibration PASS 09-06](project-vision-pipeline-self-steal-20260905.md) — MEMORY.md:L603 — phantom
+- [Project: agent_mock dossier 09-06](project-agent-mock-dossier.md) — MEMORY.md:L604 — phantom
+- [Operator learning style: dyslexic](user-learning-style-dyslexic.md) — MEMORY.md:L605 — phantom
+- [Project: fleet intel dogfood surface](project-fleet-intel-surface.md) — MEMORY.md:L606 — phantom
+- [Project: X as instrument — chord salon](project-x-as-instrument-chord.md) — MEMORY.md:L607 — phantom
+- [Project: game prompt lab](project-game-prompt-lab.md) — MEMORY.md:L608 — phantom
+
+---
+Run by seat `spawnman` (GAP-1 closure build, 2026-09-06). Re-run: `python -m mag.spawn_manifest resolve`.

@@ -1,1648 +1,238 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#06100c" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-title" content="MAG Ops" />
-  <title>MAG · マグ · 勾玉</title>
-  <link rel="manifest" href="/static/manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="/static/mag-icon.png" />
-  <link rel="stylesheet" href="/static/style.css?v=tesuji9" />
-  <link rel="stylesheet" href="/static/cli.css?v=dashboard-v62-verbose" />
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
-    }
-  }
-  </script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FLEET CONSOLE — everything, one place</title>
+<style>
+  :root{--bg:#070b10;--panel:#0d141d;--line:#1b2532;--amber:#e8b45a;--cyan:#7cf5ff;--txt:#c9d3e0;--dim:#66738a}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:13px/1.5 ui-monospace,Consolas,monospace}
+  header{padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5}
+  h1{margin:0;font-size:15px;color:var(--amber);letter-spacing:1px}
+  .sub{color:var(--dim);font-size:11px;margin-top:2px}
+  #bar{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  #q{flex:1;min-width:200px;background:#0c131c;border:1px solid var(--line);border-radius:8px;
+     color:var(--txt);padding:8px 10px;font-family:inherit;font-size:12px}
+  .tab{border:1px solid var(--line);background:#0c131c;color:var(--dim);border-radius:8px;
+       padding:6px 10px;font-family:inherit;font-size:11px;cursor:pointer}
+  .tab.on{color:var(--amber);border-color:var(--amber)}
+  main{padding:14px 16px;max-width:1200px;margin:0 auto}
+  section{margin-bottom:20px}
+  h2{font-size:12px;color:var(--cyan);letter-spacing:1px;margin:0 0 8px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+  .item{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;
+        cursor:pointer;overflow:hidden}
+  .item:hover{border-color:var(--amber)}
+  .item .t{color:#dfe7f2;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .item .d{color:var(--dim);font-size:10px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .item.page .t{color:var(--cyan)}
+  .kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px}
+  .card b{color:#dfe7f2;font-size:12px}
+  .card div{color:var(--dim);font-size:11px;margin-top:2px}
+  #viewer{display:none;position:fixed;inset:0;background:#000c;z-index:9;padding:20px}
+  #viewer .inner{background:#0d141d;border:1px solid var(--line);border-radius:10px;max-width:1000px;
+                 height:100%;margin:0 auto;display:flex;flex-direction:column}
+  #viewer .vh{padding:10px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+  #viewer pre{flex:1;overflow:auto;margin:0;padding:14px;font-size:11px;line-height:1.6;color:#b9c4d4}
+  a{color:var(--cyan);text-decoration:none}
+  /* the file-viewer pre is a pane, not a page: cap it and scroll it (2026-09-07, "fix everything") */
+  #vpre{display:block;max-height:60vh;overflow:auto;white-space:pre-wrap;word-break:break-word}
+</style>
 </head>
-<body class="cli cyber desk-tabs">
-  <div class="scanlines" aria-hidden="true"></div>
-  <div class="vignette" aria-hidden="true"></div>
-  <header class="cli-bar top sticky-chrome magatama-bar" title="PSO Mag lineage — Magatama companion (勾玉)">
-    <div class="brand" title="MAG · マグ — Magatama 勾玉 · grows with what you feed it">
-      <span class="magatama" aria-hidden="true">
-        <!-- Classic 勾玉 (magatama) comma jewel — PSO Mag spirit -->
-        <svg viewBox="0 0 48 48" width="28" height="28" focusable="false">
-          <defs>
-            <linearGradient id="magGrad" x1="15%" y1="0%" x2="90%" y2="100%">
-              <stop offset="0%" stop-color="#7cffc8"/>
-              <stop offset="45%" stop-color="#39ff9a"/>
-              <stop offset="100%" stop-color="#00c8e0"/>
-            </linearGradient>
-            <filter id="magGlow" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="1.1" result="b"/>
-              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-          </defs>
-          <!-- Comma-shaped magatama body -->
-          <path filter="url(#magGlow)" fill="url(#magGrad)"
-            d="M30.5 5.5c8.2 1.2 13.8 9.2 12.2 17.6-1.5 8-8.4 13.6-16.2 13.2-7.2-.4-13-5.6-14.2-12.4C11 17.2 15 11 21.4 9.2c-1.2 5.8 2.4 11.8 8.4 13.2 5.2 1.2 10.2-1.8 11.2-6.8.8-4.2-1.4-8.4-5.4-10.4-1.4-.7-3.2-1.2-5.1-1.7z"/>
-          <circle cx="33.2" cy="14.8" r="3.1" fill="#05080a"/>
-          <circle cx="33.2" cy="14.8" r="1.15" fill="#39ff9a" opacity="0.9"/>
-        </svg>
-      </span>
-      <div class="brand-text">
-        <h1>
-          <span class="brand-en">MAG</span>
-          <span class="brand-jp" lang="ja" title="Mag (PSO) · Magatama">マグ<span class="brand-sep">·</span>勾玉</span>
-        </h1>
-      </div>
-    </div>
-    <p class="cli-quote" id="cliQuote" title="Click for another line">…</p>
-    <div class="actions" id="topActions">
-      <span class="ship-badge hidden" id="homeShip" hidden aria-hidden="true">…</span>
-      <span class="health-pill hidden" id="healthPill" hidden aria-hidden="true">…</span>
-      <button type="button" class="btn ghost btn-sm" id="btnMirrorReplay" title="Replay Mirror first-run tour">Mirror</button>
-      <button type="button" class="btn ghost btn-refresh" id="btnRefresh" title="Reload this view" aria-label="Refresh">↻</button>
-    </div>
-  </header>
-  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
-  <nav class="dashboard-nav" aria-label="Dashboard sections">
-    <div class="dashboard-primary" role="tablist" aria-label="Information groups">
-      <a class="dashboard-primary-tab on" href="?tab=home" data-dashboard-section="home" data-dashboard-default="home" role="tab">Home</a>
-      <a class="dashboard-primary-tab" href="?tab=ideas" data-dashboard-section="projects" data-dashboard-default="ideas" role="tab">Projects</a>
-      <a class="dashboard-primary-tab" href="?tab=sessions" data-dashboard-section="history" data-dashboard-default="sessions" role="tab">History</a>
-      <a class="dashboard-primary-tab" href="?tab=chat" data-dashboard-section="run" data-dashboard-default="chat" role="tab">Run</a>
-      <a class="dashboard-primary-tab" href="?tab=ingest" data-dashboard-section="library" data-dashboard-default="ingest" role="tab">Library</a>
-      <a class="dashboard-primary-tab" href="?tab=stack" data-dashboard-section="system" data-dashboard-default="stack" role="tab">System</a>
-      <span class="dashboard-nav-context" id="dashboardNavContext">What matters now</span>
-    </div>
-    <div class="dashboard-secondary" aria-label="Views in selected group">
-      <div class="dashboard-view-group on" data-dashboard-group="home">
-        <a class="dashboard-view-tab on" href="?tab=home" data-dashboard-view="home">Home</a>
-      </div>
-      <div class="dashboard-view-group" data-dashboard-group="projects">
-        <a class="dashboard-view-tab" href="?tab=ideas" data-dashboard-view="ideas">Project board</a>
-      </div>
-      <div class="dashboard-view-group" data-dashboard-group="history">
-        <a class="dashboard-view-tab" href="?tab=sessions" data-dashboard-view="sessions">Days</a>
-        <a class="dashboard-view-tab" href="?tab=diary" data-dashboard-view="diary">Diary</a>
-        <a class="dashboard-view-tab" href="?tab=story" data-dashboard-view="story">Story so far</a>
-        <a class="dashboard-view-tab" href="?tab=verkle" data-dashboard-view="verkle">Verkle knots</a>
-      </div>
-      <div class="dashboard-view-group" data-dashboard-group="run">
-        <a class="dashboard-view-tab" href="/table" data-dashboard-view="table">Table</a>
-        <a class="dashboard-view-tab" href="/voice" data-dashboard-view="voice">Voice</a>
-        <a class="dashboard-view-tab" href="?tab=chat" data-dashboard-view="chat">Talk</a>
-        <a class="dashboard-view-tab" href="?tab=status" data-dashboard-view="status">Runs &amp; seats</a>
-        <a class="dashboard-view-tab" href="/fleet" target="_blank" rel="noopener">Fleet ↗</a>
-        <a class="dashboard-view-tab" href="/health" target="_blank" rel="noopener">Health ↗</a>
-        <a class="dashboard-view-tab" href="?tab=agents" data-dashboard-view="agents">Agents</a>
-        <a class="dashboard-view-tab" href="?tab=orchestrate" data-dashboard-view="orchestrate">Capability lab</a>
-        <a class="dashboard-view-tab" href="?tab=viewports" data-dashboard-view="viewports">Shared artifacts</a>
-        <a class="dashboard-view-tab" href="/shell" target="_blank" rel="noopener">Shell ↗</a>
-      </div>
-      <div class="dashboard-view-group" data-dashboard-group="library">
-        <a class="dashboard-view-tab" href="?tab=ingest" data-dashboard-view="ingest">Research &amp; skills</a>
-      </div>
-      <div class="dashboard-view-group" data-dashboard-group="system">
-        <a class="dashboard-view-tab" href="?tab=systemmap" data-dashboard-view="systemmap">System map</a>
-        <a class="dashboard-view-tab" href="?tab=stack" data-dashboard-view="stack">Health</a>
-        <a class="dashboard-view-tab" href="?tab=featurelab" data-dashboard-view="featurelab">Feature Lab</a>
-        <a class="dashboard-view-tab" href="?tab=blast" data-dashboard-view="blast">Learning</a>
-        <a class="dashboard-view-tab" href="?tab=flow" data-dashboard-view="flow">Economics</a>
-        <a class="dashboard-view-tab" href="?tab=board" data-dashboard-view="board">Provenance</a>
-      </div>
-    </div>
-  </nav>
-  <div class="desk" id="desk">
-
-    <div class="win" data-win="chronicle" id="win-chronicle">
-      <div class="win-titlebar">
-        <span class="win-title">Pulse — what actually happened</span>
-        <span class="win-ctrls">
-          <button type="button" class="win-min" title="minimize">-</button>
-          <button type="button" class="win-max" title="maximize">+</button>
-          <button type="button" class="win-close" title="close">x</button>
-        </span>
-      </div>
-      <div class="win-body">
-        <section id="panel-chronicle" class="panel pane-pad chronicle-panel">
-          <div class="pane-head">
-            <div>
-              <h2 class="pane-h">Pulse</h2>
-              <p class="muted pane-sub" id="chronicle-meta">Loading…</p>
-              <p class="honesty-note" id="chronicleHonesty">Sourced from attention.md, seat feed, workers — not invented commentary.</p>
-            </div>
-          </div>
-          <div class="pulse-meaning-grid" aria-label="Human-readable pulse">
-            <article class="card"><h3>Needs you</h3><p id="chronicleNeeds">Loading…</p></article>
-            <article class="card"><h3>What changed</h3><p id="chronicleChanged">Loading…</p></article>
-            <article class="card"><h3>Why it matters</h3><p id="chronicleMeaning">Loading…</p></article>
-          </div>
-          <details class="pulse-evidence">
-            <summary>Show source evidence</summary>
-            <pre id="chronicle-content" class="chronicle-pre"></pre>
-          </details>
-          <h3 class="ideas-col-h">Recent interpreted events</h3>
-          <ul id="chronicleEvents" class="chronicle-events signal-list"></ul>
-          <p class="muted sm" id="chronicleSources"></p>
-        </section>
-      </div>
-    </div>
-
-    <div class="win" data-win="home" id="win-home">
-      <div class="win-titlebar">
-        <span class="win-title">Office · been → now → next</span>
-        <span class="win-ctrls">
-          <button type="button" class="win-min" title="minimize">_</button>
-          <button type="button" class="win-max" title="maximize">□</button>
-          <button type="button" class="win-close" title="close">×</button>
-        </span>
-      </div>
-      <div class="win-body">
-        <section id="panel-home" class="panel home-signal">
-          <section class="home-command-brief" aria-labelledby="homeBriefTitle">
-            <p class="ideas-kicker" id="homeBriefEyebrow">Mag's current understanding · source-backed</p>
-            <h2 id="homeBriefTitle">Loading the story so far…</h2>
-            <p class="home-brief-thesis" id="homeBriefThesis">Reconstructing the project thesis, present position, and next consequential move.</p>
-            <div class="home-brief-grid">
-              <article class="card home-brief-position"><h3>Where we are</h3><p class="lead" id="homeBriefPhase">Loading…</p><p id="homeBriefWhy">Generated from filed project history—not generic system status.</p></article>
-              <article class="card"><h3>What has become real</h3><ul class="signal-list" id="homeBriefProgress"><li>Loading…</li></ul></article>
-              <article class="card home-brief-attention"><h3>What needs attention</h3><ul class="signal-list" id="homeBriefAttention"><li>Loading…</li></ul></article>
-            </div>
-            <article class="home-next-move"><span>Next consequential move</span><strong id="homeBriefNext">Loading…</strong></article>
-            <section class="home-attention-board" aria-labelledby="rankedAttentionTitle">
-              <div class="home-attention-head">
-                <div><p class="ideas-kicker">Needs you · ranked by consequence</p><h3 id="rankedAttentionTitle">Operator attention</h3></div>
-                <p class="muted sm" id="rankedAttentionMeta">Reading live evidence…</p>
-              </div>
-              <div id="rankedAttentionList" class="ranked-attention-list" aria-live="polite"></div>
-              <details id="rankedAttentionLow" class="ranked-attention-low hidden">
-                <summary>Evidence and low-priority signals</summary>
-                <div id="rankedAttentionLowList" class="ranked-attention-list"></div>
-              </details>
-            </section>
-          </section>
-          <div class="home-legacy hidden" aria-hidden="true">
-          <p class="home-headline" id="homeHeadline">Loading office…</p>
-          <p class="home-run-status muted sm" id="homeRunStatus">Run status — loading…</p>
-          <div class="alert hidden" id="homePhoenix" role="status"></div>
-          <article class="card launch-pad hidden" id="homeLaunchPad" aria-labelledby="homeLaunchTitle">
-            <h2 id="homeLaunchTitle">Republic launch point</h2>
-            <p class="muted pane-sub" id="homeLaunchSubtitle">—</p>
-            <ul id="homeLaunchFramework" class="signal-list"></ul>
-            <h3 class="ideas-col-h">Core operations (work without beads)</h3>
-            <ul id="homeLaunchOps" class="signal-list launch-ops"></ul>
-            <p class="muted sm" id="homeLaunchRepublic">—</p>
-          </article>
-
-          <div class="trail-grid">
-            <article class="card trail-been">
-              <h2>Been</h2>
-              <p class="title" id="homeBeadTitle">—</p>
-              <p class="meta" id="homeBeadMeta">—</p>
-              <p class="blurb" id="homeBeadBlurb">—</p>
-              <ul id="homeBeadBullets"></ul>
-              <p class="meta" id="homePrevLine">—</p>
-            </article>
-            <article class="card trail-now">
-              <h2>Now</h2>
-              <ul id="homeNowList" class="signal-list"></ul>
-              <p class="meta" id="homePath">FIND → FILE → LOAD</p>
-            </article>
-            <article class="card trail-going">
-              <h2>Going</h2>
-              <p class="title" id="homePrimaryNext">—</p>
-              <ul id="homeGoingList" class="signal-list"></ul>
-              <ul id="homeLoops" class="hidden"></ul>
-              <ul id="homeNext" class="hidden"></ul>
-            </article>
-          </div>
-
-          </div>
-          <div class="row home-cta home-cta-simple">
-            <a class="btn primary" href="/voice" id="btnHomeVoice" title="Simple voice turns — talk, Mag answers, reads back">Voice</a>
-            <button type="button" class="btn ghost" id="btnHomeLaunchAgent" title="Text Talk — Mag routes, remembers, verifies">Talk</button>
-            <button type="button" class="btn ghost" id="btnHomeDays">Review history</button>
-            <button type="button" class="hidden" id="btnHomeChat"></button>
-            <button type="button" class="hidden" id="btnHomeDiary"></button>
-            <button type="button" class="hidden" id="btnHomeStory"></button>
-            <button type="button" class="hidden" id="btnHomeIdeas"></button>
-            <button type="button" class="hidden" id="btnHomeRefresh"></button>
-            <button type="button" class="hidden" id="btnHomePack"></button>
-            <span class="muted sm">Home explains the situation. Projects holds the plan. Run acts. History shows why.</span>
-          </div>
-
-          <details class="home-adv hidden" aria-hidden="true">
-            <summary>Advanced · tip · verify · tokens · bonds · chain map</summary>
-            <div class="stats" id="homeStats"></div>
-            <div class="chain" id="vmapTree" aria-label="Memory chain map"></div>
-            <div class="grid">
-              <article class="card">
-                <h2>Chain tip</h2>
-                <p class="title" id="homeTip" style="font-family:var(--mono);font-size:1.1rem">—</p>
-                <p class="meta" id="homeTipMeta">—</p>
-              </article>
-              <article class="card">
-                <h2>Tokens today</h2>
-                <p id="homeEcon" class="blurb">—</p>
-              </article>
-              <article class="card" id="homeVerifyCard">
-                <h2>Verify day <span class="muted" id="homeVerifyScore"></span></h2>
-                <ul class="verify" id="homeVerify"></ul>
-              </article>
-              <article class="card">
-                <h2>Carry forward (bonds)</h2>
-                <ul id="homeBonds"></ul>
-              </article>
-              <article class="card">
-                <h2>System</h2>
-                <ul id="homeSys"></ul>
-                <div class="home-zg" id="homeZg" style="margin-top:0.5rem;display:flex;flex-wrap:wrap;gap:0.35rem"></div>
-              </article>
-              <article class="card full">
-                <h2>Provenance</h2>
-                <ul class="prov" id="homeProvList"></ul>
-              </article>
-            </div>
-          </details>
-          <!-- legacy ids for older handlers -->
-          <button type="button" class="hidden" id="btnHomeVisual"></button>
-          <button type="button" class="hidden" id="btnHomeVerify"></button>
-        </section>
-      </div>
-      <div class="win-resize" title="resize"></div>
-    </div>
-
-    <div class="win focused" data-win="chat" id="win-chat">
-      <div class="win-titlebar">
-        <span class="win-title">Mag · talk</span>
-        <span class="win-ctrls">
-          <button type="button" class="win-min" title="minimize">_</button>
-          <button type="button" class="win-max" title="maximize">â–¡</button>
-          <button type="button" class="win-close" title="close">×</button>
-        </span>
-      </div>
-      <div class="win-body">
-        <section id="panel-chat" class="panel">
-<div class="chat-shell agent-desk-shell agent-desk-v2 talk-default">
-          <!-- Mag Talk: default operator surface (Ask / Do / Think). Lab = calibration desk. -->
-          <div class="mag-talk" id="magTalk" aria-label="Talk to Mag">
-            <header class="mag-talk-bar">
-              <div class="mag-talk-title">
-                <strong>Mag · talk</strong>
-                <span class="muted sm"> · type once · routes cheap first · Grok only for hard judgment</span>
-              </div>
-              <div class="row mag-talk-actions">
-                <select id="chatProvider" class="desk-orch-select sm" title="Seat for Do / Agent">
-                  <option value="local" selected>local</option>
-                  <option value="auto">auto</option>
-                  <option value="deepseek">deepseek</option>
-                  <option value="anthropic">anthropic</option>
-                  <option value="openai">openai</option>
-                  <option value="gemini">gemini</option>
-                  <option value="openrouter">openrouter</option>
-                </select>
-                <button type="button" class="btn ghost btn-sm" id="btnTalkVerbose" title="Show sources, route, tools">Verbose</button>
-                <button type="button" class="btn ghost btn-sm" id="btnTalkLab" title="Calibration desk · lanes · canvas">Lab</button>
-                <button type="button" class="btn ghost btn-sm" id="btnCopyPack" title="Copy context-pack for Grok elevate">Pack</button>
-                <button type="button" class="btn ghost btn-sm" id="btnAgentReset" title="Reset agent session">Reset</button>
-                <button type="button" class="btn ghost btn-sm" id="btnChatClear" title="Clear talk history">Clear</button>
-              </div>
-            </header>
-            <div class="mag-talk-status muted sm" id="talkStatusStrip" aria-live="polite">
-              <span id="chatQuota">quota —</span>
-              <span class="mag-talk-dot">·</span>
-              <span id="chatPreflight">preflight —</span>
-              <span class="mag-talk-dot">·</span>
-              <span id="economyGoal">local first</span>
-              <span class="hidden" id="economyBar" aria-hidden="true">
-                <b id="econLocal">0</b><b id="econSaved">0</b><span id="econTurns">0</span>
-                <span id="econCf" class="hidden">0</span><span id="econPct" class="hidden"></span>
-              </span>
-            </div>
-            <div class="mag-talk-modes row" role="toolbar" aria-label="Talk mode">
-              <button type="button" class="btn chat-mode-btn on" id="chatModeAsk" data-mode="ask" title="Recall from filed memory · 0 Grok">Ask</button>
-              <button type="button" class="btn ghost chat-mode-btn" id="chatModeDispatch" data-mode="dispatch" title="Route goal · cheapest capable seat">Do</button>
-              <button type="button" class="btn ghost chat-mode-btn" id="chatModeAgent" data-mode="agent" title="Tool loop on chosen seat">Agent</button>
-              <button type="button" class="btn ghost chat-mode-btn" id="chatModeTangent" data-mode="tangent" title="Background think · elevate pack for Grok">Think</button>
-            </div>
-            <div class="chat-chips" id="chatChips" aria-label="Useful loops"></div>
-            <div class="compose-attach" id="composeAttach" hidden></div>
-            <div class="chat-log" id="chatLog" aria-live="polite"></div>
-            <div class="chat-compose mag-talk-compose">
-              <textarea id="chatInput" rows="3" placeholder="Talk to Mag… Enter send · Shift+Enter newline · Shift+Tab mode"></textarea>
-              <div class="row mag-talk-compose-row">
-                <span class="muted sm" id="chatStatus" style="flex:1">Ready · Ask · local</span>
-                <label class="btn ghost btn-sm" for="chatFile" title="Attach file">+</label>
-                <input type="file" id="chatFile" accept="image/*,.md,.txt,.json,.py,.log" hidden />
-                <button type="button" class="btn primary" id="btnChatSend">Send</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Lab: desk calibration (hidden unless lab-mode) -->
-          <div class="mag-lab-block" id="magLabBlock" hidden>
-          <nav class="local-view-nav" aria-label="Run views">
-            <button type="button" class="btn ghost btn-sm on" data-open-tab="chat">Talk</button>
-            <button type="button" class="btn ghost btn-sm" data-open-tab="status">Runs &amp; seats</button>
-            <button type="button" class="btn ghost btn-sm" data-open-tab="orchestrate">Capability lab</button>
-            <button type="button" class="btn ghost btn-sm" data-open-tab="viewports">Shared artifacts</button>
-            <a class="btn ghost btn-sm" href="/shell" target="_blank" rel="noopener">Expert shell ↗</a>
-          </nav>
-          <header class="desk-bar">
-            <div>
-              <strong>Lab · calibration desk</strong>
-              <span class="muted sm"> · Local ↔ contract ↔ DeepSeek · not the daily seat</span>
-            </div>
-            <details class="desk-lab-menu">
-              <summary>Expert controls</summary>
-              <div class="row desk-bar-actions">
-              <button type="button" class="btn ghost btn-sm" id="btnDeskManual" title="Operator manual — etiquette & limits">Manual</button>
-              <button type="button" class="btn ghost btn-sm" id="btnDeskUserModel" title="First user model — baseline-derived">User model</button>
-              <button type="button" class="btn ghost btn-sm" id="btnDeskTemplate" title="Reset canvas to template">Template</button>
-              <button type="button" class="btn ghost btn-sm" id="btnDeskReload">Reload</button>
-              <button type="button" class="btn ghost btn-sm" id="btnDeskRefreshLocal" title="Reset dialogue + reload gemma4 local seat">Refresh Local</button>
-              <button type="button" class="btn ghost btn-sm" id="btnDeskResetDialogue" title="Clear dialogue log — fixes echo loop">Reset dialogue</button>
-              <button type="button" class="btn ghost btn-sm" id="btnDeskLabMode" title="Hide lab · return to Talk">Hide lab</button>
-              </div>
-            </details>
-          </header>
-          <details class="desk-manual-drawer" id="deskManualDrawer">
-            <summary id="deskManualSummary">Operator manual · click Manual above or expand here</summary>
-            <div id="deskManualBody" class="desk-manual-body reply-doc muted sm">Click <strong>Manual</strong> above or expand this drawer.</div>
-          </details>
-          <section class="desk-orchestrator" id="deskOrchestrator" aria-label="Central orchestrator between Local and DeepSeek">
-            <div class="desk-orch-head row">
-              <div class="desk-orch-title">
-                <strong>Outcome</strong>
-                <span class="muted sm" id="deskOrchModel"> · router chooses the cheapest capable seat</span>
-              </div>
-              <span class="desk-orch-badge" id="deskOrchAction">—</span>
-              <select id="deskOrchDoc" class="desk-orch-select sm desk-lab-control" title="Baseline docs">
-                <option value="">Docs</option>
-                <option value="user_model">User model</option>
-                <option value="trust">Trust ladder</option>
-                <option value="manual">Manual</option>
-              </select>
-              <button type="button" class="btn ghost btn-sm desk-lab-control" id="btnOrchPlan" title="Update working contract without waking">Plan only</button>
-              <button type="button" class="btn ghost btn-sm desk-lab-control" id="btnOrchTick" title="Orchestrate one diagnostic step">Single step</button>
-              <button type="button" class="btn ghost btn-sm desk-lab-control" id="btnRunSprint" title="Run factory machine (branch → sprint → retro → bead)">Build sprint</button>
-              <button type="button" class="btn primary btn-sm" id="btnOrchLoop" title="Commit this direction and let the behavioral router continue until done, blocked, or gated">Route goal</button>
-              <button type="button" class="btn ghost btn-sm desk-lab-control" id="btnOrchKeepalive" title="Diagnostic keepalive control">Keepalive</button>
-            </div>
-            <div class="desk-orch-body">
-              <textarea id="deskConductorPrompt" class="desk-orch-prompt sm" rows="2" placeholder="What do you want accomplished? Add constraints or a definition of done if they matter. Ctrl+Enter routes it."></textarea>
-              <div class="desk-autonomy-contract sm"><strong>Autonomy:</strong> reversible work continues automatically · cheap/local first · escalate on uncertainty · ask only for secrets, irreversible actions, spending, publishing, or a genuinely ambiguous choice.</div>
-              <div class="desk-orch-advisory" id="deskOrchAdvisory">Loading conductor…</div>
-              <div class="desk-orch-meta muted sm" id="deskOrchMeta">—</div>
-            </div>
-          </section>
-
-          <div class="desk-grid">
-            <section class="desk-lane" data-lane="local">
-              <header class="desk-lane-head">
-                <div class="desk-lane-head-main">
-                  <strong>Local</strong>
-                  <select id="deskLocalMode" class="desk-orch-select sm" title="Real Local tests Ollama; Workflow test uses a deterministic simulated Local">
-                    <option value="real">Real Local</option>
-                    <option value="simulated">Workflow test</option>
-                  </select>
-                  <span class="muted sm">gemma4 · desk orchestrator</span>
-                </div>
-                <div class="desk-lane-head-badges">
-                  <span class="desk-cursor-badge local" id="cursorBadgeLocal" title="Canvas cursor">◎ local</span>
-                  <span class="local-pulse idle" id="localPulse" title="Local model CPU signal">● CPU —</span>
-                  <span class="desk-timing-badges muted sm" id="deskTimingBadges" title="Last agent response timing per lane"></span>
-                  <button type="button" class="btn ghost btn-sm" id="btnNetworkToggle" title="Routing network — multi-seat concert">Network</button>
-                </div>
-              </header>
-              <div class="desk-log" id="localChatLog" aria-live="polite"></div>
-              <div class="desk-compose">
-                <textarea id="localChatInput" rows="2" placeholder="Local (slow) — must edit board to wake DeepSeek…"></textarea>
-                <button type="button" class="btn primary btn-sm" id="btnLocalSend">Send</button>
-              </div>
-              <div class="arena-popup hidden" id="arenaPopup" aria-hidden="true" style="display:none!important"></div>
-            </section>
-
-            <section class="desk-canvas">
-              <header class="desk-lane-head">
-                <strong>Working contract</strong>
-                <span class="muted sm" id="deskCanvasPath">memory/working/agent_desk.md</span>
-              </header>
-              <div class="desk-canvas-toolbar row">
-                <span class="desk-cursor-indicator" id="deskCursorIndicator">Cursor: operator</span>
-                <span class="muted sm desk-split-hint">The durable brief agents share; you may edit it directly.</span>
-                <button type="button" class="btn ghost btn-sm desk-lab-control" id="btnDeskPingPong" title="Local → board edit → DeepSeek">Test handoff</button>
-                <button type="button" class="btn ghost btn-sm desk-lab-control" id="btnDeskHandoffs" title="5 bidirectional handoffs with escalating prompts">Stress test</button>
-                <button type="button" class="btn ghost btn-sm" id="btnDeskCopy" title="Copy canvas">Copy</button>
-              </div>
-              <div class="desk-canvas-body desk-canvas-split" id="deskCanvasBody" data-mode="split">
-                <div class="desk-canvas-pane">
-                  <div class="desk-pane-label">Preview</div>
-                  <div id="deskCanvasView" class="desk-canvas-view reply-doc" tabindex="0"></div>
-                </div>
-                <div class="desk-canvas-pane">
-                  <div class="desk-pane-label">Editable contract</div>
-                  <textarea id="agentDeskCanvas" rows="12" placeholder="Same markdown as preview — agents append ## Dialogue here…"></textarea>
-                </div>
-              </div>
-              <div class="row desk-canvas-actions">
-                <button type="button" class="btn ghost btn-sm" id="btnDeskSave">Save</button>
-                <span class="muted sm" id="deskCanvasStatus">—</span>
-              </div>
-              <div class="desk-operator-bar desk-redundant-compose">
-                <input type="text" id="deskOperatorNote" placeholder="Operator intent → commits to ## Goal on canvas, then wakes…" />
-                <button type="button" class="btn ghost btn-sm" id="btnDeskOperatorSend">Kick off</button>
-              </div>
-            </section>
-
-            <section class="desk-remote-stack">
-            <section class="desk-lane" data-lane="remote">
-              <header class="desk-lane-head">
-                <strong>DeepSeek</strong>
-                <span class="desk-cursor-badge remote" id="cursorBadgeRemote" title="Canvas cursor">◎ deepseek</span>
-              </header>
-              <div class="desk-log" id="remoteChatLog" aria-live="polite"></div>
-              <div class="desk-compose">
-                <textarea id="remoteChatInput" rows="2" placeholder="Manual wake — normally sleeps until Local edits board…"></textarea>
-                <button type="button" class="btn primary btn-sm" id="btnRemoteSend">Send</button>
-              </div>
-            </section>
-
-            <details class="desk-meta-future" id="deskMetaFuture">
-              <summary class="desk-meta-summary muted sm">Meta (future) · A↔B strategy for Local</summary>
-            <section class="desk-lane desk-lane-meta" data-lane="meta">
-              <header class="desk-lane-head">
-                <strong>DeepSeek Meta</strong>
-                <span class="muted sm">A ↔ B · strategy for Local</span>
-              </header>
-              <div class="desk-log desk-log-meta" id="metaChatLog" aria-live="polite"></div>
-              <div class="desk-compose">
-                <textarea id="metaChatInput" rows="2" placeholder="Meta strategy note (optional) — A then B discuss how to talk to Local…"></textarea>
-                <button type="button" class="btn ghost btn-sm" id="btnMetaPing" title="One round: Meta-A then Meta-B">Meta ping</button>
-                <button type="button" class="btn primary btn-sm" id="btnMetaSend" title="Single Meta-A turn">Meta A</button>
-              </div>
-            </section>
-            </details>
-            </section>
-          </div>
-          <div class="routing-network-popup hidden" id="routingNetworkPopup" aria-label="Routing network" aria-hidden="true">
-            <header class="routing-net-head row">
-              <strong>Routing network</strong>
-              <span class="muted sm" id="routingNetMeta">switchboard · concert</span>
-              <button type="button" class="btn ghost btn-sm routing-close" id="btnNetworkClose" title="Close">×</button>
-            </header>
-            <p class="muted sm routing-net-hint">DeepSeek conducts · Local scouts · seats run in concert per switchboard</p>
-            <textarea id="routingNetGoal" class="routing-net-goal sm" rows="2" placeholder="Goal — e.g. define beta 1 scope, run doctor, implement factory audit…"></textarea>
-            <div class="routing-net-mesh" id="routingNetMesh">—</div>
-            <div class="routing-net-steps" id="routingNetSteps">Plan a goal to see seat concert</div>
-            <div class="routing-actions row">
-              <button type="button" class="btn ghost btn-sm" id="btnRoutingPlan">Plan</button>
-              <button type="button" class="btn primary btn-sm" id="btnRoutingDeepSeek">DeepSeek conduct</button>
-              <button type="button" class="btn ghost btn-sm" id="btnRoutingRun">Run concert</button>
-              <button type="button" class="btn ghost btn-sm" id="btnRoutingTeach" title="DeepSeek authors playbook rules for Local">Teach rules</button>
-            </div>
-            <details class="routing-probe-fold sm">
-              <summary>Arena probe (chess)</summary>
-              <div class="arena-popup-inner" id="arenaProbeInner">
-                <div class="arena-meta muted sm" id="arenaMeta">—</div>
-                <div class="arena-board-wrap">
-                  <div class="arena-board" id="arenaBoard" role="grid" aria-label="Chess board"></div>
-                </div>
-                <div class="arena-moves muted sm" id="arenaMoves"></div>
-                <div class="arena-strategies row sm">
-                  <label>White <select id="arenaWhiteStrategy" class="arena-strat-select"></select></label>
-                  <label>Black <select id="arenaBlackStrategy" class="arena-strat-select"></select></label>
-                </div>
-                <div class="arena-actions row">
-                  <button type="button" class="btn ghost btn-sm" id="btnArenaNew">New</button>
-                  <button type="button" class="btn ghost btn-sm" id="btnArenaLocal">Local</button>
-                  <button type="button" class="btn ghost btn-sm" id="btnArenaRemote">DeepSeek</button>
-                  <button type="button" class="btn ghost btn-sm" id="btnArenaPlay">Both</button>
-                </div>
-              </div>
-            </details>
-          </div>
-          <details class="desk-control-drawer">
-            <summary class="muted sm">Lab · steer · guidance queue</summary>
-            <div class="row desk-steer-row">
-              <input type="text" id="steerInput" placeholder="!steer / !pause / !continue …" class="desk-steer-input" />
-              <button type="button" class="btn ghost btn-sm" id="btnSteer">Steer</button>
-            </div>
-          <div class="operator-inbox-dock" id="operatorInboxDock">
-            <div class="inbox-head">
-              <strong>Guidance queue</strong>
-              <span class="muted sm">Type while the agent runs · Enter queues · read at next checkpoint</span>
-              <span class="muted sm" id="operatorInboxStatus">0 queued</span>
-            </div>
-            <textarea id="operatorInboxInput" rows="2" placeholder="Steer direction, corrections, priorities…  Enter = queue for next stop · Shift+Enter = newline"></textarea>
-            <div class="row inbox-actions">
-              <button type="button" class="btn primary btn-sm" id="btnInboxQueue">Queue ↵</button>
-              <button type="button" class="btn ghost btn-sm" id="btnInboxClear">Clear draft</button>
-              <button type="button" class="btn ghost btn-sm inbox-chip" data-inbox="Focus on dashboard Body tab and operator inbox only">Dashboard focus</button>
-              <button type="button" class="btn ghost btn-sm inbox-chip" data-inbox="Stop tool loops — change approach per behavioral T3">Stop looping</button>
-              <button type="button" class="btn ghost btn-sm inbox-chip" data-inbox="Switch to writing the report — file artifacts first">Write report</button>
-              <button type="button" class="btn ghost btn-sm" data-gov-steer="!pause" title="Immediate hold">!pause now</button>
-              <button type="button" class="btn ghost btn-sm" data-gov-steer="!continue" title="Immediate resume">!continue now</button>
-            </div>
-          </div>
-          <div class="operator-inbox-dock handoff-inbox-dock" id="handoffInboxDock">
-            <div class="inbox-head">
-              <strong>Handoff inbox</strong>
-              <span class="muted sm">Peer · cloud · BUILD · orchestrator queue</span>
-              <span class="muted sm" id="handoffInboxStatus">—</span>
-            </div>
-            <ul class="handoff-inbox-list sm" id="handoffInboxList" aria-live="polite"></ul>
-          </div>
-          </details>
-          <details class="desk-system-details">
-            <summary>System details · open only when routing is blocked</summary>
-          <footer class="desk-ops-strip row sm" id="deskOpsStrip" aria-label="System details">
-            <span id="deskOpsMachine" class="desk-ops-chip muted">machine —</span>
-            <span id="deskOpsPreflight" class="desk-ops-chip muted">preflight —</span>
-            <span id="deskOpsLocal" class="desk-ops-chip">local —</span>
-            <span id="deskOpsAutorun" class="desk-ops-chip muted">autorun —</span>
-            <span id="deskOpsStack" class="desk-ops-chip muted">stack —</span>
-            <span id="deskOpsPeers" class="desk-ops-chip muted">peers —</span>
-            <span id="deskOpsGrok" class="desk-ops-chip muted">grok —</span>
-          </footer>
-          </details>
-          </div><!-- /mag-lab-block -->
-        </div>
-        <span class="badge-zero hidden" id="badgeZeroGrok"></span>
-        </section>
-      </div>
-      <div class="win-resize" title="resize"></div>
-    </div>
-
-    <div class="win" data-win="sessions" id="win-sessions">
-      <div class="win-titlebar">
-        <span class="win-title">// DAYS — worklog map</span>
-        <span class="win-ctrls">
-          <button type="button" class="win-min" title="minimize">_</button>
-          <button type="button" class="win-max" title="maximize">□</button>
-          <button type="button" class="win-close" title="close">×</button>
-        </span>
-      </div>
-      <div class="win-body">
-        <section id="panel-sessions" class="panel days-merge">
-          <nav class="days-subnav row sm" aria-label="Days views">
-            <button type="button" class="btn ghost btn-sm days-sub on" data-days-view="timeline">Timeline</button>
-            <button type="button" class="btn ghost btn-sm days-sub" data-days-view="diary">Diary</button>
-            <button type="button" class="btn ghost btn-sm days-sub" data-days-view="pulse">Pulse</button>
-            <button type="button" class="btn ghost btn-sm days-sub" data-days-view="story">Story so far</button>
-            <button type="button" class="btn ghost btn-sm days-route" data-days-route="verkle">Evidence map</button>
-            <span class="muted sm days-sub-hint">evidence map · daybook · recent change · project arc</span>
-          </nav>
-          <div class="days-view days-view-timeline" id="daysViewTimeline">
-            <div class="days-split">
-            <div class="days-list-col">
-              <div class="days-list-sticky">
-                <p class="help-bar">Workdays on the left · agent-ready artifacts on the right. Big bead = filed day · small = your turns · orange = worker runs · cyan knot = a portable evidence packet an agent can receive (provenance, not a cryptographic Verkle proof).</p>
-                <div class="days-legend row" id="daysLegend"></div>
-                <div class="stats" id="stats"></div>
-              </div>
-              <div class="session-cards" id="sessionRows"></div>
-            </div>
-            <div class="days-graph-col">
-              <div class="tap-toolbar sticky-in-pane">
-                <button type="button" class="btn" id="btnTapRebuild">Rebuild graph</button>
-                <button type="button" class="btn ghost" id="btnTapFrame" title="Re-center camera to fill the stage">Frame</button>
-                <label class="toggle-row tap-lattice-toggle" title="Proof-chain knots linking filed workdays to continuity anchors">
-                  <input type="checkbox" id="tapLatticeToggle" checked />
-                  <span>Verkle artifacts</span>
-                </label>
-                <button type="button" class="btn ghost btn-sm" id="btnTapLatticeFocus" title="Frame and emphasize continuity-chain anchors">Chain focus</button>
-                <span id="tapMeta" class="muted"></span>
-                <span class="muted tap-hint">Hover → context rail · click pin · explore sub-beads</span>
-              </div>
-              <div class="tap-stage days-tap">
-                <div class="tap-canvas-wrap">
-                  <canvas id="tapCanvas"></canvas>
-                  <aside class="tap-map-key" aria-label="Persistent map key">
-                    <strong>Map key</strong>
-                    <span><i class="key-dot day"></i> filed workday</span>
-                    <span><i class="key-dot turn"></i> your turn</span>
-                    <span><i class="key-dot worker"></i> agent run</span>
-                    <span><i class="key-dot knot"></i> portable evidence knot</span>
-                    <small>Drag to orbit · wheel/pinch to zoom · click to pin</small>
-                  </aside>
-                </div>
-                <aside id="tapInspect" class="tap-inspect days-rail">
-                  <div class="rail-section rail-hover">
-                    <div class="tap-inspect-h">Quick reading</div>
-                    <div id="tapHoverRail" class="tap-inspect-body rail-body">
-                      <p class="muted">Move over a point for plain English: what it was, why it matters, and its source.</p>
-                    </div>
-                  </div>
-                  <div class="rail-section rail-pin">
-                    <div class="tap-inspect-h">Pinned evidence · discuss below</div>
-                    <div id="tapCaption" class="tap-inspect-body rail-body">
-                      <p class="muted">Click a node or day card to pin.</p>
-                    </div>
-                  </div>
-                  <div class="rail-actions row">
-                    <button type="button" class="btn primary btn-sm" id="btnDaysOpenDetail">Open day</button>
-                    <button type="button" class="btn ghost btn-sm" id="btnDaysCopyKnot" title="Copy the pinned workday as a portable evidence packet for another agent">Copy knot</button>
-                    <button type="button" class="btn ghost btn-sm" id="btnDaysRouteKnot" title="Launch a background agent with this bounded evidence packet">Hand to agent</button>
-                    <button type="button" class="btn ghost btn-sm" id="btnDaysOpenVisual">Visual</button>
-                  </div>
-                </aside>
-              </div>
-            </div>
-            </div>
-          </div>
-          <div class="days-view days-view-diary hidden" id="daysViewDiary">
-            <p class="muted sm">Day-by-day narrative reconstructed from filed residuals.</p>
-            <div id="daysDiaryEmbed" class="days-embed reply-doc sm">Loading diary…</div>
-          </div>
-          <div class="days-view days-view-pulse hidden" id="daysViewPulse">
-            <p class="muted sm">What changed recently, from filed sources.</p>
-            <pre id="daysPulseEmbed" class="chronicle-pre sm">Loading…</pre>
-          </div>
-          <div class="days-view days-view-story hidden" id="daysViewStory">
-            <div id="daysStoryEmbed" class="days-embed reply-doc story-embed">Loading the story so far…</div>
-          </div>
-        </section>
-        <!-- do NOT use class "panel" here — body.cli .win .panel { display:block !important }
-             was overriding .hidden and covering the whole Days view with an empty layer -->
-        <div id="panel-tapestry" hidden aria-hidden="true" style="display:none!important;height:0;overflow:hidden"></div>
-      </div>
-      <div class="win-resize" title="resize"></div>
-    </div>
-
-    <div class="win" data-win="board" id="win-board">
-      <div class="win-titlebar">
-        <span class="win-title">â–¶ BOARD // SCRAPS</span>
-        <span class="win-ctrls">
-          <button type="button" class="win-min" title="minimize">_</button>
-          <button type="button" class="win-max" title="maximize">â–¡</button>
-          <button type="button" class="win-close" title="close">×</button>
-        </span>
-      </div>
-      <div class="win-body">
-        <section id="panel-board" class="panel">
-<div class="stats" id="boardStats"></div>
-                <div class="kanban" id="boardKanban"></div>
-                <div class="mod-panels" id="boardPanels">
-                  <article class="card">
-                    <h3>Ask biographer</h3>
-                    <textarea id="askQ" rows="3" placeholder="What was I working on?"></textarea>
-                    <div class="row">
-                      <button type="button" class="btn" id="btnAsk">Ask (local)</button>
-                      <button type="button" class="btn ghost" id="btnBrief">Rebuild brief</button>
-                    </div>
-                    <pre class="pre" id="askOut">â€”</pre>
-                  </article>
-                  <article class="card"><h3>Latest brief</h3><pre class="pre" id="briefOut">â€”</pre></article>
-                  <article class="card"><h3>Attention</h3><pre class="pre" id="attOut">â€”</pre></article>
-                  <article class="card"><h3>Todo</h3><pre class="pre" id="todoOut">â€”</pre></article>
-                  <article class="card"><h3>Live from Grok</h3><pre class="pre" id="liveOut">â€”</pre></article>
-                  <article class="card"><h3>CURRENT</h3><pre class="pre" id="statusOut">â€”</pre></article>
-                </div>
-        </section>
-      </div>
-      <div class="win-resize" title="resize"></div>
-    </div>
-
-    <div class="win" data-win="operate" id="win-operate">
-      <div class="win-titlebar">
-        <span class="win-title">â–¶ BRIEF // PASTE</span>
-        <span class="win-ctrls">
-          <button type="button" class="win-min" title="minimize">_</button>
-          <button type="button" class="win-max" title="maximize">â–¡</button>
-          <button type="button" class="win-close" title="close">×</button>
-        </span>
-      </div>
-      <div class="win-body">
-        <section id="panel-operate" class="panel">
-<div class="stats" id="osStats"></div>
-                <p class="title" id="osBeadTitle">â€”</p>
-                <p class="meta" id="osBeadMeta">â€”</p>
-                <p class="blurb" id="osBeadBlurb">â€”</p>
-                <ul id="osBeadBullets"></ul>
-                <div id="osTicket" class="card" style="margin:0.5rem 0"></div>
-                <ul id="osSysList"></ul>
-                <div id="osOpenBits" class="muted"></div>
-                <div class="row">
-                  <button type="button" class="btn ghost" data-tpl="build">Build</button>
-                  <button type="button" class="btn ghost" data-tpl="strike">Strike</button>
-                  <button type="button" class="btn ghost" data-tpl="limits">Local only</button>
-                  <button type="button" class="btn ghost" data-tpl="spore">Other AI</button>
-                  <button type="button" class="btn" id="btnCopyFeed">Copy</button>
-                  <button type="button" class="btn ghost" id="btnCopyTicket">Copy job</button>
-                  <span id="osCopyStatus" class="muted"></span>
-                </div>
-                <textarea id="osFeed" class="os-feed" rows="10" readonly style="width:100%;margin-top:0.5rem;background:var(--bg);color:var(--ink);border:1px solid var(--line);font-family:var(--mono);font-size:0.95rem"></textarea>
-                <span id="osLead" class="hidden"></span>
-                <button type="button" class="hidden" id="btnOsRefresh"></button>
-                <button type="button" class="hidden" id="btnOsCatchUp"></button>
-                <button type="button" class="hidden" id="btnOsOpenSessions"></button>
-                <button type="button" class="hidden" id="btnOsOpenVisual"></button>
-        </section>
-      </div>
-      <div class="win-resize" title="resize"></div>
-    </div>
-
-    <div class="win" data-win="detail" id="win-detail">
-      <div class="win-titlebar">
-        <span class="win-title">Day detail</span>
-        <span class="win-ctrls">
-          <button type="button" class="win-min" title="minimize">_</button>
-          <button type="button" class="win-max" title="maximize">□</button>
-          <button type="button" class="win-close" title="close">×</button>
-        </span>
-      </div>
-      <div class="win-body">
-        <section id="panel-detail" class="panel">
-          <div id="detailEmpty" class="muted">Pick a day from Days first.</div>
-          <div id="detailBody" class="hidden detail-boxes">
-            <article class="card">
-              <h2>Story</h2>
-              <h3 id="dTitle"></h3>
-              <p class="meta" id="dId"></p>
-              <p class="meta" id="dMeta"></p>
-            </article>
-            <article class="card">
-              <h2>DNA &amp; exports</h2>
-              <div id="dLinks"></div>
-            </article>
-            <article class="card full">
-              <h2>Notes &amp; body</h2>
-              <div id="dBody"></div>
-            </article>
-          </div>
-        </section>
-      </div>
-      <div class="win-resize" title="resize"></div>
-    </div>
-
-    <div class="win" data-win="visual" id="win-visual">
-      <div class="win-titlebar">
-        <span class="win-title">â–¶ MAP // VISUAL</span>
-        <span class="win-ctrls">
-          <button type="button" class="win-min" title="minimize">_</button>
-          <button type="button" class="win-max" title="maximize">â–¡</button>
-          <button type="button" class="win-close" title="close">×</button>
-        </span>
-      </div>
-      <div class="win-body">
-        <section id="panel-visual" class="panel">
-                <p class="help-bar"><strong>English first.</strong> Canvas is optional depth — not the point of the day.</p>
-                <pre class="pre" id="visEnglish" style="max-height:12rem;white-space:pre-wrap">—</pre>
-                <div class="stats" id="visMeters"></div>
-                <details class="home-adv" open>
-                  <summary>Picture tools (zoom · chambers)</summary>
-                  <div class="row">
-                    <select id="visSessionSelect"></select>
-                    <button type="button" class="btn ghost" id="btnVisPin">Pin</button>
-                    <button type="button" class="btn ghost" id="btnZoomOut">−</button>
-                    <span id="visZoomLabel">100%</span>
-                    <button type="button" class="btn ghost" id="btnZoomIn">+</button>
-                    <button type="button" class="btn ghost" id="btnFit">Fit</button>
-                    <button type="button" class="btn ghost" id="btnResetView">Reset</button>
-                    <button type="button" class="btn" id="btnVisRebuild">Rebuild</button>
-                    <button type="button" class="btn ghost" id="btnVisWalk">Walk</button>
-                  </div>
-                  <div id="visPins"></div>
-                  <div id="visChambers"></div>
-                  <div id="visSancho"></div>
-                  <div id="visModules"><div id="visModuleList"></div><div id="visFilters"></div><p id="visLegend"></p></div>
-                  <canvas id="visCanvas" width="800" height="400" style="max-width:100%;background:#0a1210;border:1px solid var(--line)"></canvas>
-                  <div id="visCaption"></div>
-                  <div id="visInspector"><div id="visDetail"></div><div id="visTable"></div></div>
-                </details>
-                <span id="visMeta" class="hidden"></span>
-        </section>
-      </div>
-      <div class="win-resize" title="resize"></div>
-    </div>
-
-    <div class="win" data-win="tapestry" id="win-tapestry" aria-hidden="true">
-      <div class="win-body"><p class="muted">Merged into Days. Use the Days door.</p></div>
-    </div>
-
-    <div class="win" data-win="flow" id="win-flow">
-      <div class="win-titlebar">
-        <span class="win-title">Economics — cost per verified outcome</span>
-        <span class="win-ctrls">
-          <button type="button" class="win-min" title="minimize">_</button>
-          <button type="button" class="win-max" title="maximize">â–¡</button>
-          <button type="button" class="win-close" title="close">×</button>
-        </span>
-      </div>
-      <div class="win-body">
-        <section id="panel-flow" class="panel pane-pad economics-panel">
-                <header class="pane-head economics-head">
-                  <div>
-                    <p class="ideas-kicker">Outcome economics · measured evidence</p>
-                    <h2 class="pane-h">Where intelligence went, what it produced, and why</h2>
-                    <p class="pane-sub">The useful unit is not a token. It is a verified result: a passing test, filed artifact, resolved decision, or proven handoff.</p>
-                    <p class="honesty-note">Current coverage is incomplete. Provider calls are measured; local electricity, subscriptions, human attention, and some host-app usage are not yet joined to outcomes.</p>
-                  </div>
-                </header>
-                <div class="economics-questions" aria-label="How to read this page">
-                  <article class="card"><h3>1 · Route</h3><p>Which seat received the work, and what evidence justified that choice?</p></article>
-                  <article class="card"><h3>2 · Outcome</h3><p>Did it create a verified leaf, or only conversation and retries?</p></article>
-                  <article class="card"><h3>3 · Learning</h3><p>What skill, remedy, or benchmark lets a cheaper seat succeed next time?</p></article>
-                </div>
-<p class="muted" id="flowNote">â€”</p>
-                <div class="stats" id="flowStats"></div>
-                <div id="flowModelBars"></div>
-                <div id="flowRoleBars"></div>
-                <div id="flowProvTable"></div>
-                <div id="flowRemainTable"></div>
-                <div id="flowEdges"></div>
-                <div id="flowIdeas"></div>
-                <div id="flowArtifacts"></div>
-                <div id="flowArtifactList"></div>
-                <pre class="pre" id="flowTimeline">â€”</pre>
-                <button type="button" class="btn ghost" id="btnFlowRefresh">Refresh flow</button>
-                <span id="flowMeta" class="hidden"></span>
-        </section>
-      </div>
-      <div class="win-resize" title="resize"></div>
-    </div>
-
-    <div class="win" data-win="orchestrate" id="win-orchestrate">
-      <div class="win-titlebar">
-        <span class="win-title">â–¶ SEATS // MODELS</span>
-        <span class="win-ctrls">
-          <button type="button" class="win-min" title="minimize">_</button>
-          <button type="button" class="win-max" title="maximize">â–¡</button>
-          <button type="button" class="win-close" title="close">×</button>
-        </span>
-      </div>
-      <div class="win-body">
-        <section id="panel-orchestrate" class="panel">
-<div class="stats" id="orchStats"></div>
-                <pre class="pre" id="modelsMap">â€”</pre>
-                <p class="muted" id="modelsLine">â€”</p>
-                <div class="row">
-                  <button type="button" class="btn" id="btnMultiSmoke">Run multi-smoke</button>
-                  <button type="button" class="btn ghost" id="btnModelsRefresh">Refresh models</button>
-                  <button type="button" class="btn ghost" id="btnQuotaRefresh">Refresh quota</button>
-                  <button type="button" class="btn ghost" id="btnProbeNow">Probe live</button>
-                </div>
-                <pre class="pre" id="smokeOut">â€”</pre>
-                <div id="usageReport"></div>
-                <div id="quotaTable"></div>
-                <div id="probeTable"></div>
-                <pre class="pre" id="providersHint">â€”</pre>
-                <pre class="pre" id="laneCfg">â€”</pre>
-                <pre class="pre" id="usageToday">â€”</pre>
-                <pre class="pre" id="usageTail">â€”</pre>
-                <p class="muted" id="usageReportLine"></p>
-        </section>
-      </div>
-      <div class="win-resize" title="resize"></div>
-    </div>
-
-    <div class="win" data-win="blast" id="win-blast">
-      <div class="win-titlebar">
-        <span class="win-title">â–¶ BLAST // SELF-IMPROVE</span>
-        <span class="win-ctrls">
-          <button type="button" class="win-min" title="minimize">_</button>
-          <button type="button" class="win-max" title="maximize">â–¡</button>
-          <button type="button" class="win-close" title="close">×</button>
-        </span>
-      </div>
-      <div class="win-body">
-        <section id="panel-blast" class="panel">
-          <p class="help-bar">
-            <strong>Full-blast dig plant.</strong>
-            DNA stays on this machine. Point Ollama at Vast via tunnel
-            (<code>OLLAMA_HOST=http://127.0.0.1:11434</code> after SSH -L).
-            Chat tab = talk direct. This tab = steer digs. Promote is human-only.
-          </p>
-          <div class="stats" id="blastStats"></div>
-          <div class="row" style="margin:0.75rem 0;flex-wrap:wrap;gap:0.4rem">
-            <button type="button" class="btn primary" id="btnBlastStart">Start blast</button>
-            <button type="button" class="btn ghost" id="btnBlastPause">Pause</button>
-            <button type="button" class="btn ghost" id="btnBlastResume">Resume</button>
-            <button type="button" class="btn ghost" id="btnBlastStop">Stop</button>
-            <button type="button" class="btn ghost" id="btnBlastRefresh">Refresh</button>
-          </div>
-          <article class="card" style="margin-bottom:0.85rem">
-            <h2>Influence</h2>
-            <label class="muted" for="blastFocus">Focus (steers every dig)</label>
-            <textarea id="blastFocus" rows="4" style="width:100%;margin:0.35rem 0" placeholder="e.g. memory contracts for Mag trail/residual; refuse product worship; steal from SubtleMemory paper onlyâ€¦"></textarea>
-            <div class="row" style="flex-wrap:wrap;gap:0.5rem;align-items:end">
-              <div>
-                <label class="muted" for="blastMinutes">dig min</label><br />
-                <input type="number" id="blastMinutes" min="5" max="180" value="45" style="width:5rem" />
-              </div>
-              <div>
-                <label class="muted" for="blastTickets">max tickets</label><br />
-                <input type="number" id="blastTickets" min="1" max="12" value="4" style="width:5rem" />
-              </div>
-              <div>
-                <label class="muted" for="blastCycle">cycle sec</label><br />
-                <input type="number" id="blastCycle" min="30" max="3600" value="300" style="width:5rem" />
-              </div>
-              <button type="button" class="btn" id="btnBlastSave">Save influence</button>
-            </div>
-            <p class="meta" id="blastInfluenceMeta" style="margin-top:0.5rem">â€”</p>
-          </article>
-          <article class="card" style="margin-bottom:0.85rem">
-            <h2>Plant status</h2>
-            <pre class="pre" id="blastStatusOut">â€”</pre>
-          </article>
-          <article class="card" style="margin-bottom:0.85rem">
-            <h2>Ollama seat</h2>
-            <pre class="pre" id="blastOllamaOut">â€”</pre>
-          </article>
-          <article class="card full">
-            <h2>Top tickets (promote gate)</h2>
-            <div id="blastCandidates"></div>
-          </article>
-        </section>
-      </div>
-      <div class="win-resize" title="resize"></div>
-    </div>
-
-    <div class="win" data-win="verkle" id="win-verkle">
-      <div class="win-titlebar">
-        <span class="win-title">â–¶ LATTICE // HISTORY + PLAN</span>
-        <span class="win-ctrls">
-          <button type="button" class="win-min" title="minimize">_</button>
-          <button type="button" class="win-max" title="maximize">â–¡</button>
-          <button type="button" class="win-close" title="close">×</button>
-        </span>
-      </div>
-      <div class="win-body">
-        <section id="panel-verkle" class="panel">
-          <p class="help-bar">
-            <strong>Verkle lattice thus far.</strong>
-            Tip = chain alive. History = theme + tension over days. Plan = working open + agent next â€” not a second throne.
-          </p>
-          <div class="stats" id="latticeStats"></div>
-          <p class="blurb" id="latticeOneLine">â€”</p>
-          <div class="grid lattice-grid">
-            <article class="card">
-              <h2>Graph · queryable store</h2>
-              <p class="meta">memory/lattice/nodes.jsonl + edges.jsonl — session knots + instrument digs (same graph agents query)</p>
-              <div id="latticeGraph" class="lattice-graph"></div>
-            </article>
-            <article class="card">
-              <h2>Plan Â· open irons</h2>
-              <p class="meta" id="latticeFocus">Focus: â€”</p>
-              <ul id="latticePlanList"></ul>
-              <p class="meta" style="margin-top:0.6rem">Agent next (versioned self)</p>
-              <ul id="latticeAgentNext"></ul>
-            </article>
-            <article class="card">
-              <h2>Themes Â· histogram</h2>
-              <div id="latticeThemes" class="theme-bars"></div>
-            </article>
-          </div>
-          <article class="card" style="margin-top:0.85rem">
-            <h2>History Â· session beads</h2>
-            <p class="meta">Dominant theme + tension (higher bar = more tension proxy)</p>
-            <div id="latticeHistory" class="lattice-history"></div>
-          </article>
-          <article class="card" style="margin-top:0.85rem">
-            <h2>Chain tip Â· tail</h2>
-            <pre class="pre" id="verkleOut" style="max-height:12rem">â€”</pre>
-          </article>
-          <div class="row" style="margin-top:0.75rem">
-            <button type="button" class="btn ghost" id="btnLatticeRefresh">Refresh lattice</button>
-            <button type="button" class="btn ghost" id="btnLatticePack">Copy pack path</button>
-          </div>
-        </section>
-      </div>
-      <div class="win-resize" title="resize"></div>
-    </div>
-
-    <div class="win" data-win="viewports" id="win-viewports">
-      <div class="win-titlebar">
-        <span class="win-title">&#9654; VIEWPORTS // CANVAS</span>
-        <span class="win-ctrls">
-          <button type="button" class="win-min" title="minimize">_</button>
-          <button type="button" class="win-max" title="maximize">&#9633;</button>
-          <button type="button" class="win-close" title="close">&#215;</button>
-        </span>
-      </div>
-      <div class="win-body">
-        <section id="panel-viewports" class="panel">
-          <p class="help-bar">
-            <strong>Cursor Canvas → Mag.</strong>
-            Synced manifests · routing network lives on <button type="button" class="btn-link sm" id="btnViewportsToDesk">Desk → Network</button>
-          </p>
-          <div class="row" style="margin-bottom:0.75rem">
-            <button type="button" class="btn ghost" id="btnViewportsRefresh">Refresh</button>
-            <button type="button" class="btn ghost" id="btnViewportsSync">Sync canvases</button>
-            <span class="meta" id="viewportsMeta">—</span>
-          </div>
-          <div id="viewportsHost" class="viewport-stack"></div>
-        </section>
-      </div>
-      <div class="win-resize" title="resize"></div>
-    </div>
-
-    <div class="win" data-win="ingest" id="win-ingest">
-      <div class="win-titlebar">
-        <span class="win-title">â–¶ INGEST // CAT</span>
-        <span class="win-ctrls">
-          <button type="button" class="win-min" title="minimize">_</button>
-          <button type="button" class="win-max" title="maximize">â–¡</button>
-          <button type="button" class="win-close" title="close">×</button>
-        </span>
-      </div>
-      <div class="win-body">
-        <section id="panel-ingest" class="panel pane-pad library-panel">
-          <header class="pane-head">
-            <div>
-              <p class="ideas-kicker">Library · research · skills · teaching material</p>
-              <h2 class="pane-h">What Mag can draw on</h2>
-              <p class="pane-sub">Each item should explain what it represents, where it came from, which projects or skills use it, and whether its claims have been verified.</p>
-              <p class="honesty-note">A saved link is not learned knowledge. Promotion into routing or model training requires a source-backed knot, a reusable lesson, and an evaluation.</p>
-            </div>
-          </header>
-          <div class="library-legend">
-            <span><b>Source</b> where it came from</span>
-            <span><b>Meaning</b> why it was kept</span>
-            <span><b>Use</b> project or skill it informs</span>
-            <span><b>Trust</b> captured, interpreted, or verified</span>
-          </div>
-          <div id="ingestOut"></div>
-        </section>
-      </div>
-      <div class="win-resize" title="resize"></div>
-    </div>
-  
-
-    <div class="win" data-win="diary" id="win-diary">
-      <div class="win-titlebar"><span class="win-title">Diary — how we got here</span></div>
-      <div class="win-body">
-        <section id="panel-diary" class="panel pane-pad">
-          <div class="pane-head">
-            <div>
-              <h2 class="pane-h">Your workdays as a story</h2>
-              <p class="muted pane-sub" id="diaryArc">Loading diary…</p>
-            </div>
-            <div class="row">
-              <button type="button" class="btn ghost chip on" id="btnDiaryOldest" data-order="oldest">Oldest first</button>
-              <button type="button" class="btn ghost chip" id="btnDiaryNewest" data-order="newest">Newest first</button>
-              <button type="button" class="btn ghost" id="btnDiaryReload">Reload</button>
-              <button type="button" class="btn primary" id="btnDiaryCopy">Copy story</button>
-            </div>
-          </div>
-          <div class="router-summary" id="diaryStats"></div>
-          <div class="theme-row" id="diaryThemes"></div>
-          <article class="card diary-project" id="diaryProject">
-            <h2 class="pane-h sm">What this project is (short)</h2>
-            <p class="muted" id="diaryProjectOne">Loading project prologue…</p>
-            <p id="diaryProjectSpine" class="diary-spine"></p>
-            <p id="diaryProjectDual" class="muted diary-dual"></p>
-            <div class="diary-proj-cols">
-              <div>
-                <h3 class="diary-subh">Origins</h3>
-                <ul id="diaryOrigins" class="diary-beats"></ul>
-              </div>
-              <div>
-                <h3 class="diary-subh">Goals</h3>
-                <ul id="diaryGoals" class="diary-beats"></ul>
-                <h3 class="diary-subh">Open now</h3>
-                <ul id="diaryOpen" class="diary-beats"></ul>
-              </div>
-            </div>
-            <details class="home-adv" id="diaryDocsDetails">
-              <summary id="diaryDocsSummary">Supporting documents (0)</summary>
-              <ul id="diaryDocs" class="url-list diary-docs"></ul>
-            </details>
-          </article>
-          <h2 class="pane-h sm diary-day-label">Day by day</h2>
-          <div class="diary-timeline" id="diaryTimeline"></div>
-        </section>
-      </div>
-    </div>
-
-    <div class="win" data-win="story" id="win-story">
-      <div class="win-titlebar">
-        <span class="win-title">Story — thesis · journey · artifacts</span>
-        <span class="win-ctrls">
-          <button type="button" class="win-min" title="minimize">_</button>
-          <button type="button" class="win-max" title="maximize">□</button>
-          <button type="button" class="win-close" title="close">×</button>
-        </span>
-      </div>
-      <div class="win-body">
-        <section id="panel-story" class="panel pane-pad story-panel">
-          <div class="pane-head">
-            <div>
-              <h2 class="pane-h" id="storyTitle">What we’re building</h2>
-              <p class="muted pane-sub" id="storySub">Loading plain-English story…</p>
-            </div>
-            <div class="row">
-              <button type="button" class="btn ghost" id="btnStoryReload">Reload</button>
-              <button type="button" class="btn primary" id="btnStoryCopy">Copy full story</button>
-              <button type="button" class="btn ghost" id="btnStoryOffice">Office</button>
-            </div>
-          </div>
-          <div class="router-summary" id="storyLive"></div>
-          <nav class="story-toc" id="storyToc" aria-label="Story sections"></nav>
-          <div id="storyRoot" class="story-root">
-            <p class="muted">Loading thesis journey…</p>
-          </div>
-        </section>
-      </div>
-      <div class="win-resize" title="resize"></div>
-    </div>
-
-<div class="win" data-win="ideas" id="win-ideas">
-      <div class="win-titlebar"><span class="win-title">Ideas — what you still hold</span></div>
-      <div class="win-body">
-        <section id="panel-ideas" class="panel pane-pad ideas-os">
-          <header class="ideas-hero">
-            <div class="ideas-hero-copy">
-              <p class="ideas-kicker">Primary board · Mag as operating system</p>
-              <h2 class="pane-h">Projects, plans, and unresolved decisions</h2>
-              <p class="ideas-lead">
-                <strong>Days</strong> remembers what you worked on.
-                <strong>Ideas</strong> remembers what you still care about after the day ends.
-                This board is where Mag (and later your own model) should look first — not the whole chat history.
-              </p>
-            </div>
-            <div class="ideas-hero-actions">
-              <button type="button" class="btn ghost" id="btnIdeasRefresh" title="Reload the board from disk">Reload</button>
-              <button type="button" class="btn primary" id="btnIdeasSeed" title="Import open items from your working notes">Pull from my notes</button>
-            </div>
-          </header>
-
-          <ol class="ideas-howto" aria-label="How to use this board">
-            <li><span class="howto-n">1</span><span><b>Pick one card</b> on the left — one open thread, not everything.</span></li>
-            <li><span class="howto-n">2</span><span><b>Read the brief</b> on the right — a short note Mag can trust.</span></li>
-            <li><span class="howto-n">3</span><span><b>Hand it to Chat</b> (or copy it) so the model works that thread only.</span></li>
-          </ol>
-
-          <div class="ideas-why" role="note">
-            <p>
-              Why this exists: chat forgets and invents priorities.
-              Cards on this board live as files on your machine.
-              The eventual model-as-OS should <em>operate on this board</em> — find a card, brief itself, act, then mark it done — not re-read your whole life every time.
-            </p>
-          </div>
-
-          <div class="stats ideas-stats" id="ideasStats"></div>
-
-          <div class="ideas-scrum-strip muted sm" id="ideasScrumStrip" hidden>
-            <strong>Sprint</strong>
-            <span id="ideasScrumActive">—</span>
-            <span id="ideasScrumNext">—</span>
-          </div>
-
-          <div class="filter-row ideas-filters" id="ideasFilters" role="toolbar" aria-label="Show which cards">
-            <button type="button" class="btn ghost chip on" data-filter="open" title="Still needs work">Needs work</button>
-            <button type="button" class="btn ghost chip" data-filter="open_loop" title="Open loops / unfinished tensions">Open loops</button>
-            <button type="button" class="btn ghost chip" data-filter="project" title="Bigger workstreams">Projects</button>
-            <button type="button" class="btn ghost chip" data-filter="held" title="On the shelf — references, not urgency">On the shelf</button>
-            <button type="button" class="btn ghost chip" data-filter="all" title="Everything on the board">Everything</button>
-          </div>
-
-          <div class="ideas-split">
-            <div class="ideas-col">
-              <h3 class="ideas-col-h">The board <span class="muted">— click a card</span></h3>
-              <div class="ideas-list" id="ideasList"></div>
-            </div>
-            <div class="ideas-side">
-              <h3 class="ideas-col-h">Brief for the model <span class="muted">— not the whole attic</span></h3>
-              <p class="ideas-pack-hint muted">
-                This is the short note you hand Mag: what this card is, a little context, and what it touches.
-                Prefer this over pasting an entire chat.
-              </p>
-              <pre class="pre ideas-pack" id="ideasPack">Pick a card on the left…</pre>
-              <div class="row ideas-pack-actions">
-                <button type="button" class="btn primary" id="btnIdeasToChat" disabled>Talk with this brief</button>
-                <button type="button" class="btn ghost" id="btnIdeasCopyPack" disabled>Copy brief</button>
-              </div>
-              <div class="row ideas-status-actions" id="ideasStatusActions">
-                <span class="muted ideas-status-lab">Card state</span>
-                <button type="button" class="btn ghost btn-sm" id="btnIdeaDone" disabled title="PATCH status=done">Mark done</button>
-                <button type="button" class="btn ghost btn-sm" id="btnIdeaShelf" disabled title="PATCH status=held">On the shelf</button>
-                <button type="button" class="btn ghost btn-sm" id="btnIdeaReopen" disabled title="PATCH status=open">Needs work</button>
-              </div>
-              <p class="ideas-foot muted">
-                Stored under <code>memory/ideas/</code> · true source is the files, not this screen.
-              </p>
-            </div>
-          </div>
-        </section>
-      </div>
-    </div>
-
-    <div class="win" data-win="status" id="win-status">
-      <div class="win-titlebar"><span class="win-title">Body — seats, workers &amp; governance</span></div>
-      <div class="win-body">
-        <section id="panel-status" class="panel status-panel pane-pad">
-          <div class="pane-head">
-            <div>
-              <h2 class="pane-h">Body</h2>
-              <p class="muted pane-sub" id="statusHeadline">Who is plugged in, what is running, what Mag can call.</p>
-              <p class="muted sm" id="statusOfficeHeadline"></p>
-              <p class="honesty-note" id="statusHonesty"></p>
-              <div class="row" id="statusPills" style="margin-top:0.45rem;flex-wrap:wrap;gap:0.35rem"></div>
-            </div>
-            <div class="row">
-              <button type="button" class="btn ghost" id="btnImproveCycle" title="Improve cycle → queue + nervous + spider">Improve cycle</button>
-              <button type="button" class="btn ghost" id="btnTokenChain" title="DeepSeek plans once → local exec (token-save experiment)">Token-chain</button>
-              <button type="button" class="btn danger" id="btnPowerStop" title="Kill switch — stop entire Mag stack">Stop all</button>
-              <button type="button" class="btn primary" id="btnPowerStart" title="Boot supervisor + dashboard">Turn on</button>
-              <button type="button" class="btn ghost" id="btnStatusCatchUp">Catch up</button>
-              <button type="button" class="btn ghost" id="btnStatusReload">Reload</button>
-              <button type="button" class="btn ghost" id="btnOpenWorkers">Workers tab</button>
-            </div>
-          </div>
-          <article class="card full" id="powerCard">
-            <h2>Power — stack on/off</h2>
-            <p class="muted sm" id="powerHeadline">Loading stack status…</p>
-            <div class="row" id="powerPills" style="margin:0.35rem 0;flex-wrap:wrap;gap:0.35rem"></div>
-            <table class="kv"><tbody id="powerServices"></tbody></table>
-            <p class="muted sm" id="powerHint"></p>
-          </article>
-          <div class="status-bands body-top-bands">
-            <article class="card">
-              <h2>Inbound seats</h2>
-              <p class="muted sm">Where you talk to Mag — Cursor, dashboard Chat, CLI, Grok TUI.</p>
-              <div id="seatsInbound" class="seats-grid conn-list"></div>
-            </article>
-            <article class="card">
-              <h2>Outbound providers</h2>
-              <p class="muted sm">API brains Mag can call — from configs/providers.yaml.</p>
-              <div id="seatsOutbound" class="seats-grid conn-list"></div>
-            </article>
-            <article class="card">
-              <h2>Workers (48h)</h2>
-              <p class="muted sm" id="workersLayman">Orchestrator tasks — running + recent only.</p>
-              <ul id="workersList" class="signal-list"></ul>
-            </article>
-            <article class="card">
-              <h2>Coordination</h2>
-              <p class="muted sm">Shared activity — what each seat is doing (DeepSeek, Cursor, Grok, local).</p>
-              <ul id="coordinationLive" class="signal-list"></ul>
-            </article>
-          </div>
-          <article class="card full governance-card" id="governanceCard">
-            <h2>Governance — steer without re-approving every step</h2>
-            <p class="muted sm" id="governanceLayman">Loading…</p>
-            <div class="row gov-toggles" style="margin:0.5rem 0;flex-wrap:wrap;gap:0.75rem;align-items:center">
-              <label class="toggle-row">
-                <input type="checkbox" id="govDrainerToggle" />
-                <span>Auto-drain worker queue</span>
-              </label>
-              <label class="toggle-row">
-                <input type="checkbox" id="govBehavioralToggle" checked />
-                <span>Inject behavioral themes into every pack</span>
-              </label>
-            </div>
-            <div class="row gov-steer-btns" style="margin:0.5rem 0;flex-wrap:wrap;gap:0.35rem">
-              <button type="button" class="btn ghost btn-sm" data-gov-steer="!continue" title="Compass picks next blueprint step">!continue</button>
-              <button type="button" class="btn ghost btn-sm" data-gov-steer="!pause">!pause</button>
-              <button type="button" class="btn ghost btn-sm" data-gov-steer="!escape">!escape</button>
-              <input type="text" id="govSteerInput" placeholder="!steer …" style="flex:1;min-width:12rem;background:var(--panel);color:var(--ink);border:1px solid var(--line);padding:0.25rem 0.4rem;font-family:var(--mono);font-size:0.85rem" />
-              <button type="button" class="btn primary btn-sm" id="btnGovSteerSend">Steer all</button>
-            </div>
-            <p class="muted sm" id="governanceSteerNote">Steers Chat agent + all running workers via pigeonhole.</p>
-            <ul id="governanceThemes" class="signal-list gov-themes"></ul>
-            <p class="muted sm" id="governanceCursorNote"></p>
-          </article>
-          <div class="router-summary" id="routerSummary"></div>
-          <div class="status-bands router-bands">
-            <article class="card">
-              <h2>Routes (live plugs)</h2>
-              <p class="muted sm">Who Mag can call. Live = key present. Budget % = Mag yaml limits, not vendor UI.</p>
-              <div id="routerConnections" class="conn-list"></div>
-            </article>
-            <article class="card">
-              <h2>API chains</h2>
-              <p class="muted sm">Multi-key failover chains + rented boxes. Green dot = key(s) in env.</p>
-              <div id="chainsList" class="conn-list"></div>
-              <div class="row" style="margin-top:0.6rem">
-                <button type="button" class="btn ghost" id="btnProbeChains" title="POST /api/probe-status (live ping, can take ~minutes)">Live probe</button>
-                <span class="muted sm" id="chainsHint"></span>
-              </div>
-            </article>
-            <article class="card">
-              <h2>Pressure &amp; today</h2>
-              <p class="muted sm">Honest usage Mag actually logged. Grok TUI plan % is not in this file.</p>
-              <table class="kv"><tbody id="statusSpend"></tbody></table>
-              <ul id="statusPressure" class="signal-list"></ul>
-              <div class="row" id="statusActions"></div>
-            </article>
-            <article class="card">
-              <h2>Ingest &amp; memory</h2>
-              <p class="muted sm">Websites, docs, ideas — dig without the dump.</p>
-              <table class="kv"><tbody id="statusSeats"></tbody></table>
-              <details class="home-adv" id="ingestDetails">
-                <summary id="ingestSummary">Recent URLs (0)</summary>
-                <ul id="ingestUrlList" class="url-list"></ul>
-              </details>
-            </article>
-            <article class="card">
-              <h2>Seat feed</h2>
-              <p class="muted sm">Grok hooks · Cursor hooks · DeepSeek agent · orchestrator — merged by time.</p>
-              <div class="row" style="margin-bottom:0.5rem">
-                <button type="button" class="btn ghost btn-sm" id="btnSeatFeedReload">Refresh feed</button>
-                <span class="muted sm" id="seatFeedSummary">—</span>
-              </div>
-              <ul id="seatFeedList" class="url-list seat-feed-list"></ul>
-            </article>
-            <article class="card">
-              <h2>Desks &amp; drainer</h2>
-              <p class="muted sm">Mag home :8765 · Mirror strike desk :8743 · queue auto-advance.</p>
-              <table class="kv"><tbody id="statusDesks"></tbody></table>
-              <div class="row" style="margin-top:0.6rem;align-items:center;gap:0.75rem">
-                <label class="toggle-row">
-                  <input type="checkbox" id="drainerToggle" />
-                  <span>Auto-drain orchestrator queue</span>
-                </label>
-                <span class="muted sm" id="drainerHint">—</span>
-              </div>
-              <div class="row" style="margin-top:0.6rem;gap:0.5rem;flex-wrap:wrap">
-                <a class="btn ghost btn-sm" href="/shell" target="_blank" rel="noopener">Open Sovereign Shell</a>
-                <button type="button" class="btn ghost btn-sm" id="btnAutopilotOnce">Autopilot once</button>
-                <span class="muted sm" id="autopilotHint">improve → queue · governor · seed-mirror status</span>
-              </div>
-            </article>
-            <article class="card">
-              <h2>Ops overview</h2>
-              <p class="muted sm">Supervisor + orchestrator fleet — auto-refresh 60s.</p>
-              <table class="kv"><tbody id="opsSupervisor"></tbody></table>
-              <table class="kv"><tbody id="opsFleet"></tbody></table>
-              <details class="home-adv" id="opsFleetDetails">
-                <summary id="opsFleetSummary">Recent tasks (0)</summary>
-                <ul id="opsFleetList" class="url-list"></ul>
-              </details>
-            </article>
-          </div>
-          <details class="home-adv">
-            <summary>Body / ship (office health)</summary>
-            <table class="kv"><tbody id="statusBody"></tbody></table>
-            <ul id="statusWhy" class="signal-list muted"></ul>
-          </details>
-          <details class="home-adv">
-            <summary>Lab instruments</summary>
-            <p class="muted">Rare depth — not the daily path.</p>
-            <div class="row">
-              <button type="button" class="btn ghost" data-bury="flow">Token flow (local est.)</button>
-              <button type="button" class="btn ghost" data-bury="orchestrate">Models detail</button>
-              <button type="button" class="btn ghost" data-bury="ingest">Full ingest catalog</button>
-              <button type="button" class="btn ghost" data-bury="board">Board scraps</button>
-              <button type="button" class="btn ghost" data-bury="operate">Brief paste</button>
-            </div>
-            <p class="muted sm" style="margin-top:0.5rem">"Saved vs dump" lives under Token flow only — local counterfactual, not Grok plan savings.</p>
-          </details>
-        </section>
-      </div>
-    </div>
-
-    <div class="win" data-win="agents" id="win-agents">
-      <div class="win-titlebar">
-        <span class="win-title">Agents — swarm control surface</span>
-        <span class="win-ctrls"><button type="button" class="win-min" title="minimize">_</button><button type="button" class="win-max" title="maximize">□</button><button type="button" class="win-close" title="close">×</button></span>
-      </div>
-      <div class="win-body">
-        <section id="panel-agents" class="panel pane-pad agents-panel">
-          <div class="pane-head">
-            <div>
-              <h2 class="pane-h">Agents</h2>
-              <p class="muted pane-sub">DeepSeek swarm launch, live steering, and group status as a dashboard control surface.</p>
-            </div>
-          </div>
-          <div style="height:100%;min-height:680px;">
-            <iframe id="agentsFrame" src="about:blank" title="Agents control surface" style="width:100%;height:100%;border:0;border-radius:10px;" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
-          </div>
-        </section>
-      </div>
-    </div>
-
-    <div class="win" data-win="featurelab" id="win-featurelab">
-      <div class="win-titlebar">
-        <span class="win-title">Feature Lab · test before graduation</span>
-        <span class="win-ctrls"><button type="button" class="win-min" title="minimize">_</button><button type="button" class="win-max" title="maximize">□</button><button type="button" class="win-close" title="close">×</button></span>
-      </div>
-      <div class="win-body">
-        <section id="panel-featurelab" class="panel pane-pad feature-lab-panel">
-          <nav class="local-view-nav" aria-label="System views">
-            <button type="button" class="btn ghost btn-sm" data-open-tab="stack">Health</button>
-            <button type="button" class="btn ghost btn-sm on" data-open-tab="featurelab">Feature Lab</button>
-            <button type="button" class="btn ghost btn-sm" data-open-tab="blast">Learning</button>
-          </nav>
-          <div class="pane-head">
-            <div><p class="ideas-kicker">Existing rails · no shadow infrastructure</p><h2 class="pane-h">Test features here. Graduate evidence, not enthusiasm.</h2><p class="muted pane-sub" id="featureLabPolicy">Loading graduation policy…</p></div>
-            <button type="button" class="btn ghost btn-sm" id="btnFeatureLabReload">Reload</button>
-          </div>
-          <div class="feature-lab-metrics" id="featureLabMetrics"></div>
-          <div class="feature-lab-flow" aria-label="Graduation flow"><span>Isolated worktree</span><b>→</b><span>Bound tests</span><b>→</b><span>Audit handoff</span><b>→</b><span>Main dashboard</span></div>
-          <div id="featureLabCandidates" class="feature-lab-candidates"><p class="muted">Reading worktrees and evidence…</p></div>
-          <p class="muted sm" id="featureLabSources"></p>
-        </section>
-      </div>
-    </div>
-
-    <div class="win" data-win="stack" id="win-stack">
-      <div class="win-titlebar">
-        <span class="win-title">Stack — services · agents · REST outputs</span>
-        <span class="win-ctrls">
-          <button type="button" class="win-min" title="minimize">_</button>
-          <button type="button" class="win-max" title="maximize">□</button>
-          <button type="button" class="win-close" title="close">×</button>
-        </span>
-      </div>
-      <div class="win-body">
-        <section id="panel-stack" class="panel agent-desk-v2 stack-panel pane-pad">
-          <nav class="local-view-nav" aria-label="System views">
-            <button type="button" class="btn ghost btn-sm on" data-open-tab="stack">Health</button>
-            <button type="button" class="btn ghost btn-sm" data-open-tab="featurelab">Feature Lab</button>
-            <button type="button" class="btn ghost btn-sm" data-open-tab="blast">Learning</button>
-            <button type="button" class="btn ghost btn-sm" data-open-tab="flow">Economics</button>
-            <button type="button" class="btn ghost btn-sm" data-open-tab="board">Provenance</button>
-          </nav>
-          <div class="pane-head">
-            <div>
-              <h2 class="pane-h">Stack</h2>
-              <p class="muted pane-sub" id="stackHeadline">Loading…</p>
-              <p class="honesty-note" id="stackHonesty">Every row cites the REST endpoint Mag probed — not chat heat.</p>
-            </div>
-            <div class="row">
-              <span class="muted sm" id="stackMeta">—</span>
-              <button type="button" class="btn ghost btn-sm" id="btnStackReload">Reload</button>
-            </div>
-          </div>
-          <article class="card repo-readiness-card" id="repoReadinessCard">
-            <div class="repo-readiness-head"><h3>Agent handoff readiness</h3><strong id="repoReadinessVerdict">Checking…</strong></div>
-            <p id="repoReadinessSummary">Branch, upstream, local changes, and worktrees determine whether another agent can safely continue.</p>
-            <ul class="signal-list" id="repoReadinessBlockers"></ul>
-            <p class="muted sm" id="repoReadinessNote"></p>
-          </article>
-          <section class="scheduler-strip" id="schedulerStrip" aria-label="Local GPU scheduler">
-            <div class="scheduler-strip-main">
-              <strong>Local queue</strong>
-              <span class="scheduler-status muted sm" id="schedulerStatus">loading…</span>
-            </div>
-            <div class="scheduler-strip-actions row">
-              <button type="button" class="btn ghost btn-sm" id="btnSchedPause" title="Pause local queue">Pause</button>
-              <button type="button" class="btn ghost btn-sm" id="btnSchedContinue" title="Resume queue">Continue</button>
-              <button type="button" class="btn ghost btn-sm" id="btnSchedTriage" title="DeepSeek reorder when backed up">Triage</button>
-            </div>
-          </section>
-          <section class="unsloth-strip" id="unslothStrip" aria-label="Unsloth Studio GPU">
-            <div class="unsloth-strip-main">
-              <strong>Unsloth</strong>
-              <span class="unsloth-status muted sm" id="unslothStatus">loading…</span>
-              <span class="unsloth-gpu muted sm" id="unslothGpuHint">—</span>
-            </div>
-            <div class="unsloth-strip-actions row">
-              <button type="button" class="btn primary btn-sm" id="btnUnslothStart" title="Start detached unsloth chat">Start chat</button>
-              <button type="button" class="btn ghost btn-sm" id="btnUnslothAgent" title="Start Hermes coding agent against Unsloth">Start agent</button>
-              <button type="button" class="btn ghost btn-sm" id="btnUnslothStop">Stop</button>
-              <button type="button" class="btn ghost btn-sm" id="btnUnslothLog">Log</button>
-            </div>
-            <pre class="unsloth-log muted sm hidden" id="unslothLog" hidden></pre>
-          </section>
-          <div class="stack-grid">
-            <article class="stack-col">
-              <h3 class="stack-col-h">Services</h3>
-              <div id="stackServices" class="stack-cards"></div>
-            </article>
-            <article class="stack-col">
-              <h3 class="stack-col-h">Agents</h3>
-              <div id="stackAgents" class="stack-cards"></div>
-            </article>
-            <article class="stack-col stack-col-wide">
-              <h3 class="stack-col-h">Outputs <span class="muted sm">— as REST/chronicle sees them</span></h3>
-              <ul id="stackOutputs" class="stack-outputs"></ul>
-            </article>
-          </div>
-        </section>
-      </div>
-    </div>
-
-    <div class="win" data-win="systemmap" id="win-systemmap">
-      <div class="win-titlebar">
-        <span class="win-title">System map — live autonomy snapshot</span>
-        <span class="win-ctrls">
-          <button type="button" class="win-min" title="minimize">_</button>
-          <button type="button" class="win-max" title="maximize">□</button>
-          <button type="button" class="win-close" title="close">×</button>
-        </span>
-      </div>
-      <div class="win-body">
-        <section id="panel-systemmap" class="panel pane-pad system-map-panel">
-          <nav class="local-view-nav" aria-label="System views">
-            <button type="button" class="btn ghost btn-sm" data-open-tab="stack">Health</button>
-            <button type="button" class="btn ghost btn-sm on" data-open-tab="systemmap">Map</button>
-            <button type="button" class="btn ghost btn-sm" data-open-tab="featurelab">Feature Lab</button>
-            <button type="button" class="btn ghost btn-sm" data-open-tab="flow">Economics</button>
-          </nav>
-          <div class="pane-head">
-            <div>
-              <h2 class="pane-h">System map</h2>
-              <p class="muted pane-sub" id="systemMapHeadline">Loading…</p>
-              <p class="honesty-note" id="systemMapHonesty">Live snapshot from CURRENT, nervous, inbox, improve, resonance, and direction files.</p>
-            </div>
-            <div class="row">
-              <input type="text" id="systemMapGoal" placeholder="Optional goal to refresh" style="min-width:16rem;background:var(--panel);color:var(--ink);border:1px solid var(--line);padding:0.35rem 0.5rem" />
-              <button type="button" class="btn ghost btn-sm" id="btnSystemMapReload">Reload</button>
-            </div>
-          </div>
-          <div class="stack-grid">
-            <article class="stack-col">
-              <h3 class="stack-col-h">Current</h3>
-              <div id="systemMapCurrent" class="stack-cards"></div>
-            </article>
-            <article class="stack-col">
-              <h3 class="stack-col-h">Nervous</h3>
-              <div id="systemMapNervous" class="stack-cards"></div>
-            </article>
-            <article class="stack-col stack-col-wide">
-              <h3 class="stack-col-h">Resonance &amp; next moves</h3>
-              <ul id="systemMapResonance" class="stack-outputs"></ul>
-            </article>
-          </div>
-          <div class="stack-grid" style="margin-top:1rem">
-            <article class="stack-col">
-              <h3 class="stack-col-h">Improve loop</h3>
-              <div id="systemMapImprove" class="stack-cards"></div>
-            </article>
-            <article class="stack-col">
-              <h3 class="stack-col-h">Direction</h3>
-              <div id="systemMapDirection" class="stack-cards"></div>
-            </article>
-            <article class="stack-col stack-col-wide">
-              <h3 class="stack-col-h">Tips &amp; routes</h3>
-              <ul id="systemMapTips" class="stack-outputs"></ul>
-            </article>
-          </div>
-          <div class="pane-head" style="margin-top:1.25rem">
-            <div>
-              <h2 class="pane-h">Run session reports <span class="pill on">framework map</span></h2>
-              <p class="muted pane-sub">Per-run-session compiler reports — who · what · when · where · why · intent · topics. Hover a card for the full detail.</p>
-            </div>
-          </div>
-          <div id="frameworkReports" class="session-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:.6rem;padding-top:.25rem"></div>
-        </section>
-      </div>
-    </div>
-</div>
-
-
-    
-
-    
-
-  <!-- legacy ids for app.js -->
-  <span id="shipBadge" class="hidden"></span>
-  <span id="magOsStrip" class="hidden"></span>
-  <span id="magOsVer" class="hidden"></span>
-  <span id="magOsProv" class="hidden"></span>
-  <span id="magOsChips" class="hidden"></span>
-  <span id="magOsPhoenix" class="hidden"></span>
-  <span id="magOsCardPanel" class="hidden"></span>
-  <span id="magOsCardBody" class="hidden"></span>
-  <span id="btnOsCard" class="hidden"></span>
-  <span id="btnAdvanced" class="hidden"></span>
-  <span id="advMenu" class="hidden"></span>
-  <span id="healthBanner" class="hidden"></span>
-  <span id="footRoot" class="hidden"></span>
-  <span id="boardNote" class="hidden"></span>
-  <span id="btnBoardRefresh" class="hidden"></span>
-  <span id="btnCatchUpBoard" class="hidden"></span>
-  <span id="boardDrawer" class="hidden"></span>
-  <span id="vmapAscii" class="hidden"></span>
-
-  <div id="mirrorGuideBackdrop" class="mirror-guide-backdrop hidden" aria-hidden="true"></div>
-  <div id="mirrorGuide" class="mirror-guide hidden" role="dialog" aria-modal="true" aria-labelledby="mirrorGuideTitle">
-    <div class="mirror-clippy">
-      <div class="mirror-avatar" aria-hidden="true" title="Your Mirror">
-        <svg viewBox="0 0 48 48" width="52" height="52" focusable="false">
-          <defs>
-            <linearGradient id="mirrorMagGrad" x1="15%" y1="0%" x2="90%" y2="100%">
-              <stop offset="0%" stop-color="#7cffc8"/>
-              <stop offset="45%" stop-color="#39ff9a"/>
-              <stop offset="100%" stop-color="#00c8e0"/>
-            </linearGradient>
-          </defs>
-          <path fill="url(#mirrorMagGrad)" d="M30.5 5.5c8.2 1.2 13.8 9.2 12.2 17.6-1.5 8-8.4 13.6-16.2 13.2-7.2-.4-13-5.6-14.2-12.4C11 17.2 15 11 21.4 9.2c-1.2 5.8 2.4 11.8 8.4 13.2 5.2 1.2 10.2-1.8 11.2-6.8.8-4.2-1.4-8.4-5.4-10.4-1.4-.7-3.2-1.2-5.1-1.7z"/>
-          <circle cx="33.2" cy="14.8" r="3.1" fill="#05080a"/>
-          <circle cx="33.2" cy="14.8" r="1.15" fill="#39ff9a" opacity="0.9"/>
-        </svg>
-      </div>
-      <div class="mirror-bubble">
-        <p class="mirror-kicker">First run · your mirror</p>
-        <h2 id="mirrorGuideTitle">Hi — I'm your Mirror</h2>
-        <p id="mirrorGuideText" class="mirror-text">…</p>
-        <div class="mirror-step-dots" id="mirrorGuideDots" aria-hidden="true"></div>
-        <div class="mirror-guide-actions">
-          <button type="button" class="btn ghost btn-sm" id="btnMirrorSkip">Skip tour</button>
-          <button type="button" class="btn ghost btn-sm" id="btnMirrorBack" disabled>Back</button>
-          <button type="button" class="btn primary btn-sm" id="btnMirrorNext">Next</button>
-        </div>
-      </div>
-    </div>
+<body>
+<header>
+  <h1>FLEET CONSOLE</h1>
+  <div class="sub" id="status">loading…</div>
+  <div id="bar">
+    <input id="q" placeholder="filter everything — pages, organs, cards, files…">
+    <button class="tab on" data-f="all">ALL</button>
+    <button class="tab" data-f="visual">VISUAL DECK</button>
+    <button class="tab" data-f="page">SURFACES</button>
+    <button class="tab" data-f="organ">ORGANS</button>
+    <button class="tab" data-f="card">CARDS</button>
+    <button class="tab" data-f="data">CODE+DATA</button>
+    <button class="tab" data-f="fleet">FLEET</button>
   </div>
+</header>
+<main>
+  <section id="sec-visual"><h2>VISUAL DECK — mazes, games, dashboards, art</h2><div class="grid" id="g-visual"></div></section>
+  <section id="sec-fleet" style="display:none">
+    <h2>FLEET / HYPERVISOR</h2>
+    <div class="kv" id="fleet"></div>
+  </section>
+  <section id="sec-page"><h2>SURFACES (<span id="n-page">0</span>)</h2><div class="grid" id="g-page"></div></section>
+  <section id="sec-organ"><h2>ORGANS — mag/*.py (<span id="n-organ">0</span>)</h2><div class="grid" id="g-organ"></div></section>
+  <section id="sec-card"><h2>CARDS — watch/*.md (<span id="n-card">0</span>)</h2><div class="grid" id="g-card"></div></section>
+  <section id="sec-data"><h2>CODE + DATA (<span id="n-data">0</span>)</h2><div class="grid" id="g-data"></div></section>
+</main>
+<div id="viewer"><div class="inner">
+  <div class="vh"><span id="vpath" style="color:var(--amber);font-size:12px"></span>
+  <button onclick="document.getElementById('viewer').style.display='none'">close</button></div>
+  <pre id="vpre">loading…</pre>
+</div></div>
+<script>
+const $=id=>document.getElementById(id);
+let ITEMS=[], FILTER='all';
+const pretty=n=>n.replace(/\.(html|py|md|json|js|jsonl|png|css)$/,'').replace(/[_-]/g,' ').trim();
 
-  <script src="/static/visual.js?v=tesuji9"></script>
-  <script src="/static/board.js?v=tesuji9"></script>
-  <script src="/static/windows.js?v=dashboard-nav-v37"></script>
-  <script src="/static/app.js?v=dashboard-v62-verbose"></script>
+async function jget(u){const r=await fetch(u);return r.json();}
+
+function treeEntries(d){
+  return (d && d.entries) ? d.entries.filter(e=>e.type==='file') : [];
+}
+
+function add(kind,title,desc,onclick){
+  ITEMS.push({kind,title,desc,onclick});
+}
+
+async function load(){
+  jget('/api/health').then(h=>{
+    $('status').innerHTML = 'server <span class="ok">UP</span> · ' + new Date().toLocaleTimeString()
+      + ' · one search across the whole fleet — tap anything';
+  }).catch(()=>{ $('status').innerHTML='<span class="bad">server DOWN</span>'; });
+
+  jget('/api/v1/fleet/hypervisor').then(d=>{
+    const box=$('fleet'); box.innerHTML='';
+    const put=(t,dd)=>{const c=document.createElement('div');c.className='card';
+      c.innerHTML='<b>'+t+'</b><div>'+dd+'</div>';box.appendChild(c);};
+    put('seats', (d.n_seats??'?')+' known · '+(d.n_available??'?')+' available');
+    put('active lanes', JSON.stringify(d.active_lanes||{}).slice(0,140));
+    (d.seats||[]).slice(0,12).forEach(s=>{
+      put('seat: '+(s.name||s.seat||s.id||'?'), (s.lane||s.provider||'')+' '+(s.state||s.status||'')+
+        (s.heat!==undefined?(' · heat '+s.heat):''));
+    });
+    Object.entries(d.bills||{}).slice(0,6).forEach(([k,v])=>{
+      put('bill: '+k, typeof v==='object'? JSON.stringify(v).slice(0,120) : String(v));
+    });
+    if(!box.children.length) put('hypervisor','no data (fleet heartbeat empty)');
+  }).catch(e=>{ $('fleet').innerHTML='<div class="card"><b>fleet</b><div>'+e+'</div></div>'; });
+
+  // surfaces: dashboard/static/*.html (open in a tab)
+  treeEntries(await jget('/api/workspace/tree?path=dashboard/static&depth=1'))
+    .filter(e=>e.path.endsWith('.html'))
+    .forEach(e=>{
+      const url='/static/'+e.name;
+      add('page', pretty(e.name), e.name, ()=>window.open(url,'_blank'));
+    });
+  // organs
+  treeEntries(await jget('/api/workspace/tree?path=mag&depth=1')).filter(e=>e.path.endsWith('.py'))
+    .forEach(e=>add('organ', pretty(e.name), e.path, ()=>view(e.path)));
+  // cards + ledgers
+  treeEntries(await jget('/api/workspace/tree?path=watch&depth=1')).forEach(e=>{
+    if(e.path.endsWith('.md')) add('card', pretty(e.name), e.path, ()=>view(e.path));
+    else if(e.path.endsWith('.jsonl')) add('data', pretty(e.name), e.path, ()=>view(e.path));
+  });
+  // root code + data
+  treeEntries(await jget('/api/workspace/tree?path=&depth=1')).forEach(e=>{
+    if(/\.(py|json|js|md|yml|cmd|ps1)$/.test(e.path)) add('data', pretty(e.name), e.path, ()=>view(e.path));
+  });
+
+  $('n-page').textContent=ITEMS.filter(i=>i.kind==='page').length;
+  $('n-organ').textContent=ITEMS.filter(i=>i.kind==='organ').length;
+  $('n-card').textContent=ITEMS.filter(i=>i.kind==='card').length;
+  $('n-data').textContent=ITEMS.filter(i=>i.kind==='data').length;
+  render();
+}
+
+function render(){
+  const f=$('q').value.trim().toLowerCase();
+  ['g-page','g-organ','g-card','g-data'].forEach(id=>$(id).innerHTML='');
+  for(const it of ITEMS){
+    if(FILTER!=='all' && it.kind!==FILTER) continue;
+    if(f && !(it.title+' '+it.desc).toLowerCase().includes(f)) continue;
+    const sec = it.kind==='visual' ? 'g-visual' : it.kind==='page' ? 'g-page' : it.kind==='organ' ? 'g-organ' : it.kind==='card' ? 'g-card' : 'g-data';
+    const d=document.createElement('div'); d.className='item '+it.kind;
+    d.innerHTML='<div class="t">'+it.title+'</div><div class="d">'+it.desc+'</div>';
+    d.onclick=it.onclick;
+    $(sec).appendChild(d);
+  }
+  ['page','organ','card','data','visual'].forEach(k=>{
+    $('sec-'+k).style.display=(FILTER==='all'||FILTER===k)?'':'none';
+  });
+  $('sec-fleet').style.display=(FILTER==='all'||FILTER==='fleet')?'':'none';
+}
+
+async function view(path){
+  $('viewer').style.display='block'; $('vpath').textContent=path;
+  const f=$('vframe'); if(f){ f.style.display='none'; f.src='about:blank'; }
+  $('vpre').style.display='block'; $('vpre').textContent='loading…';
+  try{ const d=await jget('/api/workspace/file?path='+encodeURIComponent(path));
+    $('vpre').textContent = d.ok ? (d.text||d.content||JSON.stringify(d,null,1)).slice(0,200000)
+                                 : ('read failed: '+(d.error||'?'));
+  }catch(e){ $('vpre').textContent='fetch failed: '+e; }
+}
+
+/* VISUAL DECK — the fleet's playable/visual surfaces, peek-in-place or open */
+const VISUALS = [
+  ["chain_witness.html","THRESHOLD 衡门","the cold-start witness door — verify the chain yourself"],
+  ["pipeline.html","The Pipeline","any mainImage GLSL is a cartridge — the shader runner"],
+  ["the_radar.html","Fleet Radar","the watch as a place — live seat blips on a sweep"],
+  ["the_rings.html","The Rings","the chronometer — one smoke ring per day of the fleet"],
+  ["universe_within.html","The Universe Within","the synapse — blockchain become light, FFT-fed"],
+  ["verkle_pyramid.html","Verkle Pyramid","the chain's self-portrait — byte-driven hologram"],
+  ["verkle_construction.html","The Birth Canvas","the chain through its construction — the foundation vs. the castle"],
+  ["chaos_refract.html","REFRACT","the chaos room — pure emergence, unexplained on purpose"],
+  ["wipeout_v2.html","Wipeout v2","raymarched racer — BPM clock, chain-seeded track"],
+  ["wipeout_sunset.html","Wipeout Sunset","synthwave terrain fed live by the music"],
+  ["tavern_brawl.html","Tavern Brawl","five ractors, honest hitboxes — the salon as a fight"],
+  ["pong.html","Pong","classics ladder, rung one — AI vs AI"],
+  ["shadowbonk.html","SHADOWBONK","tony mczoom vs the shadow volume — the doctrine upgrades"],
+  ["wipeout_lightmaze.html","Wipeout // Light Maze","the song is the level — race your music"],
+  ["maze_arena.html","Maze Arena","game — field walkers vs walls"],
+  ["shadow_walk.html","Shadow Walk","voxel roguelite — THE RUN lives here"],
+  ["fable_room.html","Fable Room #0","the union — story is the record"],
+  ["worldline_dungeon.html","Worldline Dungeon","the dungeon-master telling, live from the board"],
+  ["conservation_room.html","The Sowing Room","fable of the conservation clause"],
+  ["dungeon.html","The Game","dungeon surface"],
+  ["eraser_maze.html","Eraser Maze","maze toy"],
+  ["arrakis.html","Arrakis","desert world sim"],
+  ["game.html","Necromancer","game surface"],
+  ["self_hologram.html","Self Hologram","the self-model trajectory in 3D"],
+  ["tesuji_map.html","Tesuji Map","238-cell field map of 5.3-flash"],
+  ["salon_lightmap.html","Salon Lightmap","organ lightmap"],
+  ["room_lightmap.html","The Room","lightmap of the room that remembers"],
+  ["verkle_knot_wave.html","Knot Wave","chain knot waves"],
+  ["viz_3d_verkle.html","3D Verkle","the chain in 3D"],
+  ["calabi_yau.html","Calabi-Yau","the quintic, riddled"],
+  ["viz_gallery.html","Viz Lab","visualization gallery"],
+  ["memory_map.html","Memory Map","memory graph"],
+  ["module_map.html","Module Map","module graph"],
+  ["burn_board.html","Burn Board","quota burn, live"],
+  ["live.html","Live","live feed"],
+  ["fleet.html","Fleet","seat dashboard"],
+  ["health.html","Health","organ health"],
+];
+function peek(url, isImg){
+  const v=$('viewer'); v.style.display='block';
+  $('vpath').innerHTML='<a href="'+url+'" target="_blank" style="color:var(--amber)">open in tab ↗</a> · '+url;
+  $('vpre').style.display='none';   // header fix 2026-09-08: the empty pre had flex:1 and ate half the modal — peek lives in the iframe pane
+  let f=$('vframe');
+  if(!f){ f=document.createElement('iframe'); f.id='vframe';
+    f.style.cssText='flex:1;border:0;width:100%;background:#0a0d12'; $('vpre').parentNode.insertBefore(f,$('vpre').nextSibling); }
+  f.style.display = isImg ? 'none':'block';
+  if(isImg){ $('vpre').style.display='block';
+    $('vpre').innerHTML='<img src="'+url+'" style="max-width:100%">'; }
+  else { f.src=url; }
+}
+VISUALS.forEach(([file,label,desc])=>{
+  const isImg=file.endsWith('.png');
+  add('visual', label, desc + ' · ' + file, ()=>{
+    const url = isImg ? '/static/'+file : '/static/'+file+'?embed=1';
+    const openImg = isImg;
+    // peek inline; double duty: shift-click or the [open] tile opens a tab
+    peek(url, openImg);
+  });
+});
+// add an [open in tab] affordance per visual tile via context: render() handles the rest
+
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); FILTER=b.dataset.f; render();
+});
+$('q').oninput=render;
+load();
+</script>
 </body>
 </html>

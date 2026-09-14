@@ -198,8 +198,18 @@ def _apply_action(law: dict[str, Any]) -> dict[str, Any]:
             from mag.swarm_health import health_law, swarm_health
             return {"applied": True, "note": "health law derived (report)", "actions": health_law(swarm_health(), apply=False).get("actions", [])}
         if action == "catalog_as_training":
-            from mag import ghost
-            return {"applied": True, "note": "ghost self-window folded", "ok": bool(ghost.self_window(commit=False).get("window"))}
+            # Do not recursively run the full ghost observer from the law
+            # executor.  The ghost cadence owns sensing and self-window
+            # authoring; law enforcement records the handoff point only.
+            from mag.agent_state import load_latest
+
+            latest = load_latest()
+            return {
+                "applied": False,
+                "deferred": True,
+                "note": "ghost self-window deferred to ghost cadence",
+                "ok": latest is not None,
+            }
         if action == "append_manifest":
             return {"applied": True, "note": "manifest/expectations available to spawned models"}
         if action == "apply_sanctions":

@@ -15,6 +15,13 @@ SUITE_PATH = ROOT / "configs" / "conductor_eval.yaml"
 EVAL_DIR = ROOT / "memory" / "improve" / "evals" / "conductor"
 
 
+def _display_path(path: Path) -> str:
+    try:
+        return str(path.relative_to(ROOT)).replace("\\", "/")
+    except ValueError:
+        return str(path).replace("\\", "/")
+
+
 def load_suite(path: Path = SUITE_PATH) -> dict[str, Any]:
     data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
     data.setdefault("cases", [])
@@ -60,7 +67,7 @@ def run_eval(*, write: bool = True, suite_path: Path = SUITE_PATH) -> dict[str, 
     report = {
         "schema": "conductor_eval.v1",
         "ts": now.isoformat(),
-        "suite": str(suite_path.relative_to(ROOT)).replace("\\", "/"),
+        "suite": _display_path(suite_path),
         "gate": suite.get("gate") or "conductor_eval",
         "ok": bool(total) and score >= threshold,
         "score": round(score, 4),
@@ -74,5 +81,5 @@ def run_eval(*, write: bool = True, suite_path: Path = SUITE_PATH) -> dict[str, 
         dated = EVAL_DIR / f"{now.date().isoformat()}.json"
         dated.write_text(json.dumps(report, indent=2), encoding="utf-8")
         (EVAL_DIR / "latest.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
-        report["path"] = str(dated.relative_to(ROOT)).replace("\\", "/")
+        report["path"] = _display_path(dated)
     return report

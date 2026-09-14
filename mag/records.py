@@ -90,8 +90,13 @@ def pack_report(session_id: str | None = None) -> dict[str, Any]:
 
     # Prefer registry ids + residual scan
     sids = set(list_known_session_ids())
+    registry_map: dict[str, dict[str, Any]] = {}
     try:
-        from mag.registry import list_registry, RESIDUAL_DIR
+        from mag.registry import RESIDUAL_DIR, _load_registry_map, list_registry
+
+        # One registry read per report. Calling pack_status() for every session
+        # used to reload this whole ledger for each row (O(n²) self-audit).
+        registry_map = _load_registry_map()
 
         for r in list_registry(limit=500):
             if r.get("session_id"):
@@ -102,7 +107,7 @@ def pack_report(session_id: str | None = None) -> dict[str, Any]:
     except Exception:
         pass
 
-    rows = [pack_status(sid) for sid in sorted(sids)]
+    rows = [pack_status(sid, registry_map=registry_map) for sid in sorted(sids)]
     complete = [r for r in rows if r.get("complete")]
     incomplete = [r for r in rows if not r.get("complete")]
     n_leaves = 0

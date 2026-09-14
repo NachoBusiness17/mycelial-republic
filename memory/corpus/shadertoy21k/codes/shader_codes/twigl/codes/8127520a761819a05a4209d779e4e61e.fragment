@@ -1,0 +1,17 @@
+#define o gl_FragColor
+#define round(x) floor((x)+.5)
+
+o++;vec3 q,p,d=vec3((FC.xy-.5*r)/r.y,1);d.xz*=rotate2D(t*.3);q+=sin(t*.3)+1.;q.x++;
+float e;
+for(int i=0;i<200;i++){
+  p=q+=d*e;
+  p.xz=mod(p.xz-1.,2.)-1.;
+  e=length(p-clamp(p,-.5,.5));
+  if(e<.001){
+    d=reflect(d,round(p));
+    o-=o*.6;
+    e=.1;
+  }else 
+  e=min(p.y+.4,e*.7);
+}
+o-=o*snoise2D(q.xz/q.y)*d.y;

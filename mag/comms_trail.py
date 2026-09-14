@@ -169,10 +169,62 @@ def status() -> dict[str, Any]:
     from mag import mycelium as mc
     st = _read_state()
     arts = _surface_artifacts()
+    # shared-private-language confidence: how many frozen BUILD/GHOST contracts have a landed
+    # result (confirmed) vs still open (pending). Cheap to compute (local file globs) and is the
+    # signal the router consumes to decide how much cheap-tier work to trust.
+    confirmed = pending = 0
+    for art in arts:
+        if art["kind"] != "handoff":
+            continue
+        if _has_result(art["id"]):
+            confirmed += 1
+        else:
+            pending += 1
     return {"schema": SCHEMA, "ok": True, "surfaces": len(arts),
             "seen": len(st.get("seen") or []), "last_capture": st.get("last_capture"),
+            "confirmed": confirmed, "pending": pending,
             "mycelium": {"nodes": mc.status()["nodes"], "edges": mc.status()["edges"]},
             "ts": _now()}
+
+
+def consumption_signal() -> dict[str, Any]:
+    """Read the ACTUAL mycelium consumption edges -> per-seat consumption stats.
+
+    The router consumes this to trust seats that have a PROVEN consumption record (a seat
+    that has actually produced/consumed artifacts in the graph), not just the aggregate
+    confirmed/pending round-trip count. Cheap (local jsonl reads, no API).
+
+    Returns per-seat: how many consumption edges the seat is the source of + summed weight
+    (weight grows with reinforcement = the seat's work was used). A seat with count>0 and
+    weight above the trust floor is "proven" \u2014 the router can route to it with confidence.
+    """
+    from mag import mycelium as mc
+    nodes = mc._load_nodes()
+    edges = mc._load_edges()
+    seats: dict[str, dict[str, Any]] = {}
+    total = 0
+    for e in edges:
+        if e.get("type") != "consumption":
+            continue
+        total += 1
+        src = str(e.get("src"))
+        n = nodes.get(src)
+        if not n or n.get("type") != "seat":
+            continue
+        title = str(n.get("title") or src)
+        key = title.split(" (")[0].strip().lower()
+        cur = seats.setdefault(key, {"count": 0, "weight": 0.0})
+        cur["count"] += 1
+        cur["weight"] = round(cur["weight"] + float(e.get("weight") or 0), 4)
+    # a seat is "proven" when it has consumption edges with meaningful weight (>= trust floor)
+    proven = sorted(k for k, v in seats.items() if v["count"] > 0 and v["weight"] >= 0.5)
+    return {
+        "ok": True,
+        "schema": "comms_consumption.v1",
+        "total_consumption_edges": total,
+        "seats": seats,
+        "proven_seats": proven,
+    }
 
 
 def run_cadence() -> dict[str, Any]:
@@ -206,4 +258,4 @@ if __name__ == "__main__":
     raise SystemExit(main())
 
 
-__all__ = ["capture", "confirm_language", "status", "run_cadence", "main"]
+__all__ = ["capture", "confirm_language", "status", "consumption_signal", "run_cadence", "main"]

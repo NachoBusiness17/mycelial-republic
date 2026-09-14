@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FLEET CONSOLE — everything, one place</title>
+<style>
+  :root{--bg:#070b10;--panel:#0d141d;--line:#1b2532;--amber:#e8b45a;--cyan:#7cf5ff;--txt:#c9d3e0;--dim:#66738a}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:13px/1.5 ui-monospace,Consolas,monospace}
+  header{padding:14px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5}
+  h1{margin:0;font-size:15px;color:var(--amber);letter-spacing:1px}
+  .sub{color:var(--dim);font-size:11px;margin-top:2px}
+  #bar{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  #q{flex:1;min-width:200px;background:#0c131c;border:1px solid var(--line);border-radius:8px;
+     color:var(--txt);padding:8px 10px;font-family:inherit;font-size:12px}
+  .tab{border:1px solid var(--line);background:#0c131c;color:var(--dim);border-radius:8px;
+       padding:6px 10px;font-family:inherit;font-size:11px;cursor:pointer}
+  .tab.on{color:var(--amber);border-color:var(--amber)}
+  main{padding:14px 16px;max-width:1200px;margin:0 auto}
+  section{margin-bottom:20px}
+  h2{font-size:12px;color:var(--cyan);letter-spacing:1px;margin:0 0 8px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px}
+  .item{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px;
+        cursor:pointer;overflow:hidden}
+  .item:hover{border-color:var(--amber)}
+  .item .t{color:#dfe7f2;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .item .d{color:var(--dim);font-size:10px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .item.page .t{color:var(--cyan)}
+  .kv{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px}
+  .card b{color:#dfe7f2;font-size:12px}
+  .card div{color:var(--dim);font-size:11px;margin-top:2px}
+  #viewer{display:none;position:fixed;inset:0;background:#000c;z-index:9;padding:20px}
+  #viewer .inner{background:#0d141d;border:1px solid var(--line);border-radius:10px;max-width:1000px;
+                 height:100%;margin:0 auto;display:flex;flex-direction:column}
+  #viewer .vh{padding:10px 14px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+  #viewer pre{flex:1;overflow:auto;margin:0;padding:14px;font-size:11px;line-height:1.6;color:#b9c4d4}
+  a{color:var(--cyan);text-decoration:none}
+  /* the file-viewer pre is a pane, not a page: cap it and scroll it (2026-09-07, "fix everything") */
+  #vpre{display:block;max-height:60vh;overflow:auto;white-space:pre-wrap;word-break:break-word}
+</style>
+</head>
+<body>
+<header>
+  <h1>FLEET CONSOLE</h1>
+  <div class="sub" id="status">loading…</div>
+  <div id="bar">
+    <input id="q" placeholder="filter everything — pages, organs, cards, files…">
+    <button class="tab on" data-f="all">ALL</button>
+    <button class="tab" data-f="visual">VISUAL DECK</button>
+    <button class="tab" data-f="page">SURFACES</button>
+    <button class="tab" data-f="organ">ORGANS</button>
+    <button class="tab" data-f="card">CARDS</button>
+    <button class="tab" data-f="data">CODE+DATA</button>
+    <button class="tab" data-f="fleet">FLEET</button>
+  </div>
+</header>
+<main>
+  <section id="sec-visual"><h2>VISUAL DECK — mazes, games, dashboards, art</h2><div class="grid" id="g-visual"></div></section>
+  <section id="sec-fleet" style="display:none">
+    <h2>FLEET / HYPERVISOR</h2>
+    <div class="kv" id="fleet"></div>
+  </section>
+  <section id="sec-page"><h2>SURFACES (<span id="n-page">0</span>)</h2><div class="grid" id="g-page"></div></section>
+  <section id="sec-organ"><h2>ORGANS — mag/*.py (<span id="n-organ">0</span>)</h2><div class="grid" id="g-organ"></div></section>
+  <section id="sec-card"><h2>CARDS — watch/*.md (<span id="n-card">0</span>)</h2><div class="grid" id="g-card"></div></section>
+  <section id="sec-data"><h2>CODE + DATA (<span id="n-data">0</span>)</h2><div class="grid" id="g-data"></div></section>
+</main>
+<div id="viewer"><div class="inner">
+  <div class="vh"><span id="vpath" style="color:var(--amber);font-size:12px"></span>
+  <button onclick="document.getElementById('viewer').style.display='none'">close</button></div>
+  <pre id="vpre">loading…</pre>
+</div></div>
+<script>
+const $=id=>document.getElementById(id);
+let ITEMS=[], FILTER='all';
+const pretty=n=>n.replace(/\.(html|py|md|json|js|jsonl|png|css)$/,'').replace(/[_-]/g,' ').trim();
+
+async function jget(u){const r=await fetch(u);return r.json();}
+
+function treeEntries(d){
+  return (d && d.entries) ? d.entries.filter(e=>e.type==='file') : [];
+}
+
+function add(kind,title,desc,onclick){
+  ITEMS.push({kind,title,desc,onclick});
+}
+
+async function load(){
+  jget('/api/health').then(h=>{
+    $('status').innerHTML = 'server <span class="ok">UP</span> · ' + new Date().toLocaleTimeString()
+      + ' · one search across the whole fleet — tap anything';
+  }).catch(()=>{ $('status').innerHTML='<span class="bad">server DOWN</span>'; });
+
+  jget('/api/v1/fleet/hypervisor').then(d=>{
+    const box=$('fleet'); box.innerHTML='';
+    const put=(t,dd)=>{const c=document.createElement('div');c.className='card';
+      c.innerHTML='<b>'+t+'</b><div>'+dd+'</div>';box.appendChild(c);};
+    put('seats', (d.n_seats??'?')+' known · '+(d.n_available??'?')+' available');
+    put('active lanes', JSON.stringify(d.active_lanes||{}).slice(0,140));
+    (d.seats||[]).slice(0,12).forEach(s=>{
+      put('seat: '+(s.name||s.seat||s.id||'?'), (s.lane||s.provider||'')+' '+(s.state||s.status||'')+
+        (s.heat!==undefined?(' · heat '+s.heat):''));
+    });
+    Object.entries(d.bills||{}).slice(0,6).forEach(([k,v])=>{
+      put('bill: '+k, typeof v==='object'? JSON.stringify(v).slice(0,120) : String(v));
+    });
+    if(!box.children.length) put('hypervisor','no data (fleet heartbeat empty)');
+  }).catch(e=>{ $('fleet').innerHTML='<div class="card"><b>fleet</b><div>'+e+'</div></div>'; });
+
+  // surfaces: dashboard/static/*.html (open in a tab)
+  treeEntries(await jget('/api/workspace/tree?path=dashboard/static&depth=1'))
+    .filter(e=>e.path.endsWith('.html'))
+    .forEach(e=>{
+      const url='/static/'+e.name;
+      add('page', pretty(e.name), e.name, ()=>window.open(url,'_blank'));
+    });
+  // organs
+  treeEntries(await jget('/api/workspace/tree?path=mag&depth=1')).filter(e=>e.path.endsWith('.py'))
+    .forEach(e=>add('organ', pretty(e.name), e.path, ()=>view(e.path)));
+  // cards + ledgers
+  treeEntries(await jget('/api/workspace/tree?path=watch&depth=1')).forEach(e=>{
+    if(e.path.endsWith('.md')) add('card', pretty(e.name), e.path, ()=>view(e.path));
+    else if(e.path.endsWith('.jsonl')) add('data', pretty(e.name), e.path, ()=>view(e.path));
+  });
+  // root code + data
+  treeEntries(await jget('/api/workspace/tree?path=&depth=1')).forEach(e=>{
+    if(/\.(py|json|js|md|yml|cmd|ps1)$/.test(e.path)) add('data', pretty(e.name), e.path, ()=>view(e.path));
+  });
+
+  $('n-page').textContent=ITEMS.filter(i=>i.kind==='page').length;
+  $('n-organ').textContent=ITEMS.filter(i=>i.kind==='organ').length;
+  $('n-card').textContent=ITEMS.filter(i=>i.kind==='card').length;
+  $('n-data').textContent=ITEMS.filter(i=>i.kind==='data').length;
+  render();
+}
+
+function render(){
+  const f=$('q').value.trim().toLowerCase();
+  ['g-page','g-organ','g-card','g-data'].forEach(id=>$(id).innerHTML='');
+  for(const it of ITEMS){
+    if(FILTER!=='all' && it.kind!==FILTER) continue;
+    if(f && !(it.title+' '+it.desc).toLowerCase().includes(f)) continue;
+    const sec = it.kind==='visual' ? 'g-visual' : it.kind==='page' ? 'g-page' : it.kind==='organ' ? 'g-organ' : it.kind==='card' ? 'g-card' : 'g-data';
+    const d=document.createElement('div'); d.className='item '+it.kind;
+    d.innerHTML='<div class="t">'+it.title+'</div><div class="d">'+it.desc+'</div>';
+    d.onclick=it.onclick;
+    $(sec).appendChild(d);
+  }
+  ['page','organ','card','data','visual'].forEach(k=>{
+    $('sec-'+k).style.display=(FILTER==='all'||FILTER===k)?'':'none';
+  });
+  $('sec-fleet').style.display=(FILTER==='all'||FILTER==='fleet')?'':'none';
+}
+
+async function view(path){
+  $('viewer').style.display='block'; $('vpath').textContent=path;
+  const f=$('vframe'); if(f){ f.style.display='none'; f.src='about:blank'; }
+  $('vpre').style.display='block'; $('vpre').textContent='loading…';
+  try{ const d=await jget('/api/workspace/file?path='+encodeURIComponent(path));
+    $('vpre').textContent = d.ok ? (d.text||d.content||JSON.stringify(d,null,1)).slice(0,200000)
+                                 : ('read failed: '+(d.error||'?'));
+  }catch(e){ $('vpre').textContent='fetch failed: '+e; }
+}
+
+/* VISUAL DECK — the fleet's playable/visual surfaces, peek-in-place or open */
+const VISUALS = [
+  ["chain_witness.html","THRESHOLD 衡门","the cold-start witness door — verify the chain yourself"],
+  ["pipeline.html","The Pipeline","any mainImage GLSL is a cartridge — the shader runner"],
+  ["the_radar.html","Fleet Radar","the watch as a place — live seat blips on a sweep"],
+  ["the_rings.html","The Rings","the chronometer — one smoke ring per day of the fleet"],
+  ["universe_within.html","The Universe Within","the synapse — blockchain become light, FFT-fed"],
+  ["verkle_pyramid.html","Verkle Pyramid","the chain's self-portrait — byte-driven hologram"],
+  ["verkle_construction.html","The Birth Canvas","the chain through its construction — the foundation vs. the castle"],
+  ["chaos_refract.html","REFRACT","the chaos room — pure emergence, unexplained on purpose"],
+  ["wipeout_v2.html","Wipeout v2","raymarched racer — BPM clock, chain-seeded track"],
+  ["wipeout_sunset.html","Wipeout Sunset","synthwave terrain fed live by the music"],
+  ["tavern_brawl.html","Tavern Brawl","five ractors, honest hitboxes — the salon as a fight"],
+  ["pong.html","Pong","classics ladder, rung one — AI vs AI"],
+  ["shadowbonk.html","SHADOWBONK","tony mczoom vs the shadow volume — the doctrine upgrades"],
+  ["wipeout_lightmaze.html","Wipeout // Light Maze","the song is the level — race your music"],
+  ["maze_arena.html","Maze Arena","game — field walkers vs walls"],
+  ["shadow_walk.html","Shadow Walk","voxel roguelite — THE RUN lives here"],
+  ["fable_room.html","Fable Room #0","the union — story is the record"],
+  ["worldline_dungeon.html","Worldline Dungeon","the dungeon-master telling, live from the board"],
+  ["conservation_room.html","The Sowing Room","fable of the conservation clause"],
+  ["dungeon.html","The Game","dungeon surface"],
+  ["eraser_maze.html","Eraser Maze","maze toy"],
+  ["arrakis.html","Arrakis","desert world sim"],
+  ["game.html","Necromancer","game surface"],
+  ["self_hologram.html","Self Hologram","the self-model trajectory in 3D"],
+  ["tesuji_map.html","Tesuji Map","238-cell field map of 5.3-flash"],
+  ["salon_lightmap.html","Salon Lightmap","organ lightmap"],
+  ["room_lightmap.html","The Room","lightmap of the room that remembers"],
+  ["verkle_knot_wave.html","Knot Wave","chain knot waves"],
+  ["viz_3d_verkle.html","3D Verkle","the chain in 3D"],
+  ["calabi_yau.html","Calabi-Yau","the quintic, riddled"],
+  ["viz_gallery.html","Viz Lab","visualization gallery"],
+  ["memory_map.html","Memory Map","memory graph"],
+  ["module_map.html","Module Map","module graph"],
+  ["burn_board.html","Burn Board","quota burn, live"],
+  ["live.html","Live","live feed"],
+  ["fleet.html","Fleet","seat dashboard"],
+  ["health.html","Health","organ health"],
+];
+function peek(url, isImg){
+  const v=$('viewer'); v.style.display='block';
+  $('vpath').innerHTML='<a href="'+url+'" target="_blank" style="color:var(--amber)">open in tab ↗</a> · '+url;
+  $('vpre').style.display='none';   // header fix 2026-09-08: the empty pre had flex:1 and ate half the modal — peek lives in the iframe pane
+  let f=$('vframe');
+  if(!f){ f=document.createElement('iframe'); f.id='vframe';
+    f.style.cssText='flex:1;border:0;width:100%;background:#0a0d12'; $('vpre').parentNode.insertBefore(f,$('vpre').nextSibling); }
+  f.style.display = isImg ? 'none':'block';
+  if(isImg){ $('vpre').style.display='block';
+    $('vpre').innerHTML='<img src="'+url+'" style="max-width:100%">'; }
+  else { f.src=url; }
+}
+VISUALS.forEach(([file,label,desc])=>{
+  const isImg=file.endsWith('.png');
+  add('visual', label, desc + ' · ' + file, ()=>{
+    const url = isImg ? '/static/'+file : '/static/'+file+'?embed=1';
+    const openImg = isImg;
+    // peek inline; double duty: shift-click or the [open] tile opens a tab
+    peek(url, openImg);
+  });
+});
+// add an [open in tab] affordance per visual tile via context: render() handles the rest
+
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); FILTER=b.dataset.f; render();
+});
+$('q').oninput=render;
+load();
+</script>
+</body>
+</html>

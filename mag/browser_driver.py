@@ -12,7 +12,9 @@ CLI: python -m mag.browser_driver open <url> | ask "<goal>" [--surface deepseek|
 from __future__ import annotations
 
 import json
+import os
 import sys
+import urllib.request
 from pathlib import Path
 from typing import Any
 
@@ -28,6 +30,9 @@ except Exception:
     pass
 
 SCHEMA = "browser_driver.v1"
+CDP_CONNECT_TIMEOUT_MS = max(
+    250, int(float(os.environ.get("MAG_CDP_CONNECT_TIMEOUT_SECONDS", "2")) * 1000)
+)
 
 
 def _cdp_endpoint() -> str:
@@ -101,9 +106,21 @@ def connect(*, endpoint: str | None = None) -> Any:
         return {"ok": False, "error": "playwright not installed on host — pip install playwright "
                                       "(the container owns the browser; host only needs the client)",
                 "detail": str(e)[:160]}
+    # Probe the HTTP side of CDP before starting Playwright.  A stale forwarded
+    # port can accept TCP while never completing the websocket handshake; that
+    # used to make every observer (ghost sense, frontier seat status, preflight)
+    # inherit an unbounded browser wait.
     try:
+        urllib.request.urlopen(
+            ep.rstrip("/") + "/json/version", timeout=CDP_CONNECT_TIMEOUT_MS / 1000
+        ).close()
+    except Exception as e:
+        return {"ok": False, "error": f"cannot reach container CDP at {ep}: {e}",
+                "hint": "start the browser container: docker compose --profile browser up -d"}
+    try:
+        pw = None
         pw = sync_playwright().start()
-        browser = pw.chromium.connect_over_cdp(ep)
+        browser = pw.chromium.connect_over_cdp(ep, timeout=CDP_CONNECT_TIMEOUT_MS)
         ctx = browser.contexts[0] if browser.contexts else browser.new_context()
         page = ctx.new_page()
         page._mag_pw = pw  # keep playwright alive

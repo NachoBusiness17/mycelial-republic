@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>REFRACT — emergent, unexplained</title>
+<style>
+  html,body{margin:0;background:#000;overflow:hidden}
+  #c{display:block;width:100vw;height:100vh}
+  #cap{position:fixed;bottom:8px;left:12px;color:#445;font-size:10px;z-index:3}
+  .home{position:fixed;bottom:10px;right:12px;z-index:7}
+  .home a{color:#334;text-decoration:none}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="cap">REFRACT — chaos shader, operator-supplied, ported verbatim · nobody knows why it looks like this · that is the point</div>
+<div class="home"><a href="/">⌂ home</a></div>
+<script>
+/* Operator-supplied chaos shader — ported verbatim.
+   Dividing the frame by refract()/reflect() of its own noise. Emergent output. */
+const cv=document.getElementById('c');
+const gl=cv.getContext('webgl');
+function fit(){cv.width=innerWidth;cv.height=innerHeight;gl.viewport(0,0,cv.width,cv.height);}
+addEventListener('resize',fit);
+addEventListener('error',e=>{document.title='ERR: '+e.message+' @ line '+(e.lineno||'?');});
+
+const VS=`attribute vec2 aP;void main(){gl_Position=vec4(aP,0.,1.);}`;
+const FS=`
+precision highp float;
+uniform vec2 iResolution;
+uniform float iTime;
+mat2 rot(float ay){
+    float s=sin(ay),c=cos(ay);
+    return mat2(c,-s,s,c);
+}
+void mainImage(out vec4 O,vec2 u){
+    vec2 R=iResolution.xy,
+    uv=(u-R*.5)/R.y;
+    vec2 r=cos(uv+-.015);
+    vec3 col=.45+.45+cos(iTime*2.+vec3(255.,255.,255.))-.2;
+    vec2 guv=rot(iTime*.13)*uv;
+    O=sin(iTime)+vec4(22.-col,.5)/vec4(r,1.,1.)+fract(iTime+-guv.xxxx*.44)*105./1.4;
+    vec4 Oh=uv.x+uv.y+sin(iTime+1.1*vec4(221.,244.,228.,0.))/cos(guv.xyyx*15.5)/2.2;
+    O/=refract(Oh,-O+53.5,1.0)+reflect(Oh,-O+54.);
+}
+void main(){
+  vec4 fc=vec4(0.);
+  mainImage(fc,gl_FragCoord.xy);
+  gl_FragColor=fc;
+}`;
+
+function compile(){
+  const mk=(t,s)=>{const sh=gl.createShader(t);gl.shaderSource(sh,s);gl.compileShader(sh);
+    if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS)){document.title='ERR: '+gl.getShaderInfoLog(sh).slice(0,70);console.error(gl.getShaderInfoLog(sh));return null;}return sh;};
+  const vs=mk(gl.VERTEX_SHADER,VS),fs=mk(gl.FRAGMENT_SHADER,FS);
+  if(!vs||!fs)return null;
+  const pr=gl.createProgram();gl.attachShader(pr,vs);gl.attachShader(pr,fs);gl.linkProgram(pr);
+  return pr;
+}
+const pr=compile();
+if(pr){
+  fit();
+  const vbuf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,vbuf);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
+  const aP=gl.getAttribLocation(pr,'aP');gl.enableVertexAttribArray(aP);gl.vertexAttribPointer(aP,2,gl.FLOAT,false,0,0);
+  const U={};for(const n of ['iResolution','iTime'])U[n]=gl.getUniformLocation(pr,n);
+  let last=performance.now();
+  function frame(now){
+    gl.useProgram(pr);
+    gl.uniform2f(U.iResolution,cv.width,cv.height);
+    gl.uniform1f(U.iTime,(now-last===0)?0:(now)/1000);
+    gl.drawArrays(gl.TRIANGLES,0,3);
+    requestAnimationFrame(frame);
+  }
+  frame(performance.now());
+  requestAnimationFrame(frame);
+}</script>
+</body>
+</html>

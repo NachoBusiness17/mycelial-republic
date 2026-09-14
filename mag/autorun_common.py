@@ -7,6 +7,14 @@ from typing import Any
 def autorun_pause_reason() -> str | None:
     """Return a human reason if autorun should not execute this tick."""
     try:
+        from mag.operator_mode import pause_reason
+
+        shared = pause_reason()
+        if shared:
+            return shared
+    except Exception:
+        pass
+    try:
         from mag.preferences import autorun_allowed, operator_status
 
         if not autorun_allowed():
@@ -36,7 +44,7 @@ def refresh_context_for_goal(goal: str) -> dict[str, Any]:
         )
 
         mode = infer_pack_mode(goal)
-        pack = build_context_pack(mode=mode, goal=goal)
+        pack = build_context_pack(mode=mode, goal=goal, fast=True)
         out_md = ROOT / "memory" / "context_pack_latest.md"
         out_md.parent.mkdir(parents=True, exist_ok=True)
         text = format_context_pack_text(pack, mode=mode)

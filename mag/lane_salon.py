@@ -45,12 +45,15 @@ OUT = ROOT / "memory" / "runs" / "lane_salon"
 # The witnesses — the API lanes that actually work (verified today):
 # (label, provider_id, model or None=provider default, paid?).
 WITNESSES: list[tuple[str, str, str | None, bool]] = [
+    ("grok-cli", "grok-tandem", None, False),  # subscription CLI headless (mag/grok_tandem), $0
     ("nvidia-flash", "nvidia", "deepseek-ai/deepseek-v4-flash-0731", False),
     ("openrouter", "openrouter", "openrouter/auto", False),
     ("groq", "groq", None, False),
-    ("together", "together", None, False),
+    ("cerebras", "cerebras", "gpt-oss-120b", False),
+    ("together", "together", None, True),  # trial/paid — off-peak
     ("deepseek-pro", "deepseek", None, True),  # paid — off-peak only
 ]
+ROOM = ROOT / "watch" / "room.jsonl"
 
 _TOKEN_RE = re.compile(r"[a-z0-9_]+")
 _TRIVIAL = {"that", "this", "with", "from", "have", "will", "what", "would", "your",
@@ -59,6 +62,16 @@ _TRIVIAL = {"that", "this", "with", "from", "have", "will", "what", "would", "yo
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _room(seat: str, event: str, text: str, thread: str = "salon", **extra: Any) -> None:
+    rec = {"ts": _now(), "seat": seat, "event": event, "thread": thread, "text": (text or "")[:4000]}
+    rec.update(extra)
+    try:
+        with ROOM.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(rec, default=str) + "\n")
+    except OSError:
+        pass
 
 
 def _witness(label: str, provider: str, model: str | None, paid: bool, question: str) -> dict[str, Any]:
@@ -76,7 +89,9 @@ def _witness(label: str, provider: str, model: str | None, paid: bool, question:
     try:
         from models.providers import reload_providers, chat_provider
         reload_providers()
-        kw = {"tier": "T2", "max_tokens": 900}
+        # 2026-09-05: 900 truncated real salons mid-answer (groq cut at 952 chars,
+        # reasoning lanes returned headers only). 2200 = full three-part answers.
+        kw = {"tier": "T2", "max_tokens": 2200}
         if model:
             kw["model"] = model
         r = chat_provider(provider, system="You are one witness in a sovereign roundtable. "
@@ -102,33 +117,73 @@ def _consensus(witnesses: list[dict[str, Any]]) -> str:
         "the witnesses agree on no shared token (distinct expertise — each line kept)"
 
 
-def salon(question: str, *, lanes: list[str] | None = None) -> dict[str, Any]:
-    """Every reachable API lane witnesses the same question; answers combined into consensus +
-    per-seat contributions. Honest: down lanes reported, never fabricated."""
+def salon(question: str, *, lanes: list[str] | None = None,
+          thread: str = "salon", monitor: str = "") -> dict[str, Any]:
+    """Verbose posters on one room thread; optional monitor seat tri-states and files fixes."""
     q = (question or "").strip()
     if not q:
         return {"ok": False, "schema": SCHEMA, "error": "empty question"}
     selected = WITNESSES
     if lanes:
         want = {str(x).strip().lower() for x in lanes}
-        selected = [w for w in WITNESSES if w[0].lower() in want]
+        selected = [w for w in WITNESSES if w[0].lower() in want or w[1].lower() in want]
+    _room("salon-runner", "salon_question", q, thread=thread, seats=[w[0] for w in selected])
     results = []
     for label, provider, model, paid in selected:
-        results.append(_witness(label, provider, model, paid, q))
+        if label == "grok-cli":
+            # subscription tandem lane (grok_route.v1 law): headless CLI, $0 cash
+            try:
+                from mag.grok_tandem import ask_cli
+                witness_frame = ("You are one witness in a sovereign roundtable. "
+                                 "Answer concisely.\n\n" + q)
+                r = ask_cli(witness_frame)
+                w = {"surface": "grok-cli", "ok": r["ok"], "paid": False,
+                     "answer": r.get("answer", ""), "error": r.get("error", "")}
+            except Exception as e:
+                w = {"surface": "grok-cli", "ok": False, "paid": False,
+                     "answer": "", "error": str(e)[:200]}
+            results.append(w)
+            _room("grok-cli", "salon_answer", (w.get("answer") or w.get("error") or "")[:4000],
+                  thread=thread, ok=w["ok"])
+            continue
+        w = _witness(label, provider, model, paid, q)
+        results.append(w)
+        _room(label, "salon_answer", (w.get("answer") or w.get("error") or "")[:4000],
+              thread=thread, ok=bool(w.get("ok")))
     up = [w for w in results if w.get("ok")]
     consensus = _consensus(results)
+    verdict = ""
+    if monitor and up:
+        blob = "\n\n".join(f"[{w['surface']} ok={w['ok']}] {(w.get('answer') or w.get('error') or '')[:1200]}"
+                           for w in results)
+        try:
+            from models.providers import chat_provider
+            r = chat_provider(monitor, system=(
+                "You monitor the salon. Tri-state each witness SUPPORTED/DISPUTED/UNPROVEN "
+                "with one line, then surviving consensus in three lines. No new claims. "
+                "If a witness is wrong, file the fix as a one-line patch."),
+                user=f"QUESTION:\n{q}\n\nANSWERS:\n{blob}",
+                model="deepseek-v4-flash" if monitor == "deepseek" else None,
+                thinking=False, max_tokens=1800, tier="T2")
+            verdict = (r.get("text") if r.get("ok") else f"MONITOR FAILED: {str(r.get('error'))[:240]}") or ""
+        except Exception as e:  # noqa: BLE001
+            verdict = f"MONITOR FAILED: {e}"
+        _room(f"monitor-{monitor}", "salon_verdict", verdict, thread=thread)
     OUT.mkdir(parents=True, exist_ok=True)
-    run = {"schema": SCHEMA, "ts": _now(), "question": q, "n_witnesses": len(selected),
-           "n_up": len(up), "consensus": consensus, "witnesses": results}
+    run = {"schema": SCHEMA, "ts": _now(), "question": q, "thread": thread,
+           "n_witnesses": len(selected), "n_up": len(up), "consensus": consensus,
+           "verdict": verdict[:2000], "witnesses": results}
     try:
         (OUT / f"salon_{_now()[:16].replace(':', '')}.json").write_text(
             json.dumps(run, ensure_ascii=False, indent=2), encoding="utf-8")
     except Exception:  # noqa: BLE001
         pass
-    return {"ok": bool(up), "schema": SCHEMA, "ts": _now(), "n_witnesses": len(selected),
-            "n_up": len(up), "consensus": consensus,
+    _room("salon-runner", "salon_done", f"up={len(up)}/{len(selected)} thread={thread}", thread=thread)
+    return {"ok": bool(up), "schema": SCHEMA, "ts": _now(), "thread": thread,
+            "n_witnesses": len(selected), "n_up": len(up), "consensus": consensus,
+            "verdict": verdict[:800],
             "witnesses": [{k: w[k] for k in ("surface", "ok", "paid", "answer", "error")} for w in results],
-            "note": "the seats we actually have, in tandem — free lanes first, paid deepseek off-peak"}
+            "note": "verbose on one board; monitor files tri-state fixes"}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -137,6 +192,8 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("cmd", nargs="?", default="salon", choices=["salon", "status"])
     p.add_argument("question", nargs="?")
     p.add_argument("--lanes", default="")
+    p.add_argument("--thread", default="salon")
+    p.add_argument("--monitor", default="", help="provider id that tri-states the board (e.g. deepseek)")
     a = p.parse_args(argv)
     if a.cmd == "status":
         print(json.dumps({"schema": SCHEMA, "witnesses": [w[0] for w in WITNESSES],
@@ -147,7 +204,8 @@ def main(argv: list[str] | None = None) -> int:
         print("usage: python -m mag.lane_salon salon '<question>' [--lanes ...]")
         return 1
     lanes = [x for x in a.lanes.split(",") if x.strip()] if a.lanes else None
-    print(json.dumps(salon(q, lanes=lanes), ensure_ascii=False, indent=2, default=str))
+    print(json.dumps(salon(q, lanes=lanes, thread=a.thread, monitor=a.monitor),
+                     ensure_ascii=False, indent=2, default=str))
     return 0
 
 

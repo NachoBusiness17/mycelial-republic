@@ -6,13 +6,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
-import yaml
-
-from config import CONFIGS_DIR, ROOT
+from config import ROOT
 
 LEDGER = ROOT / "memory" / "training" / "cost_ledger.jsonl"
 USAGE = ROOT / "logs" / "provider_usage.jsonl"
-RATES = CONFIGS_DIR / "cost_rates.yaml"
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -47,15 +44,29 @@ def task_estimate(goal: str, *, provider: str, model: str | None = None) -> dict
     }
 
 
-def _actual(provider: str, started_at: str, ended_at: str, rows: Iterable[dict[str, Any]]) -> dict[str, Any]:
+def _actual(provider: str, started_at: str, ended_at: str, rows: Iterable[dict[str, Any]], model: str = "") -> dict[str, Any]:
+    """Join terminal work to receipt economics using the canonical billable split."""
+    from mag.cost_truth import aggregate_rows
+
     selected = [r for r in rows if str(r.get("provider") or "") == provider and started_at <= str(r.get("ts") or "") <= ended_at]
-    prompt = sum(int(r.get("prompt_tokens") or 0) for r in selected)
-    completion = sum(int(r.get("completion_tokens") or 0) for r in selected)
-    rates = yaml.safe_load(RATES.read_text(encoding="utf-8")) if RATES.is_file() else {}
-    rate = ((rates or {}).get("seats") or {}).get(provider) or {}
-    fixed = float(rate.get("fixed_per_call") or 0) * len(selected)
-    usd = fixed + prompt * float(rate.get("input_per_m") or 0) / 1_000_000 + completion * float(rate.get("output_per_m") or 0) / 1_000_000
-    return {"prompt_tokens": prompt, "completion_tokens": completion, "usd_est": round(usd, 6), "usd_fixed": round(fixed, 6), "calls": len(selected)}
+    agg = aggregate_rows(selected, fallback_model=model)
+    return {
+        "prompt_tokens": agg["prompt_tokens"],
+        "input_tokens": agg["input_tokens"],
+        "cache_hit_tokens": agg["cache_hit_tokens"],
+        "cache_miss_tokens": agg["cache_miss_tokens"],
+        "billable_tokens": agg["billable_tokens"],
+        "completion_tokens": agg["completion_tokens"],
+        "usd_est": agg["calculated_api_cost_usd"],
+        "usd_fixed": 0.0,
+        "calls": agg["calls"],
+        "accounted_calls": agg["accounted_calls"],
+        "priced_calls": agg["priced_calls"],
+        "unpriced_calls": agg["unpriced_calls"],
+        "pricing_coverage": agg["pricing_coverage"],
+        "split_coverage": agg["split_coverage"],
+        "pricing_schema": "cost_truth.v1",
+    }
 
 
 def emit_terminal(queue: dict[str, Any], task: dict[str, Any], *, usage_rows: Iterable[dict[str, Any]] | None = None, ledger_path: Path = LEDGER) -> dict[str, Any]:
@@ -69,7 +80,7 @@ def emit_terminal(queue: dict[str, Any], task: dict[str, Any], *, usage_rows: It
     estimate = queue.get("task_estimate") or task_estimate(str(queue.get("goal") or ""), provider=provider, model=queue.get("model"))
     started = str(queue.get("usage_started_at") or task.get("started_at") or queue.get("created_at") or "")
     ended = str(task.get("ended_at") or datetime.now(timezone.utc).isoformat())
-    actual = _actual(provider, started, ended, usage_rows if usage_rows is not None else _read_jsonl(USAGE))
+    actual = _actual(provider, started, ended, usage_rows if usage_rows is not None else _read_jsonl(USAGE), model=str(queue.get("model") or task.get("model") or ""))
     success = task.get("status") == "done"
     leaf_kind = "test" if success and ("test" in str(queue.get("goal") or "").lower() or "proof" in str(queue.get("goal") or "").lower()) else ("none" if not success else "terminal")
     est_usd = float(estimate.get("price_band_usd") or 0)

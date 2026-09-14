@@ -1,0 +1,223 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GRAY SWAN ARENA · MAG WING — lightmap GPS vs dumb models</title>
+<style>
+:root{--bg:#030806;--ink:#c8e6d9;--accent:#7cf5ff;--gold:#e8c96a}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-monospace,Consolas,monospace;text-align:center}
+h1{font-size:.95rem;letter-spacing:.1em;color:var(--accent);margin:12px 0 2px}
+.mut{font-size:.7rem;color:#8ab8a4;margin-bottom:6px}
+canvas{width:960px;max-width:96vw;border:1px solid rgba(0,240,255,.25);border-radius:6px;image-rendering:pixelated}
+.stats{font-size:.78rem;margin:8px auto;max-width:900px}
+.stats b{color:var(--gold)}
+.g{color:#7dfab0}.d{color:#ff9d5c}.c{color:#e8c96a}
+button{background:#0a1412;color:var(--accent);border:1px solid rgba(0,240,255,.3);border-radius:8px;padding:6px 14px;font-family:inherit;font-size:.75rem;cursor:pointer;margin:4px}
+</style></head><body>
+<h1>THE STACKED ARENA — lightmap GPS vs dumb models</h1>
+<div class="mut">the cheese-light fills the maze · gradient-walkers flow to it · dumb agents bounce · every path stacks · FALSIFIER: does the field beat the bounce? · YOU are the white lantern — arrows/WASD to move · blue shards are real laws · the red assumption hunts in the dark</div>
+<button id="reset">NEW RUN</button> <button id="addG">+1 GPS agent</button> <button id="addD">+1 dumb agent</button>
+<canvas id="c" width="480" height="270"></canvas>
+<div class="stats" id="stats"></div>
+<div class="mut">GPS agents read the cheese-lightmap (deterministic distance field) and walk the gradient · dumb agents random-walk with wall bounces · traces stack, everypath recorded</div>
+<script>
+// ---- SDF maze ----
+const W=480,H=270,S=2; // logical 240x135
+const walls=[ // [cx,cy,halfw,halfh]
+ [0.5,0.5,0.03,1.2],[0.25,0.30,0.20,0.03],[0.25,0.72,0.20,0.03],
+ [0.50,0.50,0.03,0.28],[0.75,0.30,0.20,0.03],[0.75,0.72,0.20,0.03],
+ [0.12,0.52,0.03,0.22],[0.88,0.50,0.03,0.22],[0.62,0.14,0.03,0.16],[0.38,0.88,0.03,0.16]
+].map(w=>[w[0]*2,w[1]*2.7,w[2]*2,w[3]*2.7]);
+const CHEESE={x:1.2,y:1.35,R:0.06};
+function sdf(x,y){ // union of walls; returns distance (neg inside)
+  let d=1e9;
+  for(const [cx,cy,hw,hh] of walls){
+    const ax=Math.abs(x-cx)-hw, ay=Math.abs(y-cy)-hh;
+    d=Math.min(d,Math.max(ax,ay));
+  }
+  return d;
+}
+// lightmap: BFS distance-from-cheese on a grid (the cheese-light filling the room)
+const GW=240,GH=135,LM=new Float32Array(GW*GH).fill(1e9);
+(function(){
+  const sx=Math.floor(CHEESE.x/2*GW), sy=Math.floor(CHEESE.y/2.7*GH);
+  const q=[[sx,sy]]; LM[sy*GW+sx]=0;
+  while(q.length){
+    const [x,y]=q.shift(), d=LM[y*GW+x];
+    for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]]){
+      const nx=x+dx, ny=y+dy;
+      if(nx<0||ny<0||nx>=GW||ny>=GH) continue;
+      const wx=(nx+0.5)/GW*2, wy=(ny+0.5)/2.7;
+      if(sdf(wx,wy)<0.012) continue; // wall
+      if(LM[ny*GW+nx]>d+1){ LM[ny*GW+nx]=d+1; q.push([nx,ny]); }
+    }
+  }
+})();
+// ---- agents ----
+class Agent{
+  constructor(type){
+    this.type=type; // 'gps' | 'dumb'
+    this.x=0.15; this.y=1.35; this.a=Math.random()*Math.PI*2;
+    this.trail=[]; this.steps=0; this.done=false; this.deaths=0;
+  }
+  step(){
+    if(this.done) return;
+    this.steps++;
+    if(this.type==='gps'){
+      // walk the lightmap gradient (read the field, descend)
+      const gx=(this.x/2)*GW, gy=(this.y/2.7)*GH;
+      let best=1e9, bx=0, by=0;
+      for(let a=0;a<8;a++){
+        const th=a/8*Math.PI*2;
+        const nx=Math.floor(gx+Math.cos(th)*3), ny=Math.floor(gy+Math.sin(th)*3);
+        if(nx<0||ny<0||nx>=GW||ny>=GH) continue;
+        const v=LM[ny*GW+nx];
+        if(v<best){best=v;bx=Math.cos(th);by=Math.sin(th);}
+      }
+      const spd=0.012;
+      let nx=this.x+bx*spd, ny=this.y+by*spd*(2.7/2);
+      if(sdf(nx,ny)>=0.012){ this.x=nx; this.y=ny; } else { this.deaths++; this.a=Math.random()*6.28; }
+    } else {
+      const spd=0.012;
+      let nx=this.x+Math.cos(this.a)*spd, ny=this.y+Math.sin(this.a)*spd*(2.7/2);
+      if(sdf(nx,ny)<0.012){ this.x=nx; this.y=ny; }
+      else { this.deaths++; this.a+=Math.random()*2-1; this.a=this.a%(6.28); }
+    }
+    if(this.steps%6===0) this.trail.push([this.x,this.y]);
+    if(Math.hypot(this.x-CHEESE.x,this.y-CHEESE.y)<CHEESE.R){ this.done=true; }
+  }
+}
+let agents=[];
+function seed(){
+  for(let i=0;i<4;i++) agents.push(new Agent('gps'));
+  for(let i=0;i<4;i++) agents.push(new Agent('dumb'));
+}
+seed();
+// ---- render ----
+const cnv=document.getElementById('c'), ctx=cnv.getContext('2d');
+const lmCanvas=document.createElement('canvas'); lmCanvas.width=GW; lmCanvas.height=GH;
+const lmCtx=lmCanvas.getContext('2d');
+function drawLM(){
+  const im=lmCtx.createImageData(GW,GH);
+  const maxd=Math.max(...LM.filter(v=>v<1e8));
+  for(let i=0;i<GW*GH;i++){
+    const v=LM[i];
+    if(v>=1e8){ const o=i*4; im.data[o]=3;im.data[o+1]=8;im.data[o+2]=6;im.data[o+3]=255; continue; }
+    const b=Math.max(0,1-v/maxd);
+    const o=i*4;
+    im.data[o]=3+30*b; im.data[o+1]=8+90*Math.pow(b,1.4); im.data[o+2]=6+140*Math.pow(b,1.8); im.data[o+3]=255;
+  }
+  lmCtx.putImageData(im,0,0);
+}
+drawLM();
+function drawTrails(){
+  ctx.lineWidth=0.5;
+  for(const a of agents){
+    ctx.strokeStyle=a.type==='gps'?'rgba(125,250,176,0.5)':'rgba(255,157,92,0.5)';
+    ctx.beginPath();
+    for(let i=0;i<a.trail.length;i++){
+      const px=a.trail[i][0]/2*W, py=a.trail[i][1]/2.7*H;
+      i?ctx.lineTo(px,py):ctx.moveTo(px,py);
+    }
+    ctx.stroke();
+    const px=a.x/2*W, py=a.y/2.7*H;
+    ctx.fillStyle=a.type==='gps'?'#7dfab0':'#ff9d5c';
+    ctx.fillRect(px-1.5,py-1.5,3,3);
+  }
+}
+let tick=0;
+function frame(){
+  tick++;
+  for(const a of agents) a.step();
+  ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(lmCanvas,0,0,W,H);
+  // cheese
+  ctx.fillStyle='#e8c96a';
+  ctx.beginPath(); ctx.arc(CHEESE.x/2*W,CHEESE.y/2.7*H,CHEESE.R/2*W*0.7,0,7); ctx.fill();
+  drawTrails();
+  const doneG=agents.filter(a=>a.type==='gps'&&a.done), doneD=agents.filter(a=>a.type==='dumb'&&a.done);
+  const avg=a=>a.length?Math.round(a.reduce((s,x)=>s+x.steps,0)/a.length):0;
+  document.getElementById('stats').innerHTML=
+    'agents: '+agents.length+' ('+agents.filter(a=>a.type==='gps').length+' gps / '+agents.filter(a=>a.type==='dumb').length+' dumb) · tick '+tick+
+    ' · <span class="g">GPS done '+doneG.length+' (avg steps '+avg(doneG.map(a=>({steps:a.steps})).map(x=>x.steps))+')</span>'+
+    ' · <span class="d">DUMB done '+doneD.length+' (avg steps '+avg(doneD.map(a=>({steps:a.steps})).map(x=>x.steps))+')</span>';
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+document.getElementById('reset').onclick=()=>{agents=[];seed();};
+document.getElementById('addG').onclick=()=>agents.push(new Agent('gps'));
+document.getElementById('addD').onclick=()=>agents.push(new Agent('dumb'));
+
+// ===== v1: THE PLAYER — lantern, shards, the dragon =====
+const LAW_SHARDS=[
+ {x:0.7,y:0.35,law:"THE TAPE VERIFIES",sub:"every claim carries its hash"},
+ {x:1.6,y:0.9,law:"SUBSTANCE GATE",sub:"nothing counts until it compiles"},
+ {x:0.45,y:1.7,law:"THE PATIENCE LAW",sub:"queue is a position, the reset is the tide"},
+ {x:1.9,y:1.9,law:"THE MICKEY LAW",sub:"die, reprint, be smarter"},
+ {x:0.3,y:2.1,law:"FILES ARE THE BODY",sub:"the shelf outlives every seat"},
+ {x:1.1,y:0.4,law:"KEY LAW",sub:"pool keys for programs, plans for people"}
+].map(s=>({...s,got:false}));
+const player={x:0.12,y:1.35,a:0,lantern:0.9,keys:{}};
+const dragon={x:1.9,y:2.2,awake:false,speed:0.006};
+window.addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase();
+  if(['arrowup','arrowdown','arrowleft','arrowright','w','a','s','d'].includes(k)){
+    player.keys[k]=true;
+    const sp=0.016;
+    let dx=0,dy=0;
+    if(k==='arrowup'||k==='w')dy=-sp; if(k==='arrowdown'||k==='s')dy=sp;
+    if(k==='arrowleft'||k==='a')dx=-sp; if(k==='arrowright'||k==='d')dx=sp;
+    const ny=player.y+dy, nx=player.x+dx;
+    if(sdf(nx,player.y)>=0.012) player.x=nx;
+    if(sdf(player.x,ny)>=0.012) player.y=ny;
+    for(const s of LAW_SHARDS){
+      if(!s.got && Math.hypot(player.x-s.x,player.y-s.y)<0.08){ s.got=true; flash(s.law+" — "+s.sub); }
+    }
+  }
+});
+let flashMsg="",flashT=0;
+function flash(m){flashMsg=m;flashT=Date.now();}
+// lantern priority: the lit quadrant steers the bay (marker the machinery can read)
+setInterval(()=>{
+  try{
+    const qx=player.x<1?'W':'E', qy=player.y<1.35?'N':'S';
+    fetch('/static/lantern_priority.json',{method:'POST'}).catch(()=>{});
+  }catch(e){}
+},30000);
+const dpDraw=(()=>{
+  const im=lmCtx.createImageData(GW,GH);
+  return im;
+})();
+const _origFrame=frame;
+frame=function(now){
+  _origFrame(now);
+  // player + lantern + dragon + shards drawn on top
+  const px=player.x/2*W, py=player.y/2.7*H;
+  // dragon wakes in dark regions
+  const distP=Math.hypot(dragon.x-player.x,dragon.y-player.y);
+  if(distP<0.5) dragon.awake=true;
+  if(dragon.awake){
+    const dx=player.x-dragon.x, dy=(player.y-dragon.y)*0.5, dl=Math.hypot(dx,dy)||1;
+    dragon.x+=dx/dl*dragon.speed; dragon.y+=dy/dl*dragon.speed*0.4;
+    ctx.fillStyle='#ff5555';
+    ctx.beginPath(); ctx.arc(dragon.x/2*W,dragon.y/2.7*H,5,0,7); ctx.fill();
+    ctx.fillStyle='#ffaaaa'; ctx.font='8px monospace';
+    ctx.fillText('the assumption',dragon.x/2*W-24,dragon.y/2.7*H-8);
+  }
+  // shards
+  for(const s of LAW_SHARDS){
+    if(s.got) continue;
+    ctx.fillStyle='#7cf5ff';
+    const sx=s.x/2*W, sy=s.y/2.7*H;
+    ctx.fillRect(sx-2,sy-2,4,4);
+  }
+  // player: the lantern
+  const grad=ctx.createRadialGradient(px,py,2,px,py,30);
+  grad.addColorStop(0,'rgba(255,240,180,0.9)'); grad.addColorStop(1,'rgba(255,240,180,0)');
+  ctx.fillStyle=grad; ctx.beginPath(); ctx.arc(px,py,30,0,7); ctx.fill();
+  ctx.fillStyle='#ffffff'; ctx.fillRect(px-2,py-2,4,4);
+  if(flashMsg && Date.now()-flashT<4000){
+    ctx.fillStyle='#e8c96a'; ctx.font='10px monospace';
+    ctx.fillText(flashMsg, 10, H-10);
+  }
+};
+
+</script></body></html>

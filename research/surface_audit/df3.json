@@ -1,0 +1,233 @@
+{
+  "auditor": "df3",
+  "campaign": "SELF_STEAL_IDEA_TRIANGULATION_20260906 — dogfood everything (tranche 1, walker 3)",
+  "slice": "dashboard/static/nav.js LINKS[20..29]",
+  "generated": "2026-09-06",
+  "server": "http://127.0.0.1:8765",
+  "method": "file exists -> curl (code+bytes) -> inline scripts extracted -> node --check -> five-liner from bytes -> verdict per KEEP/MERGE/DEMOTE protocol",
+  "tally": {"keep": 7, "merge": 2, "demote": 1},
+  "surfaces": [
+    {
+      "index": 20,
+      "url": "/static/cast-voice.html",
+      "name": "Cast Voice",
+      "exists_on_disk": true,
+      "http": 200,
+      "bytes": 48625,
+      "inline_scripts": 1,
+      "node_check": "PASS (cast-voice__0.js)",
+      "five_liner": {
+        "what_is_happening": "Full-duplex voice loop with Mag: whisper STT (warm-capture VAD steal) or browser WebSpeech in, /api/v1/voice/turn + canvas/handoff/shadow/diary-seal out, TTS back, seat + lane + ms meta on every bubble.",
+        "why_it_matters": "This is the hands-free operator surface — the one place the fleet is spoken to as a person, and it carries the I3 warm-capture steal (recorder starts before VAD listens, 1800ms hangover) so no phoneme is clipped.",
+        "what_needs_decision": "Backend is alive (GET /api/v1/voice/canvas -> 200, mag_voice_canvas.v1, updated 2026-08-18) but the canvas data is 19 days stale — decide whether voice memory (dig board) is still the living store or has moved.",
+        "what_it_can_do_next": "Fresh session per Start (anti glue), seat persisted in localStorage, TTS voice picker; next: surface the 19-day canvas staleness on the page itself instead of serving it silently.",
+        "evidence_path": "dashboard/static/cast-voice.html; live probe GET /api/v1/voice/canvas?session_id=df3-probe -> 200 7303b"
+      },
+      "because_sentence": "Cast Voice exists because the operator talks to Mag from his phone, and a voice seat that clips the first phoneme is a broken ear, not a broken speaker.",
+      "verdict": "KEEP",
+      "verdict_reason": "Unique destination-question (talk to Mag hands-free), all five lines fill from bytes, backend verified alive."
+    },
+    {
+      "index": 21,
+      "url": "/static/control.html",
+      "name": "Control (Direct Mag)",
+      "exists_on_disk": true,
+      "http": 200,
+      "bytes": 2892,
+      "inline_scripts": 1,
+      "node_check": "PASS (control__0.js)",
+      "five_liner": {
+        "what_is_happening": "Direct Mag: a tablet-sized form that files a goal as a remote intent (POST /api/v1/remote/intent) and refreshes queue/repo status (GET /api/v1/remote/status), token-gated, queue-only by design.",
+        "why_it_matters": "It is the promise of filing work into Mag from anywhere in the house without opening a shell — the remote-control lane with a preserved audit handoff.",
+        "what_needs_decision": "BOTH of its endpoints 404 on the live gateway right now (probed: /api/v1/remote/status -> 404 not found; intent route same family) — decide whether the remote-control API was never mounted on :8765 or was retired; until then this surface cannot do its one job.",
+        "what_it_can_do_next": "If the remote API remounts, it works as-is (status schema remote_control_status.v1 is handled honestly, incl. 'not yet' states); if it is retired, the page should 410 honestly instead of promising a route that isn't there.",
+        "evidence_path": "dashboard/static/control.html; live probes: GET /api/v1/remote/status -> 404 61b {\"error\":\"not found\"}"
+      },
+      "because_sentence": "Control exists because work should be fileable from the tablet on the couch, but today the door it knocks on (remote/status, remote/intent) is not mounted on the gateway.",
+      "verdict": "MERGE",
+      "verdict_reason": "MERGE -> operator_board.html: same payload (operator intent -> queue, receipt back) with a remote skin, and its backend is dead on the live gateway; fold into Operator Board's evidence section as the remote lane until the remote API remounts."
+    },
+    {
+      "index": 22,
+      "url": "/static/table.html",
+      "name": "Table",
+      "exists_on_disk": true,
+      "http": 200,
+      "bytes": 26172,
+      "inline_scripts": 1,
+      "node_check": "PASS (table__0.js)",
+      "five_liner": {
+        "what_is_happening": "The tabletop: chat with the DM via /api/v1/voice/turn (channel=table, lane=dig), live ASCII + canvas HUD from /api/v1/table/view, legal-move chips, guest-of-honor salon advice A/B, campaign id persisted in localStorage, auto-boot of the classic module.",
+        "why_it_matters": "This is the dungeon master made flesh — the T5 capability question ('can a local agent summon stronger dungeon masters') rendered as a playable table, and it is the one surface in this slice verified serving LIVE game bytes.",
+        "what_needs_decision": "Boot silently POSTs /api/v1/game {action:start,module:classic} when the view looks empty — decide if an audit surface should auto-start a campaign on visit or wait for an explicit 'classic one' click.",
+        "what_it_can_do_next": "Probed live: GET /api/v1/table/view?session_id=df3-probe -> 200 2338b, mag_table_view.v1, real 23x13 grid — next: the double paintCanvas/refreshTableView dance after advice (lines 253-274) is redundant repaint; one authoritative refresh would do.",
+        "evidence_path": "dashboard/static/table.html; live probe /api/v1/table/view -> 200 2338b mag_table_view.v1"
+      },
+      "because_sentence": "Table exists because the dungeon-master ladder is the product, and this is the chair you sit in — verified live, grid bytes on the wire.",
+      "verdict": "KEEP",
+      "verdict_reason": "Unique destination-question (sit at the table), all five fill from bytes, live 200 with real payload — the strongest surface in the slice."
+    },
+    {
+      "index": 23,
+      "url": "/static/wearable.html",
+      "name": "Wearable",
+      "exists_on_disk": true,
+      "http": 200,
+      "bytes": 6334,
+      "inline_scripts": 1,
+      "node_check": "PASS (wearable__0.js)",
+      "five_liner": {
+        "what_is_happening": "Baymax-lite wrist HUD: polls /api/v1/wearable/surface for swarm stats (inbox, queue, invariants, false-pos, explore, intake), renders tap-to-dry-run skill buttons, mic -> local faster-whisper -> /api/v1/wearable/command?dry=true.",
+        "why_it_matters": "It is the glanceable body-snake for the phone/watch form factor — fleet vitals plus one-tap skill routing without a keyboard.",
+        "what_needs_decision": "Its only data endpoint 404s on the live gateway (probed: /api/v1/wearable/surface -> 404 not found) — every stat renders an honest dash forever; decide whether the wearable API is a different port, unmounted, or dead, because right now the HUD is a corpse with honest manners.",
+        "what_it_can_do_next": "Empty-state is honest (dashes + 'HUD fetch failed' surfaced to the out pane), so on remount it revives with zero changes; or fold its two good organs (skills tap-list, 6s-capped mic) into Cast Voice and retire the shell.",
+        "evidence_path": "dashboard/static/wearable.html; live probe GET /api/v1/wearable/surface -> 404 64b {\"error\":\"not found\"}"
+      },
+      "because_sentence": "Wearable exists because the operator wanted the swarm on his wrist, but its single vein (wearable/surface) is not attached to the current gateway, so it lives on dashes.",
+      "verdict": "MERGE",
+      "verdict_reason": "MERGE -> cast-voice.html: the voice->command loop is Cast Voice's payload, the stat strip duplicates Live's, and its only endpoint 404s; keep the skills-tap idea as a Cast Voice mode."
+    },
+    {
+      "index": 24,
+      "url": "/static/falsifiers.html",
+      "name": "Falsifiers",
+      "exists_on_disk": true,
+      "http": 200,
+      "bytes": 4862,
+      "inline_scripts": 0,
+      "node_check": "N/A — zero script tags, pure static HTML index",
+      "five_liner": {
+        "what_is_happening": "Index of paste-checkable browser falsifiers: three BUILT (lattice #1, chain #2, claim #5 — linked) and two UNPROVEN (#3 mass balance, #4 concurrency serializability) shown with the dependency that blocks each.",
+        "why_it_matters": "This is the T3 law made navigable — every claim links to a checker, and the emptiness (two unproven invariants) is shown honestly instead of hidden.",
+        "what_needs_decision": "Falsifier #4 (concurrency) explicitly waits on the per-card in-flight lock ('spawn gate') and #3 on the room.jsonl flow schema — decide which blocker lands first, or accept the index as the honest TODO list.",
+        "what_it_can_do_next": "The pattern law is written on the page (f(in)->bool becomes a browser surface); next falsifier just adds a card — the index scales at zero cost.",
+        "evidence_path": "dashboard/static/falsifiers.html (inline provenance comment lines 2-9); no JS, no network"
+      },
+      "because_sentence": "Falsifiers exists because 'merely drawing a node is not proof' needs a front door, and this one admits in plain text which checks are real and which are still wishes.",
+      "verdict": "KEEP",
+      "verdict_reason": "Owns a unique destination-question (which invariants are paste-checkable), honest empty states, zero-fetch; it is the evidence index for its three KEEP children."
+    },
+    {
+      "index": 25,
+      "url": "/static/chain_check.html",
+      "name": "Chain Check",
+      "exists_on_disk": true,
+      "http": 200,
+      "bytes": 30811,
+      "inline_scripts": 1,
+      "node_check": "PASS (chain_check__0.js)",
+      "five_liner": {
+        "what_is_happening": "Paste-verifier for the verkle chain's actual formulas: leaf=sha256('leaf:'+canonical json), node=sha256('node:'+L+':'+R), genesis=sha256('empty'), merkle prefix roots — with Python's exact json.dumps canonicalization (ensure_ascii, float repr) mirrored in JS and an inline FIPS 180-4 sha-256 as crypto.subtle fallback, engine parity self-tested on load.",
+        "why_it_matters": "The chain is the signed line ('files + chain over processes, chat is vapor') — this page lets anyone paste a row and falsify 'this knot is authentic' without trusting a single process, including the dashboard itself.",
+        "what_needs_decision": "The header honestly flags the one known blind spot (JSON.parse loses Python's int/float distinction, 3.0 becomes 3) and asserts real payloads are unaffected — decide whether that assertion deserves a vector test in the page itself.",
+        "what_it_can_do_next": "Pinned against memory/biography/verkle_chain.jsonl (header cites 7,159 leaves, tip verified 2026-09-04; watch memory says 13,678 now) — next: refresh the header count or fetch-count honestly at load.",
+        "evidence_path": "dashboard/static/chain_check.html header comment (formulas + honest boundary); twin mag/verkle_knot.py + mag/verkle_artifact.py verify_leaf"
+      },
+      "because_sentence": "Chain Check exists because the room that remembers is only a room if any stranger can re-derive the walls from a pasted row.",
+      "verdict": "KEEP",
+      "verdict_reason": "Unique falsifier (#2), byte-exact Python-formula mirror with declared blind spot, directly polices the fleet's core trust object."
+    },
+    {
+      "index": 26,
+      "url": "/static/claim_check.html",
+      "name": "Claim Check",
+      "exists_on_disk": true,
+      "http": 200,
+      "bytes": 14106,
+      "inline_scripts": 1,
+      "node_check": "PASS (claim_check__0.js)",
+      "five_liner": {
+        "what_is_happening": "Paste-verifier for the launch law on intake cards: >=14/25 is launch-eligible iff lane named AND no unnamed gate; BUILD WINDOWED/NOW must carry a launched-builder marker or name an explicit operator gate — verdicts LAUNCH LAWFUL / VIOLATION [launched law] / GATED DEFERRAL (legal) / MALFORMED, with four demo cards including the deliberately dishonest one.",
+        "why_it_matters": "It polices this seat's own root failure mode ('act before consult', identity-skipped-for-resemblance) mechanically — the gate rule from the triangulation protocol ('it can't earn a tab') is executable here, and this page IS the reference implementation (no Python twin yet).",
+        "what_needs_decision": "Header admits 'Python twin: none yet (this IS the reference impl)' — decide whether the law's enforcement should stay browser-only or get a mag/ twin so intake scoring can gate itself server-side.",
+        "what_it_can_do_next": "Regex lane tokens already know the fleet's provider names (z_ai/glm/deepseek/grok/rib_chat/autoclaw); next: point it at watch/room.jsonl rows in bulk instead of one pasted card.",
+        "evidence_path": "dashboard/static/claim_check.html header comment (the law, verbatim) + demo-mal card; index parent falsifiers.html"
+      },
+      "because_sentence": "Claim Check exists because 'windowed but actually deferred' is the fleet's most common lie, and a regex that catches it is cheaper than trust.",
+      "verdict": "KEEP",
+      "verdict_reason": "Unique falsifier (#5) with no overlap — it audits the campaign's own launch law and is the honest reference implementation."
+    },
+    {
+      "index": 27,
+      "url": "/static/lattice_check.html",
+      "name": "Lattice Check",
+      "exists_on_disk": true,
+      "http": 200,
+      "bytes": 8700,
+      "inline_scripts": 1,
+      "node_check": "PASS (lattice_check__0.js)",
+      "five_liner": {
+        "what_is_happening": "Paste-verifier for the Legendre three-square invariant: strips 4^a then tests n=8b+7; any claimed on-grid pair measuring sqrt(7), sqrt(15), sqrt(23)... proves the grid is broken or the space is not Z^3; pair matrix + quick single-number check + a seeded broken-grid demo.",
+        "why_it_matters": "It is falsifier #1 — the proof-of-pattern for the whole class (pure f(paste)->verdict, JS<->Python parity via mag/lattice_distance.py with tests), and it guards the voxel grids used by mesh_gallery/maze-style surfaces.",
+        "what_needs_decision": "Nothing pending — provenance is complete (intake card watch/INTAKE_LEGENDRE_LATTICE_20260904.md 15/25 BUILD WINDOWED, Python twin, tests). This is what 'done' looks like on this nav bar.",
+        "what_it_can_do_next": "Next: run it against the live grid exports of the sibling game surfaces as a scheduled paste instead of waiting for a human to smell a broken grid.",
+        "evidence_path": "dashboard/static/lattice_check.html header comment; twin mag/lattice_distance.py + tests/test_lattice_distance.py"
+      },
+      "because_sentence": "Lattice Check exists because a dungeon that measures sqrt(7) between two integer points is lying about its own geometry, and now the lie is checkable in ten seconds.",
+      "verdict": "KEEP",
+      "verdict_reason": "Unique falsifier (#1), full provenance chain (intake card -> Python twin -> tests -> page), the template the other two check pages were cut from."
+    },
+    {
+      "index": 28,
+      "url": "/static/fleet_symbols.html",
+      "name": "Fleet Symbols",
+      "exists_on_disk": true,
+      "http": 200,
+      "bytes": 16820,
+      "inline_scripts": 1,
+      "node_check": "PASS (fleet_symbols__0.js)",
+      "five_liner": {
+        "what_is_happening": "The operator algebra rendered: 7 SVG glyphs (emit/store/dissipate/gate/integrate/differentiate/ground) plus 7 named circuits (ACCUMULATOR, MAX_DISTILL, LIGHT THESIS, BURST LANE, LEG-1 CLAIM ORGAN, STANDING WAVE MINER, TOKEN DIET) — and one deliberate refusal: VAPOR CHAT renders as REFUSED because its op list never ends in ground.",
+        "why_it_matters": "The hard rule is enforced structurally in the JS (a circuit not ending in ground is refused at render time) — the launch law drawn as type system, and the gists carry real fleet numbers (99.5% prefix hit, 50/50 @ p50 1.7s, 3.3x output).",
+        "what_needs_decision": "None available: the page renders a fixed constant list, no live data, no editable inputs — it cannot answer 'what is happening NOW', only 'what do these marks mean'.",
+        "what_it_can_do_next": "If the glyph vocabulary is what other surfaces should draw with, it belongs beside them as a legend; it could also parse a pasted op-chain and render it under the same ground rule.",
+        "evidence_path": "dashboard/static/fleet_symbols.html script (CIRCUITS constant + ground-refusal branch); zero fetch, zero endpoints"
+      },
+      "because_sentence": "Fleet Symbols exists so the algebra has one canonical drawing, but as a surface it is a legend plate, not an instrument.",
+      "verdict": "DEMOTE",
+      "verdict_reason": "DEMOTE -> LIBRARY file: pure reference legend over a constant list — real claim content (ground rule + fleet numbers) but no live bytes and nothing that changes the operator's next decision; file under LIBRARY with the note that its ground-refusal rule should be cited wherever glyphs are reused."
+    },
+    {
+      "index": 29,
+      "url": "/static/rtfm_graph.html",
+      "name": "RTFM Graph",
+      "exists_on_disk": true,
+      "http": 200,
+      "bytes": 46308,
+      "inline_scripts": 2,
+      "node_check": "PASS (rtfm_graph__0.js data, rtfm_graph__1.js render)",
+      "five_liner": {
+        "what_is_happening": "Browsable knowledge graph of the fleet's manuals embedded INLINE as knowledge_graph.v2 (57 nodes / 77 edges: 10 laws, 20 RTFM artifacts, 16 MCP concepts, 7 MCP servers, 4 skills; ts 2026-09-04T15:10:12Z) with search, kind chips, and a detail pane that quotes each law's purpose and invariants verbatim.",
+        "why_it_matters": "This is the syllabus object from the triangulation — laws like 'law:loopback' carry their full text ('nothing phones home that the room did not order') inside the page, so the standing laws are browsable without a shell.",
+        "what_needs_decision": "The graph is a frozen 2026-09-04 snapshot regenerated only by hand (python dashboard/static/_rtfm_graph_data.py, then re-inject) — decide whether regeneration rides a standing cadence or stays deliberate; a stale law-graph is worse than no law-graph.",
+        "what_it_can_do_next": "Regen pipeline exists and is one command; next: stamp the snapshot ts visibly in the header so 'how old is this law graph' is answerable from the page instead of the source.",
+        "evidence_path": "dashboard/static/rtfm_graph.html (header comment + embedded GRAPH const; counted 57 nodes/77 edges by parsing the inline JSON)"
+      },
+      "because_sentence": "RTFM Graph exists because the manuals are the fleet's real source of truth, and ten laws you can click beat ten laws you remember wrong.",
+      "verdict": "KEEP",
+      "verdict_reason": "Unique destination-question (what do the manuals actually say and how do they connect), all content from bytes, honest frozen-ts provenance; one regen command from live."
+    }
+  ],
+  "slice_summary": {
+    "audited": 10,
+    "keep": ["cast-voice.html", "table.html", "falsifiers.html", "chain_check.html", "claim_check.html", "lattice_check.html", "rtfm_graph.html"],
+    "merge": [
+      {"surface": "control.html", "twin": "operator_board.html", "note": "same intent->queue payload with remote skin; both endpoints 404 on live gateway"},
+      {"surface": "wearable.html", "twin": "cast-voice.html", "note": "voice->command loop duplicated; sole data endpoint /api/v1/wearable/surface 404s"}
+    ],
+    "demote": [
+      {"surface": "fleet_symbols.html", "to": "LIBRARY", "note": "reference legend over a constant list; ground-rule refusal worth citing, not a live surface"}
+    ],
+    "worst_offenders": [
+      "control.html — a command-entry surface whose ONLY two API calls (remote/status, remote/intent) both 404 on the live gateway; it cannot do its one job",
+      "wearable.html — sole data endpoint /api/v1/wearable/surface 404s; every stat is a permanent honest dash and the voice loop duplicates cast-voice"
+    ],
+    "live_probes": {
+      "/api/v1/table/view?session_id=df3-probe": "200 2338b mag_table_view.v1 (live grid)",
+      "/api/v1/voice/canvas?session_id=df3-probe": "200 7303b (data stale: updated 2026-08-18)",
+      "/api/v1/wearable/surface": "404 not found",
+      "/api/v1/remote/status": "404 not found"
+    },
+    "node_check": "10/10 inline scripts PASS (falsifiers.html has zero scripts by design)"
+  }
+}

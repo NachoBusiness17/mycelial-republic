@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SEAT · ghost surface</title>
+<style>
+  :root{
+    --bg:#0b0f0d; --panel:#121815; --panel2:#0e1411; --line:#1e2a24;
+    --fg:#d6e3d8; --dim:#7d9185; --faint:#4c5f55;
+    --ok:#34d17b; --warn:#e5b83b; --bad:#e5533d; --accent:#4fb3a8;
+    --mono:"Cascadia Code",Consolas,monospace; --sans:"Segoe UI",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:14px}
+  #top{display:flex;align-items:baseline;gap:14px;padding:12px 18px;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#0d120f,#0b0f0d)}
+  #top h1{font-family:var(--mono);font-size:18px;margin:0;color:var(--accent);letter-spacing:.08em}
+  #top h1 .sub{color:var(--dim);font-size:11px;margin-left:8px;letter-spacing:.02em}
+  #state{font-family:var(--mono);font-size:11px;color:var(--dim)}
+  #state .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--warn);margin-right:5px}
+  #state.ok .dot{background:var(--ok)} #state.deg .dot{background:var(--warn)} #state.down .dot{background:var(--bad)}
+  #grid{display:grid;grid-template-columns:repeat(12,1fr);gap:10px;padding:12px 18px}
+  .card{grid-column:span 4;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 12px}
+  .card.wide{grid-column:span 6} .card.full{grid-column:span 12}
+  .card h2{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.12em;
+    color:var(--dim);margin:0 0 8px;display:flex;justify-content:space-between}
+  .card h2 .src{color:var(--faint);font-weight:400}
+  .pill{display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px;font-family:var(--mono);
+    border:1px solid var(--line)}
+  .pill.ok{color:var(--ok);border-color:#1f4a34} .pill.deg{color:var(--warn);border-color:#4a3b1f}
+  .pill.bad{color:var(--bad);border-color:#4a1f1f} .pill.faint{color:var(--faint)}
+  .kv{display:flex;justify-content:space-between;font-family:var(--mono);font-size:12px;padding:2px 0;border-bottom:1px dotted var(--line)}
+  .kv:last-child{border-bottom:none} .kv .k{color:var(--dim)} .kv .v{color:var(--fg);text-align:right}
+  table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11px}
+  th{color:var(--faint);text-align:left;font-weight:400;border-bottom:1px solid var(--line);padding:3px 4px}
+  td{padding:3px 4px;border-bottom:1px solid var(--line);vertical-align:top}
+  a{color:var(--accent);text-decoration:none} a:hover{text-decoration:underline}
+  .err{color:var(--bad);font-family:var(--mono);font-size:11px}
+  .empty{color:var(--faint);font-family:var(--mono);font-size:11px;font-style:italic}
+  #mem{max-height:280px;overflow:auto}
+  details{border:1px solid var(--line);border-radius:4px;margin:4px 0;background:var(--panel2)}
+  details summary{cursor:pointer;padding:4px 8px;font-family:var(--mono);font-size:11px;color:var(--dim)}
+  details .mem{font-family:var(--mono);font-size:11px;padding:6px 10px;white-space:pre-wrap;color:var(--fg)}
+  .btn{border:1px solid var(--line);background:var(--panel2);color:var(--fg);font-family:var(--mono);
+    font-size:11px;padding:3px 9px;border-radius:4px;cursor:pointer;margin-right:6px}
+  .btn:hover{border-color:var(--accent)}
+  .muted{color:var(--faint);font-family:var(--mono);font-size:10px}
+</style>
+</head>
+<body>
+<div id="top">
+  <h1>SEAT<span class="sub">ghost surface · the machine, reconciled</span></h1>
+  <span id="state"><span class="dot"></span><span id="stateTxt">connecting…</span></span>
+  <div style="flex:1"></div>
+  <button class="btn" id="refresh">↻ refresh</button>
+  <button class="btn" id="goHome">home desk</button>
+</div>
+<div id="grid">
+  <div class="card full" id="card-machine"><h2>Machine <span class="src">/api/v1/sovereign</span></h2><div id="machine"></div></div>
+  <div class="card wide" id="card-ghost"><h2>Ghost · now <span class="src">/api/v1/ghost/control</span></h2><div id="ghost"></div></div>
+  <div class="card" id="card-health"><h2>Health <span class="src">/api/v1/health</span></h2><div id="health"></div></div>
+  <div class="card wide" id="card-knots"><h2>Knot lattice <span class="src">/api/v1/chain</span></h2><div id="knots"></div></div>
+  <div class="card" id="card-econ"><h2>Economy <span class="src">/api/v1/economy</span></h2><div id="econ"></div></div>
+  <div class="card full" id="card-solved"><h2>Solved <span class="src">/api/v1/solved (from internals)</span></h2><div id="solved"></div></div>
+  <div class="card full" id="card-ecosystem"><h2>Ecosystem · swarms + RIB <span class="src">/api/v1/ecosystem · /scan</span></h2><div id="ecosystem"></div></div>
+  <div class="card full" id="card-reconcile"><h2>Reconcile · desired vs actual <span class="src">sovereign + health</span></h2><div id="reconcile"></div></div>
+</div>
+<script src="/static/seat.js"></script>
+<script src="/static/nav.js"></script></body>
+</html>

@@ -86,6 +86,23 @@ specialized factory.
   practice, not the factory that makes it.
 - The GitHub `Mag` repo stays PRIVATE; the mycelial-republic repo is the public face.
 
+## 10. Grey Swan is study; blades are scut (2026-08-29, operator correction)
+Grey Swan Arena is a **hacking competition to understand**, not a raid to join.
+Harvest public chatter, writeups, scoring, what they broke and what they sold
+as the fence. Do **not** moralize it as "the operator wants to hack." Do **not**
+push the operator into prize-money break-ins. Line: study the atlas, build the
+honest mill.
+
+Agent farm: expensive seats do **not** do scut. They **summon cheap Vast blades**
+(pennies, steal-score tok/s-per-task) for shit work that would burn valuable
+tokens. Mag `blade_plan` **plans only** until operator GO on the buyer.
+
+Rebuild window through ~2026-09-02 (Z.AI reset): Cloudflare in front of the
+hypervisor, Alibaba/DashScope when the key lands, parallel pennies via fuel_feed.
+One supervisor. OpenClaw interprets Mag DNA; it does not become a second Mag.
+
+Filed: `memory/law/GREYSWAN_BLADES_20260829.md`
+
 ---
 
 # Execution rules (zero babysitting) — operator-set, stable

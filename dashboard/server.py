@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import time
+import threading
 import mimetypes
 import re
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -21,6 +22,29 @@ ROOT = Path(__file__).resolve().parents[1]
 BIO = ROOT / "memory" / "biography"
 INGEST = ROOT / "memory" / "ingest"
 STATIC = Path(__file__).resolve().parent / "static"
+DATA = Path(__file__).resolve().parent / "data"
+
+# LAW-060 enforcement (2026-09-07, "I can't return to static"): every HTML page
+# served carries the return bar — HOME / ALL / BACK — injected server-side so no
+# surface can ever trap the operator. Structural, not per-page courtesy.
+_FLEETBAR = (
+    '<div id="fleetbar" style="position:fixed;bottom:0;left:0;right:0;z-index:9999;'
+    'display:flex;background:#0a1412;border-top:1px solid rgba(124,245,255,.45)">'
+    '<a href="/" style="flex:1;padding:13px 0;text-align:center;color:#7cf5ff;'
+    'font:700 13px ui-monospace,monospace;text-decoration:none">⌂ HOME</a>'
+    '<a href="/static/" style="flex:1;padding:13px 0;text-align:center;color:#7cf5ff;'
+    'font:700 13px ui-monospace,monospace;text-decoration:none;'
+    'border-left:1px solid rgba(124,245,255,.25);border-right:1px solid rgba(124,245,255,.25)">☰ ALL</a>'
+    '<a href="#" onclick="history.back();return false" style="flex:1;padding:13px 0;'
+    'text-align:center;color:#e8c96a;font:700 13px ui-monospace,monospace;'
+    'text-decoration:none">← BACK</a></div><div style="height:46px"></div>'
+)
+
+
+def _fleetbar_inject(data: bytes) -> bytes:
+    if b"fleetbar" in data or b"</body>" not in data:
+        return data
+    return data.replace(b"</body>", _FLEETBAR.encode("utf-8") + b"</body>", 1)
 DEFAULT_HOST = bind_host()
 DEFAULT_PORT = 8765
 
@@ -46,6 +70,33 @@ def _read_jsonl(path: Path, limit: int = 500) -> list[dict]:
         except json.JSONDecodeError:
             continue
     return rows[-limit:]
+
+
+def _tail_jsonl(path: Path, limit: int = 500, window: int = 262144) -> dict:
+    """Last `limit` rows via a bounded backward read — O(window), never the
+    whole file (ractor_board.jsonl hit 713MB; clients must not re-download it).
+    Returns rows + truncated flag (True when the window may have cut older rows)."""
+    if not path.is_file():
+        return {"rows": [], "truncated": False, "bytes_read": 0}
+    size = path.stat().st_size
+    with path.open("rb") as fh:
+        if size > window:
+            fh.seek(size - window)
+            fh.readline()  # drop the partial line at the window head
+            data = fh.read()
+            truncated = True
+        else:
+            data = fh.read()
+            truncated = False
+    rows = []
+    for line in data.decode("utf-8", errors="replace").splitlines():
+        if not line.strip():
+            continue
+        try:
+            rows.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return {"rows": rows[-limit:], "truncated": truncated, "bytes_read": len(data)}
 
 
 def _ensure_session(sessions: dict[str, dict[str, Any]], sid: str) -> dict[str, Any]:
@@ -403,6 +454,8 @@ def safe_file(rel: str) -> Path | None:
         static = STATIC.resolve()
         if not (str(candidate).startswith(str(root)) or str(candidate).startswith(str(static))):
             return None
+        if candidate.is_dir():
+            candidate = candidate / "index.html"
         if candidate.is_file():
             return candidate
     except OSError:
@@ -441,6 +494,82 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         parsed = urlparse(self.path)
         path = parsed.path
+
+        # Spend surface: canonical cost view + enforcer status (2026-09-03).
+        # snapshot() takes ~25s over the full usage stream — NEVER compute in the
+        # request path. A daemon thread refreshes cost_cache every 60s; requests
+        # return instantly (202 while the first refresh is still warming).
+        if path == "/api/v1/cost":
+            with _cost_lock:
+                payload = dict(_cost_cache)
+            if payload.get("payload"):
+                return self._json(200, payload["payload"])
+            return self._json(202, {
+                "schema": "cost_surface.v1",
+                "warming": True,
+                "warming_since": payload.get("ts"),
+                "error": payload.get("error"),
+            })
+
+        # Ractor tail door (2026-09-06): the deeds board jsonl hit 713MB and
+        # ractor.html was re-downloading it whole every 15s. Bounded backward
+        # read, ?limit= up to 2000.
+        if path == "/api/v1/ractor/tail":
+            try:
+                limit = min(2000, max(1, int(parse_qs(parsed.query).get("limit", ["500"])[0])))
+            except ValueError:
+                limit = 500
+            tail = _tail_jsonl(DATA / "ractor_board.jsonl", limit=limit)
+            return self._json(200, tail)
+
+        # Data door (2026-09-10): the big jsonl archives moved out of the web
+        # root into dashboard/data. Only these named files are served; the
+        # directory itself is never listed and nothing else escapes.
+        if path.startswith("/data/"):
+            name = unquote(path[len("/data/"):])
+            allowed = {"ractor_board.jsonl", "ESTATE_INDEX.jsonl"}
+            fpath = DATA / name
+            if name not in allowed or not fpath.is_file():
+                return self._json(404, {"error": "not found"})
+            ctype = "application/x-ndjson" if name.endswith(".jsonl") else "application/octet-stream"
+            self.send_response(200)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Content-Length", str(fpath.stat().st_size))
+            self.end_headers()
+            with fpath.open("rb") as fh:
+                while True:
+                    chunk = fh.read(1 << 20)
+                    if not chunk:
+                        break
+                    self.wfile.write(chunk)
+            return None
+
+
+        # MCP endpoint info page (the actual tool calls are POST-only)
+        if path == "/mcp":
+            try:
+                from mag import mcp_server as _mcp
+                tools = [t.get("name", "?") for t in _mcp.tools_manifest()]
+                return self._json(200, {
+                    "ok": True,
+                    "endpoint": "MCP over HTTP",
+                    "method": "POST only",
+                    "usage": {
+                        "list": '{"method": "tools/list"}',
+                        "call": '{"method": "tools/call", "params": {"name": "...", "arguments": {...}}}',
+                    },
+                    "tools": tools,
+                    "count": len(tools),
+                })
+            except Exception as e:  # noqa: BLE001
+                return self._json(500, {"ok": False, "error": str(e)[:200]})
+
+        # /keep/ — 4chan the video game (Diamond Age Primer public square)
+        if path in ("/chan", "/chan.html", "/keep", "/keep.html", "/b", "/b.html"):
+            cf = STATIC / "chan.html"
+            if not cf.is_file():
+                return self._json(404, {"error": "chan.html missing"})
+            return self._bytes(200, cf.read_bytes(), "text/html; charset=utf-8")
 
         if path in ("/wave", "/wave.html", "/desk", "/desk.html"):
             wf = STATIC / "wave.html"
@@ -506,14 +635,22 @@ class Handler(BaseHTTPRequestHandler):
             if not f:
                 return self._json(404, {"error": "not found"})
             ctype = mimetypes.guess_type(str(f))[0] or "application/octet-stream"
-            return self._bytes(200, f.read_bytes(), ctype)
+            data = f.read_bytes()
+            # LAW-060 amendment: embedded pages (?embed=1) skip the bar — the
+            # host page already carries it; nested bars stack and lie.
+            if ctype.startswith("text/html") and "embed=1" not in (parsed.query or ""):
+                data = _fleetbar_inject(data)
+            return self._bytes(200, data, ctype)
 
         if path.startswith("/files/"):
             f = safe_file(path.lstrip("/"))
             if not f:
                 return self._json(404, {"error": "not found", "path": path})
             ctype = mimetypes.guess_type(str(f))[0] or "application/octet-stream"
-            return self._bytes(200, f.read_bytes(), ctype)
+            data = f.read_bytes()
+            if ctype.startswith("text/html"):
+                data = _fleetbar_inject(data)
+            return self._bytes(200, data, ctype)
 
         # SSE live fleet stream (real-time dashboard, no polling)
         if path == "/api/v1/stream":
@@ -668,6 +805,26 @@ class Handler(BaseHTTPRequestHandler):
         data, err = self._read_json_body()
         if err:
             return self._json(400, {"ok": False, "error": err})
+
+        # MCP over HTTP: every surface becomes a client of the fleet's 17 tools.
+        #   POST /mcp {"method": "tools/list"}
+        #   POST /mcp {"method": "tools/call", "params": {"name": "...", "arguments": {...}}}
+        # Auth: same X-API-Key gate as the rest of the API (loopback-only by default).
+        if path == "/mcp":
+            method = str((data or {}).get("method") or "")
+            try:
+                from mag import mcp_server as _mcp
+                if method == "tools/list":
+                    return self._json(200, {"tools": _mcp.tools_manifest()})
+                if method == "tools/call":
+                    params = (data or {}).get("params") or {}
+                    result = _mcp.call_tool(
+                        str(params.get("name") or ""),
+                        params.get("arguments") or {})
+                    return self._json(200, result)
+                return self._json(400, {"ok": False, "error": f"unknown mcp method: {method}"})
+            except Exception as e:  # noqa: BLE001
+                return self._json(500, {"ok": False, "error": str(e)[:200]})
 
         if path == "/api/v1/agent/stream":
             return self._stream_agent(data or {})
@@ -899,6 +1056,42 @@ class _TLSServer(ThreadingHTTPServer):
             raise
 
 
+_cost_lock = threading.Lock()
+_cost_cache: dict[str, Any] = {}
+
+
+def _cost_refresher() -> None:
+    """Background wall-builder for /api/v1/cost: recompute every 60s, never block requests."""
+    def _loop() -> None:
+        while True:
+            try:
+                from mag.cost_truth import snapshot
+                from mag.cost_enforcer import cost_status
+                try:
+                    import yaml as _yaml
+                    from config import CONFIGS_DIR
+                    overlay = _yaml.safe_load(
+                        (CONFIGS_DIR / "spend_overlay.yaml").read_text(encoding="utf-8")
+                    )
+                except Exception as _oexc:
+                    overlay = {"schema": "spend_overlay.v1", "error": f"{type(_oexc).__name__}: {_oexc}"}
+                payload = {
+                    "schema": "cost_surface.v1",
+                    "truth": snapshot(),
+                    "enforcer": cost_status(),
+                    "overlay": overlay,
+                }
+                with _cost_lock:
+                    _cost_cache.clear()
+                    _cost_cache["payload"] = payload
+                    _cost_cache["ts"] = time.time()
+            except Exception as exc:
+                with _cost_lock:
+                    _cost_cache["error"] = f"{type(exc).__name__}: {exc}"
+            time.sleep(60)
+    threading.Thread(target=_loop, daemon=True, name="cost-refresher").start()
+
+
 def run(host: str = DEFAULT_HOST, port: int = DEFAULT_PORT, *, tls: bool = False) -> None:
     """Serve the desk. tls=True so a phone mic is a secure context."""
     import ssl
@@ -921,6 +1114,7 @@ def run(host: str = DEFAULT_HOST, port: int = DEFAULT_PORT, *, tls: bool = False
     else:
         httpd = ThreadingHTTPServer((host, port), Handler)
     httpd.daemon_threads = True
+    _cost_refresher()
     print_bind_banner(host=host, port=port)
     print(f"  scheme:    {scheme}")
     print(f"  biography: {BIO}")

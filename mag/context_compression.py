@@ -20,6 +20,7 @@ LAW: Keep the original as fallback. Compression is optimization, not replacement
 from __future__ import annotations
 
 import json
+import hashlib
 import re
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -61,6 +62,10 @@ class CompressionResult:
         return {
             "schema": "context_compression.v1",
             "name": self.name,
+            # The compressed artifact is the offload payload.  Persist its
+            # content; the original remains in the caller's source surface.
+            "compressed": self.compressed,
+            "original_hash": hashlib.sha256(self.original.encode("utf-8")).hexdigest()[:16],
             "original_tokens": self.original_tokens,
             "compressed_tokens": self.compressed_tokens,
             "ratio": round(self.ratio, 3),

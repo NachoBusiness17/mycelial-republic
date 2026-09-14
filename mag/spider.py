@@ -166,7 +166,14 @@ def _check_cloud_seats() -> list[dict[str, Any]]:
     return signals
 
 
-def tick(*, dry: bool = False, inject: bool = False) -> dict[str, Any]:
+def tick(*, dry: bool = False, inject: bool = False, deep: bool = False) -> dict[str, Any]:
+    """Run bounded spider checks; reserve orphan reaping for deep cadence.
+
+    A normal improve/health cycle is a control-plane observer.  Scanning the
+    entire task corpus and then reaping from inside that observer made a law
+    enforcement call unexpectedly block on thousands of JSON files.  Deep
+    cadence is explicit for operators that want mesh hygiene in this tick.
+    """
     signals = []
     signals.extend(_check_operator_active())
     signals.extend(_check_orchestrator_tasks())
@@ -195,7 +202,7 @@ def tick(*, dry: bool = False, inject: bool = False) -> dict[str, Any]:
             )
             injected.append(tid)
 
-    if not dry:
+    if not dry and deep:
         try:
             from mag.switchboard import find_orphans, reap
 

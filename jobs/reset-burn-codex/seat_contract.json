@@ -1,0 +1,23 @@
+{
+  "schema": "seat_contract.v1",
+  "job_id": "reset-burn-codex",
+  "goal": "Burn remaining ChatGPT/Codex quota on Mag venv tests + doctor FILE until the window is empty. No Docker npipe. No host lab. No spend.",
+  "invariants": [
+    "use .venv python or mag.cmd — never PATH python",
+    "if mag_exec.ps1 fails ExecutionPolicy or docker npipe: mag.cmd doctor instead, do not ask for Docker",
+    "FILE trail_core_N; stop after one cage so operator can re-paste"
+  ],
+  "forbidden_moves": [
+    "python main.py lab",
+    "asking the operator to grant Docker",
+    "vast create/ask",
+    "keeping a loop open after FILE"
+  ],
+  "acceptance_commands": [
+    "mag.cmd doctor",
+    ".venv/Scripts/python.exe -m pytest tests/test_sense_mcp.py tests/test_blade_templates.py tests/test_reconnect_cage_first.py tests/test_gauntlet_sweeps.py -q"
+  ],
+  "checkpoint_schema": {"required": ["completed", "artifacts", "failures", "budget_used_pct", "next_action_one_line"]},
+  "handoff_schema": {"required": ["done", "untested", "blocked", "resume_command"]},
+  "resume_command": "read jobs/reset-burn-codex/seat_contract.json. Run acceptance_commands. Paste outputs into jobs/reset-burn-codex/trail_core_1.md (completed, failures, next_action). If pytest red, fix ONLY those tests, re-run, FILE. Stop."
+}

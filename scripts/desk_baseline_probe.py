@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
 import urllib.error
@@ -26,12 +27,16 @@ BASE = "http://127.0.0.1:8765"
 API = f"{BASE}/api/v1/desk-dialogue"
 DESK_API = f"{BASE}/api/v1/agent-desk"
 EXPECTED_DESK_API = "handoff_loop.v1"
+# A baseline probe is an observer, not a request worker.  Keep a stale or
+# half-open dashboard from holding coding preflight hostage; callers that need
+# a slower check can opt in explicitly through the environment.
+DESK_PROBE_TIMEOUT = max(0.25, float(os.environ.get("MAG_DESK_PROBE_TIMEOUT_SECONDS", "2")))
 
 GetJsonFn = Callable[[str], tuple[dict[str, Any] | None, str | None]]
 GetTextFn = Callable[[str], tuple[str | None, str | None]]
 
 
-def _http_get_json(url: str, *, timeout: float = 15) -> tuple[dict[str, Any] | None, str | None]:
+def _http_get_json(url: str, *, timeout: float = DESK_PROBE_TIMEOUT) -> tuple[dict[str, Any] | None, str | None]:
     try:
         req = urllib.request.Request(url, method="GET")
         with urllib.request.urlopen(req, timeout=timeout) as resp:
@@ -42,7 +47,7 @@ def _http_get_json(url: str, *, timeout: float = 15) -> tuple[dict[str, Any] | N
         return None, str(exc)
 
 
-def _http_get_text(url: str, *, timeout: float = 15) -> tuple[str | None, str | None]:
+def _http_get_text(url: str, *, timeout: float = DESK_PROBE_TIMEOUT) -> tuple[str | None, str | None]:
     try:
         req = urllib.request.Request(url, method="GET")
         with urllib.request.urlopen(req, timeout=timeout) as resp:

@@ -1,0 +1,21 @@
+{
+  "schema": "seat_contract.v1",
+  "job_id": "gateway-durable-spawn",
+  "goal": "Make the API gateway (:8001) a durable spawn of the mag-sovereign container: read mag_launch.py's spawn pattern (backend.server, lab, ghost, drainer, autorun) and add the api gateway service the same way (main.py api --host 0.0.0.0 --port 8001, log to logs/api_gateway.log). The operator currently restarts it by hand via docker exec — that ends now.",
+  "invariants": [
+    "follow the EXISTING spawn-list pattern exactly (same supervision style as siblings); no new supervisor, no cron, no host process (law 11)",
+    "Edit tool only for source edits",
+    "do not run docker (cage law) — the container restart is the dispatcher's"
+  ],
+  "forbidden_moves": ["docker commands", "touching covenant.json or watch/", "changing any sibling spawn"],
+  "acceptance_commands": [
+    ".venv/Scripts/python.exe -c \"import ast; ast.parse(open('mag_launch.py').read()); print('mag_launch parses')\"",
+    ".venv/Scripts/python.exe -c \"s=open('mag_launch.py').read(); assert 'api' in s and '8001' in s; print('api spawn present')\""
+  ],
+  "checkpoint_schema": {"required": ["completed","artifacts","failures","budget_used_pct","next_action_one_line"]},
+  "handoff_schema": {"required": ["done","untested","blocked","resume_command"]},
+  "resume_command": "codex exec --skip-git-repo-check -C <repo> 'read jobs/gateway-durable-spawn/seat_contract.json + latest trail_core, do next_action, run acceptance_commands, write trail_core_N'",
+  "driver": "codex-exec",
+  "opened": "2026-08-29",
+  "opened_by": "zcode dispatch (operator: keep cookin with the keys we have)"
+}

@@ -22,6 +22,9 @@ CATALOG = [
             "adventure",
             "goblin",
             "the keep",
+            "water one",
+            "water computer",
+            "hydraulic",
         ],
         "blurb": "Campaign engine + classic keep stub + dice (engine-first)",
         "engine": "game_campaign",
@@ -54,6 +57,7 @@ def is_play_intent(text: str) -> bool:
         re.search(
             r"\b("
             r"dnd|d&d|dungeon|campaign|classic one|classic dnd|the keep|"
+            r"water one|water computer|hydraulic|"
             r"start (a )?(game|campaign|adventure|classic)|"
             r"play (dnd|d&d|the classic|a game|the keep)|"
             r"let'?s play|wanna play|want to play|"

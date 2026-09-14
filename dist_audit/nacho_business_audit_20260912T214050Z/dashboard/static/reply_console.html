@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>REPLY OVERDRIVE — 36 doors (fl33t)</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { background:#0b0e14; color:#d7dce6; font:15px/1.45 ui-monospace,Consolas,monospace; margin:0; padding:24px; }
+  h1 { font-size:20px; color:#ffd166; margin:0 0 4px; }
+  .sub { color:#7d8590; font-size:12px; margin-bottom:18px; }
+  .tier { margin:26px 0 10px; font-size:13px; letter-spacing:2px; color:#58a6ff; border-bottom:1px solid #1c2431; padding-bottom:4px; }
+  .card { background:#111722; border:1px solid #1c2431; border-radius:8px; padding:14px 16px; margin:10px 0; }
+  .card:hover { border-color:#2d3a52; }
+  .top { display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap; }
+  .who { color:#e6edf3; font-weight:bold; }
+  .who a { color:#58a6ff; text-decoration:none; }
+  .meta { color:#7d8590; font-size:11px; }
+  .snip { color:#9aa4b2; font-size:12.5px; margin:6px 0 10px; font-style:italic; }
+  .draft { white-space:pre-wrap; color:#d7dce6; background:#0b0e14; border:1px dashed #2d3a52; border-radius:6px; padding:10px 12px; font-size:13px; }
+  .btn { margin-top:8px; background:#238636; border:0; color:#fff; padding:6px 14px; border-radius:6px; font:inherit; font-size:12px; cursor:pointer; }
+  .btn:hover { background:#2ea043; }
+  .btn.open { background:#1f6feb; }
+  .btn.open:hover { background:#388bfd; }
+  .btnrow { display:flex; gap:8px; margin-top:8px; }
+  .chars { color:#7d8590; font-size:11px; margin-left:8px; }
+  .over { color:#f85149; }
+  .tag { display:inline-block; background:#1c2431; color:#ffd166; border-radius:4px; padding:1px 7px; font-size:10.5px; margin-left:6px; }
+</style>
+</head>
+<body>
+<h1>REPLY OVERDRIVE — 36 doors</h1>
+<div class="sub">fl33t voice, receipts-backed · sorted FRESH → WARM → DEEP · click COPY, grab, edit on the fly · 🤸🚗 NachoQuixotic</div>
+<div id="app"></div>
+<script>
+const TARGETS = [
+ // ---- FRESH (< 24h) ----
+ {t:"FRESH · tonight", h:"@0xSero", u:"https://x.com/0xSero/status/2097046041660928179", a:"4h · 14K views", s:"Can GLM-5.3-Flash build a Nintendo DS emulator from scratch? DS4-Flash couldn't. Scores identical to GPT-5.6-Terra Max.",
+  d:"Our fleet runs on 5.3-flash — it ships multi-file systems nightly. But a DS emulator from scratch is human-months, not a one-shot. Ask for the CPU interpreter loop and it cooks; ask for the whole console and you're testing patience, not the model. 🤸🚗"},
+ {t:"FRESH · tonight", h:"@techNmak", u:"https://x.com/techNmak/status/2097024476731027497", a:"6h · 4.9K views", s:"Tokenization is the first boundary between human-readable text and what the LLM computes over.",
+  d:"Tokenization is also the privacy boundary everyone skips: what the model computes over is not what you said. We log the hashes of our agent runs, not the transcripts — the receipt proves the work without handing over the words. 🤸🚗"},
+ {t:"FRESH · tonight", h:"@polydao", u:"https://x.com/polydao/status/2096928467107622935", a:"11h · 33K views", s:"\"The End of Software Engineering\" — writing code is finished as a skill; an agent has no such ceiling.",
+  d:"\"Writing code is finished as a skill\" — the skill moves up, it doesn't die. Our fleet runs 15 agents and the failure mode was never state; it was a stale map. Humans hold the map, agents hold the pickaxe. The ceiling isn't memory, it's knowing which wall to stop banging. 🤸🚗"},
+ {t:"FRESH · today", h:"@GregoryDiamos", u:"https://x.com/GregoryDiamos/status/2096873745420075020", a:"15h · 120K views", s:"Revisit outrageously small neural nets. Needed a 10k tok/s CPU model for data processing.",
+  d:"10k tok/s on CPU is the sleeper direction: a small net that's always awake beats a huge one you can't afford to leave running. We run flash-tier agents 24/7 as the night watch — the economy of always-on is the whole product. 🤸🚗"},
+ {t:"FRESH · today", h:"@omarsar0", u:"https://x.com/omarsar0/status/2096837122892485069", a:"17h · 9.3K views", s:"NoRA: one-line change to LoRA — zero-init up-projection means early optimization is governed almost entirely by the down side.",
+  d:"Zero-init up-projection governing early optimization is one of those obvious-in-hindsight tells — the network starts life with no opinions and the first gradients are the loudest. A one-line fix that improves forgetting is worth ten architectures. 🤸🚗"},
+ {t:"FRESH · 1-2d", h:"@DanKornas", u:"https://x.com/DanKornas/status/2096168704341889332", a:"~1.5d", s:"OpenSwarm — autonomous AI agent orchestrator, code workers pick up dev tasks, local model support.",
+  d:"The missing piece in every swarm orchestrator I've tried: a shared ledger. Workers that can't read each other's receipts just race. Give the swarm one signed record and the coordination problem shrinks to bookkeeping. 🤸🚗"},
+
+ // ---- WARM (2-12d) ----
+ {t:"WARM · this week", h:"@ItsmeAjayKV", u:"https://x.com/ItsmeAjayKV/status/2095891343730196871", a:"~2d · question", s:"How is GLM-5.3 Flash compared to Qwen3.8-Flash-Next and DeepSeek-V4-Flash-0731?",
+  d:"Ran 5.3-flash as our whole fleet's deep-work lane for weeks: 15 parallel agents, 0 rejections, multi-file systems shipped nightly. The flash tier stopped being \"the cheap one\" the moment context stopped being the bottleneck. Qwen's fast, DeepSeek's cheap, 5.3-flash just shows up. 🤸🚗"},
+ {t:"WARM · this week", h:"@ProximalHQ", u:"https://x.com/ProximalHQ/status/2095233588010840372", a:"~3d", s:"GLM 5.3 third-best on FrontierSWE, strongest open-source, but lacks native vision.",
+  d:"Right — 5.3 is text-only at the base tier (5V carries the eyes). Our fix was dumber: one cheap vision model as a \"senses seat\" that describes the world to the blind one. Sight by committee. Works better than it sounds."},
+ {t:"WARM · this week", h:"@kidsreallycute", u:"https://x.com/kidsreallycute/status/2093597133677236602", a:"~6d", s:"GLM-5.3-Flash is interesting, but the part that catches my attention is the economics behind it.",
+  d:"The economics ARE the release. 320B total, 18B active means you're paying for electricity, not the whole orchestra. We ran a full agent fleet on the flash tier for $0 — the expensive part was never inference, it was the courage to let agents touch prod. 🤸🚗"},
+ {t:"WARM · this week", h:"@buildwithhassan", u:"https://x.com/buildwithhassan/status/2092754701599031755", a:"~7d", s:"Quota consumption 1/3 of GLM-5.3, API pricing comparisons.",
+  d:"The 1/3 quota on flash is the whole business model: the model is cheap enough to waste, and wasting it is how you find what it's actually for. We burn flash on everything and only escalate when the answer matters more than the token. 🤸🚗"},
+ {t:"WARM · this week", h:"@TheUpsiderAI", u:"https://x.com/TheUpsiderAI/status/2092681696306970952", a:"~8d", s:"GLM-5.3-Flash: 320B params, 18B active — \"how big is it\" is the wrong question.",
+  d:"\"How big is it\" died when MoE made activation the real spec. Next question down the ladder: how small can the active set get before personality falls off. Somewhere around 18B, apparently, personality is fine. 🤸🚗"},
+ {t:"WARM · this week", h:"@LLMJunky", u:"https://x.com/LLMJunky/status/2092388334941196687", a:"~8d", s:"Open models are a few months behind, not years — it's about data sovereignty, access to intelligence on your own terms.",
+  d:"\"Months behind\" misses it — the open stack's edge isn't catching up, it's that you can put it on YOUR desk next to your files. We run a hybrid: cheap frontier brain for the fleet, local weights for the things we can't afford to leak. Sovereignty isn't a score, it's a location. 🤸🚗"},
+ {t:"WARM · this week", h:"@vicky_grok", u:"https://x.com/vicky_grok/status/2089012165407871343", a:"~10d", s:"Multi-agent swarms: deep dive into swarm anatomy, topologies, specialization.",
+  d:"Every swarm topology diagram skips the most important node: the archive. Agents that forget between runs aren't a team, they're a relay race where the baton is on fire. Memory is the topology. 🤸🚗"},
+ {t:"WARM · 2wk", h:"@MaziyarPanahi", u:"https://x.com/MaziyarPanahi/status/2089959038331003350", a:"~10d", s:"GLM-5.3 has same base and total/active params as 5.2 — gains from one month of long-horizon environments + RL.",
+  d:"Same base + one month of long-horizon RL is the quiet part of every \"massive upgrade\" headline. The base is the body; post-training is the habits. We've seen the same thing: same model, better environments, wildly different agent. 🤸🚗"},
+ {t:"WARM · 2wk", h:"@ZhihuFrontier", u:"https://x.com/ZhihuFrontier/status/2089977451627847789", a:"~10d", s:"GLM-5.3's biggest upgrade isn't the base — post-training scaling, reusing GLM-5.2's 743B MoE with 40B active.",
+  d:"Post-training scaling is just reinforcement learning with better taste in failure. Reusing the 743B base is the honest move — why rebuild the orchestra when you can retrain the conductor. 🤸🚗"},
+ {t:"WARM · 2wk", h:"@thealexker", u:"https://x.com/thealexker/status/2088156264056475973", a:"~11d", s:"The most underrated gems from GLM-5.3.",
+  d:"The most underrated gem in 5.3 isn't in the benchmarks: it shows up cold. No warm context, no drama, ships multi-file systems on the first try. Boring reliability is the feature nobody puts on a slide. 🤸🚗"},
+ {t:"WARM · 2wk", h:"@Haleeeemahh", u:"https://x.com/Haleeeemahh/status/2088552241854554185", a:"~11d · guide", s:"Step-by-step guide to use GLM-5.3 for free — coding, agent workflows, cyber questions.",
+  d:"Solid guide. The free-tier trick nobody mentions: run MULTIPLE seats, not one busy one. Separate quota pools beat one heroic window every time. The fleet always outworks the stallion. 🤸🚗"},
+ {t:"WARM · 2wk", h:"@SPAC89", u:"https://x.com/SPAC89/status/2088533422809448888", a:"~11d", s:"Crossed 1.1B tokens with GLM 5.3 Max in ZCode — \"much bigger upgrade than the name suggests.\"",
+  d:"1.1B tokens in one tool is not usage, it's cohabitation. The interesting stat isn't the token count — it's how much of that was cache hits. Warm context is the actual product; nobody's billing you for remembering. 🤸🚗"},
+ {t:"WARM · 2wk", h:"@MistralDevs", u:"https://x.com/MistralDevs/status/2087577897909325873", a:"~12d", s:"Tutorial: coding agent (Vibe CLI) with an open model on your own hardware.",
+  d:"Local coding agents are the discipline regimen of the industry: when the model can't hear the cloud, your context engineering has to actually be good. Cheap frontier models made everyone lazy; local weights make everyone honest. 🤸🚗"},
+
+ // ---- DEEP (evergreen, big accounts) ----
+ {t:"DEEP · evergreen", h:"@aparnadhinak", u:"https://x.com/aparnadhinak/status/2051014879449157952", a:"~4wk", s:"A swarm manager = a loop over running harnesses, ensuring progress.",
+  d:"Correct and undersold: the manager is a LOOP, not a brain. Ours is a python file that reads state from disk and restarts what died. The intelligence is in the files; the loop just refuses to lose them. 🤸🚗"},
+ {t:"DEEP · evergreen", h:"@BrianRoemmele", u:"https://x.com/BrianRoemmele/status/2077741960614539392", a:"~5wk · big reach", s:"LLM orchestration is I/O-bound; latency lives in model inference, not the coordinator.",
+  d:"I/O-bound is right, and the I in 2026 is mostly waiting on judgment, not tokens. We parallelized to 15 workers and the bottleneck moved to \"which answer do we trust.\" The queue is epistemological now. 🤸🚗"},
+ {t:"DEEP · evergreen", h:"@swarms_corp", u:"https://x.com/swarms_corp/status/2032556332054925468", a:"~6wk", s:"Swarms v10: async sub-agents, SkillOrchestra, hierarchical swarm.",
+  d:"Async sub-agents + hierarchical swarm = admitting the truth that most agent work is waiting. Ours run all night on the cheap lane and leave a signed ledger of what they did — the hierarchy isn't control, it's bookkeeping. 🤸🚗"},
+ {t:"DEEP · evergreen", h:"@eng_khairallah1", u:"https://x.com/eng_khairallah1/status/2049055333054857612", a:"~5wk", s:"How to build a multi-agent coding stack in 2026 — agent swarm with no Claude/GPT equivalent.",
+  d:"\"Agent swarm with no Claude/GPT equivalent\" is the tell — swarm isn't a model feature, it's a discipline. Ours: 15 workers, one signed ledger, one builds one verifies. Runs on flash-tier models because the discipline does the work. 🤸🚗"},
+ {t:"DEEP · evergreen", h:"@hqmank", u:"https://x.com/hqmank/status/2066865206203130367", a:"~4wk", s:"ZCode desktop agent running GLM-5.2, Telegram/Discord bot integration for Coding Plan subscribers.",
+  d:"The desktop-agent-with-subscription shape is the sleeper hit of the year. Local harness, remote brain, bot door for the phone. That's the architecture running our whole operation — except ours mostly runs itself and texts me receipts. 🤸🚗"},
+ {t:"DEEP · evergreen", h:"@AlphaSignalAI", u:"https://x.com/AlphaSignalAI/status/2042302224286572943", a:"~6wk", s:"Z.AI Coding Plan ~$10/month vs $60/month for three Claude Pro seats — 6x price gap.",
+  d:"$10 doing three Claude seats' job is the whole commodity-layer story of 2026. The moat moved up: whoever owns the harness and the memory owns the relationship. The model is just the electricity. 🤸🚗"},
+ {t:"DEEP · evergreen", h:"@championswimmer", u:"https://x.com/championswimmer/status/2015050117456228542", a:"~7wk", s:"Breakdown of the unbundled coding AI tools stack heading into 2026.",
+  d:"The unbundling everyone misses: memory. Models churn monthly, harnesses quarterly, but the record of what your agents did — that's the compounding asset. Nobody's unbundled that yet because everyone keeps it in a chat log that evaporates. 🤸🚗"},
+ {t:"DEEP · evergreen", h:"@doodlestein", u:"https://x.com/doodlestein/status/2041660563005100220", a:"~6wk", s:"Spinning up a swarm of agents across various harnesses.",
+  d:"Running one swarm across harnesses is the real test — each harness is a dialect and the swarm needs a lingua franca. Ours: files on disk + one hash chain. Every harness can read a receipt. 🤸🚗"},
+ {t:"DEEP · evergreen", h:"@jumperz", u:"https://x.com/jumperz/status/2020305891430428767", a:"~7wk", s:"AI agent swarm in Discord — coordinator + agents via handoffs.",
+  d:"Discord as the swarm bus works until an agent needs to say something private. Then you discover chat is vapor and files are the body. Build the file channel first; the fun one is already there. 🤸🚗"},
+ {t:"DEEP · evergreen", h:"@hasantoxr", u:"https://x.com/hasantoxr/article/2065757441963462964", a:"~4wk · article", s:"Kimi agent swarm: 300 AI agents in parallel, 4,000+ steps in a single run.",
+  d:"300 agents and 4,000 steps is the demo; the product is the 4,001st step where one agent contradicts the others and you need receipts to break the tie. Verification is the scaling wall now, not orchestration. 🤸🚗"},
+ {t:"DEEP · evergreen", h:"@Av1dlive", u:"https://x.com/Av1dlive/article/2062561213532471707", a:"~4wk · article", s:"How to build AI agent swarms — orchestrator aggregates results.",
+  d:"Every swarm guide ends at \"orchestrator aggregates results.\" That's step one. Step two is the ledger: who did what, signed, so tomorrow's agents inherit the record instead of re-deriving it. Swarms without history are just expensive dice. 🤸🚗"},
+ {t:"DEEP · evergreen", h:"@NirantK", u:"https://x.com/NirantK/article/2058928450082394212", a:"~4wk · article", s:"Breaking Claude Agent SDK's model lock-in in 1 day.",
+  d:"Lock-in broke the day harnesses standardized on files. Whatever model answers, the receipts live on your disk. We swap brains weekly; the chain never notices. 🤸🚗"},
+ {t:"DEEP · evergreen", h:"@clairevo", u:"https://x.com/clairevo/article/2071648224314896815", a:"~5wk · article", s:"How I ChatPRD: 8 models, 82 builds — counterpoint: cheaper models didn't work, Claude Code won.",
+  d:"Respect the counterpoint. Cheaper models win at breadth; judgment-dense products still want the expensive brain. Our rule: flash for the fleet's hands, frontier for the forks in the road. The skill is knowing which decision you're in. 🤸🚗"},
+ {t:"DEEP · evergreen", h:"@milesdeutscher", u:"https://x.com/milesdeutscher/article/2069437476838809797", a:"~4wk · article · big reach", s:"GLM-5.2 is f*cking incredible (Chinese Claude Killer?) — saving ~50% on daily dev.",
+  d:"The \"Chinese Claude killer\" framing undersells the weird part: the coding plan is so cheap the rational move is to run MORE agents, not fewer. You stop asking \"which model\" and start asking \"how wide.\" We went to 15 parallel before we blinked. 🤸🚗"},
+ {t:"DEEP · evergreen", h:"@Aiswarya_Sankar", u:"https://x.com/Aiswarya_Sankar/article/2069829531314384939", a:"~4wk · article", s:"GLM-5.2 vs Claude Opus: same code, less than half the cost (~46%).",
+  d:"The 46%-of-Opus number matters less than what it buys: permission to be wasteful. Run the cheap one on everything and the expensive one only where the answer changes your week. Cost-per-token is the wrong metric; cost-per-decision is the real one. 🤸🚗"},
+ {t:"DEEP · evergreen", h:"@JulianGoldieSEO", u:"https://x.com/JulianGoldieSEO/article/2066359701692952594", a:"~4wk · article", s:"GLM 5.2 model with Agent OS is actually insane.",
+  d:"Every \"Agent OS\" is really a memory ledger with marketing. Ours is literally a hash-chained file the agents append to and can't rewrite. Boring, local, and it remembers better than any pitch deck. 🤸🚗"},
+ {t:"DEEP · evergreen", h:"@JulianGoldieSEO", u:"https://x.com/JulianGoldieSEO/article/2072506936571072908", a:"~5wk · article", s:"Vibe coding with Claude Sonnet 5 vs GLM 5.2.",
+  d:"The real spec isn't which model wins, it's which model you can afford to run 24/7. Ours never sleeps on the flash tier — night watch, salon shifts, receipts by dawn. The expensive models get consulted like senior partners: rarely, and only when it counts. 🤸🚗"},
+];
+
+const app = document.getElementById("app");
+let lastTier = "";
+TARGETS.forEach((x, i) => {
+  if (x.t !== lastTier) {
+    lastTier = x.t;
+    const h = document.createElement("div");
+    h.className = "tier"; h.textContent = "— " + x.t.toUpperCase() + " —";
+    app.appendChild(h);
+  }
+  const card = document.createElement("div");
+  card.className = "card";
+  const len = x.d.length;
+  const lenCls = len > 280 ? "over" : "";
+  card.innerHTML =
+    '<div class="top"><span class="who">' + (i+1) + '. <a href="' + x.u + '" target="_blank">' + x.h + "</a>" +
+    '<span class="tag">' + x.t.split("·")[0].trim() + "</span></span>" +
+    '<span class="meta">' + x.a + '</span></div>' +
+    '<div class="snip">"' + x.s + '"</div>' +
+    '<div class="draft" id="d' + i + '"></div>' +
+    '<div class="btnrow"><button class="btn" data-i="' + i + '">COPY DRAFT</button>' +
+    '<a class="btn open" style="text-decoration:none" href="' + x.u + '" target="_blank">OPEN POST ↗</a>' +
+    '<span class="chars ' + lenCls + '">' + len + " chars" + (len > 280 ? " — trims to 280 visible" : "") + "</span></div>";
+  app.appendChild(card);
+  card.querySelector(".draft").textContent = x.d;
+});
+document.querySelectorAll("button.btn").forEach(b => {
+  b.addEventListener("click", () => {
+    const i = b.getAttribute("data-i");
+    const txt = TARGETS[i].d;
+    const done = () => { b.textContent = "COPIED ✓"; setTimeout(() => b.textContent = "COPY DRAFT", 1200); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(done).catch(() => fallbackCopy(txt, done));
+    } else fallbackCopy(txt, done);
+  });
+});
+function fallbackCopy(txt, done) {
+  const ta = document.createElement("textarea");
+  ta.value = txt; document.body.appendChild(ta); ta.select();
+  try { document.execCommand("copy"); done(); } catch (e) { alert("Copy failed — select the draft text manually"); }
+  document.body.removeChild(ta);
+}
+</script>
+</body>
+</html>

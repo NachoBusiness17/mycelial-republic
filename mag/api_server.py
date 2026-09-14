@@ -30,6 +30,7 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from mag import api_gateway as gw
+from mag import mcp_http  # noqa: F401 — registers POST /mcp on the gateway registry
 
 DEFAULT_HOST = "127.0.0.1"
 # :8000 is reserved for backend.server (/health and /run_task), which is the
@@ -44,10 +45,26 @@ app = FastAPI(
     "All endpoints require the X-API-Key header.",
 )
 
+# 2026-08-29: the operator's board page (file:// on the desktop) fetches this
+# loopback-bound service — allow cross-origin from anywhere; the port never
+# leaves the machine and every route still requires the key.
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 
-def require_api_key(x_api_key: str | None = Header(default=None)) -> None:
-    """FastAPI dependency — reject requests without a valid X-API-Key."""
-    if not gw.check_api_key({"X-API-Key": x_api_key or ""}):
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"],
+                   allow_headers=["*"])
+
+
+def require_api_key(x_api_key: str | None = Header(default=None),
+                     request: "Request" = None) -> None:
+    """FastAPI dependency — reject requests without a valid API key.
+
+    2026-08-29: the key may also ride ?key= (operator's board page on the
+    desktop; the gateway layer accepts it too — both doors agree).
+    """
+    key = x_api_key
+    if not key and request is not None:
+        key = request.query_params.get("key")
+    if not gw.check_api_key({"X-API-Key": key or ""}):
         raise HTTPException(status_code=401, detail="missing or invalid X-API-Key")
 
 
@@ -82,10 +99,13 @@ async def gateway_bridge(path: str, request: Request) -> JSONResponse:
                     content={"ok": False, "error": "invalid JSON body"},
                 )
 
-    # Headers as a plain dict for the gateway gate.
+    # Headers as a plain dict for the gateway gate; query params flow too
+    # (2026-08-29: fixes ?n= being ignored; enables ?key= browser access).
     headers = {k: v for k, v in request.headers.items()}
+    query = dict(request.query_params)
 
-    status, payload = gw.dispatch(request.method, full_path, headers=headers, body=body)
+    status, payload = gw.dispatch(request.method, full_path, headers=headers,
+                                  body=body, query=query)
     return JSONResponse(status_code=status, content=payload)
 
 

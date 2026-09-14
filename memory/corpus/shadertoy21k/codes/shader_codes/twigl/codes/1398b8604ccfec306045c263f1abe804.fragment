@@ -1,0 +1,26 @@
+void rot(inout vec3 p,vec3 a,float t){
+  a=normalize(a);
+  vec3 u=cross(a,p),v=cross(u,a);
+  p=u*cos(t)+v*sin(t)+a*dot(p,a);   
+}
+
+float map(vec3 p){
+  p=abs(p);
+  float de=0.;
+  vec3 q;
+  q=p;if(p.x<p.x)p.xy=p.yz; de=max(de,dot(p,normalize(vec3(2,1,1)))-1.);
+  q=p;if(p.y<p.z)p.yz=p.zy; de=max(de,dot(p,normalize(vec3(1,2,1)))-1.);
+  //q=p;if(p.z<p.x)p.zx=p.xz; de=max(de,dot(p,normalize(vec3(1,1,2)))-1.);
+  return de;
+}
+
+void main(){
+  float i,g,e=1.;
+  for(i=0.;++i<50.&&e>.001;){
+    vec3 p=g*normalize(vec3((gl_FragCoord.xy-.5*r)/r.y,1));
+    p.z-=4.;
+    rot(p,vec3(1,2,3),t*1.5);
+    g+=e=map(p);
+  }
+  o+=3./i;  
+}

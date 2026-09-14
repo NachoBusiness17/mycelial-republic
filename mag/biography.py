@@ -315,7 +315,11 @@ def export_session_artifacts(
     return out
 
 
-def pack_status(session_id: str) -> dict[str, Any]:
+def pack_status(
+    session_id: str,
+    *,
+    registry_map: dict[str, dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     """Lean complete = residual + card + content_commit + chain leaf.
 
     PDF / visual / md are derived (optional), not required for complete.
@@ -325,7 +329,7 @@ def pack_status(session_id: str) -> dict[str, Any]:
     try:
         from mag.registry import lean_pack_status
 
-        st = lean_pack_status(session_id)
+        st = lean_pack_status(session_id, registry_map=registry_map)
         # aliases for older callers
         st["has_dossier"] = st.get("has_residual")
         st["has_leaf"] = st.get("has_leaf")

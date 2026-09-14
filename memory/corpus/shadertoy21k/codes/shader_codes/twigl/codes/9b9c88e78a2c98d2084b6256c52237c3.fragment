@@ -1,0 +1,15 @@
+float map(vec3 p){
+  p.z+=t;
+	float r=1.;
+	p.xz = fract(p.xz)-.5;
+	for(int i=0;i<16;i++){
+		p=abs(p);
+		float s=1.8/clamp(dot(p,p),.1,1.2);
+		p*=s;
+		p-=vec3(.4,2,.2);
+		r*=s;
+	}
+  return length(p/r)-0.01;
+}
+
+vec3 normal(vec3 p){vec2 e=vec2(1,-1)*.002;return normalize(e.xyy*map(p+e.xyy)+e.yyx*map(p+e.yyx)+e.yxy*map(p+e.yxy)+e.xxx*map(p+e.xxx));}float march(vec3 o, vec3 d, float n, float f){float t=n,h;for(int i=0;i<50;i++){t+=h=map(o+d*t);if(h<.001) return t;if(t>=f) return f;}return f;}void main(){vec2 uv=(gl_FragCoord.xy*2.-r)/r.y;vec3 ro=vec3(0,0,-2.5),rd=normalize(vec3(uv,2)),c;float t=march(ro,rd,0.,10.);if(t<10.){vec3 p=ro+rd*t,n=normal(p);c=vec3(0.3,0.5,0.8)+cos(p*3.)*.5+.5;c=c*max(clamp(dot(n, vec3(.577)),0.,1.),.2)*max(.5+.5*n.y,0.)*exp2(-2.*pow(max(0.,1.-map(p+n*.3)/.3),2.))+vec3(.8,.6,.2)*pow(clamp(dot(reflect(rd, n), vec3(.577)), 0., 1.), 20.);}o.xyz=c;}

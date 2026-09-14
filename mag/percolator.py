@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import sys
 from datetime import datetime, timezone
@@ -44,6 +45,7 @@ SCHEMA = "percolator.v1"
 NOISE_DIR = ROOT / "memory" / "ghost" / "noise"
 INTAKE_DIR = ROOT / "memory" / "ghost" / "intake"
 INVARIANT_REGISTRY = ROOT / "memory" / "percolator" / "invariants.json"
+SEALS_DIR = ROOT / "memory" / "seals"
 EXPLORE_QUEUE = ROOT / "memory" / "percolator" / "explore.jsonl"
 
 # ── signal lexicon (deterministic scoring, no hallucination) ──────────────────
@@ -52,6 +54,10 @@ SIGNAL_HINTS = (
     "invariant", "architecture", "swarm", "flock", "rib", "procedure", "mechanism",
     "we built", "we made", "how to", "the map precedes", "intended paths", "consensus",
     "agent", "steer", "fold", "verkle", "training signal", "false positive", "noise",
+    # moderation-field register (wrongthink invariant map, 2026-09-10): a flag receipt is
+    # the platform's sensor firing — refusals/filters/blocks are repeatable field signal.
+    "refusal", "content filter", "moderation", "flagged", "shadow cell", "denial",
+    "temp block", "reach limit", "unsafe content", "boundary is data",
 )
 THEATER_HINTS = (
     "thrilled", "excited", "excitedly", "announcement", "breaking", "🚀", "🔥",
@@ -133,18 +139,83 @@ def _read_jsonl(path: Path, tail: int = 200) -> list[dict[str, Any]]:
     return out
 
 
-def _load_registry() -> dict[str, Any]:
-    if not INVARIANT_REGISTRY.is_file():
-        return {"invariants": {}, "false_positives": 0}
+def _newest_seal_registry() -> Path | None:
+    """Newest seal snapshot of the invariant registry, or None (seal dir names are UTC-sortable)."""
     try:
-        return json.loads(INVARIANT_REGISTRY.read_text(encoding="utf-8"))
+        cands = sorted(SEALS_DIR.glob("*/memory/percolator/invariants.json"))
+        return cands[-1] if cands else None
+    except OSError:
+        return None
+
+
+def _load_registry() -> dict[str, Any]:
+    reg = None
+    try:
+        if INVARIANT_REGISTRY.is_file():
+            reg = json.loads(INVARIANT_REGISTRY.read_text(encoding="utf-8"))
     except Exception:
-        return {"invariants": {}, "false_positives": 0}
+        reg = None
+    seal_path = _newest_seal_registry()
+    if seal_path is not None:
+        try:
+            seal = json.loads(seal_path.read_text(encoding="utf-8"))
+        except Exception:
+            seal = None
+        if isinstance(seal, dict):
+            seal_gens = seal.get("invariants") or {}
+            live_gens = (reg.get("invariants") or {}) if isinstance(reg, dict) else {}
+            # GAP-2 (2026-09-06, seat sealcheck; Astra gap v2 ANSWER.md "recovery presented as
+            # conservation"): the heal trigger is a PER-GENERATION ID DIFF against the newest
+            # seal — ANY sealed generation missing from live heals. The old >50%-by-count gate
+            # could not detect partial loss: deleting ONE sealed generation left a silently
+            # "healthy" load. The count gate is kept only as a redundant fast-path pre-check
+            # (the ID diff subsumes it); it is never the sole trigger.
+            missing = [k for k in seal_gens if k not in live_gens]
+            shrank = len(live_gens) * 2 < len(seal_gens)
+            if reg is None or missing or shrank:
+                try:  # AUTO-HEAL (registry-wipe amnesia 2026-09-06 + partial loss 2026-09-06):
+                    # merge newest seal — never start empty, never silently stay partial.
+                    merged = dict(seal_gens)
+                    if INVARIANT_REGISTRY.is_file():
+                        try:
+                            live = json.loads(INVARIANT_REGISTRY.read_text(encoding="utf-8"))
+                            for k, v in (live.get("invariants") or {}).items():
+                                if k in merged:  # union merge: shared count summed + last_seen maxed
+                                    merged[k]["count"] += v.get("count", 0)
+                                    merged[k]["last_seen"] = max(merged[k].get("last_seen") or "",
+                                                                 v.get("last_seen") or "")
+                                else:
+                                    merged[k] = v
+                            seal["false_positives"] = max(seal.get("false_positives", 0),
+                                                          live.get("false_positives", 0))
+                        except Exception:
+                            pass
+                    reg = {"invariants": merged, "false_positives": seal.get("false_positives", 0)}
+                    _append_jsonl(INVARIANT_REGISTRY.parent / "heal.log",
+                                  {"ts": _now(),
+                                   "heal": f"auto-healed {len(merged)} generations from {seal_path.parents[2]}"})
+                except Exception:
+                    reg = None
+    if reg is None:
+        reg = {"invariants": {}, "false_positives": 0}
+    reg.setdefault("invariants", {})
+    reg.setdefault("false_positives", 0)
+    return reg
 
 
 def _save_registry(reg: dict[str, Any]) -> None:
     INVARIANT_REGISTRY.parent.mkdir(parents=True, exist_ok=True)
-    INVARIANT_REGISTRY.write_text(json.dumps(reg, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp = INVARIANT_REGISTRY.with_name(f"{INVARIANT_REGISTRY.name}.{os.getpid()}.tmp")
+    tmp.write_text(json.dumps(reg, ensure_ascii=False, indent=2), encoding="utf-8")
+    try:  # LAW-065 DEMO (2026-09-07, seat gatekeep): receipt the destructive replace.
+        # Warn-only era — the receipt is appended, the save is never blocked. Sole demo
+        # call site; fleet-wide requirement is operator law, not this build's call.
+        from mag.destructive_receipt import record as _receipt
+        _receipt(str(INVARIANT_REGISTRY), actor="percolator",
+                 reason="atomic registry save (temp+os.replace) — LAW-065 demo call site")
+    except Exception:
+        pass  # the instrument must never break the writer
+    os.replace(tmp, INVARIANT_REGISTRY)  # atomic: empty-file-from-crash is now impossible
 
 
 def append_noise(items: list[dict[str, Any]], *, domain: str = "general") -> dict[str, Any]:
@@ -206,8 +277,8 @@ def _compile_invariant(signal_sentences: list[str], canonical: str, *, domain: s
     try:
         from mag import fact_bus
         # fold=False (2026-08-16, sacred-cow fix): a percolator SIGNAL does not need a full
-        # verkle session-knot append (append_verkle_knot -> _rewrite_chain is O(n^2) over the
-        # whole chain — measured 65s on 5,874 leaves, systemic landmine in every log_behavioral_event).
+        # verkle session-knot append (append_verkle_knot -> _rewrite_chain uses
+        # incremental O(n log n) prefix roots over the whole chain).
         # The fact still lands in the fact STORE + the invariant registry (real data); only the
         # expensive session-knot verkle rewrite is skipped. The spine (verkle_knot) is untouched.
         fb = fact_bus.publish_fact(text[:400], who="percolator", what="compiled_invariant",

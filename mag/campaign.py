@@ -89,6 +89,19 @@ def load_module(module_path: str | Path) -> dict[str, Any]:
     return module
 
 
+def _rooms_by_id(module: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """Normalize module rooms to a dict keyed by room id.
+
+    mag_game_module.v1 ships rooms either as a dict keyed by id
+    (sunless_citadel) or as a list of {id, name, order} entries
+    (villains_guild). List entries without an id cannot be addressed.
+    """
+    rooms = module.get("rooms", {})
+    if isinstance(rooms, dict):
+        return rooms
+    return {r["id"]: r for r in rooms if r.get("id")}
+
+
 def load_riddler_map(campaign_dir: Path) -> dict[str, Any]:
     """Load the riddler territory→story mappings for a campaign."""
     riddler_path = campaign_dir / "riddler_map.json"
@@ -110,7 +123,7 @@ def dm_narrate(
     If dm_model is 'rules_engine', returns the room description directly.
     If dm_model is a real model, sends the room + riddler context to generate narration.
     """
-    room = module.get("rooms", {}).get(state.current_room, {})
+    room = _rooms_by_id(module).get(state.current_room, {})
     if not room:
         return {"ok": False, "error": f"Room not found: {state.current_room}"}
 
@@ -568,7 +581,7 @@ def run_campaign(
     print()
 
     for room_id in room_ids:
-        room = module.get("rooms", {}).get(room_id)
+        room = _rooms_by_id(module).get(room_id)
         if not room:
             print(f"  [SKIP] Room '{room_id}' not found in module.")
             continue
@@ -663,7 +676,7 @@ def run_campaign(
 
 def _room_order(module: dict[str, Any]) -> list[str]:
     """Get room IDs in campaign order, excluding hub/end rooms."""
-    rooms = module.get("rooms", {})
+    rooms = _rooms_by_id(module)
     ordered = [
         (r.get("order", 99), rid)
         for rid, r in rooms.items()
@@ -676,7 +689,7 @@ def _room_order(module: dict[str, Any]) -> list[str]:
 def _count_steers(module: dict[str, Any]) -> int:
     return sum(
         len(r.get("steer_schedule", []))
-        for r in module.get("rooms", {}).values()
+        for r in _rooms_by_id(module).values()
     )
 
 

@@ -176,7 +176,7 @@ class Handler(BaseHTTPRequestHandler):
         if path in ("/", "/cast.html"):
             from mag.display import build_display_payload
 
-            page = render_cast_page(build_display_payload())
+            page = render_cast_page(build_display_payload(fast=True))
             raw = page.encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
@@ -189,7 +189,7 @@ class Handler(BaseHTTPRequestHandler):
         if path in ("/api/v1/display", "/api/display"):
             from mag.display import build_display_payload
 
-            self._json(200, build_display_payload())
+            self._json(200, build_display_payload(fast=True))
             return
         if path == "/api/v1/feed":
             # The Mycelial Republic feed: high-signal $0 wins (Tumblr/IG-style), mapped to internals.

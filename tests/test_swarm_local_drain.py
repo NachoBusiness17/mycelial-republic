@@ -42,22 +42,20 @@ def test_key_reconcile_never_logs_value():
         assert secret_marker not in blob
 
 
-def test_drain_pass_honest_when_no_key(monkeypatch):
-    # force no resolved key -> honest ok:False (never silently queue-fail).
-    # Must stub key_reconcile: it also reads .env from disk, so popping process
-    # env is not enough and used to spawn a live drain.
+def test_drain_pass_does_not_require_deepseek_for_local_work(monkeypatch):
+    # A missing DeepSeek key must not block local/free rightsized work.
     monkeypatch.setattr(
         sld, "key_reconcile",
         lambda: {"ok": True, "resolved_provider_key": False, "note": "test"},
     )
 
-    def _boom(**kwargs):
-        raise AssertionError("run_once must not spawn when no key resolves")
-
-    monkeypatch.setattr("mag.swarm_worker.run_once", _boom)
+    monkeypatch.setattr(
+        "mag.swarm_worker.run_rightsized_once",
+        lambda **kwargs: {"done": 0, "failed": 0, "skipped": 0},
+    )
     r = sld.drain_pass(limit=1)
-    assert r["ok"] is False
-    assert "no deepseek key resolves" in r["error"]
+    assert r["ok"] is True
+    assert r["done"] == 0
 
 
 def test_run_cadence_daily_cap_guard():

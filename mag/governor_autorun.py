@@ -25,7 +25,17 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 TRAIL = ROOT / "memory" / "runs" / "governor_autorun_trail.jsonl"
+DOCKER_ONLY_MARKER = ROOT / "state" / "DOCKER_ONLY"
 _LAST_PLAN_FP: str | None = None
+
+
+def _host_runtime_blocked() -> bool:
+    """Prevent a host drainer from competing with the container supervisor."""
+    return (
+        os.name == "nt"
+        and DOCKER_ONLY_MARKER.is_file()
+        and os.environ.get("MAG_ALLOW_HOST_RUNTIME") != "1"
+    )
 
 from mag.router import DEPTH_JOB_MAP  # single law — ponytail: no duplicate maps
 
@@ -232,6 +242,40 @@ def queue_has_goal(goal: str) -> bool:
     return False
 
 
+def recently_terminal_goal(goal: str, *, cooldown_s: float | None = None) -> dict[str, Any] | None:
+    """Return a recent terminal attempt for ``goal``.
+
+    Agent-state ``next_moves`` are durable intentions, not one-shot queue
+    commands.  The old fill path only deduplicated queued/running rows, so a
+    successful task whose next_move remained open was re-enqueued every
+    autorun tick.  That produced an apparently immortal agent loop.  Keep a
+    short, explicit cooldown for terminal attempts; an operator can still
+    force a retry by changing the goal or moving the state entry forward.
+    """
+    from mag.orchestrator import list_queue, QUEUE_TERMINAL
+
+    if cooldown_s is None:
+        cooldown_s = float(os.environ.get("MAG_AGENT_STATE_RETRY_COOLDOWN_S", "21600") or "21600")
+    wanted = (goal or "").strip()
+    if not wanted:
+        return None
+    now = datetime.now(timezone.utc)
+    for row in list_queue(limit=300):
+        if (str(row.get("goal") or "").strip() != wanted
+                or row.get("status") not in QUEUE_TERMINAL):
+            continue
+        stamp = row.get("ended_at") or row.get("updated_at") or row.get("created_at")
+        try:
+            when = datetime.fromisoformat(str(stamp).replace("Z", "+00:00"))
+            age_s = max(0.0, (now - when).total_seconds())
+        except (TypeError, ValueError):
+            age_s = 0.0
+        if row.get("status") == "done" or age_s <= float(cooldown_s):
+            return {"status": row.get("status"), "queue_id": row.get("queue_id"),
+                    "age_s": round(age_s, 1), "cooldown_s": float(cooldown_s)}
+    return None
+
+
 def enqueue_routed(goal: str, *, tag: str = "", depth: str | None = None) -> dict[str, Any]:
     """Enqueue with governor routing (provider + depth metadata)."""
     from mag.autorun_common import fkb_block_for_goal, refresh_context_for_goal
@@ -290,8 +334,26 @@ def fill_queue(
     max_state: int = 2,
     max_handoff: int = 2,
     max_verkle: int = 2,
+    budget_seconds: float = 12.0,
 ) -> dict[str, Any]:
-    """Intelligently seed orchestrator queue + todo from real sources."""
+    """Seed the durable queue from real sources within a control-plane budget.
+
+    Queue admission is the fast path. Ghost/republic/janitor cadence is
+    optional work for the drainer and is deferred once this budget is spent;
+    otherwise the flywheel recursively becomes the inline workload it is meant
+    to offload.
+    """
+    import time
+
+    started = time.monotonic()
+    budget_s = max(0.0, float(budget_seconds))
+
+    def within_budget() -> bool:
+        return time.monotonic() - started < budget_s
+
+    def defer(reason: str) -> None:
+        filled["budget_deferred"] = reason
+
     filled: dict[str, Any] = {
         "improve": [],
         "agent_state": [],
@@ -339,6 +401,9 @@ def fill_queue(
         st = load_latest()
         if st:
             for m in (st.get("next_moves") or [])[:max_state]:
+                if not within_budget():
+                    defer("agent_state_admission")
+                    break
                 if isinstance(m, dict):
                     status = str(m.get("status") or "open")
                     text = str(m.get("title") or m.get("text") or m.get("move") or "")
@@ -350,6 +415,12 @@ def fill_queue(
                 if queue_has_goal(goal) and _todo_has_text(goal):
                     filled["skipped"].append(goal[:60])
                     continue
+                terminal = recently_terminal_goal(goal)
+                if terminal is not None:
+                    filled["skipped"].append(
+                        f"{goal[:48]} (terminal:{terminal.get('status')})"
+                    )
+                    continue
                 _append_todo_mag(goal)
                 if not queue_has_goal(goal):
                     rec = enqueue_routed(goal, tag="agent-state")
@@ -360,6 +431,9 @@ def fill_queue(
     handoff_dir = ROOT / "queue" / "handoff"
     if handoff_dir.is_dir():
         for p in sorted(handoff_dir.glob("*.json"))[:max_handoff]:
+            if not within_budget():
+                defer("handoff_admission")
+                break
             try:
                 h = json.loads(p.read_text(encoding="utf-8"))
             except (json.JSONDecodeError, OSError):
@@ -375,6 +449,9 @@ def fill_queue(
         from mag.verkle_audit import verkle_gaps
 
         for gap in verkle_gaps():
+            if not within_budget():
+                defer("verkle_admission")
+                break
             if len(filled["verkle"]) >= max_verkle:
                 break
             if gap.get("severity") not in ("warn", "error"):
@@ -404,6 +481,9 @@ def fill_queue(
         from mag.ghost import sense_copilot
         cp = sense_copilot()
         for msg in cp.get("messages", [])[:max_handoff]:
+            if not within_budget():
+                defer("copilot_admission")
+                break
             action = str(msg.get("action") or "exec")
             goal = str(msg.get("goal") or "").strip()
             if action != "exec" or not goal:
@@ -418,51 +498,57 @@ def fill_queue(
 
     # ── Autonomous ghost + janitor (inline, $0, < 2 sec each) ──
     try:
-        from mag.ghost import cycle as ghost_cycle, load_vectors
-        if load_vectors():
-            ghost_result = ghost_cycle(dry=False)
-            filled["ghost"] = ghost_result.get("outcome", "?")
+        if not within_budget():
+            defer("ghost_cadence")
         else:
-            filled["ghost"] = "no_vectors"
+            from mag.ghost import cycle as ghost_cycle, load_vectors
+            if load_vectors():
+                ghost_result = ghost_cycle(dry=False)
+                filled["ghost"] = ghost_result.get("outcome", "?")
+            else:
+                filled["ghost"] = "no_vectors"
     except Exception as e:
         filled["ghost_error"] = str(e)
 
-    # ── REPUBLIC LOOP (2026-08-11) — the ONE coherent self-improvement cadence, explicit on the
-    # autorun beat: tool-select -> formula -> right-size -> cost-feed -> substrate -> stand -> lens
-    # -> trigger -> compile + diamond-mine -> egregore -> self-loop -> test-steal -> feedback +
-    # sense + emergence. Idempotent (dedup); beats with the autorun heartbeat. ──
+    # ── REPUBLIC LOOP (2026-08-11) — explicit cadence owner, budgeted ──
     try:
-        from mag.republic_loop import loop as republic_loop
-        rl = republic_loop()
-        filled["republic_loop"] = {"n_ok": rl.get("n_ok"), "n_steps": rl.get("n_steps"),
-                                   "health": rl.get("health"),
-                                   "verdict": rl.get("verdict"),
-                                   "growth": rl.get("growth")}
+        if not within_budget():
+            defer("republic_cadence")
+        else:
+            from mag.republic_loop import loop as republic_loop
+            rl = republic_loop()
+            filled["republic_loop"] = {"n_ok": rl.get("n_ok"), "n_steps": rl.get("n_steps"),
+                                       "health": rl.get("health"),
+                                       "verdict": rl.get("verdict"),
+                                       "growth": rl.get("growth")}
     except Exception as e:
         filled["republic_loop"] = {"ok": False, "error": str(e)[:120]}
 
     try:
-        # Janitor: verkle tip fix + training nudge + inbox health
-        from mag.ghost import sense as ghost_sense
-        state = ghost_sense()
-        if state.get("verkle_tip_stale"):
-            import subprocess, sys as _sys, os as _os
-            _flags = (getattr(subprocess, "CREATE_NO_WINDOW", 0) if _os.name == "nt" else 0)
-            subprocess.run([headless.PYTHON, "-m", "mag.verkle_audit", "--full"],
-                          cwd=str(ROOT), capture_output=True, timeout=30, creationflags=_flags)
-            filled["janitor_verkle"] = "audited"
-        if state.get("training_rows", 0) >= 5:
-            # Check W0.3 archive gate
-            archive_dir = ROOT.parent / "mycelial-republic" / "data" / "raw"
-            has_archive = archive_dir.is_dir() and any(
-                f.suffix in (".zip", ".tar", ".gz") for f in archive_dir.iterdir()
-            )
-            filled["janitor_training"] = "blocked" if not has_archive else "ready"
-        filled["janitor_inbox"] = state.get("inbox_pending", 0)
-        # PIPE 4: Spider blindness → auto-todo when FKB has clear signals
-        if state.get("spider_blind") and len(state.get("fkb_signals", [])) >= 3:
-            _append_todo_mag("[janitor] Spider is blind but FKB has clear failure patterns. Investigate spider detection thresholds.")
-            filled["spider_todo"] = "appended"
+        if not within_budget():
+            defer("janitor_observation")
+        else:
+            # Janitor: verkle tip fix + training nudge + inbox health
+            from mag.ghost import sense as ghost_sense
+            state = ghost_sense()
+            if state.get("verkle_tip_stale"):
+                import subprocess, sys as _sys, os as _os
+                _flags = (getattr(subprocess, "CREATE_NO_WINDOW", 0) if _os.name == "nt" else 0)
+                subprocess.run([headless.PYTHON, "-m", "mag.verkle_audit", "--full"],
+                              cwd=str(ROOT), capture_output=True, timeout=30, creationflags=_flags)
+                filled["janitor_verkle"] = "audited"
+            if state.get("training_rows", 0) >= 5:
+                # Check W0.3 archive gate
+                archive_dir = ROOT.parent / "mycelial-republic" / "data" / "raw"
+                has_archive = archive_dir.is_dir() and any(
+                    f.suffix in (".zip", ".tar", ".gz") for f in archive_dir.iterdir()
+                )
+                filled["janitor_training"] = "blocked" if not has_archive else "ready"
+            filled["janitor_inbox"] = state.get("inbox_pending", 0)
+            # PIPE 4: Spider blindness → auto-todo when FKB has clear signals
+            if state.get("spider_blind") and len(state.get("fkb_signals", [])) >= 3:
+                _append_todo_mag("[janitor] Spider is blind but FKB has clear failure patterns. Investigate spider detection thresholds.")
+                filled["spider_todo"] = "appended"
     except Exception as e:
         filled["janitor_error"] = str(e)
 
@@ -489,6 +575,7 @@ def fill_queue(
                     "total_queued",
                     "skipped",
                 )
+                if k in filled
             },
         }
     )
@@ -703,19 +790,36 @@ def autorun_once(*, fill: bool = True, dry: bool = False) -> dict[str, Any]:
     """One intelligent autorun tick: fill → plan → drain or governor."""
     from mag.autorun_common import autorun_pause_reason
 
+    # An explicit operator pause is the higher-priority safety signal.  It
+    # must remain observable even when the host-runtime guard also applies;
+    # otherwise a paused system reports the wrong reason and can mislead the
+    # operator about what actually stopped autorun.
+    pause = autorun_pause_reason()
+    if pause and not dry:
+        result: dict[str, Any] = {
+            "schema": "autorun_once.v1",
+            "ts": _now(),
+            "action": "paused",
+            "detail": pause,
+            "steps": [{"paused": pause}],
+        }
+        _trail_autorun_once(result)
+        return result
+
+    if _host_runtime_blocked():
+        return {
+            "schema": "autorun_once.v1",
+            "ts": _now(),
+            "action": "blocked_host_runtime",
+            "detail": "Docker-only runtime is active; run autorun inside the Mag container",
+            "steps": [],
+        }
+
     result: dict[str, Any] = {
         "schema": "autorun_once.v1",
         "ts": _now(),
         "steps": [],
     }
-
-    pause = autorun_pause_reason()
-    if pause and not dry:
-        result["action"] = "paused"
-        result["detail"] = pause
-        result["steps"].append({"paused": pause})
-        _trail_autorun_once(result)
-        return result
 
     if fill and not dry:
         filled = fill_queue()
@@ -819,6 +923,10 @@ def autorun_once(*, fill: bool = True, dry: bool = False) -> dict[str, Any]:
 
 def autorun_loop(interval_s: float = 5.0, *, once: bool = False) -> None:
     """Drainer main loop — intelligent fill/plan/execute."""
+    if _host_runtime_blocked():
+        print("[autorun] blocked: Docker-only runtime is active", flush=True)
+        return
+
     fill_every = int(os.environ.get("MAG_AUTORUN_FILL_EVERY", "12") or "12")
     autopilot_every = int(os.environ.get("MAG_AUTOPILOT_EVERY", "0") or "0")
     growth_every = int(os.environ.get("MAG_GROWTH_CYCLE_EVERY", "0") or "0")
@@ -867,6 +975,10 @@ def autorun_loop(interval_s: float = 5.0, *, once: bool = False) -> None:
     # Cost/learn cadence: fold provider cache/cost/latency telemetry into the skill_ledger
     # (tesuji-everywhere). Idempotent — only folds when new usage rows landed. Default 600.
     cost_learn_every = int(os.environ.get("MAG_COST_LEARN_EVERY", "600") or "600")
+    # Vast billing is a read-only meter. Refresh slowly enough to avoid turning
+    # a five-second autorun loop into a billing poller; the dashboard always
+    # reads the last cached receipts.
+    vast_sync_every = int(os.environ.get("MAG_VAST_SYNC_EVERY", "3600") or "3600")
     # Context-growth cadence: measure per-session context growth to find repack ballooners.
     context_growth_every = int(os.environ.get("MAG_CONTEXT_GROWTH_EVERY", "900") or "900")
     # Self-steal cadence: audit capability utilization + launch/resume research for gaps.
@@ -1214,6 +1326,19 @@ def autorun_loop(interval_s: float = 5.0, *, once: bool = False) -> None:
                     )
             except Exception as e:
                 print(_dim(f"  [ghost-recurring] error: {e}"), flush=True)
+
+        # Read-only Vast charge/instance refresh. This is attached to the
+        # existing governor cadence, not a second supervisor or lifecycle
+        # controller; it never starts/stops/destroys a GPU instance.
+        if vast_sync_every > 0 and tick > 0 and tick % vast_sync_every == 0:
+            try:
+                from mag.vast_cost import sync as vast_sync
+
+                vs = vast_sync(days=30, include_instances=True)
+                print(_dim(f"  [vast-meter] ok={vs.get('ok')} appended={vs.get('charges_appended', 0)} "
+                           f"instances={vs.get('instances_fetched', 0)}"), flush=True)
+            except Exception as e:
+                print(_dim(f"  [vast-meter] error: {e}"), flush=True)
 
         # Rightsize-everything cadence: apply the queue-rightsize lesson to all subsystems,
         # autonomously (cheap-first, proof-first, no LLM on cadence).

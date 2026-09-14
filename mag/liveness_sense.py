@@ -30,6 +30,7 @@ process_supervisor.status, frontier_rib.seat_status, swarm_worker queue, ghost_c
 from __future__ import annotations
 
 import sys
+import threading
 from typing import Any
 
 try:
@@ -41,6 +42,10 @@ except Exception:
 sys.path.insert(0, str(ROOT))
 
 SCHEMA = "liveness_sense.v1"
+_BOOT_LOCK = threading.Lock()
+_BOOT_THREAD: threading.Thread | None = None
+_BOOT_DONE = threading.Event()
+_BOOT_RESULT: dict[str, Any] | None = None
 
 
 def _prove() -> dict[str, Any]:
@@ -103,21 +108,40 @@ def _cold_boot(*, timeout: float = 5.0) -> dict[str, Any]:
     """Can a stateless seat cold-boot from core (standing wave auto-mount)? BOUNDED (non-blocking):
     boot_context can hang, so we time-box it and report 'unknown/slow' honestly, never block the
     classifier. Deterministic + $0."""
-    try:
-        import concurrent.futures as cf
-        def _run():
-            from mag import ghost_cold_boot as gcb
-            b = gcb.boot_context()
-            return {"ok": bool(b.get("ok")), "standing": bool(b.get("standing") or b.get("standing_wave"))}
-        with cf.ThreadPoolExecutor(max_workers=1) as ex:
-            fut = ex.submit(_run)
-            res = fut.result(timeout=timeout)
-        return res
-    except cf.TimeoutError:
-        return {"ok": False, "standing": None, "timed_out": True,
-                "note": f"boot_context did not return within {timeout}s — unknown, not fabricating"}
-    except Exception as e:
-        return {"ok": False, "standing": False, "error": str(e)[:120]}
+    global _BOOT_THREAD, _BOOT_RESULT
+
+    # The original implementation used a ThreadPoolExecutor inside a
+    # ``with`` block.  On timeout, __exit__ called shutdown(wait=True), so the
+    # supposedly bounded probe still blocked until the expensive boot finished.
+    # Keep one daemon probe for the lifetime of the process and return UNKNOWN
+    # while it is still working.
+    with _BOOT_LOCK:
+        if _BOOT_RESULT is None and (_BOOT_THREAD is None or not _BOOT_THREAD.is_alive()):
+            def _run() -> None:
+                global _BOOT_RESULT
+                try:
+                    # Liveness needs the core reconstruction invariant, not the
+                    # full user-facing preamble (which may contact providers).
+                    from mag import agent_knot
+                    where = agent_knot.where()
+                    inv = agent_knot.standing_invariant()
+                    _BOOT_RESULT = {
+                        "ok": bool(where and inv),
+                        "standing": bool(where and inv),
+                        "source": "agent_knot core reconstruction",
+                    }
+                except Exception as e:
+                    _BOOT_RESULT = {"ok": False, "standing": False, "error": str(e)[:120]}
+                finally:
+                    _BOOT_DONE.set()
+
+            _BOOT_DONE.clear()
+            _BOOT_THREAD = threading.Thread(target=_run, name="liveness-cold-boot", daemon=True)
+            _BOOT_THREAD.start()
+    if _BOOT_DONE.wait(timeout=max(0.0, timeout)) and _BOOT_RESULT is not None:
+        return dict(_BOOT_RESULT)
+    return {"ok": False, "standing": None, "timed_out": True,
+            "note": f"core reconstruction did not return within {timeout}s — unknown, not fabricating"}
 
 
 # ── THE CLASSIFIER ────────────────────────────────────────────────────────────

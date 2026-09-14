@@ -5,6 +5,7 @@
 """
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from mag import headless
@@ -13,7 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from config import ROOT
-from mag.health import catch_up, sanity
+from mag.health import catch_up, in_mag_cage, sanity
 from mag.runtime import write_heartbeat
 
 
@@ -47,7 +48,17 @@ def ensure_lab(restart: bool = False) -> dict[str, Any]:
         cu = catch_up()
         return {"ok": cu.get("ok"), "action": "catch_up", "catch_up": cu, "sanity": sanity()}
     if restart:
-        # spawn lab detached
+        if in_mag_cage() or os.environ.get("MAG_CONTAINER") == "1":
+            return {
+                "ok": False,
+                "action": "refuse_host_lab",
+                "hint": (
+                    "Already in mag-sovereign. Do not spawn host python main.py lab. "
+                    "From the host: docker compose restart mag"
+                ),
+                "sanity": s,
+            }
+        # spawn lab detached — last resort on disposable-dev soil only
         py = headless.PYTHON
         creation = 0
         if sys.platform == "win32":
@@ -70,7 +81,10 @@ def ensure_lab(restart: bool = False) -> dict[str, Any]:
     return {
         "ok": False,
         "action": "need_lab",
-        "hint": "python main.py lab   or   python main.py guard --restart",
+        "hint": (
+            r"scripts\mag_exec.ps1 doctor; docker compose restart mag. "
+            "Host python main.py lab is last resort (second supervisor if cage is up)."
+        ),
         "sanity": s,
     }
 

@@ -32,6 +32,15 @@ def _bounded(values: Any, limit: int, width: int = 500) -> list[str]:
 
 def _knot_for_session(session_id: str) -> tuple[Path | None, dict[str, Any]]:
     sid = str(session_id or "").strip()
+    v2_key = hashlib.sha256(sid.encode("utf-8")).hexdigest()[:32]
+    pointer_v2 = BIO / "knots" / f"by-session_v2_{v2_key}.json"
+    pointed_v2 = _read(pointer_v2)
+    filename_v2 = str(pointed_v2.get("filename") or "")
+    if filename_v2 and Path(filename_v2).name == filename_v2:
+        path_v2 = BIO / "knots" / filename_v2
+        knot_v2 = _read(path_v2)
+        if knot_v2 and str(knot_v2.get("session_id") or "") == sid:
+            return path_v2, knot_v2
     pointer = BIO / "knots" / f"by-session_{sid[:12]}.json"
     pointed = _read(pointer)
     filename = str(pointed.get("filename") or "")

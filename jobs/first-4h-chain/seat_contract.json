@@ -1,0 +1,84 @@
+{
+  "schema": "seat_contract.v1",
+  "job_id": "first-4h-chain",
+  "salon": "memory/runs/salons/long_horizon/SALON_ARTIFACT.md",
+  "goal": "Run one 4h-class chain as bounded cages under this job_id: (1) blade launch+gate, (2) bootstrap, (3) drain batch, (4) receipt+knot. Prove the seat contract on grok+codex before any new seats. Disk is supervisor.",
+  "invariants": [
+    "CHAIN OF BOUNDED CAGES under one durable job ID (salon 4/4).",
+    "Frozen spec at hour 0 — this directory. Chat is heat.",
+    "Checkpoint = atomic trail_core_N: completed, artifact hashes, test results, failures, budget elapsed, ONE next action, resume_command.",
+    "Handoff = next seat reads seat_contract.json + SPEC.md + last trail_core only, never the chat log.",
+    "Disk is the supervisor; no new process (law 11).",
+    "job_floor claim/verify = single-flight: one cage in flight per job.",
+    "resume_command is the whole driver interface (operator phone or existing seat).",
+    "Covenant: state/vast/covenant.json — blade_max_dph 0.12, lifetime 4h, floor as filed. Do not raise caps without operator word.",
+    "One-builds-one-verifies: no Claude/Mistral slot-in until this chain runs clean end-to-end."
+  ],
+  "forbidden_moves": [
+    "host python main.py lab (second supervisor)",
+    "new supervisor / hunter / tick process",
+    "treat chat or compaction as DNA",
+    "ping all frontiers on every prompt",
+    "re-ask machines in state/vast/blocked_machines.json",
+    "buy while credit < covenant_floor",
+    "leave a blade up with nobody watching (reap at lifetime)",
+    "start cage n+1 without trail_core_n on disk"
+  ],
+  "acceptance_commands": {
+    "cage_0": [
+      ".\\.venv\\Scripts\\python.exe -c \"import json; json.load(open(r'jobs/first-4h-chain/seat_contract.json', encoding='utf-8'))\"",
+      ".\\.venv\\Scripts\\python.exe -c \"from pathlib import Path; p=Path(r'jobs/first-4h-chain/SPEC.md'); assert p.is_file()\"",
+      ".\\.venv\\Scripts\\python.exe -c \"from pathlib import Path,json; c=json.load(open(r'jobs/first-4h-chain/seat_contract.json',encoding='utf-8')); t=Path(r'jobs/first-4h-chain/trail_core_0.md').read_text(encoding='utf-8'); assert c['resume_command'] in t\""
+    ],
+    "cage_1_launch_gate": [
+      ".\\.venv\\Scripts\\python.exe state\\vast\\launch_vast.py probe",
+      ".\\.venv\\Scripts\\python.exe state\\vast\\launch_vast.py instances"
+    ],
+    "cage_2_bootstrap": [
+      "GET blade OpenAI-compat /v1/models after gate (tunnel or mapped port); smoke one chat"
+    ],
+    "cage_3_drain_batch": [
+      ".\\.venv\\Scripts\\python.exe -m mag.fuel_feed --once --dry"
+    ],
+    "cage_4_receipt_knot": [
+      "FILE receipt under jobs/first-4h-chain/ plus verkle/trail core; hashes in trail_core_4"
+    ]
+  },
+  "checkpoint_schema": {
+    "file": "jobs/first-4h-chain/trail_core_N.md",
+    "atomic": true,
+    "fields": [
+      "n",
+      "job_id",
+      "completed",
+      "artifact_hashes",
+      "test_results",
+      "failures",
+      "budget_elapsed",
+      "next_action",
+      "resume_command"
+    ]
+  },
+  "handoff_schema": {
+    "reads": [
+      "jobs/first-4h-chain/seat_contract.json",
+      "jobs/first-4h-chain/SPEC.md",
+      "jobs/first-4h-chain/trail_core_N.md (latest)"
+    ],
+    "never": ["chat log", "compaction novel"],
+    "fields": [
+      "done",
+      "untested",
+      "blocked",
+      "resume_command"
+    ]
+  },
+  "resume_command": ".\\.venv\\Scripts\\python.exe state\\vast\\launch_vast.py probe",
+  "cages": [
+    {"n": 0, "name": "scaffold", "status": "done"},
+    {"n": 1, "name": "blade launch+gate", "status": "next"},
+    {"n": 2, "name": "bootstrap", "status": "pending"},
+    {"n": 3, "name": "drain batch", "status": "pending"},
+    {"n": 4, "name": "receipt+knot", "status": "pending"}
+  ]
+}

@@ -19,6 +19,10 @@ that a task is "going well": it earned more room. A failing/looping task never c
 the SAFE ceiling.
 
 Ledger: memory/runs/cost_governor/{task_id}.json  (append-only attempts per task)
+
+Pricing for new attempts is delegated to ``mag.cost_truth``.  Older attempt
+rows retain the rate that was recorded when they were made; they are not
+silently rewritten as if an invoice had been reissued.
 """
 from __future__ import annotations
 
@@ -43,8 +47,11 @@ SAFE_CEILING_USD = 0.50     # failed/unproven task cut here
 USEFUL_CEILING_USD = 1.00   # a task producing real output may spend this
 
 # Real billable prices (USD per token) — grounded on the 2026-08-12 billing CSV.
-MISS_USD_PER_TOK = 0.00000014   # $0.14 / 1M cache-miss input
-OUT_USD_PER_TOK = 0.00000028    # $0.28 / 1M completion output
+# Off-peak DeepSeek-v4-flash defaults are retained as compatibility constants.
+# price_usd() below uses the canonical receipt pricing schedule, including the
+# current weekday peak multiplier, for new attempts.
+MISS_USD_PER_TOK = 0.00000022   # $0.22 / 1M cache-miss input (off-peak)
+OUT_USD_PER_TOK = 0.00000066    # $0.66 / 1M completion output (off-peak)
 
 
 def _now() -> str:
@@ -70,11 +77,22 @@ def _save(ledger: dict[str, Any]) -> None:
 
 def price_usd(miss_tokens: int = 0, completion_tokens: int = 0) -> float:
     """Billable cost in dollars: cache MISS + completion only. Never cache-hit tokens."""
-    return round(
-        int(miss_tokens or 0) * MISS_USD_PER_TOK
-        + int(completion_tokens or 0) * OUT_USD_PER_TOK,
-        6,
-    )
+    try:
+        from mag.cost_truth import price_tokens
+
+        return float(price_tokens(
+            "deepseek",
+            "deepseek-v4-flash",
+            cache_miss_tokens=miss_tokens,
+            completion_tokens=completion_tokens,
+            at=datetime.now(timezone.utc),
+        ).get("calculated_usd") or 0)
+    except Exception:
+        return round(
+            int(miss_tokens or 0) * MISS_USD_PER_TOK
+            + int(completion_tokens or 0) * OUT_USD_PER_TOK,
+            6,
+        )
 
 
 def spend(task_id: str) -> float:

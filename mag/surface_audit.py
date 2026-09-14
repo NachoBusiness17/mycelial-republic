@@ -133,3 +133,7 @@ def audit() -> dict[str, Any]:
         "verdict": verdict,
         "checks": checks,
     }
+
+
+if __name__ == "__main__":
+    print(json.dumps(audit(), indent=2, ensure_ascii=False, default=str))

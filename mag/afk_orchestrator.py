@@ -55,6 +55,12 @@ def _right_size() -> str:
 
 def run_afk(*, force: bool = False) -> dict[str, Any]:
     """The one-pass AFK advance cadence (right-sized, ghost-routed)."""
+    try:
+        from mag.operator_mode import pause_reason
+        if (reason := pause_reason()):
+            return {"ok": True, "action": "skip", "reason": reason}
+    except Exception:
+        pass
     if not force and not _operator_offline():
         return {"ok": True, "action": "skip", "reason": "operator active (AFK-only)"}
     level = _right_size()

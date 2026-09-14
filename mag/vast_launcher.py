@@ -291,6 +291,43 @@ def _load_vast_key() -> str:
     return ""
 
 
+def credit() -> dict[str, Any]:
+    """GET /users/current only. Never create instances. Buyer stays off."""
+    key = _load_vast_key()
+    if not key:
+        return {
+            "ok": False,
+            "schema": "vast_credit.v1",
+            "error": "no VASTAI_API_KEY / VAST_API_KEY in env or .env",
+            "how": "vast.ai → Account → API → rotate. Then set VASTAI_API_KEY in .env. Buyer still stood down.",
+        }
+    import urllib.error
+    import urllib.request
+
+    req = urllib.request.Request(
+        "https://console.vast.ai/api/v0/users/current/",
+        headers={"Authorization": "Bearer " + key, "Accept": "application/json"},
+        method="GET",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            raw = json.loads(resp.read().decode("utf-8", errors="replace"))
+    except urllib.error.HTTPError as e:
+        return {"ok": False, "schema": "vast_credit.v1", "error": f"HTTP {e.code}", "buyer": "stood_down"}
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "schema": "vast_credit.v1", "error": type(e).__name__ + ": " + str(e)[:160]}
+    user = raw.get("user") if isinstance(raw.get("user"), dict) else raw
+    return {
+        "ok": True,
+        "schema": "vast_credit.v1",
+        "user_id": user.get("id") or raw.get("id"),
+        "credit": user.get("credit") if "credit" in user else raw.get("credit"),
+        "balance": user.get("balance") if "balance" in user else raw.get("balance"),
+        "buyer": "stood_down",
+        "note": "Spend math uses credit. This call did not launch anything.",
+    }
+
+
 def _manual_steps(best: GPUOption) -> list[str]:
     """Manual steps for launching without API key."""
     package_dir = build_training_package()
@@ -435,6 +472,7 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("train", help="launch LoRA training (dry run)")
     sub.add_parser("verify", help="verify pipeline locally")
     sub.add_parser("serve", help="plan hosting Saelis-31B on a rented GPU (dry run)")
+    sub.add_parser("credit", help="GET users/current only — no instances, buyer off")
     args = p.parse_args(argv)
     cmd = args.cmd or "estimate"
     if cmd == "estimate":
@@ -448,6 +486,8 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(verify_pipeline_locally(), indent=2, ensure_ascii=False, default=str))
     elif cmd == "serve":
         print(json.dumps(serve_plan(), indent=2, ensure_ascii=False, default=str))
+    elif cmd == "credit":
+        print(json.dumps(credit(), indent=2, ensure_ascii=False, default=str))
     return 0
 
 

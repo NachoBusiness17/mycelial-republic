@@ -61,6 +61,14 @@ def _safe(label: str, fn: Any) -> dict[str, Any]:
 def run_once() -> dict[str, Any]:
     """One full AFK loop pass. Each step folds to the learning surface."""
     out: dict[str, Any] = {"schema": "afk_cadence.v1", "ts": _now()}
+    try:
+        from mag.operator_mode import pause_reason
+        if (reason := pause_reason()):
+            out["action"] = "skip"
+            out["reason"] = reason
+            return out
+    except Exception:
+        pass
     rs = _right_size()
     out["right_size"] = rs
     if rs.get("level") == "none":
@@ -105,6 +113,13 @@ def run_once() -> dict[str, Any]:
     # DOGFOOD SENTINEL (this is why we dogfood): probe the real systems every cycle so failures
     # (cache-miss waste, broken grok dispatch, graph persistence) SURFACE instead of hiding.
     steps.append(_safe("dogfood_audit", lambda: _import_run("dogfood_audit", "audit", None)))
+    # SESSION BUS: relay bounded, sanitized cross-session messages during the same AFK cadence.
+    # This is deterministic and $0; the bridge writes its own receipt without retaining bodies.
+    steps.append(_safe("session_bridge", lambda: _import_run("session_bridge", "relay", None)))
+    # ROUTE FEEDBACK: refresh the local lane cascade without model calls or provider spend.
+    steps.append(_safe("ask_router", lambda: _route_health()))
+    # AUTHORITY HEALTH: one known board-write control smoke; never drains the opaque queue.
+    steps.append(_safe("harness_health", lambda: _import_run("harness", "health_check", None)))
     steps.append(_safe("seed_chain", lambda: _import_run("seed_chain", "seed_build", _next_problem())))
     if budget >= 2:
         steps.append(_safe("self_advance", lambda: _import_run("self_advance", "expand", None, force=True)))
@@ -173,6 +188,11 @@ def _next_problem() -> str:
         return str(item.get("title") or "")[:200]
     except Exception:
         return "advance the sovereign agent self-advance loop"
+
+
+def _route_health() -> Any:
+    from mag.ask_router import route
+    return route("AFK cadence route health", dry=True)
 
 
 def _import_run(mod: str, fn: str, arg: Any, **kw: Any) -> Any:

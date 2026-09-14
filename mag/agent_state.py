@@ -15,6 +15,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import contextlib
+import functools
+import os
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -63,6 +67,56 @@ def ensure_dirs() -> None:
     STATE_DIR.mkdir(parents=True, exist_ok=True)
 
 
+@contextlib.contextmanager
+def agent_state_lock(*, timeout: float = 60.0):
+    """Serialize state commits without changing the historical chain.
+
+    The lock path is derived from ``STATE_DIR`` at call time so tests and
+    isolated callers can redirect the state root safely.  A stale lock from a
+    crashed writer is recoverable after fifteen minutes; normal contention
+    waits briefly and never spins indefinitely.
+    """
+    ensure_dirs()
+    lock_path = STATE_DIR / ".agent_state.lock"
+    deadline = time.monotonic() + timeout
+    acquired = False
+    while not acquired:
+        try:
+            fd = os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            try:
+                os.write(fd, f"pid={os.getpid()}\n".encode("ascii"))
+            finally:
+                os.close(fd)
+            acquired = True
+        except FileExistsError:
+            try:
+                if time.time() - lock_path.stat().st_mtime > 900:
+                    lock_path.unlink()
+                    continue
+            except FileNotFoundError:
+                continue
+            if time.monotonic() >= deadline:
+                raise TimeoutError(f"agent-state lock timeout: {lock_path}")
+            time.sleep(0.05)
+    try:
+        yield
+    finally:
+        if acquired:
+            try:
+                lock_path.unlink()
+            except FileNotFoundError:
+                pass
+
+
+def _state_locked(fn):
+    @functools.wraps(fn)
+    def wrapped(*args, **kwargs):
+        with agent_state_lock():
+            return fn(*args, **kwargs)
+
+    return wrapped
+
+
 def load_latest() -> dict[str, Any] | None:
     if not LATEST_JSON.is_file():
         return None
@@ -108,7 +162,10 @@ def list_versions(*, limit: int = 20) -> list[dict[str, Any]]:
 
 def _body_for_hash(state: dict[str, Any]) -> dict[str, Any]:
     """Exclude volatile tip fields from content commit."""
-    skip = {"tip", "chain_row", "pack_excerpt"}
+    # content_commit is derived from this body, so a verifier receiving a
+    # persisted state must exclude the commitment itself to avoid a
+    # self-referential hash mismatch.
+    skip = {"tip", "chain_row", "pack_excerpt", "content_commit"}
     return {k: v for k, v in state.items() if k not in skip}
 
 
@@ -220,6 +277,7 @@ def pack_excerpt(*, max_chars: int = 900) -> str:
     return "\n".join(lines)[:max_chars]
 
 
+@_state_locked
 def commit_state(
     payload: dict[str, Any],
     *,

@@ -35,6 +35,7 @@ CHAIN = BIO / "verkle_chain.jsonl"
 TIP = BIO / "verkle_tip.json"
 EVOLUTION = BIO / "topic_evolution.json"
 LOCK = BIO / ".verkle.lock"
+SCHEMA = "verkle_knot.v1"
 
 THEME_BASIS = [
     "mirror_meta",
@@ -52,6 +53,17 @@ def _h(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def session_pointer_v2(session_id: str) -> Path:
+    """Collision-free pointer path for a full session identity.
+
+    The legacy by-session pointer truncates identities to 12 characters and
+    is retained only for compatibility.  New writes use the full identity's
+    SHA-256 prefix so unrelated sessions cannot overwrite one another.
+    """
+    sid = str(session_id or "")
+    return KNOTS / f"by-session_v2_{_h(sid.encode('utf-8'))[:32]}.json"
+
+
 # ───────────────────────────────────────────────────────────────────────────
 # SINGLE-WRITER LOCK (2026-08-25) — the lost-update fix.
 #
@@ -66,8 +78,9 @@ def _h(data: bytes) -> str:
 # holder) are broken after _LOCK_STALE_SECONDS.
 # ───────────────────────────────────────────────────────────────────────────
 
-# Amends run _rewrite_chain, which is O(n^2) (~2 min at 6.3k leaves). The stale
-# threshold must exceed the worst legitimate holder or we'd re-introduce the race.
+# Amends run _rewrite_chain, which uses an incremental O(n log n) prefix-root
+# calculation. The stale threshold must exceed the worst legitimate holder or
+# we'd re-introduce the race.
 _LOCK_STALE_SECONDS = 900.0
 _LOCK_POLL_SECONDS = 0.05
 
@@ -83,7 +96,31 @@ def verkle_lock(timeout: float = 60.0):
             break
         except FileExistsError:
             try:
-                if time.time() - LOCK.stat().st_mtime > _LOCK_STALE_SECONDS:
+                stale = time.time() - LOCK.stat().st_mtime > _LOCK_STALE_SECONDS
+                # A crashed writer can leave a fresh-looking marker behind (for
+                # example after a test/process is terminated).  Do not wait the
+                # full 15-minute safety window when the recorded owner is gone.
+                if not stale:
+                    try:
+                        owner = int(LOCK.read_text(encoding="utf-8", errors="replace").split()[0])
+                    except (OSError, ValueError, IndexError):
+                        owner = 0
+                    if owner and owner != os.getpid():
+                        try:
+                            os.kill(owner, 0)
+                        except ProcessLookupError:
+                            stale = True
+                        except PermissionError:
+                            # Cannot prove the owner is dead; preserve the lock.
+                            stale = False
+                        except SystemError:
+                            # CPython on some Windows builds surfaces a missing
+                            # PID as SystemError (WinError 87) instead of OSError.
+                            stale = True
+                        except OSError:
+                            # Windows may report a generic missing-process error.
+                            stale = True
+                if stale:
                     LOCK.unlink()  # crashed holder — break the stale lock
             except OSError:
                 pass
@@ -119,6 +156,51 @@ def _merkle_root(leaf_hashes: list[str]) -> str:
             nxt.append(_h(b"node:" + left.encode() + b":" + right.encode()))
         layer = nxt
     return layer[0]
+
+
+def _merkle_prefix_roots(leaf_hashes: list[str]) -> list[str]:
+    """Return the legacy duplicate-last Merkle root for every non-empty prefix.
+
+    ``_merkle_root`` duplicates the final node at *each level* when a layer has
+    odd cardinality. Recomputing that tree for every prefix made an amend
+    quadratic in the number of leaves. A binary forest stores complete
+    subtrees as leaves arrive; folding those subtrees right-to-left, lifting a
+    shorter suffix by self-duplication where necessary, reproduces the legacy
+    semantics in O(log n) work per prefix. The result is byte-for-byte
+    equivalent to ``_merkle_root`` for every prefix, but costs O(n log n)
+    hashes instead of O(n²).
+    """
+    if not leaf_hashes:
+        return []
+
+    def _join(left: str, right: str) -> str:
+        return _h(b"node:" + left.encode() + b":" + right.encode())
+
+    def _lift(root: str, from_height: int, to_height: int) -> str:
+        """Apply the same-node duplication until a suffix reaches a height."""
+        for _ in range(max(0, to_height - from_height)):
+            root = _join(root, root)
+        return root
+
+    # (root, height), in left-to-right binary decomposition order. Heights
+    # descend strictly from left to right, so a right fold is well-defined.
+    forest: list[tuple[str, int]] = []
+
+    roots: list[str] = []
+    for leaf in leaf_hashes:
+        forest.append((leaf, 0))
+        while len(forest) >= 2 and forest[-1][1] == forest[-2][1]:
+            right, height = forest.pop()
+            left, _ = forest.pop()
+            forest.append((_join(left, right), height + 1))
+
+        root, height = forest[-1]
+        for left, left_height in reversed(forest[:-1]):
+            root = _lift(root, height, left_height)
+            root = _join(left, root)
+            height = left_height + 1
+        roots.append(root)
+    return roots
 
 
 def _slug_theme(name: str | None) -> str:
@@ -240,6 +322,7 @@ def _consolidate_chain_one_leaf_per_session_unlocked() -> dict[str, Any]:
     rows = _load_chain_rows()
     by_sid: dict[str, dict[str, Any]] = {}
     orphan: list[dict[str, Any]] = []
+    conflicts: list[dict[str, Any]] = []
     for r in rows:
         sid = str(r.get("session_id") or "")
         if not sid:
@@ -247,6 +330,13 @@ def _consolidate_chain_one_leaf_per_session_unlocked() -> dict[str, Any]:
             continue
         # keep last occurrence (most recent amend)
         old = by_sid.get(sid)
+        if old and old.get("leaf_hash") != r.get("leaf_hash"):
+            conflicts.append({
+                "session_id": sid,
+                "first_leaf_hash": old.get("leaf_hash"),
+                "later_leaf_hash": r.get("leaf_hash"),
+            })
+            continue
         if old and old.get("filename") and old.get("filename") != r.get("filename"):
             old_path = KNOTS / str(old["filename"])
             if old_path.is_file():
@@ -255,6 +345,13 @@ def _consolidate_chain_one_leaf_per_session_unlocked() -> dict[str, Any]:
                 except OSError:
                     pass
         by_sid[sid] = r
+    if conflicts:
+        return {
+            "ok": False,
+            "error": "conflicting leaf hashes for duplicate session IDs; refusing repair",
+            "conflicts": conflicts,
+            "before": len(rows),
+        }
     # preserve first-seen order of sessions
     order: list[str] = []
     for r in rows:
@@ -304,23 +401,28 @@ def _consolidate_chain_one_leaf_per_session_unlocked() -> dict[str, Any]:
 
 
 def _rewrite_chain(rows: list[dict[str, Any]]) -> list[str]:
-    """Rewrite chain file with stable indices; return leaf_hashes in order."""
-    hashes: list[str] = []
+    """Rewrite chain file with stable indices; return leaf_hashes in order.
+
+    Prefix roots are computed incrementally so an amend remains bounded on the
+    live 6k+ leaf chain.
+    """
+    hashes = [str(row.get("leaf_hash")) for row in rows if row.get("leaf_hash")]
+    prefix_roots = _merkle_prefix_roots(hashes)
     lines: list[str] = []
+    hash_i = 0
     for i, row in enumerate(rows):
         h = row.get("leaf_hash")
         if not h:
             continue
-        prior = hashes[:]
-        hashes.append(h)
-        root = _merkle_root(hashes)
-        parent = _merkle_root(prior) if prior else _h(b"empty")
+        root = prefix_roots[hash_i]
+        parent = prefix_roots[hash_i - 1] if hash_i else _h(b"empty")
         row = dict(row)
         row["index"] = i
-        row["n_leaves"] = len(hashes)
+        row["n_leaves"] = hash_i + 1
         row["parent_verkle_root"] = parent
         row["verkle_root"] = root
         lines.append(json.dumps(row))
+        hash_i += 1
     CHAIN.parent.mkdir(parents=True, exist_ok=True)
     CHAIN.write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
     return hashes
@@ -416,7 +518,10 @@ def prove(index: int | None = None) -> dict[str, Any]:
 
 
 def prove_latest() -> dict[str, Any]:
-    """Prove the latest leaf's membership against the chain tip (spooky demo)."""
+    """Prove latest membership only when the persisted tip agrees with the chain."""
+    ok, why = _verify_chain_consistent()
+    if not ok:
+        return {"ok": False, "verified": False, "error": why, "n_leaves": 0}
     return prove()
 
 
@@ -442,6 +547,59 @@ def _verify_chain_consistent() -> tuple[bool, str]:
     except (OSError, json.JSONDecodeError):
         pass
     return True, f"chain consistent ({len(hashes)} leaves)"
+
+
+def _write_tip_atomic(tip: dict[str, Any]) -> None:
+    """Replace the small tip pointer atomically while holding ``verkle_lock``."""
+    TIP.parent.mkdir(parents=True, exist_ok=True)
+    tmp = TIP.with_name(f"{TIP.name}.{os.getpid()}.tmp")
+    try:
+        tmp.write_text(json.dumps(tip, indent=2) + "\n", encoding="utf-8")
+        os.replace(tmp, TIP)
+    finally:
+        with contextlib.suppress(OSError):
+            tmp.unlink()
+
+
+def repair_tip_if_consistent() -> dict[str, Any]:
+    """Repair only stale tip metadata after proving the chain itself is sound.
+
+    This deliberately does not consolidate or rewrite the chain.  If the last
+    committed row disagrees with the recomputed root, the repair refuses to
+    mutate anything and returns the integrity failure for the Elder to surface.
+    """
+    with verkle_lock():
+        rows = _load_chain_rows()
+        hashes = [str(r.get("leaf_hash")) for r in rows if r.get("leaf_hash")]
+        root = _merkle_root(hashes) if hashes else _h(b"empty")
+        if rows and hashes and rows[-1].get("verkle_root") != root:
+            return {"ok": False, "repaired": False,
+                    "error": "last chain row disagrees with recomputed root",
+                    "n_leaves": len(hashes), "root": root}
+        old: dict[str, Any] = {}
+        if TIP.is_file():
+            try:
+                value = json.loads(TIP.read_text(encoding="utf-8"))
+                if isinstance(value, dict):
+                    old = value
+            except (OSError, json.JSONDecodeError):
+                old = {}
+        last = rows[-1] if rows else {}
+        tip = {
+            "schema": "verkle_tip.v1",
+            "root": root,
+            "n_leaves": len(hashes),
+            "last_filename": last.get("filename"),
+            "last_leaf_hash": hashes[-1] if hashes else None,
+            "last_session_id": last.get("session_id"),
+            "updated_minute": last.get("end_minute") or last.get("start_minute"),
+            "note": "Tip repaired from verified chain; chain rows unchanged.",
+        }
+        changed = any(old.get(k) != v for k, v in tip.items())
+        if changed:
+            _write_tip_atomic(tip)
+        return {"ok": True, "repaired": changed, "n_leaves": len(hashes),
+                "root": root, "tip": str(TIP)}
 
 
 
@@ -505,11 +663,13 @@ def _append_verkle_knot_unlocked(dossier: dict[str, Any], pdf_path: str | None =
 
     path = KNOTS / fname
     path.write_text(json.dumps(leaf, indent=2), encoding="utf-8")
+    pointer_doc = {"filename": fname, "leaf_hash": leaf["leaf_hash"], "session_id": sid,
+                   "schema": "verkle_session_pointer.v2"}
     _safe_sid = re.sub(r"[^A-Za-z0-9._-]+", "-", sid)[:12]
     (KNOTS / f"by-session_{_safe_sid}.json").write_text(
-        json.dumps({"filename": fname, "leaf_hash": leaf["leaf_hash"]}, indent=2),
-        encoding="utf-8",
+        json.dumps(pointer_doc, indent=2), encoding="utf-8"
     )
+    session_pointer_v2(sid).write_text(json.dumps(pointer_doc, indent=2), encoding="utf-8")
 
     chain_row = {
         "ts": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),

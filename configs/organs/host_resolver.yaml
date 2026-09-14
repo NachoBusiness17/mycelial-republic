@@ -1,0 +1,32 @@
+# host_resolver organ specification v1
+schema: organ.v1
+id: host_resolver
+label: DNS-Independent Host Resolver
+module: mag.host_resolver
+callable: resolve_host
+source: mag/host_resolver.py
+design:
+  dns_fallback: /etc/hosts + environment variable override
+  service_discovery: ollama, api_gateway, browser_cdp on 127.0.0.1
+  network_monitor: detect connectivity loss and trigger fallback
+  health_probe: verify service availability before use
+  offline_mode: maintain cached service mappings when disconnected
+
+wired_by:
+  - docker-compose.yml
+  - mag/api_server.py
+  - mag/browser_env.py
+  - mag/swarm_worker.py
+
+state_paths:
+  - memory/runs/host_resolver/mappings.jsonl
+  - memory/runs/host_resolver/network_state.json
+
+receipt_paths:
+  - memory/runs/host_resolver/receipts.jsonl
+
+security_invariants:
+  - "Must resolve host.docker.internal without DNS"
+  - "Fallback to 127.0.0.1 when DNS fails"
+  - "Cache mappings survive 72h offline"
+  - "No external dependencies for host resolution"

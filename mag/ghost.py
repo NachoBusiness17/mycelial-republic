@@ -46,6 +46,21 @@ COPILOT_DIR = ROOT / "memory" / "copilot"
 COPILOT_INBOX = COPILOT_DIR / "inbox.jsonl"
 COPILOT_OUTBOX = COPILOT_DIR / "outbox"
 COPILOT_STATE = COPILOT_DIR / "state.json"
+DOCKER_ONLY_MARKER = ROOT / "state" / "DOCKER_ONLY"
+
+
+def _host_runtime_blocked() -> bool:
+    """Keep autonomous Mag ownership inside Docker when the project declares it.
+
+    The Windows host may still run read-only CLI/tests, but long-lived Ghost
+    cycles and daemons must not compete with the container supervisor. An
+    explicit escape hatch remains available for deliberate maintenance.
+    """
+    return (
+        os.name == "nt"
+        and DOCKER_ONLY_MARKER.is_file()
+        and os.environ.get("MAG_ALLOW_HOST_RUNTIME") != "1"
+    )
 
 
 def _now() -> str:
@@ -533,7 +548,17 @@ def sense_surfaces() -> dict[str, Any]:
     return out
 
 
-def sense() -> dict[str, Any]:
+def sense(*, run_loop: bool = False, deep: bool = False) -> dict[str, Any]:
+    """Return a read-only ghost snapshot.
+
+    ``sense`` is an observer and must not execute the republic cadence as a
+    side effect.  The old default ran a 20-step self-improvement loop from
+    inside every health read, including verkle writes and remote probes; that
+    made a status check capable of becoming the runaway workload.  Cadence
+    owners call ``sense(run_loop=True)`` only when they explicitly own a loop
+    tick.  Normal callers receive the latest-known/deferred marker.  ``deep``
+    opts into the expensive process/mesh/AST observers for an explicit audit.
+    """
     state: dict[str, Any] = {"ts": _now()}
 
     # FKB
@@ -592,12 +617,15 @@ def sense() -> dict[str, Any]:
     except Exception:
         state["copilot_inbox_pending"] = 0
 
-    # Switchboard orphan backlog (undone intents in the mesh) — SURFACE GAP FIX.
-    try:
-        from mag.switchboard import status as _sw_status
-        state["orphans"] = (_sw_status().get("summary") or {}).get("n_orphans", 0)
-    except Exception:
-        state["orphans"] = 0
+    # Switchboard orphan backlog is an explicit deep observer.  A routine
+    # health read must not scan thousands of task/mailbox records.
+    state["orphans"] = None if not deep else 0
+    if deep:
+        try:
+            from mag.switchboard import find_orphans as _find_orphans
+            state["orphans"] = int(_find_orphans(dry=True).get("n") or 0)
+        except Exception:
+            state["orphans"] = None
 
     # Training
     training_rows = ROOT / "memory" / "pile" / "training_rows.jsonl"
@@ -621,11 +649,15 @@ def sense() -> dict[str, Any]:
 
     # TOP PROCESSES — the bug-hunt STARTS here (operator standing rule 2026-08-11):
     # when errors surface, check top CPU/memory processes FIRST via ghost sense, then descend.
-    try:
-        from mag.top_processes import top_processes as _tp
-        state["top_processes"] = _tp(8)
-    except Exception as e:
-        state["top_processes"] = {"ok": False, "error": str(e)[:120]}
+    if deep:
+        try:
+            from mag.top_processes import top_processes as _tp
+            state["top_processes"] = _tp(8)
+        except Exception as e:
+            state["top_processes"] = {"ok": False, "error": str(e)[:120]}
+    else:
+        state["top_processes"] = {"ok": None, "deferred": True,
+                                   "note": "explicit deep sense only; observer is not a hot-path census"}
 
     # GPU SURFACE — the GPU as a first-class sense surface (gpu-as-rightsizer-surface RIB):
     # SENSE -> COMPRESS(auto_quantize law) -> MEMORY(verkle) -> ROUTE(rightsizer). Read-only, $0.
@@ -768,12 +800,14 @@ def sense() -> dict[str, Any]:
     # agent_knot, chain_substrate, self_loop, agentic_test_steal) into a single loop contract:
     # substrate -> stand -> lens/roshomon -> trigger -> compile -> egregore -> self-loop(map/
     # stochastic/zeitgeist) -> test-steal. Idempotent (dedup via swarm_surface); swarm-routed. ──
-    state["republic_loop"] = {"ok": False}
-    try:
-        from mag import republic_loop
-        state["republic_loop"] = republic_loop.loop(state)
-    except Exception as e:
-        state["republic_loop"] = {"ok": False, "error": str(e)[:120]}
+    state["republic_loop"] = {"ok": None, "deferred": True,
+                               "note": "observer-only sense; cadence owner must explicitly run republic_loop"}
+    if run_loop:
+        try:
+            from mag import republic_loop
+            state["republic_loop"] = republic_loop.loop(state)
+        except Exception as e:
+            state["republic_loop"] = {"ok": False, "error": str(e)[:120]}
 
     # ── ORPHAN SENSE (2026-08-11) — SENSE TEST: ghost detects ALL novel orphans across every
     # orphan/novel surface (switchboard orphans, percolator novel queue, cold idea-graph vertices,
@@ -781,19 +815,23 @@ def sense() -> dict[str, Any]:
     state["orphan_sense"] = {"ok": False}
     try:
         from mag import orphan_sense
-        state["orphan_sense"] = orphan_sense.novel_orphans()
+        # Sensing must not enqueue or mutate the queue.  The cadence owner can
+        # run orphan_sense.novel_orphans(enqueue=True) as an explicit action.
+        state["orphan_sense"] = orphan_sense.novel_orphans(enqueue=False)
     except Exception as e:
         state["orphan_sense"] = {"ok": False, "error": str(e)[:120]}
 
     # ── LOOP DOCTOR (2026-08-11) — errors/warnings are PART of the standing sense: every beat scans
     # the corpus (deterministic ast) and surfaces errors/warnings for patching. Trust bytes, not
     # reports — the loop checks and patches when they appear. ──
-    state["loop_doctor"] = {"ok": False}
-    try:
-        from mag import loop_doctor
-        state["loop_doctor"] = loop_doctor.sense()
-    except Exception as e:
-        state["loop_doctor"] = {"ok": False, "error": str(e)[:120]}
+    state["loop_doctor"] = {"ok": None, "deferred": True,
+                             "note": "AST doctor is an explicit audit surface, not a hot-path sense"}
+    if deep:
+        try:
+            from mag import loop_doctor
+            state["loop_doctor"] = loop_doctor.sense()
+        except Exception as e:
+            state["loop_doctor"] = {"ok": False, "error": str(e)[:120]}
 
     # Signature text for vector matching — system signals first
     parts = []
@@ -1463,7 +1501,12 @@ async def autonomous_task_loop(app, interval_s: float = 60.0) -> None:
                         },
                         "content_commit": {"hex": result.get("task_id", "?")[:8]},
                     }
-                    append_verkle_knot(dossier)
+                    try:
+                        fold_result = append_verkle_knot(dossier)
+                        if fold_result is None:
+                            print(f"[verkle] WARNING: append_verkle_knot returned None for task {result.get('task_id','?')} — fold may have been refused", flush=True)
+                    except Exception as _ve:
+                        print(f"[verkle] FOLD-SWALLOW GUARD: append_verkle_knot failed: {_ve}", flush=True)
                     # Publish to event bus so subscribers react
                     try:
                         from mag.verkle_bus import publish as bus_publish, CH_TASK, CH_VERKLE
@@ -1635,6 +1678,10 @@ async def daemon_mode(port: int = 9000, host: str = "0.0.0.0") -> None:
       python -m mag.ghost --daemon
       python -m mag.ghost --daemon --port 9000
     """
+    if _host_runtime_blocked():
+        print("[ghost-daemon] blocked: Docker-only runtime is active", flush=True)
+        return
+
     import asyncio as _asyncio
     from contextlib import asynccontextmanager
 
@@ -3026,7 +3073,8 @@ def _score_emergent(output: str, task_kind: str) -> dict[str, Any]:
 # CYCLE
 # ====================================================================
 
-def self_window(*, commit: bool = True, session_id: str | None = None) -> dict[str, Any]:
+def self_window(*, commit: bool = True, session_id: str | None = None,
+                state: dict[str, Any] | None = None) -> dict[str, Any]:
     """The ghost's OWN self-aware agent window (the whole point of ghost): fold its recent
     loop outcomes into a self-authored agent_state (label, one_line, next_moves,
     do_not_redesign, notes). Ghost stops being only a sensor of others' state and becomes
@@ -3038,7 +3086,11 @@ def self_window(*, commit: bool = True, session_id: str | None = None) -> dict[s
     """
     from mag.agent_state import commit_state, load_latest
 
-    st = sense()
+    # A cycle already sensed the state immediately before authoring this
+    # window. Reusing it prevents the self-authoring step from recursively
+    # rebuilding every observer surface a second time; direct callers still
+    # get the original behavior.
+    st = state if state is not None else sense()
     surfaces = st.get("surfaces") or {}
     myc = surfaces.get("mycelium") or {}
     comms = surfaces.get("comms_trail") or {}
@@ -3116,6 +3168,14 @@ def ping(agent: str, kind: str = "steer", text: str = "", *, dry: bool = False) 
 
 
 def cycle(dry: bool = False, deploy_text: str | None = None) -> dict[str, Any]:
+    if _host_runtime_blocked():
+        return {
+            "ts": _now(),
+            "dry": dry,
+            "outcome": "blocked_host_runtime",
+            "note": "Docker-only runtime is active; run Ghost inside the Mag container",
+        }
+
     trail: dict[str, Any] = {"ts": _now(), "dry": dry}
 
     state = sense()
@@ -3174,9 +3234,13 @@ def cycle(dry: bool = False, deploy_text: str | None = None) -> dict[str, Any]:
     # SELF-AWARE: the ghost authors its own agent window each cycle (the whole point of ghost).
     try:
         if not dry:
-            trail["self_window"] = self_window(commit=True, session_id=state.get("session_id"))
+            trail["self_window"] = self_window(
+                commit=True, session_id=state.get("session_id"), state=state
+            )
         else:
-            trail["self_window"] = self_window(commit=False, session_id=state.get("session_id"))
+            trail["self_window"] = self_window(
+                commit=False, session_id=state.get("session_id"), state=state
+            )
     except Exception as e:
         trail["self_window_error"] = str(e)[:200]
 

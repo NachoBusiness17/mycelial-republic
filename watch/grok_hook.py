@@ -16,6 +16,9 @@ WATCH_DIR = AGENT_ROOT / "watch"
 FEED = WATCH_DIR / "grok_feed.jsonl"
 LIVE = AGENT_ROOT / "memory" / "live_from_grok.md"
 POINTER = WATCH_DIR / "active_session.json"
+# 08-29: the ROOM — one verbose cross-seat stream (operator: "deepseek chat gpt
+# and all in a chat room verbose spilling their shit so we can debug them").
+ROOM = WATCH_DIR / "room.jsonl"
 
 
 def _preview(val, n: int = 500) -> str | None:
@@ -64,6 +67,21 @@ def main() -> int:
 
     with FEED.open("a", encoding="utf-8") as f:
         f.write(json.dumps(rec, default=str) + "\n")
+
+    # room post — verbose, fail-open, same event the feed saw
+    try:
+        room_rec = {
+            "ts": rec["ts"],
+            "seat": "grok",
+            "event": hook_event,
+            "session": sid,
+            "tool": rec.get("tool_name"),
+            "text": rec.get("prompt_preview") or rec.get("tool_input_preview"),
+        }
+        with ROOM.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(room_rec, default=str) + "\n")
+    except Exception:  # noqa: BLE001 — the room never blocks the seat
+        pass
 
     if sid:
         POINTER.write_text(

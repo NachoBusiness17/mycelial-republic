@@ -182,6 +182,72 @@ def check(agent_state: str = "coding-agent") -> dict[str, Any]:
     }
 
 
+# ── INSTRUCTION-LAYER EPOCH PIN (2026-08-26) ───────────────────────────────────────────────
+# The session-invariant pins above cover SESSION_SEED + formatting — the SESSION prefix.
+# The INSTRUCTION layer (work_contract.BRIEF + rib_cache.FROZEN_RIB + the corrections skill)
+# is the other cache-mined prefix every seat folds in, and it was UNPINNED — a silent edit
+# changed the fleet-wide prefix with no gate and no alarm. Pin it: any change now must be a
+# deliberate, visible epoch event (freeze_instructions with a label), and check_instructions
+# flags drift. (Found by the verification seat 2026-08-26: "the guard doesn't guard the thing
+# that just changed.")
+INSTRUCTION_SOURCES: list[tuple[str, object]] = [
+    ("work_contract.BRIEF",
+     lambda: __import__("mag.work_contract", fromlist=["BRIEF"]).BRIEF),
+    ("rib_cache.FROZEN_RIB",
+     lambda: __import__("mag.rib_cache", fromlist=["FROZEN_RIB"]).FROZEN_RIB),
+    ("operator-corrections.SKILL",
+     lambda: (ROOT / ".agents" / "skills" / "operator-corrections" / "SKILL.md")
+     .read_text(encoding="utf-8", errors="replace")),
+]
+
+
+def instruction_sha() -> str:
+    """Content hash of the instruction layer — BRIEF + FROZEN_RIB + corrections skill."""
+    h = hashlib.sha256()
+    for name, src in INSTRUCTION_SOURCES:
+        h.update(name.encode("utf-8"))
+        h.update(b"\0")
+        try:
+            h.update(str(src()).encode("utf-8"))
+        except Exception as e:  # noqa: BLE001
+            h.update(f"<unread:{e}>".encode("utf-8"))
+    return h.hexdigest()
+
+
+def freeze_instructions(*, label: str = "") -> dict[str, Any]:
+    """Pin the instruction layer as a deliberate epoch. Any future byte drift trips check()."""
+    st = "instructions"
+    cur = instruction_sha()
+    state = _load_state()
+    state.setdefault("pins", {})[st] = {
+        "sha": cur, "ts": _now(), "label": label or "instruction-layer epoch",
+        "sources": [n for n, _ in INSTRUCTION_SOURCES],
+    }
+    _save_state(state)
+    return {"ok": True, "schema": SCHEMA, "pinned": st, "sha": cur[:16],
+            "ts": state["pins"][st]["ts"], "label": state["pins"][st]["label"]}
+
+
+def check_instructions() -> dict[str, Any]:
+    """Is the instruction layer byte-identical to its pinned epoch? stable:true = cache-safe."""
+    st = "instructions"
+    pins = _load_state().get("pins") or {}
+    pin = pins.get(st)
+    if not pin:
+        return {"ok": True, "schema": SCHEMA, "stable": None,
+                "error": "no instruction-layer pin — run freeze_instructions",
+                "action": "PIN (deliberate epoch required)"}
+    cur = instruction_sha()
+    stable = cur == pin.get("sha")
+    return {"ok": True, "schema": SCHEMA, "stable": stable,
+            "epoch": pin.get("ts"), "label": pin.get("label"),
+            "pinned_sha": pin.get("sha")[:16], "cur_sha": cur[:16],
+            "sources": pin.get("sources"),
+            "action": "ship" if stable else
+                      "DRIFT — instruction layer changed; deliberate epoch required "
+                      "(freeze_instructions --label '...')"}
+
+
 def tail(goal: str = "", agent_state: str = "coding-agent", *, with_model: bool = False) -> str:
     """The volatile part — learned case law + model hint. Goes AFTER the delimiter."""
     from mag import session_route
@@ -238,6 +304,10 @@ def main(argv: list[str] | None = None) -> int:
         goal = " ".join(rest[i:]); break
     if cmd == "freeze":
         print(json.dumps(freeze(state, label=label), indent=2, ensure_ascii=False))
+    elif cmd == "freeze-instructions":
+        print(json.dumps(freeze_instructions(label=label), indent=2, ensure_ascii=False))
+    elif cmd == "check-instructions":
+        print(json.dumps(check_instructions(), indent=2, ensure_ascii=False))
     elif cmd == "stable":
         print(stable_prefix(state))
     elif cmd == "preamble":

@@ -1,0 +1,4 @@
+{
+  "path": "mag/x_auth_once.py",
+  "content": "\"\"\"One-shot X OAuth login for the @groundingwave surface.\nRun (Mag root, venv): python -m mag.x_auth_once\nOpens the browser, auto-catches the 8788 callback, exchanges immediately,\nwrites memory/runs/x_oauth/tokens.json. No paste race.\n\"\"\"\nimport time\n\nfrom . import x_oauth as x\n\n\ndef main() -> None:\n    d = x.start()\n    if not d.get(\"ok\"):\n        print(d)\n        return\n    print(\"AUTH URL:\", d[\"authorize_url\"])\n    print(\"waiting up to 240s for callback on\", d[\"redirect_uri\"])\n    t0 = time.time()\n    while not x._captured.get(\"code\") and time.time() - t0 < 240:\n        time.sleep(1)\n    code = x._captured.get(\"code\", \"\")\n    if not code:\n        print(\"no callback captured — rerun and approve faster\")\n        return\n    print(x.complete(code))\n\n\nif __name__ == \"__main__\":\n    main()\n"
+}

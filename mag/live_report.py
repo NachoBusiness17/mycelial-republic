@@ -60,6 +60,14 @@ def render() -> str:
         control = {"control_error": str(e)[:120]}
 
     lines.append("## 1 · What ghost sees")
+    try:
+        from mag.operator_mode import read as read_operator_mode
+        op = read_operator_mode()
+        mode = op.get("effective_mode", op.get("mode"))
+        detail = str(op.get("reason") or "")[:180]
+        lines.append(f"- **Operator mode:** {str(mode).upper()} · {detail}")
+    except Exception as e:
+        lines.append(f"- **Operator mode:** unavailable ({str(e)[:100]})")
     rec = control.get("recurring") or {}
     if rec:
         lines.append(f"- **Recurring cadence:** {json.dumps(rec, default=str)[:300]}")
@@ -85,6 +93,20 @@ def render() -> str:
             lines.append(f"\n## 2 · Supervised loops running: {running or 'none'}")
     except Exception:
         pass
+
+    # Read-only lifecycle preflight: this observes the single-controller law
+    # without starting, stopping, or probing a provider.
+    try:
+        from mag.live_ops_readiness import snapshot as readiness_snapshot
+        readiness = readiness_snapshot()
+        lines.append(
+            f"\n## 2a · Lifecycle readiness: {readiness.get('lifecycle')} "
+            f"· receipts={'ready' if readiness.get('ready_for_operator_action') else 'missing'}"
+        )
+        for warning in readiness.get("warnings") or []:
+            lines.append(f"- **Warning:** {warning}")
+    except Exception as e:
+        lines.append(f"\n## 2a · Lifecycle readiness: unavailable ({str(e)[:80]})")
 
     # Queue
     try:

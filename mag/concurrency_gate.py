@@ -46,6 +46,16 @@ MODEL_CONCURRENCY: dict[str, int] = {
     "glm-4-32b-0414-128k": 15,
     "search-prime": 5,
     "web-reader": 5,
+    # deepseek-penny lane (openclaw conservation 2026-09-02): conservative local
+    # cap, NOT a verified vendor number — no deepseek per-key table receipted.
+    # 3 covers the 3-wide dogfood play without claiming more. (F2, 2026-09-04)
+    "deepseek-v4-flash": 3,
+    # coding-plan Max seat probe lane (2026-09-05, operator GO): "max-flash-5x"
+    # is OUR name for the concurrency probe lane on the Max coding-plan seat.
+    # g1 width 5 CLEAN (3.75x), g2 width 8 CLEAN (4.45x, peak 7); SHADOW WORK
+    # fanout escalates to width 50 = the salon's ceiling experiment, real work.
+    # 50 is the measured test width, NOT a vendor cap.
+    "max-flash-5x": 50,
 }
 
 LEASE_SECS = 120          # a held slot this old is considered dead -> steal it
@@ -56,10 +66,14 @@ _LOCK_DIR = ROOT / "memory" / "runs" / "concurrency"
 LOCK_OWNER = os.path.basename(sys.argv[0] or "?")
 
 
-def _slot_paths(model: str) -> list[Path]:
+def _slot_paths(model: str, *, lane: str = "") -> list[Path]:
+    """Leases are per (lane, model) — coding-plan Max and funded Lite are
+    different API keys. Sharing one glm-4.7-flash slot across keys made Lite
+    wait 180s while Max hung on raw /paas/v4."""
     _LOCK_DIR.mkdir(parents=True, exist_ok=True)
     n = int(MODEL_CONCURRENCY.get(model, 1))
-    return [_LOCK_DIR / f"{model}.{i}.lease" for i in range(max(1, n))]
+    prefix = f"{lane}.{model}" if lane else model
+    return [_LOCK_DIR / f"{prefix}.{i}.lease" for i in range(max(1, n))]
 
 
 def _lease_ok(path: Path) -> bool:
@@ -72,9 +86,9 @@ def _lease_ok(path: Path) -> bool:
     return (time.time() - ts) < LEASE_SECS
 
 
-def acquire(model: str, *, timeout: int = DEFAULT_TIMEOUT, owner: str = "") -> str | None:
+def acquire(model: str, *, timeout: int = DEFAULT_TIMEOUT, owner: str = "", lane: str = "") -> str | None:
     """Block until a slot for this model is free (or timeout). Returns a token to release."""
-    slots = _slot_paths(model)
+    slots = _slot_paths(model, lane=lane)
     owner = owner or LOCK_OWNER
     deadline = time.time() + timeout
     while time.time() < deadline:
@@ -82,10 +96,11 @@ def acquire(model: str, *, timeout: int = DEFAULT_TIMEOUT, owner: str = "") -> s
             if not _lease_ok(path):
                 try:
                     path.write_text(json.dumps({
-                        "model": model, "slot": i, "ts": time.time(),
+                        "model": model, "lane": lane, "slot": i, "ts": time.time(),
                         "owner": owner, "pid": os.getpid(),
                     }), encoding="utf-8")
-                    return f"{model}.{i}"
+                    prefix = f"{lane}.{model}" if lane else model
+                    return f"{prefix}.{i}"
                 except Exception:  # noqa: BLE001
                     continue
         time.sleep(POLL_SECS)
@@ -122,13 +137,13 @@ def status() -> dict[str, Any]:
             "n_locked_models": len(held)}
 
 
-def hold(model: str, *, timeout: int = DEFAULT_TIMEOUT, owner: str = "") -> Iterator[None]:
+def hold(model: str, *, timeout: int = DEFAULT_TIMEOUT, owner: str = "", lane: str = "") -> Iterator[None]:
     """Context manager: acquire a slot for the model's in-flight cap, release on exit."""
     import contextlib
 
     @contextlib.contextmanager
     def _ctx():
-        token = acquire(model, timeout=timeout, owner=owner)
+        token = acquire(model, timeout=timeout, owner=owner, lane=lane)
         if token is None:
             raise TimeoutError(f"no {model} slot free within {timeout}s")
         try:

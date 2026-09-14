@@ -1,0 +1,4 @@
+precision lowp float;uniform vec2 resolution;uniform float time;
+#define t time
+#define k sin(length(u.xy)*8.-t)
+void main(){vec2 r=resolution;vec2 u=(gl_FragCoord.xy*2.-r)/r.y*mat2(cos(t),sin(t),-sin(t),cos(t));gl_FragColor=vec4(vec3((u.x<0.)?1.+k:-k),1.);}

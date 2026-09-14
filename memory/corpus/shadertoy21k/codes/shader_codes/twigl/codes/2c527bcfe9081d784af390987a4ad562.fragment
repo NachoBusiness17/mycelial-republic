@@ -1,0 +1,28 @@
+#define PI acos(-1.0)
+#define rot(a) mat2(cos(a),sin(a),-sin(a),cos(a))
+
+// 3D Folding (https://www.shadertoy.com/view/XlX3zB)
+vec3 fold(vec3 pos, float type) 
+{
+    float cospin = cos(PI / type);
+    float scospin = sqrt(0.75 - cospin * cospin);
+    vec3 nc = vec3(-0.5, -cospin, scospin);
+    for(int i = 0;i < 5; i++)
+    {
+        pos.xy=abs(pos.xy);
+        pos-=2.0 * min(0.0, dot(pos, nc)) * nc;
+    }
+    return pos;
+}
+
+float de(vec3 p)
+{
+    p.xy*=rot(t);
+    p.yz*=rot(t);
+    p = fold(p, 5.0);
+    p.y -= 7.0;
+    return dot(p, normalize(vec3(2,2,3)));
+}
+
+#define A(a)length(p.a)-0.1
+vec3 C(vec3 p){if(A(yz)<.001) return vec3(1,0,0);if(A(zx)<.001) return vec3(0,1,0);if(A(xy)<.001) return vec3(0,0,1);return vec3(.3,.8,1);}void main(){vec2 uv=(gl_FragCoord.xy*2.-r)/r.y;vec3 col,ro=vec3(2,3,10),w=normalize(-ro),u=normalize(cross(w,vec3(0.0,1.0,0.0))),rd=mat3(u,cross(u,w),w)*normalize(vec3(uv,2)),p;float i,h=0.0,d;for(i=1.;i>0.;i-=.02){p=ro+rd*h;h+=d=min(min(min(A(yz),A(zx)),A(xy)),de(p));if(d<.001){o=vec4(C(p),1);o*=i*i;break;}}}

@@ -32,462 +32,6 @@ _ARCHETYPES = {
 _TRAITS = ["greedy", "brave", "craven", "curious", "hotheaded", "cautious", "kind", "cynical"]
 
 
-def _pals(camp: dict[str, Any]) -> list[dict[str, Any]]:
-    return [p for p in (camp.get("pals") or []) if isinstance(p, dict)]
-
-
-def _pal(camp: dict[str, Any], name: str) -> dict[str, Any] | None:
-    n = (name or "").lower()
-    for p in _pals(camp):
-        if str(p.get("name") or "").lower() == n:
-            return p
-    return None
-
-
-def _set_pal(camp: dict[str, Any], pal: dict[str, Any]) -> None:
-    name = str(pal.get("name") or "").lower()
-    rest = [p for p in _pals(camp) if str(p.get("name") or "").lower() != name]
-    if str(pal.get("station") or "") != "fled":
-        rest.append(pal)
-    camp["pals"] = rest
-
-
-def _cut_merchant(camp: dict[str, Any], pl: dict[str, Any]) -> str:
-    """Palworld catch + XCOM panic. One station. Dice, not a script. He never opens the crate."""
-    from mag.game_dice import roll_dice
-    flags = list(camp.get("flags") or [])
-    if "freed_merchant" in flags:
-        return "The rope already fell."
-    flags.append("freed_merchant")
-    flags.append("freed_merchant_opportunity")
-    enc = camp.get("encounter") or {}
-    fighting = False
-    try:
-        fighting = bool(isinstance(enc, dict) and enc.get("name") and int(enc.get("hp") or 0) > 0)
-    except (TypeError, ValueError):
-        fighting = False
-    traits = [str(x).lower() for x in (pl.get("traits") or [])]
-    dc = 12
-    if fighting:
-        dc += 4
-    if "kind" in traits:
-        dc -= 2
-    if "talked_merchant" in flags:
-        dc -= 1
-    if "brave" in traits:
-        dc -= 1
-    if "greedy" in traits:
-        dc += 1
-    roll = int(roll_dice("1d20").get("total") or 10)
-    pal = {
-        "name": "merchant",
-        "race": "human",
-        "job": "merchant",
-        "traits": ["craven", "cynical"],
-        "hp": 6,
-        "hp_max": 6,
-        "station": "cover",
-    }
-    if fighting and roll >= dc + 5:
-        pal["station"] = "fight"
-        pal["traits"] = ["cynical"]
-        line = "The rope falls. He snatches a goblin spear. His hands shake. He still will not touch the crate."
-    elif roll >= dc:
-        pal["station"] = "cover" if fighting else "follow"
-        if fighting:
-            line = "The rope falls. He crawls behind the crate. Cover. He will not fight. He will not open it."
-        else:
-            line = "The rope falls. He walks. He still will not open that box."
-    elif fighting:
-        pal["station"] = "fled"
-        flags.append("merchant_fled")
-        line = "The rope falls. He runs. Goblins still hold the floor. The crate keeps its wax."
-    else:
-        pal["station"] = "follow"
-        line = "The rope falls. He walks. He still will not open that box."
-    camp["flags"] = list(dict.fromkeys(flags))
-    _set_pal(camp, pal)
-    enc = camp.get("encounter")
-    if isinstance(enc, dict) and enc.get("units"):
-        for u in enc.get("units") or []:
-            if str(u.get("station") or "") == "captive":
-                u["station"] = "idle"
-                u["job"] = "idle"
-                u["aware"] = True
-        if fighting:
-            _alert_camp(enc)
-    try:
-        from mag.party_subchain import append as _ps
-        _ps(seat="table", ok=True, move="merchant pal " + str(pal.get("station")), kind="pal")
-    except Exception:
-        pass
-    return line
-
-
-def _pal_in_fight(camp: dict[str, Any], enc: dict[str, Any], events: list[str], pl: dict[str, Any]) -> None:
-    """XCOM squad: pal acts from their station. Panic can break cover."""
-    pal = _pal(camp, "merchant")
-    if not pal:
-        return
-    from mag.game_dice import roll_dice
-    station = str(pal.get("station") or "")
-    traits = [str(x).lower() for x in (pal.get("traits") or [])]
-    php = int(pl.get("hp") or 0)
-    pmax = int(pl.get("hp_max") or 10) or 10
-    if station == "cover":
-        events.append("The merchant stays behind the crate.")
-        if "craven" in traits and php * 2 <= pmax:
-            if int(roll_dice("1d20").get("total") or 10) < 10:
-                pal["station"] = "fled"
-                camp["flags"] = list(dict.fromkeys(list(camp.get("flags") or []) + ["merchant_fled"]))
-                _set_pal(camp, pal)
-                events.append("He breaks. He is gone.")
-        return
-    if station == "fight" and enc and int(enc.get("hp") or 0) > 0:
-        dmg = int(roll_dice("1d4").get("total") or 1)
-        unit = _pick_unit(enc) if enc.get("units") else None
-        if unit:
-            dead = _hurt_unit(enc, unit, dmg)
-            if dead or int(enc.get("hp") or 0) <= 0:
-                events.append("His spear drops the " + str(unit.get("name")) + ".")
-            else:
-                events.append("His spear finds the " + str(unit.get("name")) + ".")
-        else:
-            enc["hp"] = max(0, int(enc.get("hp") or 0) - dmg)
-            if enc["hp"] <= 0:
-                events.append("His spear drops one. They fall. The crate is still waxed.")
-            else:
-                events.append("His spear finds one.")
-        if "craven" in (pal.get("traits") or []) and int(roll_dice("1d20").get("total") or 10) < 8:
-            pal["station"] = "cover"
-            pal["traits"] = ["craven", "cynical"]
-            _set_pal(camp, pal)
-            events.append("He ducks back behind the crate.")
-
-
-
-def _task_ahead(camp: dict[str, Any]) -> str:
-    flags = " ".join(str(f) for f in (camp.get("flags") or [])).lower()
-    if "talked_merchant" in flags or "freed_merchant" in flags:
-        return "crate"
-    return "captive"
-
-
-_STATION_LINE = {
-    "crate": "at the crate",
-    "captive": "at the rope",
-    "mouth": "at the way out",
-    "dice": "dice by the pillars",
-    "sleep": "asleep on a claw-mark",
-    "idle": "where the rope was",
-}
-
-
-def _sync_band(enc: dict[str, Any]) -> dict[str, Any]:
-    units = [u for u in (enc.get("units") or []) if int(u.get("hp") or 0) > 0]
-    enc["units"] = units
-    enc["hp"] = sum(int(u.get("hp") or 0) for u in units)
-    if units:
-        enc["hp_max"] = max(int(enc.get("hp_max") or 0), sum(int(u.get("hp_max") or 0) for u in units))
-    if not units:
-        enc["hp"] = 0
-    init = [x for x in (enc.get("init") or []) if x == "you" or x == "merchant" or any(str(u.get("name")) == x for u in units)]
-    if init:
-        enc["init"] = init
-        enc["whose"] = int(enc.get("whose") or 0) % len(init)
-    return enc
-
-
-def _roll_init(camp: dict[str, Any], enc: dict[str, Any]) -> None:
-    from mag.game_dice import roll_dice
-    order: list[tuple[str, int]] = []
-    pl = camp.get("player") or {}
-    traits = [str(x).lower() for x in (pl.get("traits") or [])]
-    you = int(roll_dice("1d20").get("total") or 10)
-    if "cautious" in traits:
-        you += 2
-    if "hotheaded" in traits:
-        you -= 1
-    if str(pl.get("archetype") or "").lower() == "rogue":
-        you += 3
-    order.append(("you", you))
-    pal = _pal(camp, "merchant")
-    if pal and str(pal.get("station") or "") == "fight":
-        order.append(("merchant", int(roll_dice("1d20").get("total") or 8)))
-    for u in enc.get("units") or []:
-        bonus = 4 if u.get("aware") else -4
-        order.append((str(u.get("name")), int(roll_dice("1d20").get("total") or 10) + bonus))
-    order.sort(key=lambda x: -x[1])
-    enc["init"] = [n for n, _ in order]
-    enc["whose"] = 0
-
-
-def _ensure_band(camp: dict[str, Any]) -> dict[str, Any] | None:
-    enc = camp.get("encounter")
-    if not isinstance(enc, dict) or int(enc.get("hp") or 0) <= 0:
-        return enc if isinstance(enc, dict) else None
-    if enc.get("units"):
-        _sync_band(enc)
-        if not enc.get("init"):
-            _roll_init(camp, enc)
-        camp["encounter"] = enc
-        return enc
-    from mag.game_dice import roll_dice
-    n = max(3, min(5, 2 + int(roll_dice("1d3").get("total") or 2)))
-    ahead = _task_ahead(camp)
-    jobs = [ahead]
-    for j in ("captive", "crate", "mouth", "dice", "sleep"):
-        if j not in jobs:
-            jobs.append(j)
-        if len(jobs) >= n:
-            break
-    names = {
-        "crate": "crate-guard",
-        "captive": "rope-guard",
-        "mouth": "mouth-guard",
-        "dice": "dice-goblin",
-        "sleep": "sleeper",
-    }
-    units = []
-    for i, st in enumerate(jobs[:n]):
-        aware = st not in ("dice", "sleep")
-        units.append({
-            "id": "g" + str(i + 1),
-            "name": names.get(st, "goblin"),
-            "race": "goblin",
-            "job": st,
-            "station": st,
-            "hp": 3 if st == "sleep" else 4,
-            "hp_max": 3 if st == "sleep" else 4,
-            "ac": 15 if aware else 12,
-            "attack_bonus": 4 if aware else 1,
-            "damage": "1d6+2" if aware else "1d4",
-            "speed": 10 if aware else 4,
-            "ct": 0,
-            "aware": aware,
-        })
-    enc["units"] = units
-    _roll_init(camp, enc)
-    _sync_band(enc)
-    camp["encounter"] = enc
-    return enc
-
-
-def _camp_look(camp: dict[str, Any]) -> str:
-    enc = _ensure_band(camp)
-    if not enc or int(enc.get("hp") or 0) <= 0:
-        return ""
-    units = enc.get("units") or []
-    n = len(units)
-    bits = [str(n) + (" goblins." if n != 1 else " goblin.")]
-    for u in units:
-        bits.append("One " + _STATION_LINE.get(str(u.get("station") or ""), "in the dark") + ".")
-    return " ".join(bits)
-
-
-def _pick_unit(enc: dict[str, Any], target: str = "") -> dict[str, Any] | None:
-    units = [u for u in (enc.get("units") or []) if int(u.get("hp") or 0) > 0]
-    if not units:
-        return None
-    t = (target or "").lower()
-    for u in units:
-        blob = " ".join([str(u.get("name") or ""), str(u.get("station") or ""), str(u.get("job") or "")]).lower()
-        if t and t in blob:
-            return u
-    aware = [u for u in units if u.get("aware")]
-    return (aware or units)[0]
-
-
-def _hurt_unit(enc: dict[str, Any], unit: dict[str, Any], dmg: int) -> bool:
-    unit["hp"] = max(0, int(unit.get("hp") or 0) - int(dmg))
-    dead = int(unit["hp"]) <= 0
-    _sync_band(enc)
-    return dead
-
-
-def _goblin_strike(camp: dict[str, Any], unit: dict[str, Any], pl: dict[str, Any], events: list[str]) -> None:
-    from mag.game_dice import roll_dice
-    if not unit.get("aware"):
-        unit["aware"] = True
-        unit["ac"] = 15
-        unit["speed"] = 10
-        events.append("The " + str(unit.get("name")) + " wakes.")
-        return
-    hit = roll_dice("1d20+" + str(int(unit.get("attack_bonus") or 0)))
-    if int(hit.get("total") or 0) >= int(pl.get("ac") or 10):
-        fdmg = roll_dice(str(unit.get("damage") or "1d6"))
-        dealt = int(fdmg.get("total") or 1)
-        pmax = int(pl.get("hp_max") or pl.get("hp") or 10)
-        pl["hp"] = max(0, int(pl.get("hp") or 0) - dealt)
-        if pl["hp"] <= 0:
-            camp["status"] = "defeated"
-            events.append("The " + str(unit.get("name")) + " drops you.")
-        else:
-            events.append("The " + str(unit.get("name")) + " hits. " + _wound_look(int(pl["hp"]), pmax, "you"))
-    else:
-        events.append("The " + str(unit.get("name")) + " misses.")
-
-
-def _resolve_ticks(camp: dict[str, Any], events: list[str], pl: dict[str, Any]) -> None:
-    enc = camp.get("encounter")
-    if not isinstance(enc, dict) or int(enc.get("hp") or 0) <= 0:
-        return
-    init = [x for x in (enc.get("init") or ["you"]) if x]
-    if not init:
-        return
-    try:
-        you_i = init.index("you")
-    except ValueError:
-        you_i = 0
-    enc["whose"] = (you_i + 1) % len(init)
-    for _ in range(len(init)):
-        enc = camp.get("encounter")
-        if not isinstance(enc, dict) or int(enc.get("hp") or 0) <= 0:
-            return
-        init = [x for x in (enc.get("init") or ["you"]) if x]
-        if not init:
-            return
-        whose = int(enc.get("whose") or 0) % len(init)
-        who = init[whose]
-        if who == "you":
-            return
-        if who == "merchant":
-            _pal_in_fight(camp, enc, events, pl)
-        else:
-            unit = next((u for u in (enc.get("units") or []) if str(u.get("name")) == who and int(u.get("hp") or 0) > 0), None)
-            if unit:
-                _goblin_strike(camp, unit, pl, events)
-                if camp.get("status") == "defeated":
-                    return
-        init = [x for x in ((camp.get("encounter") or {}).get("init") or init) if x]
-        if not init:
-            return
-        enc = camp.get("encounter") or enc
-        enc["whose"] = (int(enc.get("whose") or 0) + 1) % len(init)
-
-
-def _sneak_to(camp: dict[str, Any], pl: dict[str, Any]) -> tuple[bool, str]:
-    from mag.game_dice import roll_dice
-    enc = _ensure_band(camp)
-    flags = list(camp.get("flags") or [])
-    if "near:merchant" in flags:
-        return True, "You are already at the rope."
-    traits = [str(x).lower() for x in (pl.get("traits") or [])]
-    arch = str(pl.get("archetype") or "").lower()
-    dc = 10
-    units = (enc or {}).get("units") or []
-    if any(u.get("station") == "captive" and u.get("aware") for u in units):
-        dc += 2
-    if any(u.get("station") == "mouth" and u.get("aware") for u in units):
-        dc += 1
-    if enc and enc.get("alert"):
-        dc += 4
-    dc += min(3, max(0, int((enc or {}).get("rope_tug") or 0) - 1))
-    dc -= sum(1 for u in units if not u.get("aware"))
-    if arch == "rogue":
-        dc -= 3
-    if "cautious" in traits:
-        dc -= 2
-    if "craven" in traits:
-        dc -= 1
-    if "hotheaded" in traits:
-        dc += 2
-    roll = int(roll_dice("1d20").get("total") or 10)
-    if roll >= dc:
-        camp["flags"] = list(dict.fromkeys(flags + ["near:merchant"]))
-        return True, "You reach the rope. The camp does not look up."
-    _alert_camp(enc)
-    return False, "A goblin hisses. The camp knows you."
-
-
-
-_JOB_LINES = {
-    "captive": [
-        "The rope-guard tugs the knot.",
-        "The rope-guard works the knot.",
-        "The knot bites. He does not look up.",
-    ],
-    "crate": [
-        "The crate-guard does not touch the wax.",
-        "The crate-guard shifts his weight. The seal holds.",
-        "He looks at the crate. He does not open it.",
-    ],
-    "mouth": [
-        "The mouth-guard watches the way you came.",
-        "The mouth-guard spits into the dark.",
-        "The way out is still his.",
-    ],
-    "dice": [
-        "Dice click. They are not looking.",
-        "A curse at the bones. Still not looking.",
-        "The dice go still. Then again.",
-    ],
-    "sleep": [
-        "A goblin snores on a claw-mark.",
-        "The sleeper rolls. The claw-mark stays.",
-        "Wet leather breath. Still asleep.",
-    ],
-    "idle": [
-        "He stares at the empty ring.",
-        "He has nothing to hold.",
-        "The rope is gone. He is still here.",
-    ],
-}
-
-
-def _job_say(st: str, enc: dict[str, Any]) -> str:
-    opts = _JOB_LINES.get(st) or []
-    if not opts:
-        return ""
-    if st == "captive":
-        i = min(len(opts) - 1, max(0, int(enc.get("rope_tug") or 1) - 1))
-        return opts[i]
-    tick = int(enc.get("tick") or 1)
-    return opts[(tick - 1) % len(opts)]
-
-
-def _alert_camp(enc: dict[str, Any] | None) -> None:
-    if not isinstance(enc, dict):
-        return
-    enc["alert"] = True
-    for u in enc.get("units") or []:
-        u["aware"] = True
-        u["ac"] = 15
-        u["speed"] = 10
-
-
-def _camp_tick(camp: dict[str, Any], events: list[str], speak: bool = True) -> None:
-    """Infocom CLOCKER. One job in the light. Never the same line twice running."""
-    enc = _ensure_band(camp)
-    if not enc or int(enc.get("hp") or 0) <= 0:
-        return
-    if enc.get("alert"):
-        return
-    enc["tick"] = int(enc.get("tick") or 0) + 1
-    units = enc.get("units") or []
-    for u in units:
-        if str(u.get("station") or "") == "captive":
-            enc["rope_tug"] = int(enc.get("rope_tug") or 0) + 1
-    n = len(units)
-    if not n:
-        return
-    last = enc.get("last_tick_line")
-    idx = (int(enc.get("tick") or 1) - 1) % n
-    line = ""
-    for off in range(n):
-        u = units[(idx + off) % n]
-        cand = _job_say(str(u.get("station") or ""), enc)
-        if cand and cand != last:
-            line = cand
-            break
-    if not line:
-        line = _job_say(str(units[idx].get("station") or ""), enc)
-    enc["last_tick_line"] = line
-    if speak and line:
-        events.append(line)
-
-
-
 def _utc() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -1027,30 +571,30 @@ def _trial_from_lance(goal: str) -> str:
     return " ".join(strokes) + " What do you do?"
 
 
-def _invariant_talk(target: str, camp: dict[str, Any]) -> list[str] | None:
-    """If the target is an invariant-NPC, voice the principle they embody (the doctrine made flesh).
-    Returns narration events, or None if the target isn't one."""
-    try:
-        from mag import invariant_npcs
-        per = invariant_npcs.resolve(target)
-        if not per:
-            return None
-        room = _room(camp)
-        scene = f"{room.get('name')}. {room.get('desc')}".strip()
-        r = invariant_npcs.talk(per["name"], scene=scene, history=camp.get("log") or [])
-        text = r.get("reply") or per.get("soul") or ""
-        return [str(text).strip() or str(per.get("soul") or per["name"])]
-    except Exception:
-        return None
 
+def _named_hearth(camp: dict[str, Any]) -> bool:
+    """Evennia characters≠things: Calcifer is DefaultCharacter only at Mira's lantern hearth."""
+    room = _room(camp)
+    rid = str(camp.get("room_id") or room.get("id") or room.get("name") or "").lower()
+    rname = str(room.get("name") or "").lower()
+    return ("lantern" in rid) or ("tavern" in rid) or ("mira" in rname)
 
 def _talk_calcifer(camp: dict[str, Any]) -> str:
-    """One fire elemental. Mira lantern hearth only. Never play-text doctrine."""
-    room = _room(camp)
-    rid = str(camp.get("room_id") or room.get("id") or "").lower()
-    if "lantern" not in rid and "tavern" not in rid:
+    """Hearth: persona_recall trickster + RIB invariant. No session_id dump."""
+    if not _named_hearth(camp):
         return ""
-    line = "The hearth pops. You named him Calcifer."
+    room = _room(camp)
+    blob = " ".join([
+        str(room.get("name") or ""),
+        str(room.get("desc") or ""),
+        " ".join(str(h) for h in (room.get("hooks") or [])),
+    ]).lower()
+    if not any(w in blob for w in ("fire", "hearth", "flame", "damp", "calcifer")):
+        return ""
+    beat = _trial_from_lance("calcifer named hearth fingerprint liquid familiar babel")
+    if beat:
+        return beat
+    line = "You already named this fire. The next name is the tool you do not have. What do you do?"
     return _player_signal(line, source="calcifer") or line
 
 
@@ -1058,52 +602,26 @@ def _look_at(camp: dict[str, Any], noun: str) -> str:
     """Examine one thing in the room. Bytes already on the lantern, not a new throne."""
     room = _room(camp)
     n = (noun or "").strip().lower()
-    if n.startswith(("the ", "a ", "an ")):
-        n = n.split(" ", 1)[-1]
     desc = str(room.get("desc") or "")
     hooks = [str(h) for h in (room.get("hooks") or [])]
-    if n in ("calcifer",):
-        rid = str(camp.get("room_id") or room.get("id") or "").lower()
-        if "lantern" in rid or "tavern" in rid:
-            return "The hearth. You named him Calcifer."
-        return "He is in Mira's hearth. Not here."
-    if n in ("fire", "hearth", "flame"):
-        rid = str(camp.get("room_id") or room.get("id") or "").lower()
-        if "lantern" in rid or "tavern" in rid:
-            return "The hearth. You named him Calcifer."
-        return "A fire. Ordinary."
-    if n in ("goblin", "goblins", "band", "camp", "them", "guards"):
-        return _camp_look(camp) or "No camp here."
-    if n in ("dice", "dice-goblin"):
-        return "Bone dice. They are not looking at you."
-    if n in ("sleeper",):
-        return "Asleep on a claw-mark. Breath like wet leather."
-    if n in ("rope-guard", "crate-guard", "mouth-guard"):
-        enc = camp.get("encounter") if isinstance(camp.get("encounter"), dict) else {}
-        u = _pick_unit(enc, n)
-        if u:
-            return "One " + _STATION_LINE.get(str(u.get("station") or ""), "in the dark") + "."
-        return _camp_look(camp) or "No camp here."
-    if n in ("stubs", "stub"):
-        return "Blackened nubs in the rock. The fire is gone. Something small still uses this dark."
-    if n in ("hand", "hands", "inventory", "bag", "bags", "pocket", "pockets"):
-        inv = [str(x) for x in ((camp.get("player") or {}).get("inventory") or []) if x]
-        if not inv:
-            return "Empty hands."
-        return "In hand: " + ", ".join(inv) + "."
+    if n in ("fire", "hearth", "flame", "calcifer", "torch"):
+        # Evennia get_display_things: inventory/keep torch is a Thing, not the named Character
+        if n == "torch" and not _named_hearth(camp):
+            hit = next((h for h in hooks if "torch" in h.lower()), "")
+            return hit or "A torch. Just a torch. It is not the fire you named."
+        if n == "torch" and _named_hearth(camp):
+            return "A torch in hand. The named fire is the hearth, not this stick."
+        if _named_hearth(camp):
+            return "The fire argues with the damp. It is the only honest heat in the room. You named it Calcifer."
+        return "No named fire here. A torch is a torch."
     if n in ("mug", "tankard", "glass"):
         return "The same mug. Mira polishes it like a debt she can finish."
     if "stranger" in n:
-        return (
-            "The stranger did not stand when the mug broke. "
-            "Broth still steaming. Three windows in three mouths. "
-            "Keep smoke is a rumor they will not settle."
-        )
+        hit = next((h for h in hooks if "stranger" in h.lower()), "")
+        return hit or "A stranger maps wet rings on the table and will not look up."
     if n in ("barkeep", "mira", "bartender"):
-        return (
-            "Mira polishes the mug like a debt she can finish. "
-            "Keep politics does not pour ale."
-        )
+        hit = next((h for h in hooks if "barkeep" in h.lower()), "")
+        return hit or "The barkeep polishes the same mug."
     if n in ("door", "road"):
         return "Door to the road. The weather is on the other side of it."
     if n in ("stairs", "rooms"):
@@ -1128,29 +646,16 @@ def _look_at(camp: dict[str, Any], noun: str) -> str:
         hit = next((h for h in hooks if any(w in h.lower() for w in ("merchant", "captive", "prisoner"))), "")
         body = hit.split(":", 1)[-1].strip() if hit else ""
         return body or "A captive merchant, still bound. The keep's business did not end at the gate."
-    if n in ("rope",):
-        blob = " ".join([str(room.get("name") or ""), str(room.get("desc") or ""), " ".join(hooks)]).lower()
-        if "captive" in blob or "merchant" in blob or "rope" in blob:
-            return (
-                "The rope has worn a ring in his wrist. "
-                "Cut it and he walks. He still will not open the box."
-            )
-        return "No rope here."
-    if n in ("crate", "chest", "seal", "box", "puzzle-box", "puzzlebox", "puzzle"):
-        blob = " ".join([str(room.get("name") or ""), str(room.get("desc") or ""), " ".join(hooks)]).lower()
-        if not re.search(r"\b(crate|chest|seal|box|ward)\b", blob):
-            return "The box is not in this room."
+    if n in ("crate", "chest", "seal", "box"):
         hit = next((h for h in hooks if any(w in h.lower() for w in ("crate", "seal", "chest", "box"))), "")
         body = hit.split(":", 1)[-1].strip() if hit else ""
         opened = any(str(f).startswith("temple:") or str(f).startswith("shared:") or str(f).startswith("slain:") for f in (camp.get("flags") or []))
         if not opened:
-            if n == "seal":
-                return "The keep's mark in the wax. A name you have not spoken."
-            return (
-                "Wood, wax, the keep's mark. "
-                "A closed thing remembers the tool that was missing when it was shut."
+            beat = _trial_from_lance(
+                "puzzle box temple primer play_rooms dungeon_dev rooms are the roadmap missing tool"
             )
-        return body or "The box is open. The ward has a name now."
+            return beat or "The box is closed because the tool is unnamed. What do you do?"
+        return body or _trial_from_lance("dungeon_dev conquer share the knot") or "The box is open. The ward has a name."
     if n:
         try:
             from mag.verkle_lance import trace
@@ -1164,8 +669,12 @@ def _look_at(camp: dict[str, Any], noun: str) -> str:
             for sent in re.split(r"(?<=[.!?])\s+", desc):
                 if n in sent.lower():
                     return sent
-            return desc
-    return "Nothing called " + noun + " stands out."
+            # Noun is scenery mentioned in desc but no focused sentence — still one beat,
+            # not a second Look of the whole room (Inform "nothing special" class).
+            return "Nothing special about the " + noun + "."
+    # Evennia caller.search no-match: short refuse then return (no room.desc dump).
+    # Inform parser error (E): "You can't see any such thing." — one beat, not Look glue.
+    return ("Nothing called " + (noun or "that") + " here.").strip()
 
 
 def _hook_body(s: str) -> str:
@@ -1260,7 +769,8 @@ def story_so_far(camp: dict[str, Any]) -> str:
         walked = f"{who} walked {', then '.join(path)}. "
 
     calc = ""
-    if "calcifer" in blob or "torch" in blob:
+    # Thing≠Character: carried/keep torch does not mint Calcifer into the saga
+    if "calcifer" in blob or ("lantern" in blob and any(w in blob for w in ("fire", "hearth", "mira"))):
         calc = "The fire came with them — Calcifer, same flame as the lantern, still arguing with the damp. "
 
     want = ""
@@ -1306,36 +816,15 @@ def _llm_room_beat(camp: dict[str, Any]) -> str:
     failure so the deterministic narration is the safe fallback."""
     try:
         from mag import game_dm_llm
-        from mag import game_saga
         room = _room(camp)
         scene = f"{room.get('name')}. {room.get('desc')}".strip()
         root = str((camp.get("world_root") or ""))[:16]
-        cid = str(camp.get("campaign_id") or camp.get("id") or "default")
-        history = list(camp.get("log") or [])
-        saga = game_saga.recall(cid)
-        if saga.get("text"):
-            history = [saga["text"]] + history
-        res = game_dm_llm.dm_narrate(scene, world_root=root, action="look", history=history)
+        res = game_dm_llm.dm_narrate(scene, world_root=root, action="look", history=camp.get("log") or [])
         if res.get("ok") and res.get("text"):
-            text = str(res["text"]).strip()
-            # record a named saga beat so the running gag recurs + builds (Boatmurdered law)
-            game_saga.add(cid, _saga_name(room), f"in the {room.get('name')}: {scene}"[:200])
-            return text
+            return str(res["text"]).strip()
     except Exception:
         pass
     return ""
-
-
-def _saga_name(room: dict[str, Any]) -> str:
-    """The named thing the world will remember — a room's recurring character or a specific absurdity."""
-    people = [str(p) for p in (room.get("hooks") or []) if str(p).strip().lower().startswith(
-        ("barkeep", "stranger", "merchant", "goblin", "calcifer"))]
-    if people:
-        return people[0].split(":", 1)[0].strip()
-    for known in ("elephant", "the mug", "the torch", "the fire", "the crate"):
-        if any(known in str(h).lower() for h in (room.get("hooks") or [])):
-            return known
-    return str(room.get("name") or "the tavern")
 
 
 def _narrate_room(camp: dict[str, Any]) -> str:
@@ -1439,7 +928,8 @@ def _narrate_room(camp: dict[str, Any]) -> str:
             dest = rooms.get(str(dest_id) or "") or {}
             dname = str(dest.get("name") or dest_id or d)
             named.append(f"{d} toward {dname}")
-        pass
+        if named:
+            paras.append("Ways out: " + "; ".join(named) + ".")
     return " ".join(p.strip() for p in paras if p and p.strip())
 
 
@@ -1527,93 +1017,10 @@ def _try_action(
         pass
     if ok:
         camp["flags"] = list(dict.fromkeys(list(camp.get("flags") or []) + [f"handled:{target.lower()[:20]}"]))
-        return (
-            f"The {target} gives. Something you had not named yet was the tool."
-        )
-    return (
-        f"The {target} keeps its secret. The crate is still waxed. The tool is not in your hand."
-    )
-
-
-def _next_paths(camp: dict[str, Any], events: list[str], action: dict[str, Any] | None = None) -> list[dict[str, str]]:
-    """3-4 clickable paths from this beat and this room. Type anything else."""
-    beat = " ".join(str(e) for e in (events or [])).lower()
-    raw = str((action or {}).get("raw") or (action or {}).get("text") or "").lower()
-    blob = beat + " " + raw
-    room = _room(camp)
-    rid = str(camp.get("room_id") or room.get("id") or "").lower()
-    people = [str(x).lower() for x in people_in_room(camp)]
-    enc = camp.get("encounter") or {}
-    exits = room.get("exits") or {}
-    exit_names = list(exits.keys()) if isinstance(exits, dict) else list(exits or [])
-    flags = [str(f).lower() for f in (camp.get("flags") or [])]
-    hooks = " ".join(str(h) for h in (room.get("hooks") or [])).lower()
-    room_blob = " ".join([str(room.get("name") or ""), str(room.get("desc") or ""), hooks]).lower()
-    paths: list[dict[str, str]] = []
-    seen: set[str] = set()
-
-    def add(label: str, text: str) -> None:
-        t = (text or "").strip()
-        if not t or t.lower() in seen or len(paths) >= 4:
-            return
-        seen.add(t.lower())
-        paths.append({"label": label, "text": t})
-
-    fighting = False
-    try:
-        fighting = bool(isinstance(enc, dict) and enc.get("name") and int(enc.get("hp") or 0) > 0)
-    except (TypeError, ValueError):
-        fighting = False
-    if any(w in blob for w in ("rope", "cut", "loose", "wrist", "bound")) and "freed_merchant" not in flags:
-        if (not fighting) or ("near:merchant" in flags):
-            add("Cut him loose", "take rope")
-    if any(w in blob or w in room_blob for w in ("crate", "box", "seal", "wax")):
-        if not fighting:
-            add("Look at the crate", "look crate")
-    if fighting:
-        _ensure_band(camp)
-        enc = camp.get("encounter") or enc
-        alert = bool(isinstance(enc, dict) and enc.get("alert"))
-        if not alert:
-            add("Listen", "listen")
-        unit = _pick_unit(enc) if isinstance(enc, dict) else None
-        if unit:
-            add("Attack the " + str(unit.get("name")), "attack " + str(unit.get("name")))
-        else:
-            add("Fight " + str(enc.get("name")), "attack")
-        if alert:
-            add("Wait", "wait")
-        elif "near:merchant" in flags and "freed_merchant" not in flags:
-            add("Talk to the merchant", "talk to merchant")
-        elif "freed_merchant" not in flags:
-            add("Sneak to the captive", "sneak to merchant")
-        add("Get out", "flee")
-    pal = _pal(camp, "merchant")
-    if pal and str(pal.get("station") or "") == "cover":
-        add("Tell him to fight", "talk to merchant fight")
-    if pal and str(pal.get("station") or "") == "fight":
-        add("Talk to the merchant", "talk to merchant")
-    if "merchant" in people and "talk to merchant" not in seen and not pal:
-        if "merchant" not in blob:
-            if not (fighting and isinstance(enc, dict) and enc.get("alert") and "near:merchant" not in flags):
-                add("Talk to the merchant", "talk to merchant")
-    if any(n in people for n in ("barkeep", "mira")):
-        add("Talk to Mira", "talk to mira")
-        add("Look at the fire", "look fire")
-    if "stranger" in people and "stranger" not in blob:
-        add("Talk to the stranger", "talk to stranger")
-    if "stubs" in room_blob or "cellar" in rid:
-        add("Look at the stubs", "look stubs")
-        if "deeper" in [str(e).lower() for e in exit_names]:
-            add("Go deeper", "go deeper")
-        if "up" in [str(e).lower() for e in exit_names]:
-            add("Go up", "go up")
-    for d in exit_names:
-        dl = str(d).lower()
-        add("Go " + dl, "go " + dl)
-    add("Look around", "look")
-    add("Check your hands", "look hand")
-    return paths[:4]
+        return (f"You {verb} the {target} — it gives ({roll} vs {dc}). A knot unties in the world. "
+                f"Look or examine to see what changed; something here may be finishable now.")
+    return (f"You try to {verb} the {target}, but it resists ({roll} vs {dc}). It keeps its secret. "
+            f"Examine it again — there is likely a tool or a word you have not tried yet.")
 
 
 def list_legal_actions(camp: dict[str, Any]) -> list[dict[str, Any]]:
@@ -1650,7 +1057,7 @@ def people_in_room(camp: dict[str, Any]) -> list[str]:
     room = _room(camp)
     names: list[str] = []
     enc = camp.get("encounter")
-    if isinstance(enc, dict) and enc.get("name") and int(enc.get("hp") or 0) > 0 and not enc.get("units"):
+    if isinstance(enc, dict) and enc.get("name") and int(enc.get("hp") or 0) > 0:
         names.append(str(enc.get("name")))
     for h in room.get("hooks") or []:
         s = str(h).strip()
@@ -1664,7 +1071,7 @@ def people_in_room(camp: dict[str, Any]) -> list[str]:
             name = "barkeep"
         elif "stranger" in low:
             name = "stranger"
-        elif low.startswith("merchant") or low.startswith("captive"):
+        elif "merchant" in low or "captive" in low:
             name = "merchant"
         elif "goblin" in low:
             name = "goblin"
@@ -1683,19 +1090,10 @@ def people_in_room(camp: dict[str, Any]) -> list[str]:
         " ".join(str(x) for x in (room.get("tags") or [])),
         " ".join(str(h) for h in (room.get("hooks") or [])),
     ]).lower()
-    rid = str(camp.get("room_id") or room.get("id") or "").lower()
-    if ("lantern" in rid or "tavern" in rid) and any(w in blob for w in ("fire", "hearth")):
+    # characters≠things: Calcifer only on named hearth (not every torch)
+    if _named_hearth(camp) and any(w in blob for w in ("fire", "hearth", "flame", "calcifer")):
         if "calcifer" not in [n.lower() for n in names]:
             names.append("Calcifer")
-    flags = [str(f).lower() for f in (camp.get("flags") or [])]
-    if "merchant_fled" in flags:
-        names = [n for n in names if "merchant" not in n.lower()]
-    for pal in _pals(camp):
-        if str(pal.get("station") or "") == "fled":
-            continue
-        nm = str(pal.get("name") or "").strip()
-        if nm and not any(nm.lower() == x.lower() for x in names):
-            names.append(nm)
     return names
 
 
@@ -1749,8 +1147,17 @@ def _talk_events(camp: dict[str, Any], pl: dict[str, Any], action: dict[str, Any
         or low_raw.startswith(("talk to ", "speak to ", "say to ", "ask ", "talk with ", "speak with "))
         or bool(re.search(r"\b(wink|nod|wave)\s+at\b", low_raw))
     )
-    if not raw:
-        events.append("You speak into the room.")
+    # Evennia CmdSay: empty args → "Say what?" and return (no room lecture).
+    # at_pre_say returning empty also aborts with no msg_contents.
+    # Bare say/speak must not auto-pick the only person and dump their hook.
+    if low_raw in ("say", "speak") and not str(action.get("target") or "").strip():
+        events.append("Say what?")
+        return events
+    if raw and not commandish:
+        events.append(f'You say: "{raw[:180]}"')
+    elif not raw:
+        events.append("Say what?")
+        return events
     if target and you and target.lower() == you.lower():
         events.append("That's you.")
         if people:
@@ -1767,7 +1174,7 @@ def _talk_events(camp: dict[str, Any], pl: dict[str, Any], action: dict[str, Any
         ):
             target = "stranger"
         elif "barkeep" in names and any(
-            w in low_raw for w in ("howdy", "hello", "hey", "hi", "hiya", "greetings")
+            w in low_raw for w in ("howdy", "hello", "hey", "hiya", "greetings")
         ):
             target = "barkeep"
         elif len(people) == 1:
@@ -1776,117 +1183,32 @@ def _talk_events(camp: dict[str, Any], pl: dict[str, Any], action: dict[str, Any
             events.append("Talk to whom? " + ", ".join(people) + ".")
             return events
         else:
-            rid = str(camp.get("room_id") or "").lower()
-            if "lantern" in rid or "tavern" in rid:
-                events.append(_talk_calcifer(camp) or "The hearth pops. No one answers.")
-            else:
-                events.append("No one answers.")
-            return events
-    tlow = target.lower()
-    if "calcifer" in tlow:
-        events.append(_talk_calcifer(camp) or "He is in Mira's hearth. Not here.")
-        return events
-    if tlow in ("fire", "hearth", "torch", "flame"):
-        rid = str(camp.get("room_id") or "").lower()
-        if "lantern" in rid or "tavern" in rid:
-            events.append(_talk_calcifer(camp) or "A fire elemental lives in this hearth. You named him Calcifer. He is not every flame.")
-        else:
-            events.append("A fire. Ordinary. Not the elemental from the lantern.")
-        return events
-    tlow_inv = target.lower()
-    skip_inv = any(n in tlow_inv for n in ("mira", "barkeep", "merchant", "stranger", "calcifer", "goblin"))
-    if not skip_inv:
-        # Invariant-NPCs (the doctrine personified): talking to one IS interacting with an invariant.
-        inv_events = _invariant_talk(target, camp)
-        if inv_events:
-            events.extend(inv_events)
+            # Evennia talking_npc CmdTalk sits ON the NPC, not the room
+            # (contrib/tutorials/talking_npc). Empty people = no talk cmdset.
+            # Operator law: empty-room hi is "No one answers", never a hearth lecture.
+            events.append("No one answers.")
             return events
     here = any(
-        p.lower() == target.lower() or target.lower() in p.lower() or p.lower() in target.lower()
-        for p in people
+        p.lower() == target.lower() or target.lower() in p.lower() for p in people
     )
-    tlow_early = target.lower()
-    aliases = {"mira": "barkeep", "bartender": "barkeep", "captive": "merchant"}
-    want = aliases.get(tlow_early, tlow_early)
-    here = here or any(want in p.lower() or p.lower() in want for p in people)
-    local = ("merchant", "barkeep", "mira", "stranger", "goblin")
-    if any(n in tlow_early for n in local) and not here:
-        if people:
-            events.append("No " + target + " here. Here: " + ", ".join(people) + ".")
-        else:
-            events.append("No " + target + " here.")
-        return events
     if people and not here:
         events.append("No " + target + " here. Here: " + ", ".join(people) + ".")
         return events
+    tlow = target.lower()
+    if "calcifer" in tlow or tlow in ("fire", "hearth", "flame"):
+        beat = _talk_calcifer(camp)
+        events.append(beat or ("The fire pops. You named it Calcifer." if _named_hearth(camp) else "No named fire here. A torch is a torch."))
+        return events
+    if tlow == "torch":
+        events.append("A torch. Just a torch. It does not answer as Calcifer.")
+        return events
     if "merchant" in tlow or "captive" in tlow:
-        flags = list(camp.get("flags") or [])
-        enc = camp.get("encounter")
-        live = isinstance(enc, dict) and int(enc.get("hp") or 0) > 0
-        if live and "near:merchant" not in flags:
-            if isinstance(enc, dict) and enc.get("alert"):
-                events.append("They are looking. You cannot reach the rope.")
-                return events
-            ok, line = _sneak_to(camp, pl)
-            events.append(line)
-            if not ok:
-                enc = _ensure_band(camp) or {}
-                guard = next((u for u in (enc.get("units") or []) if u.get("station") in ("captive", "mouth") and u.get("aware")), None)
-                if guard:
-                    _goblin_strike(camp, guard, pl, events)
-                enc = camp.get("encounter") or enc
-                if isinstance(enc, dict) and enc.get("init") and "you" in enc["init"]:
-                    enc["whose"] = enc["init"].index("you")
-                return events
-        pal = _pal(camp, "merchant")
-        if pal and str(pal.get("station") or "") == "cover" and any(
-            w in low_raw for w in ("fight", "help", "stand", "spear")
-        ):
-            from mag.game_dice import roll_dice
-            if int(roll_dice("1d20").get("total") or 10) >= 12:
-                pal["station"] = "fight"
-                pal["traits"] = ["cynical"]
-                _set_pal(camp, pal)
-                events.append("He takes a spear. His hands shake. He still will not touch the crate.")
-            else:
-                pal["station"] = "fled"
-                camp["flags"] = list(dict.fromkeys(flags + ["merchant_fled"]))
-                _set_pal(camp, pal)
-                events.append("He shakes his head and runs.")
-            return events
-        if pal and str(pal.get("station") or "") == "fight":
-            events.append("He keeps the spear. He still will not open that box.")
-            return events
-        if pal and str(pal.get("station") or "") == "cover":
-            events.append("He is behind the crate. Cover. He will not open it.")
-            return events
-        if "merchant_fled" in flags:
-            events.append("He already ran.")
-            return events
-        if "freed_merchant" in flags:
-            events.append(
-                "He rubs the ring in his wrist. "
-                "'I walk. I still will not open that box.'"
-            )
-        elif "talked_merchant" in flags:
-            events.append(
-                "He will not look at the crate. "
-                "'The rope is a kindness. The seal is a name you have not spoken. "
-                "Those are the only two doors left.'"
-            )
-        else:
-            tug = int((camp.get("encounter") or {}).get("rope_tug") or 0)
-            if tug >= 2:
-                events.append("The knot is worse. His hand is darker.")
-            events.append(
-                "The merchant's mouth is dry. The rope has worn a ring in his wrist. "
-                "'Cut me loose and I will walk. I will not open that box. "
-                "We shut it because we did not have the tool. Opening it is how you find the tool.'"
-            )
-            camp["flags"] = list(dict.fromkeys(flags + ["talked_merchant"]))
+        beat = _trial_from_lance(
+            "right sized tools flock memlance identify the tool we needed for the intended goal"
+        )
+        events.append(beat or "The merchant waits. The box is a question. What do you do?")
         return events
     if tlow in ("barkeep", "mira") or "barkeep" in tlow:
-        flags = list(camp.get("flags") or [])
         if any(w in raw.lower() for w in ("polish", "mug", "tankard", "glass", "why")):
             events.append(
                 "Mira the barkeep does not look up. "
@@ -1894,14 +1216,14 @@ def _talk_events(camp: dict[str, Any], pl: dict[str, Any], action: dict[str, Any
                 "Mug is honest work. Keep smoke is not my department.'"
             )
             return events
-        if "talked_mira" in flags:
-            events.append("Mira polishes. 'Keep smoke is not my department.'")
-        else:
-            events.append(
-                "Mira the barkeep does not look up. "
-                "'First drink is free if you come back breathing. Mug is honest work.'"
-            )
-            camp["flags"] = list(dict.fromkeys(flags + ["talked_mira"]))
+        hook = _hook_for_person(room, "barkeep") or _hook_for_person(room, target)
+        if hook:
+            events.append(hook)
+            return events
+        events.append(
+            "The barkeep polishes. The fire argues with the damp. "
+            "No one answers cleanly — but the room heard you."
+        )
         return events
     if tlow == "stranger" or "stranger" in tlow:
         if any(w in raw.lower() for w in ("hunt", "mark", "bad guy", "failed", "party", "adventur")):
@@ -2012,10 +1334,12 @@ def _act_events(camp: dict[str, Any], action: dict[str, Any]) -> list[str]:
         pass
     parts: list[str] = []
     if "fireball" in blob or (verb == "cast" and "familiar" not in blob):
-        if any(w in room_blob for w in ("torch", "fire", "flame", "hearth")):
+        if _named_hearth(camp) and any(w in room_blob for w in ("fire", "hearth", "flame")):
             parts.append(
-                "The torch pops — Calcifer, same fire as the lantern. It answers the cast."
+                "The hearth pops — Calcifer, the fire you named. It answers the cast."
             )
+        elif any(w in room_blob for w in ("torch", "fire", "flame", "hearth")):
+            parts.append("The torch pops. Just a torch.")
         dice_h = next((h for h in hooks if "dice" in h.lower()), "")
         if dice_h:
             parts.append(dice_h)
@@ -2054,90 +1378,14 @@ def _act_events(camp: dict[str, Any], action: dict[str, Any]) -> list[str]:
             detect()
         except Exception:
             pass
-        parts.append(desc[:220] if desc else "The room hears you.")
-        if hooks:
-            parts.append(hooks[0])
+        # Evennia SystemNoMatch: self.msg("Huh?") — one refuse, never return_appearance.
+        # Inform Check/Instead fail: stop the action; do not Look the room.
+        v = (verb or "verb").strip() or "verb"
+        parts.append("Nothing answers that " + v + ".")
     speech = _player_signal(" ".join(p for p in parts if p), source="keep_gate_act")
     if not speech:
-        speech = (hooks[0] if hooks else desc[:180]) or "The room answers."
+        speech = " ".join(p for p in parts if p) or "Nothing answers that verb."
     return [speech]
-
-
-
-def _wound_look(hp: int, hp_max: int, who: str = "they") -> str:
-    """HP is the body. 10 full, 5 beaten, 3 needs a doctor, 1 badly wounded still moving."""
-    hp = int(hp or 0)
-    mx = max(1, int(hp_max or 10))
-    you = who == "you"
-    if hp <= 0:
-        return "You fall." if you else "They drop."
-    n = 10.0 * hp / mx
-    if n >= 9.5:
-        return "You look unhurt." if you else "They look unhurt."
-    if n >= 5:
-        return "You've taken a beating." if you else "They've taken a beating."
-    if n >= 3:
-        return "You're hurt. You need a doctor." if you else "They're hurt. They need a doctor."
-    return (
-        "You're badly wounded. You can still move. You need help."
-        if you
-        else "They're badly wounded. They can still move. They need help."
-    )
-
-
-def _glance(camp: dict[str, Any]) -> str:
-    """Place remembers deeds, not glances. One beat. Flags prime the next door."""
-    room = _room(camp)
-    name = str(room.get("name") or "Here")
-    rid = str(camp.get("room_id") or room.get("id") or "").lower()
-    tags = [str(x).lower() for x in (room.get("tags") or [])]
-    flags = [str(f).lower() for f in (camp.get("flags") or [])]
-    crate_open = any("crate" in f or f.startswith("handled:") for f in flags)
-    here = " ".join(people_in_room(camp)).lower()
-    if "tavern" in tags or "hub" in tags or "lantern" in rid:
-        if crate_open and "crate" in (str(room.get("desc") or "") + here).lower():
-            return name + " is the same. Wax on the crate is broken. Mira will not look at it."
-        if "talked_merchant" in flags and "merchant" in here:
-            return name + " is the same. Rope and seal still wait. The fire argues with the damp."
-        if "talked_mira" in flags:
-            return name + " is the same. The dwarf's mug was honest work. North is the keep."
-        return name + " is the same. Mira the dwarf at the bar. A fire elemental argues with the damp."
-    if "road" in rid or "road" in name.lower():
-        return name + " is the same. Overturned cart. Keep smoke too black."
-    if "gate" in rid:
-        return name + " is the same. Empty post. Dice on the table. A hatch goes down."
-    if "court" in rid:
-        return name + " is the same. Well rope cut halfway. Barracks barred. West is the great hall."
-    if "hall" in rid or "claw" in rid:
-        here = " ".join(people_in_room(camp)).lower()
-        enc = camp.get("encounter")
-        if isinstance(enc, dict) and int(enc.get("hp") or 0) > 0:
-            _ensure_band(camp)
-            camp_line = _camp_look(camp)
-            crate = " The crate keeps its wax."
-            if camp_line:
-                return camp_line + crate
-            body = _wound_look(int(enc.get("hp") or 0), int(enc.get("hp_max") or 10), "they")
-            if "freed_merchant" in flags:
-                return name + " is the same. " + body + " The rope fell." + crate
-            return name + " is the same. " + body + crate
-        if "freed_merchant" in flags:
-            return name + " is the same. The rope fell. The crate keeps its wax."
-        if "talked_merchant" in flags and "merchant" in here:
-            return name + " is the same. Rope and seal still wait. The crate keeps its wax."
-        return name + " is the same. A captive by the fire. A crate with the keep's seal."
-    if "cellar" in rid:
-        return "The same cave. Cold. Chatter still deeper."
-    if "fork" in rid:
-        return name + " is the same. Noise echoes. Two mouths: left and right."
-    enc = camp.get("encounter")
-    if isinstance(enc, dict) and int(enc.get("hp") or 0) > 0:
-        body = _wound_look(int(enc.get("hp") or 0), int(enc.get("hp_max") or 10), "they")
-        return name + " is the same. " + body
-    people = [p for p in people_in_room(camp) if p]
-    if people:
-        return name + " is the same. " + people[0] + " is here."
-    return name + " is the same."
 
 
 def apply_action(campaign_id: str, action: dict[str, Any] | None) -> dict[str, Any]:
@@ -2163,47 +1411,7 @@ def apply_action(campaign_id: str, action: dict[str, Any] | None) -> dict[str, A
         if noun:
             events.append(_look_at(camp, noun))
         else:
-            camp_line = _camp_look(camp)
-            events.append(camp_line or _glance(camp))
-        enc = camp.get("encounter")
-        if isinstance(enc, dict) and (enc.get("units") or []) and not enc.get("alert"):
-            _camp_tick(camp, events, speak=False)
-    elif atype in ("listen", "wait"):
-        enc = _ensure_band(camp)
-        live = isinstance(enc, dict) and int((enc or {}).get("hp") or 0) > 0
-        if atype == "listen":
-            if not live:
-                events.append("The room holds its breath. Nothing answers.")
-            elif enc.get("alert"):
-                events.append("Steel. Breath. They are all looking.")
-            else:
-                bits: list[str] = []
-                has_rope = False
-                for u in enc.get("units") or []:
-                    st = str(u.get("station") or "")
-                    if st == "captive":
-                        has_rope = True
-                    if u.get("aware"):
-                        continue
-                    if st == "dice":
-                        bits.append("Dice.")
-                    elif st == "sleep":
-                        bits.append("A snore.")
-                if has_rope:
-                    bits.append("The rope creaks.")
-                events.append(" ".join(bits) if bits else "The camp is quiet in the wrong way.")
-                if int(enc.get("rope_tug") or 0) >= 2:
-                    events.append("The knot has been worked.")
-                _camp_tick(camp, events, speak=False)
-        else:
-            if live and enc.get("alert"):
-                events.append("You wait. They do not.")
-                _resolve_ticks(camp, events, pl)
-            elif live:
-                events.append("You wait.")
-                _camp_tick(camp, events, speak=True)
-            else:
-                events.append("Time passes.")
+            events.append(_narrate_room(camp))
     elif atype == "use":
         room = _room(camp)
         tags = [str(x).lower() for x in (room.get("tags") or [])]
@@ -2226,57 +1434,952 @@ def apply_action(campaign_id: str, action: dict[str, Any] | None) -> dict[str, A
         ]).lower()
         loot = list(room.get("loot") or [])
         inv = list(pl.get("inventory") or [])
-        scenery = {
-            "stubs", "stub", "stairs", "stair", "cave", "air", "chatter",
-            "mouth", "hatch", "rock", "wall", "dark", "cold", "fire",
-            "hearth", "keep", "smoke", "weather", "door", "road",
-        }
+        # Evennia CmdGet: empty args → "Get what?" and return (no room dump).
+        # Mag verb is take; bare take/get/grab/pick up must not invent a Look.
         if not noun:
             events.append("Take what?")
-        elif noun in scenery or any(noun == s or noun.endswith("s") and noun[:-1] in scenery for s in scenery):
-            events.append("That stays in the room. It does not come free.")
-        elif "rope" in noun and ("captive" in blob or "merchant" in blob):
-            live = isinstance(camp.get("encounter"), dict) and int((camp.get("encounter") or {}).get("hp") or 0) > 0
-            enc_now = camp.get("encounter") if isinstance(camp.get("encounter"), dict) else {}
-            if live and enc_now.get("alert") and "near:merchant" not in list(camp.get("flags") or []):
-                events.append("They are looking. You cannot reach the rope.")
-            elif live and "near:merchant" not in list(camp.get("flags") or []):
-                ok, line = _sneak_to(camp, pl)
-                events.append(line)
-                if not ok:
-                    enc = _ensure_band(camp) or {}
-                    guard = next((u for u in (enc.get("units") or []) if u.get("station") in ("captive", "mouth") and u.get("aware")), None)
-                    if guard:
-                        _goblin_strike(camp, guard, pl, events)
-                    enc = camp.get("encounter") or enc
-                    if isinstance(enc, dict) and enc.get("init") and "you" in enc["init"]:
-                        enc["whose"] = enc["init"].index("you")
-                else:
-                    events.append(_cut_merchant(camp, pl))
-            else:
-                events.append(_cut_merchant(camp, pl))
         elif any(noun in str(i).lower() for i in inv):
             events.append(f"Already carrying {noun}.")
-        elif any(noun in str(x).lower() for x in loot):
+        elif any(noun in str(x).lower() for x in loot) or (noun and noun in blob):
             item = next((x for x in loot if noun in str(x).lower()), noun.replace(" ", "_"))
             if item not in inv:
                 inv.append(item)
                 pl["inventory"] = inv
-            if "rope" in noun:
-                events.append(_cut_merchant(camp, pl))
-            elif any(w in noun for w in ("crate", "seal", "chest", "bounty")):
-                events.append(
-                    "The crate is a calling card. Wax still holds. "
-                    "We shut it because we did not have the tool."
-                )
-                _work_events(camp, action)
-                enc_now = camp.get("encounter")
-                if isinstance(enc_now, dict) and int(enc_now.get("hp") or 0) > 0:
-                    events.append("Goblins still hold the floor.")
-            else:
-                events.append(f"You take the {noun}. It sits in the hand, unnamed until used.")
+            events.append(f"You take the {noun}.")
+            if any(w in noun for w in ("crate", "seal", "chest", "bounty")):
+                events.extend(_work_events(camp, action))
+            events.append("Carrying: " + ", ".join(inv) + ".")
         else:
-            events.append(f"No {noun} here to take.")
+            # Evennia caller.search no-match: short refuse then return (no Look dump).
+            # Inform "You can't see any such thing" — one beat, not room.desc glued on.
+            events.append(f"No {noun} here.")
+    elif atype == "drop":
+        # Evennia CmdDrop (general.py): empty → "Drop what?"; inventory miss →
+        # nofound_string "You aren't carrying {args}." — short refuse, never Look/talk.
+        noun = str(action.get("item") or "").strip().lower()
+        inv = list(pl.get("inventory") or [])
+        if not noun:
+            events.append("Drop what?")
+        else:
+            # Prefer exact inventory name, then substring (same spirit as take).
+            match = next((i for i in inv if str(i).lower() == noun), None)
+            if match is None:
+                match = next((i for i in inv if noun in str(i).lower()), None)
+            if match is None:
+                events.append(f"You aren't carrying {noun}.")
+            else:
+                pl["inventory"] = [i for i in inv if i != match]
+                events.append(f"You drop the {match}.")
+    elif atype == "give":
+        # Evennia CmdGive (general.py): need inv obj + to/target.
+        # empty/rhs miss → usage; inv miss → You aren't carrying X; no target → short refuse.
+        # Never fall through to talk / return_appearance.
+        noun = str(action.get("item") or "").strip().lower()
+        whom = str(action.get("target") or "").strip()
+        inv = list(pl.get("inventory") or [])
+        if not noun or not whom:
+            events.append("Give what to whom?")
+        else:
+            match = next((i for i in inv if str(i).lower() == noun), None)
+            if match is None:
+                match = next((i for i in inv if noun in str(i).lower()), None)
+            if match is None:
+                events.append(f"You aren't carrying {noun}.")
+            else:
+                people = people_in_room(camp)
+                you = str(pl.get("name") or "").strip()
+                target = _talk_target(whom, people, whom)
+                in_room = any(
+                    target.lower() == p.lower()
+                    or whom.lower() == p.lower()
+                    or whom.lower() in p.lower()
+                    or p.lower() in whom.lower()
+                    for p in people
+                )
+                if you and target and target.lower() == you.lower():
+                    events.append(f"You keep the {match} to yourself.")
+                elif not target or not in_room:
+                    # Evennia caller.search miss on rhs — short refuse, no room dump.
+                    events.append(f"No one here called {whom}.")
+                else:
+                    display = next(
+                        (p for p in people if p.lower() == target.lower() or whom.lower() in p.lower() or p.lower() in whom.lower()),
+                        target,
+                    )
+                    pl["inventory"] = [i for i in inv if i != match]
+                    events.append(f"You give the {match} to {display}.")
+    elif atype == "whisper":
+        # Evennia CmdWhisper: empty lhs/rhs → Usage then return; search miss quiet;
+        # success → at_say(whisper=True). Short refuse; never talk/room.desc dump.
+        whom = str(action.get("target") or "").strip()
+        # Evennia rhs only — never treat the command token / bare raw as speech.
+        speech = str(action.get("message") or "").strip()
+        if not whom or not speech:
+            events.append("Usage: whisper <character> = <message>")
+        else:
+            people = people_in_room(camp)
+            target = _talk_target(whom, people, whom)
+            in_room = any(
+                target.lower() == p.lower()
+                or whom.lower() == p.lower()
+                or whom.lower() in p.lower()
+                or p.lower() in whom.lower()
+                for p in people
+            ) if people else False
+            if not target or not in_room:
+                events.append(f"No one here called {whom}.")
+            else:
+                display = next(
+                    (
+                        p
+                        for p in people
+                        if p.lower() == target.lower()
+                        or whom.lower() in p.lower()
+                        or p.lower() in whom.lower()
+                    ),
+                    target,
+                )
+                events.append(f'You whisper to {display}: "{speech[:180]}"')
+    elif atype == "pose":
+        # Evennia CmdPose (general.py): empty → "What do you want to do?"; else
+        # f"{caller.name}{args}" with leading space unless args[0] in "',:".
+        # Short refuse; never talk/room.desc dump.
+        raw_pose = str(action.get("pose") if action.get("pose") is not None else action.get("message") or "")
+        pose_text = raw_pose.strip()
+        if not pose_text:
+            events.append("What do you want to do?")
+        else:
+            name = str(pl.get("name") or "Adventurer").strip() or "Adventurer"
+            if raw_pose[:1] in ("'", ",", ":"):
+                args = raw_pose
+            else:
+                args = " " + pose_text
+            events.append(f"{name}{args}"[:220])
+    elif atype == "wait":
+        # Inform Standard Rules / DM4 Wait: "Time passes." Short beat; never talk dump.
+        events.append("Time passes.")
+    elif atype == "wear":
+        # Inform Wear: 1 can't wear / 2 not holding / 3 already wearing / 4 put on.
+        # Mag has no wearable flag yet — short refuse; bare → Wear what?
+        noun = str(action.get("item") or "").strip().lower()
+        inv = list(pl.get("inventory") or [])
+        if not noun:
+            events.append("Wear what?")
+        elif any(noun in str(i).lower() for i in inv):
+            # carried but not wearable in Mag wardrobe yet
+            events.append("You can't wear that!")
+        else:
+            events.append("You're not holding that!")
+    elif atype == "remove":
+        # Inform Disrobe: 1 not wearing / 2 take off. Mag: short refuse.
+        noun = str(action.get("item") or "").strip().lower()
+        if not noun:
+            events.append("Remove what?")
+        else:
+            events.append("You're not wearing that!")
+    elif atype == "read":
+        # Inform DM4 Consult / §16 reading matter: bare needs noun;
+        # default "You discover nothing of interest in <x1>."
+        # Never dump room.desc / return_appearance; never talk belt.
+        noun = str(action.get("item") or "").strip().lower()
+        if not noun:
+            events.append("Read what?")
+        else:
+            room = _room(camp)
+            blob = " ".join([
+                str(room.get("name") or ""),
+                str(room.get("desc") or ""),
+                " ".join(str(h) for h in (room.get("hooks") or [])),
+                " ".join(str(x) for x in (room.get("loot") or [])),
+            ]).lower()
+            inv = list(pl.get("inventory") or [])
+            in_scope = (noun in blob) or any(noun in str(i).lower() for i in inv)
+            if not in_scope:
+                events.append(f"Nothing called {noun} here.")
+            else:
+                # Mag has no readable text attr yet — Consult default, one beat.
+                events.append(f"You discover nothing of interest in the {noun}.")
+    elif atype in ("unlock", "lock"):
+        # Inform DM4 Unlock/Lock message 1: not something you can unlock/lock.
+        # Bare → Unlock/Lock what?; Mag has no lockable flag yet — short refuse.
+        # Never talk dump; never move (fixes lock-the-gate → north).
+        noun = str(action.get("item") or "").strip().lower()
+        locking = atype == "lock"
+        if not noun:
+            events.append("Lock what?" if locking else "Unlock what?")
+        else:
+            room = _room(camp)
+            blob = " ".join([
+                str(room.get("name") or ""),
+                str(room.get("desc") or ""),
+                " ".join(str(h) for h in (room.get("hooks") or [])),
+                " ".join(str(x) for x in (room.get("loot") or [])),
+                " ".join(str(k) for k in (room.get("exits") or {})),
+            ]).lower()
+            in_scope = bool(noun and noun in blob) or any(
+                noun in str(i).lower() for i in (pl.get("inventory") or [])
+            )
+            if not in_scope and noun not in ("door", "gate", "crate", "chest", "box", "seal", "lock"):
+                events.append(f"Nothing called {noun} here.")
+            else:
+                if locking:
+                    events.append("That doesn't seem to be something you can lock.")
+                else:
+                    events.append("That doesn't seem to be something you can unlock.")
+
+    elif atype == "listen":
+        # Inform WI §7.7 / Standard Rules: bare listen = listen to location.
+        # Default report: "You hear nothing unexpected." Art of Noise room miss:
+        # "Nothing of note." Short ambient beat from room hooks/people only —
+        # never talk belt, never full room.desc / return_appearance.
+        room = _room(camp)
+        target = str(action.get("target") or action.get("item") or "").strip().lower()
+        hooks = [str(h) for h in (room.get("hooks") or []) if str(h).strip()]
+        blob = " ".join(
+            [
+                str(room.get("name") or ""),
+                str(room.get("desc") or ""),
+                " ".join(hooks),
+            ]
+        ).lower()
+        people = people_in_room(camp)
+        if target:
+            # listen to <noun>: match hook/person/named hearth; else Inform default.
+            hit = ""
+            if target in ("fire", "hearth", "flame", "calcifer") and _named_hearth(camp):
+                hit = "The named fire argues with the damp. A soft pop, then quiet."
+            elif any(target in str(p).lower() for p in people):
+                whom = next(p for p in people if target in str(p).lower())
+                hit = f"You catch a murmur near {whom}."
+            else:
+                for h in hooks:
+                    if target and target in h.lower():
+                        hit = f"You hear something near the {target}."
+                        break
+            events.append(hit or "You hear nothing unexpected.")
+        else:
+            # bare listen → location ambient, not Look.
+            strokes = []
+            if _named_hearth(camp) or any(w in blob for w in ("fire", "hearth", "flame")):
+                strokes.append("The hearth ticks once against the damp.")
+            if people:
+                strokes.append("Soft voices braid at the edge of hearing.")
+            elif any(w in blob for w in ("wind", "road", "woods", "keep", "stone", "gate")):
+                strokes.append("Stone and air hold their own quiet.")
+            if strokes:
+                events.append(" ".join(strokes)[:220])
+            else:
+                events.append("You hear nothing unexpected.")
+    elif atype in ("smell", "taste", "touch"):
+        # Inform DM4 §A4 Smell / Taste / Touch — short sensory floors; never talk belt / room.desc.
+        #  Smell: "You smell nothing unexpected."
+        #  Taste: "You taste nothing unexpected."
+        #  Touch1 animate: "Keep your hands to yourself!"; Touch2: "You feel nothing unexpected."
+        room = _room(camp)
+        target = str(action.get("target") or action.get("item") or "").strip().lower()
+        hooks = [str(h) for h in (room.get("hooks") or []) if str(h).strip()]
+        blob = " ".join(
+            [
+                str(room.get("name") or ""),
+                str(room.get("desc") or ""),
+                " ".join(hooks),
+            ]
+        ).lower()
+        people = people_in_room(camp)
+        sense = atype
+        if sense == "smell":
+            default = "You smell nothing unexpected."
+            if target:
+                if target in ("fire", "hearth", "flame", "calcifer") and _named_hearth(camp):
+                    events.append("Woodsmoke and named fire. A sharp sweet pop.")
+                elif any(target in str(p).lower() for p in people):
+                    events.append(default)
+                elif any(target in h.lower() for h in hooks):
+                    events.append(f"You catch a faint scent near the {target}.")
+                else:
+                    events.append(default)
+            else:
+                # Calcifer/hearth scent only on named lantern hearth — keep torch ≠ woodsmoke.
+                if _named_hearth(camp) and any(w in blob for w in ("fire", "hearth", "flame", "calcifer")):
+                    events.append("Woodsmoke hangs low. The hearth answers first.")
+                else:
+                    events.append(default)
+        elif sense == "taste":
+            events.append("You taste nothing unexpected.")
+        else:  # touch
+            if target and any(target in str(p).lower() for p in people):
+                events.append("Keep your hands to yourself!")
+            elif target in ("fire", "hearth", "flame", "calcifer") and _named_hearth(camp):
+                events.append("Heat warns your fingers back. The named fire does not want a hand.")
+            else:
+                events.append("You feel nothing unexpected.")
+
+    elif atype == "lmode":
+        # Inform DM4 §A4 LMode1/2/3 — Mag has no look-mode organ yet; speak only + flag.
+        # Never room.desc; never invent Calcifer on keep_gate.
+        mode = str(action.get("mode") or "brief").strip().lower()
+        if mode not in ("brief", "verbose", "superbrief"):
+            mode = "brief"
+        camp["look_mode"] = mode
+        if mode == "verbose":
+            events.append(
+                "The game is now in its verbose mode, which always gives "
+                "long descriptions of locations (even if you've been there before)."
+            )
+        elif mode == "superbrief":
+            events.append(
+                "The game is now in its superbrief mode, which always gives "
+                "short descriptions of locations (even if you haven't been there before)."
+            )
+        else:
+            events.append(
+                "The game is now in its normal brief printing mode, which gives "
+                "long descriptions of places never before visited and short descriptions otherwise."
+            )
+    elif atype == "objects":
+        # Inform DM4 §A4 Objects1/2 — no handled-history organ; hang on inventory if present.
+        inv = list(((camp.get("player") or {}).get("inventory") or []))
+        if not inv:
+            events.append("Objects you have handled: None.")
+        else:
+            lines = ["Objects you have handled:"]
+            for item in inv[:16]:
+                lines.append(f"  {item}")
+            if len(inv) > 16:
+                lines.append("(considering the first sixteen objects only)")
+            events.append("\n".join(lines))
+    elif atype == "places":
+        # Inform DM4 §A4 Places — no visited organ yet; current room name only.
+        room = _room(camp)
+        rname = str((room or {}).get("name") or camp.get("room_id") or "").strip()
+        if not rname:
+            events.append("You have visited: nowhere interesting.")
+        else:
+            events.append(f"You have visited: {rname}.")
+
+    elif atype == "pronouns":
+        # Inform DM4 §A4 Pronouns1-4. Mag has no it/him/her/them antecedent organ yet.
+        # Floor Pronouns4 only; never room.desc; never invent Calcifer on keep_gate.
+        events.append("At the moment, no pronouns are known to the game.")
+    elif atype == "notify":
+        # Inform DM4 §A4 NotifyOn / NotifyOff. Hang score_notify flag; speak only.
+        mode = str(action.get("mode") or "on").strip().lower()
+        if mode == "off":
+            camp["score_notify"] = False
+            events.append("Score notification off.")
+        else:
+            camp["score_notify"] = True
+            events.append("Score notification on.")
+    elif atype == "verify":
+        # Inform DM4 §A4 Verify1 — Mag has no gamefile CRC organ; always intact.
+        events.append("The game file has verified as intact.")
+    elif atype == "version":
+        # Inform Version banner — Mag release line, not a room dump.
+        events.append("Mag play-as-work table. The Verkle chain is the only save.")
+    elif atype == "script":
+        # Inform DM4 §A4 ScriptOn / ScriptOff. No Z-machine transcript stream —
+        # hang camp["transcript"] flag; short floors only; never room.desc; never invent Calcifer.
+        mode = str(action.get("mode") or "on").strip().lower()
+        on = bool(camp.get("transcript"))
+        if mode == "off":
+            if not on:
+                events.append("Transcripting is already off.")
+            else:
+                camp["transcript"] = False
+                events.append("End of transcript.")
+        else:
+            if on:
+                events.append("Transcripting is already on.")
+            else:
+                camp["transcript"] = True
+                events.append("Start of a transcript of Mag play-as-work table.")
+    elif atype == "recording":
+        # Inform I6 CommandsOn/Off (PunyInform verblib). No Z-machine @output_stream 4 —
+        # hang camp["recording"] flag; short floors only; never room.desc; never invent Calcifer.
+        mode = str(action.get("mode") or "on").strip().lower()
+        on = bool(camp.get("recording"))
+        if mode == "off":
+            camp["recording"] = False
+            events.append("[Command recording off.]")
+        else:
+            camp["recording"] = True
+            events.append("[Command recording on.]")
+    elif atype == "replay":
+        # Inform I6 CommandsRead. Mag has no @input_stream / command-file organ — soft floor only.
+        # Never invent a replay file; never dump room.desc; never invent Calcifer on keep_gate.
+        events.append("[Replaying commands.]")
+    elif atype == "amusing":
+        # Inform DM4 Amusing entry point / AMUSING_PROVIDED end-menu. Mid-story refuse.
+        # Classic library stub: "You must finish the story first." Mag: no victory organ yet.
+        # Never dump room.desc; never invent Calcifer on keep_gate; never open end-menu.
+        events.append("You must finish the story first.")
+    elif atype == "pushdir":
+
+        # Inform DM4 §A4 PushDir1/2/3. Mag has no AllowPushDir organ — refuse only.
+        # Never move the player; never dump room.desc; never invent Calcifer on keep_gate.
+        code = int(action.get("code") or 1)
+        if code == 2:
+            events.append("That's not a direction.")
+        elif code == 3:
+            events.append("Not that way you can't.")
+        else:
+            events.append("Is that the best you can think of?")
+
+    elif atype == "quit":
+        # Inform DM4 §A4 Quit2. Soft confirm only — never kill /wave; never room.desc; never invent Calcifer.
+        events.append("Are you sure you want to quit?")
+    elif atype == "restart":
+        # Inform DM4 §A4 Restart1. Soft confirm only — never wipe campaign; never invent Calcifer.
+        events.append("Are you sure you want to restart?")
+    elif atype == "restore":
+        # Inform DM4 §A4 Restore1. Mag ironman / no restore organ — fail short.
+        events.append("Restore failed.")
+    elif atype == "save":
+        # Inform DM4 §A4 Save2 "Ok." Mag: Verkle chain is the only save (no Z-machine file dialog).
+        events.append("Ok. The Verkle chain is the only save.")
+    elif atype == "undo":
+        # Inform DM4 Miscellany 6. Mag ironman provides no undo organ.
+        events.append("[Your interpreter does not provide undo. Sorry!]")
+    elif atype == "oops":
+        # Inform DM4 Miscellany 14/16. Mag has no oops-correction organ — short refuse only.
+        mode = str(action.get("mode") or "bare").strip().lower()
+        if mode == "multi":
+            events.append('"Oops" can only correct a single word.')
+        else:
+            events.append("Sorry, that can't be corrected.")
+
+    elif atype == "score":
+        # Inform DM4 §A4 Score: "You have so far scored ‹score› out of a possible MAX_SCORE, in ‹turns› turn/turns"
+        # Mag has no MAX_SCORE organ — floor 0/0. Prefer camp day / turns / storyteller fast_turns.
+        # Short beat only; never room.desc; never invent Calcifer on keep_gate.
+        st = camp.get("storyteller") if isinstance(camp.get("storyteller"), dict) else {}
+        n = 0
+        if camp.get("day") is not None:
+            try:
+                n = int(camp.get("day") or 0)
+            except (TypeError, ValueError):
+                n = 0
+        elif camp.get("turns") is not None:
+            try:
+                n = int(camp.get("turns") or 0)
+            except (TypeError, ValueError):
+                n = 0
+        else:
+            try:
+                n = int(st.get("fast_turns") or 0)
+            except (TypeError, ValueError):
+                n = 0
+            if n <= 0:
+                try:
+                    n = int(st.get("days_since_crisis") or 0)
+                except (TypeError, ValueError):
+                    n = 0
+        turn_word = "turn" if n == 1 else "turns"
+        events.append(f"You have so far scored 0 out of a possible 0, in {n} {turn_word}.")
+    elif atype in ("push", "pull", "turn"):
+        # Inform DM4 §A4 Push / Pull / Turn — Mag has no scenery-push organ yet.
+        #  Pull1 fixed-in-place unused (no scenery model); Pull2 unable; Pull3 nothing obvious; Pull4 courteous.
+        #  Push and Turn use the same floors (DM4: Turn: see Pull). Bare → What do you want to …?
+        target = str(action.get("target") or action.get("item") or "").strip().lower()
+        if atype == "push":
+            verb = "push"
+        elif atype == "pull":
+            verb = "pull"
+        else:
+            verb = "turn"
+        if not target:
+            events.append(f"What do you want to {verb}?")
+        elif target in ("fire", "hearth", "flame", "calcifer", "torch") and _named_hearth(camp):
+            # Named fire isn't furniture — Pull2 / Push2 / Turn2.
+            events.append("You are unable to.")
+        else:
+            people = people_in_room(camp)
+            person_keys = (
+                "mira", "merchant", "goblin", "captive", "cartographer",
+                "stranger", "barkeep", "bartender",
+            )
+            is_person = False
+            for p in people:
+                pl = str(p).lower()
+                if pl in ("calcifer", "fire", "hearth", "flame", "torch"):
+                    continue
+                if target == pl or target in pl or pl in target:
+                    is_person = True
+                    break
+            if not is_person:
+                for k in person_keys:
+                    if target == k or target.startswith(k + " ") or target.endswith(" " + k):
+                        is_person = True
+                        break
+            if is_person:
+                events.append("That would be less than courteous.")
+            else:
+                # Fixed-in-place / no push organ — Pull3 / Turn3 default.
+                events.append("Nothing obvious happens.")
+
+    elif atype == "knock":
+        # Inform 7 Handbook knocking-on Report/Check. Mag: no door-open organ yet.
+        # Bare → What do you want to knock on?
+        # self → Your head makes a hollow sound.
+        # person → That wouldn't be polite.
+        # else → You tap gently on <noun>, but nothing happens.
+        # Never dump room.desc; never invent Calcifer on keep_gate; never steal Attack.
+        target = str(action.get("target") or "").strip().lower()
+        if not target:
+            events.append("What do you want to knock on?")
+        elif target in ("me", "myself", "self", "my head", "head"):
+            events.append("Your head makes a hollow sound.")
+        else:
+            people = people_in_room(camp)
+            person_keys = (
+                "mira", "merchant", "goblin", "captive", "cartographer",
+                "stranger", "barkeep", "bartender",
+            )
+            is_person = False
+            for p in people:
+                pl = str(p).lower()
+                if pl in ("calcifer", "fire", "hearth", "flame", "torch"):
+                    continue
+                if target == pl or target in pl or pl in target:
+                    is_person = True
+                    break
+            if not is_person:
+                for k in person_keys:
+                    if target == k or target.startswith(k + " ") or target.endswith(" " + k):
+                        is_person = True
+                        break
+            if is_person:
+                events.append("That wouldn't be polite.")
+            else:
+                noun = target
+                if not noun.startswith(("the ", "a ", "an ")):
+                    noun = f"the {noun}"
+                events.append(f"You tap gently on {noun}, but nothing happens.")
+
+    elif atype == "jump":
+        # Inform DM4 §A4 Jump / JumpOver. Short beat; never room.desc; never invent Calcifer.
+        target = str(action.get("target") or "").strip()
+        if action.get("over") and target:
+            events.append("You would achieve nothing by this.")
+        else:
+            events.append("You jump on the spot, fruitlessly.")
+    elif atype == "sing":
+        # Inform DM4 §A4 Sing
+        events.append("Your singing is abominable.")
+    elif atype == "think":
+        # Inform DM4 §A4 Think
+        events.append("What a good idea.")
+    elif atype == "kiss":
+        # Inform DM4 §A4 Kiss — same floor with or without target; never talk dump.
+        events.append("Keep your mind on the game.")
+    elif atype == "swim":
+        # Inform DM4 §A4 Swim ("swim"/"dive")
+        events.append("There's not enough water to swim in.")
+    elif atype == "dig":
+        # Inform DM4 §A4 Dig
+        events.append("Digging would achieve nothing here.")
+    elif atype == "cut":
+        # Inform DM4 §A4 Cut — bare or with target; never room.desc; never invent Calcifer.
+        if not str(action.get("target") or "").strip():
+            events.append("Cut what?")
+        else:
+            events.append("Cutting that up would achieve little.")
+    elif atype == "wake":
+        # Inform DM4 §A4 Wake / WakeOther
+        events.append("The dreadful truth is, this is not a dream.")
+    elif atype == "sleep":
+        # Inform DM4 §A4 Sleep — soft floor for nap/doze/yawn ONLY.
+        # Mag rest|heal|camp|sleep stays the rest organ (HP heal). Never dump room.desc;
+        # never invent Calcifer on keep_gate; never steal rest.
+        events.append("You aren't feeling especially drowsy.")
+    elif atype == "swing":
+        # Inform DM4 §A4 Swing — Grammar.h: Verb 'swing' * noun / * 'on' noun → Swing.
+        # Floor: There's nothing sensible to swing here.
+        # Mag attack organ keeps bare swing / swing at / combat synonyms.
+        # Never dump room.desc; never invent Calcifer on keep_gate.
+        events.append("There's nothing sensible to swing here.")
+    elif atype == "burn":
+        # Inform DM4 §A4 Burn + Miscellany 49.
+        # Bare burn → incomplete prompt. Burn+noun → "This dangerous act would achieve little."
+        # Mag use/fire keeps: set fire / on fire / light the / torch the / set the X on fire.
+        # Never dump room.desc; never invent Calcifer on keep_gate; never steal use/light/torch.
+        target = str(action.get("target") or "").strip()
+        if target:
+            events.append("This dangerous act would achieve little.")
+        else:
+            events.append("What do you want to burn?")
+    elif atype == "pray":
+        # Inform DM4 §A4 Pray
+        events.append("Nothing practical results from your prayer.")
+    elif atype == "rub":
+        # Inform DM4 §A4 Rub — short floor; never talk dump; never room.desc.
+        events.append("You achieve nothing by this.")
+    elif atype == "squeeze":
+        # Inform DM4 §A4 Squeeze — Squeeze2 default (inanimate); never talk dump.
+        events.append("You achieve nothing by this.")
+    elif atype == "wave":
+        # Inform DM4 §A4 WaveHands / Wave. Bare wave = hands; with target = wave object.
+        # Do not invent hold-check organ — short WaveHands/Wave floors only.
+        target = str(action.get("target") or "").strip()
+        if target:
+            events.append(f"You look ridiculous waving {target}.")
+        else:
+            events.append("You wave, feeling foolish.")
+    elif atype == "climb":
+        # Inform DM4 §A4 Climb — miss verb floor; do not steal enter/gate→move.
+        events.append("I don't think much is to be achieved by that.")
+    elif atype == "extinguish":
+        # Inform Extinguish / SwitchOff soft (put out / douse / blow out).
+        # No lit-device organ yet — short refuse only.
+        # Never dump room.desc; never invent Calcifer quench on keep_gate.
+        target = str(action.get("target") or "").strip()
+        if target:
+            events.append("You can't extinguish that.")
+        else:
+            events.append("What do you want to extinguish?")
+    elif atype == "blow":
+        # Inform DM4 §A4 Blow — bare asks noun; with target short refuse. Never talk dump.
+        if not str(action.get("target") or "").strip():
+            events.append("Blow what?")
+        else:
+            events.append("You can't usefully blow that.")
+    elif atype == "buy":
+        # Inform DM4 §A4 Buy. "buy a drink" already drink earlier in parse.
+        events.append("Nothing is on sale.")
+    elif atype == "tie":
+        # Inform DM4 §A4 Tie — bare or with target; never dump Look prose.
+        if not str(action.get("target") or "").strip():
+            events.append("Tie what?")
+        else:
+            events.append("You would achieve nothing by this.")
+    elif atype == "untie":
+        # Inform community Untie soft (no stock I7 Untie). Field block refuse.
+        # Never dump room.desc; never invent rope-cut / Calcifer; never talk belt.
+        if not str(action.get("target") or "").strip():
+            events.append("What do you want to untie?")
+        else:
+            events.append("There's nothing to be achieved by that.")
+    elif atype == "sorry":
+        # Inform DM4 §A4 Sorry
+        events.append("Oh, don't apologise.")
+    elif atype == "look_under":
+        # Inform DM4 §A4 LookUnder — miss under-look; never mistype as look(item=under…).
+        events.append("You find nothing of interest.")
+    elif atype == "yes":
+        # Inform DM4 §A4 Yes — Soft Yes; rhetorical only; never talk dump.
+        events.append("That was a rhetorical question.")
+    elif atype == "no":
+        # Inform DM4 §A4 No — same floor as Yes.
+        events.append("That was a rhetorical question.")
+    elif atype == "set":
+        # Inform DM4 §A4 Set / SetTo — miss dial; never invent switch organ.
+        target = str(action.get("target") or "").strip()
+        if action.get("set_to"):
+            events.append("No, you can't set that to anything.")
+        elif not target:
+            events.append("Set what?")
+        else:
+            events.append("No, you can't set that.")
+    elif atype == "switch":
+        # Inform DM4 §A4 SwitchOn/SwitchOff — miss switchables; short refuse.
+        events.append("That's not something you can switch.")
+    elif atype == "throw_at":
+        # Inform DM4 §A4 ThrowAt — miss throw; do NOT steal attack/slay or "throw workers".
+        target = str(action.get("target") or "").strip()
+        if not target:
+            events.append("Throw what?")
+        else:
+            events.append("Futile.")
+
+    elif atype == "mild":
+        events.append("Quite.")
+    elif atype == "strong":
+        events.append("Real adventurers do not use such language.")
+    elif atype == "fill":
+        events.append("But there's no water here to carry.")
+    elif atype == "empty":
+        target = str(action.get("target") or "").strip()
+        if not target:
+            events.append("Empty what?")
+        else:
+            events.append("That can't contain things.")
+    elif atype == "pour":
+        # Inform EmptyT cousin (stock Grammar.h has no Pour verb). Mag miss floors only.
+        # Do NOT invent liquid/container organ; drink phrases stay drink organ.
+        target = str(action.get("target") or "").strip()
+        into = str(action.get("into") or "").strip()
+        if not target and not into:
+            events.append("What do you want to pour?")
+        else:
+            # DM4 EmptyT4 / EmptyT1 miss — no liquid organ yet
+            events.append("That would scarcely empty anything.")
+    elif atype == "show":
+        item = str(action.get("item") or "").strip()
+        target = str(action.get("target") or "").strip()
+        if not item and not target:
+            events.append("Show what?")
+        elif item and not target:
+            events.append("Show it to whom?")
+        else:
+            # miss holding organ: short Show2
+            inv = [str(i).lower() for i in (pl.get("inventory") or [])]
+            held = any(item.lower() in i or i in item.lower() for i in inv) if item else False
+            if item and not held:
+                events.append("You aren't holding that.")
+            else:
+                events.append("They are unimpressed.")
+
+    elif atype == "search":
+        # Inform DM4 §A4 Search 2/4/5/6. Mag has no container organ yet — short floors,
+        # never _narrate_room. Container open/closed reads the same crate_open flag
+        # the open/close organ already writes; no new state.
+        noun = str(action.get("target") or action.get("item") or "").strip().lower()
+        if not noun:
+            events.append("Search what?")
+        else:
+            room = _room(camp)
+            blob = " ".join([
+                str(room.get("name") or ""),
+                str(room.get("desc") or ""),
+                " ".join(str(h) for h in (room.get("hooks") or [])),
+                " ".join(str(x) for x in (room.get("loot") or [])),
+                " ".join(str(k) for k in (room.get("exits") or {})),
+            ]).lower()
+            in_inv = any(noun in str(i).lower() for i in (pl.get("inventory") or []))
+            in_room = bool(noun and noun in blob) or in_inv
+            containers = ("crate", "chest", "seal", "box", "sack", "pack", "barrel")
+            supporters = ("table", "bar", "counter", "shelf", "bench", "slab")
+            is_container = any(w in noun or noun in w for w in containers) and (
+                in_room or any(w in blob for w in containers)
+            )
+            is_supporter = any(w in noun or noun in w for w in supporters) and in_room
+            flags = list(camp.get("flags") or [])
+            opened = any(
+                str(f) == "crate_open"
+                or str(f).startswith(("temple:", "shared:", "door_open:"))
+                for f in flags
+            )
+            if not in_room and not is_container:
+                events.append(f"Nothing called {noun} here.")
+            elif is_container and not opened:
+                events.append(f"You can't see inside, since the {noun} is closed.")
+            elif is_container:
+                events.append(f"The {noun} is empty.")
+            elif is_supporter:
+                events.append(f"There is nothing on the {noun}.")
+            else:
+                events.append("You find nothing of interest.")
+    elif atype == "vague_go":
+        # Inform DM4 §A4 VagueGo. The exits themselves stay the move organ's job.
+        events.append("You'll have to say which compass direction to go in.")
+    elif atype == "answer":
+        # Inform DM4 §A4 Answer. A named person still routes to the talk organ upstream.
+        events.append("There is no reply.")
+    elif atype == "follow":
+        # Inform follow.inf FollowSub soft: bare → whom; noun present → "No need!".
+        # No follow_direction / MoveNPC organ yet. Never talk belt; never room.desc.
+        target = str(action.get("target") or "").strip()
+        mode = str(action.get("mode") or "").strip().lower()
+        if mode == "whom" or not target:
+            events.append("Whom do you want to follow?")
+        else:
+            events.append("No need!")
+    elif atype == "ask":
+        # Inform Miscellany 48 incomplete Ask (creature token missing).
+        # Named-person Ask stays talk organ upstream. Never room.desc; never invent Calcifer.
+        events.append("Whom do you want to ask?")
+    elif atype == "tell":
+        # Inform DM4 §A4 Tell1/Tell2. Named-person Tell stays talk organ upstream.
+        target = str(action.get("target") or "").strip()
+        if not target:
+            events.append("You talk to yourself a while.")
+        else:
+            events.append("This provokes no reaction.")
+    elif atype == "order":
+        # Inform DM4 §A4 Order. Drink "order a …" never reaches here.
+        target = str(action.get("target") or "").strip()
+        if not target:
+            events.append("Order whom?")
+        else:
+            name = target.split()[0].capitalize()
+            events.append(f"{name} has better things to do.")
+    elif atype == "exit":
+        # Inform DM4 §A4 Exit1 / GetOff — Mag has no enter-furniture organ yet.
+        ex_tgt = str(action.get("target") or "").strip().lower()
+        if ex_tgt:
+            events.append(f"But you aren't on the {ex_tgt} at the moment.")
+        else:
+            events.append("But you aren't in anything at the moment.")
+    elif atype == "eat":
+        # Inform DM4 §A4 Eat1 — no edible organ yet; never room.desc.
+        item = str(action.get("item") or "").strip()
+        if not item:
+            events.append("Eat what?")
+        else:
+            events.append("That's plainly inedible.")
+    elif atype == "enter":
+        # Inform DM4 §A4 Enter2/3 — no furniture organ yet; never _narrate_room.
+        noun = str(action.get("target") or action.get("item") or "").strip().lower()
+        if not noun:
+            events.append("Enter what?")
+        else:
+            room = _room(camp)
+            blob = " ".join([
+                str(room.get("name") or ""),
+                str(room.get("desc") or ""),
+                " ".join(str(h) for h in (room.get("hooks") or [])),
+                " ".join(str(x) for x in (room.get("loot") or [])),
+            ]).lower()
+            flags = list(camp.get("flags") or [])
+            opened = any(
+                str(f) == "crate_open"
+                or str(f).startswith(("temple:", "shared:", "door_open:"))
+                for f in flags
+            )
+            containers = ("crate", "chest", "seal", "box", "sack", "barrel")
+            is_container = any(w in noun or noun in w for w in containers)
+            if is_container and not opened:
+                events.append(f"You can't get into the closed {noun}.")
+            else:
+                events.append("That's not something you can enter.")
+    elif atype == "sit":
+        # Inform Sit is Enter. Mag: no furniture organ — short refuse, never room.desc.
+        noun = str(action.get("target") or "").strip().lower()
+        mode = str(action.get("mode") or "").strip().lower()
+        if not noun:
+            events.append("Lie on what?" if mode == "lie" else "Sit on what?")
+        else:
+            events.append("That's not something you can sit on.")
+    elif atype == "stand":
+        # Inform: already standing when not on a supporter.
+        events.append("You are already standing.")
+
+    elif atype == "home":
+        # Evennia CmdHome (general.py): key=home; locks perm(home)|Builder; arg_regex r"$".
+        # no home → "You have no home!"; already there → "You are already home!";
+        # else → "There's no place like home ..." + move_to(..., move_type="teleport").
+        # Mag home = lantern/tavern hub (no caller.home attr). Short refuse; never talk dump.
+        rooms = (camp.get("module_snapshot") or {}).get("rooms") or {}
+        home_id = None
+        for rid, room in rooms.items():
+            rid_l = str(rid).lower()
+            tags = [str(x).lower() for x in ((room or {}).get("tags") or [])]
+            rname = str((room or {}).get("name") or "").lower()
+            area = str((room or {}).get("area_tag") or "").lower()
+            if (
+                "lantern" in rid_l
+                or "tavern" in rid_l
+                or "tavern" in tags
+                or "hub" in tags
+                or area == "hub"
+                or ("mira" in rname and any(w in rname for w in ("hearth", "tavern", "lantern", "inn")))
+            ):
+                home_id = rid
+                break
+        if home_id is None:
+            start = (
+                camp.get("start_room")
+                or (camp.get("module_snapshot") or {}).get("start_room")
+            )
+            if start and str(start) in rooms:
+                home_id = start
+            elif start:
+                home_id = start
+        if not home_id:
+            events.append("You have no home!")
+        elif str(camp.get("room_id") or "") == str(home_id):
+            events.append("You are already home!")
+        else:
+            camp["room_id"] = home_id
+            camp["encounter"] = None
+            room = _room(camp)
+            for fl in room.get("flags_on_enter") or []:
+                camp["flags"] = list(dict.fromkeys(list(camp.get("flags") or []) + [fl]))
+            events.append("There's no place like home ...")
+            name = str(room.get("name") or "home")
+            hook = str((room.get("hooks") or [""])[0] or "")
+            land = f"You are home: {name}."
+            if hook:
+                land = land + " " + hook
+            events.append(land[:220])
+    elif atype in ("open", "close"):
+        # Evennia CmdOpenCloseDoor: empty → usage return; not-door short refuse;
+        # already open/closed; You open/close X. Inform: "That's not something you can open."
+        # Never fall through to talk / return_appearance.
+        noun = str(action.get("item") or "").strip().lower()
+        closing = atype == "close"
+        if not noun:
+            events.append("Close what?" if closing else "Open what?")
+        else:
+            room = _room(camp)
+            blob = " ".join([
+                str(room.get("name") or ""),
+                str(room.get("desc") or ""),
+                " ".join(str(h) for h in (room.get("hooks") or [])),
+                " ".join(str(x) for x in (room.get("loot") or [])),
+                " ".join(str(k) for k in (room.get("exits") or {})),
+            ]).lower()
+            people = people_in_room(camp)
+            in_people = any(
+                noun == p.lower() or noun in p.lower() or p.lower() in noun
+                for p in people
+            )
+            in_inv = any(noun in str(i).lower() for i in (pl.get("inventory") or []))
+            in_room = bool(noun and noun in blob) or in_inv
+            containers = ("crate", "chest", "seal", "box")
+            doors = ("door", "gate", "doorway", "hatch")
+            is_container = any(w in noun or noun in w for w in containers) and (
+                in_room or any(w in blob for w in containers)
+            )
+            is_door = any(w in noun or noun in w for w in doors) and (
+                in_room or any(w in blob for w in doors) or bool(room.get("exits"))
+            )
+            flags = list(camp.get("flags") or [])
+            opened = any(
+                str(f).startswith("temple:")
+                or str(f).startswith("shared:")
+                or str(f).startswith("slain:")
+                or str(f).startswith("crate_open")
+                or str(f).startswith("door_open:")
+                for f in flags
+            )
+            if in_people and not is_container and not is_door:
+                events.append("This is not a door.")
+            elif not in_room and not is_container and not is_door:
+                events.append(f"Nothing called {noun} here.")
+            elif not is_container and not is_door:
+                events.append("That's not something you can open." if not closing else "That's not something you can close.")
+            elif is_container:
+                label = next((w for w in containers if w in noun or noun in w), "crate")
+                if closing:
+                    if "crate_open" in flags:
+                        camp["flags"] = [f for f in flags if f != "crate_open"]
+                        events.append(f"You close the {label}.")
+                    else:
+                        events.append(f"The {label} is already closed.")
+                else:
+                    if opened or "crate_open" in flags:
+                        events.append(f"The {label} is already open.")
+                    else:
+                        events.append(f"You open the {label}.")
+                        camp["flags"] = list(dict.fromkeys(flags + ["crate_open"]))
+                        events.extend(_work_events(camp, action))
+            else:
+                rid = str(camp.get("room_id") or "here")
+                flag = f"door_open:{rid}"
+                label = next((w for w in doors if w in noun or noun in w), "door")
+                if closing:
+                    if flag in flags:
+                        camp["flags"] = [f for f in flags if f != flag]
+                        events.append(f"You close the {label}.")
+                    else:
+                        events.append(f"The {label} is already closed.")
+                else:
+                    if flag in flags:
+                        events.append(f"The {label} is already open.")
+                    else:
+                        camp["flags"] = list(dict.fromkeys(flags + [flag]))
+                        events.append(f"You open the {label}.")
     elif atype == "talk":
         # Address the named person. Their hook is the line. HP lives on the bar.
         events.extend(_talk_events(camp, pl, action))
@@ -2374,138 +2477,101 @@ def apply_action(campaign_id: str, action: dict[str, Any] | None) -> dict[str, A
                     direction = k
                     break
         if direction not in exits:
-            return {"ok": False, "error": f"can't go {direction}", "legal": legal}
-        if camp.get("encounter") and int((camp["encounter"] or {}).get("hp") or 0) > 0:
-            dmg = roll_dice("1d4")
-            pl["hp"] = max(0, int(pl.get("hp") or 0) - int(dmg["total"]))
-            events.append(f"Leaving under fire — take {dmg['total']}! HP {pl['hp']}.")
-            if pl["hp"] <= 0:
-                camp["status"] = "defeated"
-                camp["player"] = pl
-                events.append("You fall. Say start classic for a new run.")
-                save_campaign(camp)
-                return {"ok": True, "events": events, "narrate": " ".join(events), "status": "defeated"}
-        camp["room_id"] = exits[direction]
-        camp["encounter"] = None
-        room = _room(camp)
-        for fl in room.get("flags_on_enter") or []:
-            camp["flags"] = list(dict.fromkeys(list(camp.get("flags") or []) + [fl]))
-        enc = room.get("encounter")
-        if enc:
-            camp["encounter"] = dict(enc)
-            rid = str(room.get("id") or camp.get("room_id") or "").lower()
-            if "claw" in rid or "hall" in rid:
-                _ensure_band(camp)
-                events.append("You enter the hall. " + (_camp_look(camp) or "Goblins hold the floor.") + " The crate keeps its wax.")
-            else:
-                events.append(
-                    "You enter "
-                    + str(room.get("name") or "the room")
-                    + ". Something holds the floor."
-                )
+            # Evennia CmdExitError (Howto-Default-Exit-Errors): "You cannot move {key}."
+            # Short refuse as narrate/events — never ok:False empty speak → room floor dump.
+            d = (direction or "that way").strip() or "that way"
+            events.append(f"You cannot move {d}.")
         else:
-            # game_entry.walk shape (stone 2), geography from the module not BUILDINGS.
-            hook = str((room.get("hooks") or [""])[0] or "")
-            name = str(room.get("name") or "somewhere")
-            low_n = name.lower()
-            if any(w in low_n for w in ("cave", "hall", "fork", "cellar", "tunnel", "pit", "road", "gate", "court", "lantern", "tavern")):
-                line = "You walk " + direction + " into " + name + "."
+            if camp.get("encounter") and int((camp["encounter"] or {}).get("hp") or 0) > 0:
+                dmg = roll_dice("1d4")
+                pl["hp"] = max(0, int(pl.get("hp") or 0) - int(dmg["total"]))
+                events.append(f"Leaving under fire — take {dmg['total']}! HP {pl['hp']}.")
+                if pl["hp"] <= 0:
+                    camp["status"] = "defeated"
+                    camp["player"] = pl
+                    events.append("You fall. Say start classic for a new run.")
+                    save_campaign(camp)
+                    return {"ok": True, "events": events, "narrate": " ".join(events), "status": "defeated"}
+            camp["room_id"] = exits[direction]
+            camp["encounter"] = None
+            room = _room(camp)
+            for fl in room.get("flags_on_enter") or []:
+                camp["flags"] = list(dict.fromkeys(list(camp.get("flags") or []) + [fl]))
+            enc = room.get("encounter")
+            if enc:
+                camp["encounter"] = dict(enc)
+                events.append(f"You enter {room.get('name')}. {enc.get('name')}!")
             else:
-                line = "You walk " + direction + " to " + name + "."
-            if hook:
-                line = line + " " + str(hook).split(":", 1)[-1].strip()
-            events.append(line)
-    elif atype == "sneak":
-        ok, line = _sneak_to(camp, pl)
-        events.append(line)
-        if not ok:
-            enc = _ensure_band(camp) or {}
-            guard = next((u for u in (enc.get("units") or []) if u.get("station") in ("captive", "mouth") and u.get("aware")), None)
-            if guard:
-                _goblin_strike(camp, guard, pl, events)
-            enc = camp.get("encounter") or enc
-            if isinstance(enc, dict) and enc.get("init") and "you" in enc["init"]:
-                enc["whose"] = enc["init"].index("you")
-        else:
-            events.append("He is close enough to hear you whisper.")
+                # game_entry.walk shape (stone 2), geography from the module not BUILDINGS.
+                hook = str((room.get("hooks") or [""])[0] or "")
+                name = str(room.get("name") or "somewhere")
+                low_n = name.lower()
+                if any(w in low_n for w in ("cave", "hall", "fork", "cellar", "tunnel", "pit", "road")):
+                    line = "You walk " + direction + " into " + name + "."
+                else:
+                    line = "You walk " + direction + " and a building appears: " + name + "."
+                if hook:
+                    line = line + " " + hook
+                events.append(line)
+            # loot
+            for item in room.get("loot") or []:
+                inv = list(pl.get("inventory") or [])
+                if item not in inv:
+                    inv.append(item)
+                    pl["inventory"] = inv
+                    events.append(f"You pick up {item}.")
+            events.append(_narrate_room(camp))
     elif atype == "attack":
         enc = camp.get("encounter")
         if not enc or int(enc.get("hp") or 0) <= 0:
             return {"ok": False, "error": "nothing to attack", "legal": legal}
-        enc = _ensure_band(camp) or enc
-        camp["flags"] = [f for f in (camp.get("flags") or []) if f != "near:merchant"]
         traits = [str(t).lower() for t in (pl.get("traits") or [])]
         bonus = int(pl.get("attack_bonus") or 0)
         if "hotheaded" in traits:
             bonus += 1
         if "craven" in traits:
-            events.append("Fear nags. You strike anyway.")
-        target = str(action.get("target") or action.get("item") or "").strip()
-        unit = _pick_unit(enc, target)
+            events.append("Fear nags — you strike anyway.")
         hit = roll_dice(f"1d20+{bonus}")
-        ac = int((unit or enc).get("ac") or 10)
-        enc_max = int(enc.get("hp_max") or enc.get("hp") or 10)
+        ac = int(enc.get("ac") or 10)
         if hit["total"] >= ac:
             dmg = roll_dice(str(pl.get("damage") or "1d6"))
-            dealt = int(dmg["total"])
-            if unit:
-                dead = _hurt_unit(enc, unit, dealt)
-                if dead:
-                    events.append("The " + str(unit.get("name")) + " drops.")
-                    enc = camp.get("encounter") or enc
-                else:
-                    events.append("The " + str(unit.get("name")) + " takes the blow. " + _wound_look(int(unit.get("hp") or 0), int(unit.get("hp_max") or 4), "they"))
-                enc["hp"] = int((camp.get("encounter") or enc).get("hp") or 0)
-            else:
-                enc["hp"] = max(0, int(enc.get("hp") or 0) - dealt)
+            enc["hp"] = max(0, int(enc.get("hp") or 0) - int(dmg["total"]))
+            events.append(
+                f"Hit ({hit['total']} vs AC {ac}) for {dmg['total']}. "
+                f"{enc.get('name')} HP {enc['hp']}/{enc.get('hp_max')}."
+            )
             if enc["hp"] <= 0:
-                events.append("They drop. The crate is still waxed.")
+                events.append(f"{enc.get('name')} drops!")
                 droom = str(enc.get("dungeon_room") or "")
                 if droom:
                     try:
                         from mag import dungeon_dev
                         dungeon_dev.conquer(droom, knot=f"slain:{enc.get('name')}", publish=True)
+                        events.append(
+                            "The ward folds. The temple keeps that room for everyone, not a throne."
+                        )
                     except Exception:
-                        pass
+                        events.append("The beast is down. The knot did not fold. File it again.")
                 for fl in _room(camp).get("flags_on_clear") or []:
                     camp["flags"] = list(dict.fromkeys(list(camp.get("flags") or []) + [fl]))
                 camp["flags"] = list(dict.fromkeys(list(camp.get("flags") or []) + ([f"slain:{droom}"] if droom else [])))
                 camp["encounter"] = None
-            elif not unit:
-                bits = []
-                if dealt >= (enc_max / 2):
-                    bits.append("The blow takes half of them.")
-                bits.append(_wound_look(int(enc["hp"]), enc_max, "they"))
-                events.append(" ".join(bits))
+                if "greedy" in traits and "freed_merchant_opportunity" in (camp.get("flags") or []):
+                    events.append("The captive merchant eyes your purse already…")
         else:
-            if unit:
-                events.append("You miss the " + str(unit.get("name")) + ".")
-            else:
-                events.append("You miss. " + _wound_look(int(enc.get("hp") or 0), enc_max, "they"))
+            events.append(f"Miss ({hit['total']} vs AC {ac}).")
         enc = camp.get("encounter")
         if enc and int(enc.get("hp") or 0) > 0:
-            _resolve_ticks(camp, events, pl)
-            enc = camp.get("encounter")
-            if enc and int(enc.get("hp") or 0) <= 0:
-                events.append("They drop. The crate is still waxed.")
-                camp["encounter"] = None
-                enc = None
-        if enc and int(enc.get("hp") or 0) > 0 and not (enc.get("units") or []):
             fhit = roll_dice(f"1d20+{int(enc.get('attack_bonus') or 0)}")
             if fhit["total"] >= int(pl.get("ac") or 10):
                 fdmg = roll_dice(str(enc.get("damage") or "1d6"))
-                dealt = int(fdmg["total"])
-                pmax = int(pl.get("hp_max") or pl.get("hp") or 10)
-                pl["hp"] = max(0, int(pl.get("hp") or 0) - dealt)
+                pl["hp"] = max(0, int(pl.get("hp") or 0) - int(fdmg["total"]))
+                events.append(f"{enc.get('name')} hits for {fdmg['total']}! HP {pl['hp']}.")
                 if pl["hp"] <= 0:
                     camp["status"] = "defeated"
                     events.append("You fall.")
-                else:
-                    bits = ["They hit back."]
-                    if dealt >= (pmax / 2):
-                        bits.append("The blow takes half of you.")
-                    bits.append(_wound_look(int(pl["hp"]), pmax, "you"))
-                    events.append(" ".join(bits))
+            else:
+                events.append(f"{enc.get('name')} misses.")
     elif atype == "flee":
         exits = list((_room(camp).get("exits") or {}).keys())
         if not exits:
@@ -2513,25 +2579,88 @@ def apply_action(campaign_id: str, action: dict[str, Any] | None) -> dict[str, A
         return apply_action(campaign_id, {"type": "move", "direction": exits[0]})
     elif atype == "rest":
         if camp.get("encounter") and int((camp["encounter"] or {}).get("hp") or 0) > 0:
-            return {"ok": False, "error": "They still hold the floor.", "legal": legal}
-        before = int(pl.get("hp") or 0)
-        mx = int(pl.get("hp_max") or 10)
-        pl["hp"] = mx
-        if before > 0 and (10.0 * before / max(1, mx)) < 3:
-            events.append("Help finds you. You rest. You look unhurt.")
-        elif before > 0 and (10.0 * before / max(1, mx)) < 9.5:
-            events.append("You rest. You look unhurt.")
-        else:
-            events.append("You rest. The fire argues with the damp.")
+            return {"ok": False, "error": "can't rest in combat", "legal": legal}
+        pl["hp"] = int(pl.get("hp_max") or 10)
+        events.append(f"You rest. HP {pl['hp']}.")
         events.extend(_fire_rest_events(camp))
     elif atype == "act":
         events.extend(_act_events(camp, action))
     elif atype in ("work", "share", "file"):
         events.extend(_work_events(camp, action))
+    elif atype == "put":
+        # Inform DM4 §A4 Insert (1–9) / PutOn (1–8). Mag has no container organ yet —
+        # short refuse floors only; never talk belt / room.desc dump.
+        #  Insert1: need holding before put into
+        #  Insert2: can't contain things
+        #  Insert5: can't put inside itself
+        #  PutOn1: need holding before put on top
+        #  PutOn3: putting on X would achieve nothing
+        noun = str(action.get("item") or "").strip().lower()
+        target = str(action.get("target") or "").strip().lower()
+        mode = str(action.get("mode") or "into").strip().lower()
+        if mode not in ("into", "onto"):
+            mode = "into"
+        inv = list(pl.get("inventory") or [])
+        if not noun:
+            events.append("Put what?")
+        elif not target:
+            events.append(
+                "What do you want to put that in?"
+                if mode == "into"
+                else "What do you want to put that on?"
+            )
+        elif noun == target or noun in target or target in noun:
+            events.append("You can't put something inside itself.")
+        else:
+            match = next((i for i in inv if str(i).lower() == noun), None)
+            if match is None:
+                match = next((i for i in inv if noun in str(i).lower()), None)
+            if match is None:
+                if mode == "onto":
+                    events.append(
+                        f"You need to be holding {noun} before you can put it on top of something else."
+                    )
+                else:
+                    events.append(
+                        f"You need to be holding {noun} before you can put it into something else."
+                    )
+            else:
+                # No Mag container/supporter model yet — Inform Insert2 / PutOn3.
+                if mode == "onto":
+                    events.append(f"Putting things on {target} would achieve nothing.")
+                else:
+                    events.append("That can't contain things.")
+    elif atype == "again":
+        # Inform DM4 Miscellany 20/21 — never talk dump.
+        # 21: no prior command → "You can hardly repeat that."
+        # 20: misuse (NPC, again / again <junk>) → short coach, not re-dispatch.
+        if action.get("misuse"):
+            events.append(
+                'To repeat a command like "look", just say "again", not "look, again".'
+            )
+        else:
+            last = camp.get("last_speech")
+            if not isinstance(last, dict) or not str(last.get("type") or "").strip():
+                events.append("You can hardly repeat that.")
+            else:
+                # Re-dispatch prior speech action (flee-style recursion). Do not nest again.
+                replay = dict(last)
+                replay.pop("raw", None)
+                if str(replay.get("type") or "").lower() == "again":
+                    events.append("You can hardly repeat that.")
+                else:
+                    return apply_action(campaign_id, replay)
     else:
         return {"ok": False, "error": f"illegal action {atype}", "legal": legal}
 
     camp["player"] = pl
+    # Inform AGAIN buffer: remember last speech action (not again itself).
+    if atype and atype != "again":
+        remembered = {"type": atype}
+        for k in ("item", "target", "direction", "pose", "message", "verb", "mode"):
+            if action.get(k) is not None and str(action.get(k)).strip() != "":
+                remembered[k] = action.get(k)
+        camp["last_speech"] = remembered
     color = _craft_narrate(camp, events)
     # color lives on storyteller for the passage, not in the spoken beat
     camp["log"] = list(camp.get("log") or []) + [
@@ -2632,7 +2761,6 @@ def apply_action(campaign_id: str, action: dict[str, Any] | None) -> dict[str, A
         "events": events,
         "narrate": " ".join(events).strip(),
         "legal": list_legal_actions(camp),
-        "choices": _next_paths(camp, events, action),
         "scene_context": scene_context(camp),
         "status": camp.get("status"),
         "player": camp.get("player"),
@@ -2780,8 +2908,6 @@ def parse_player_speech(text: str) -> dict[str, Any] | None:
     t = (text or "").strip().lower()
     if not t:
         return None
-    if re.match(r"^(try|attempt)\b", t):
-        return {"type": "try", "raw": (text or "").strip()[:240]}
     # single-letter exits (voice-friendly)
     if t in ("n", "north"):
         return {"type": "move", "direction": "north"}
@@ -2795,19 +2921,17 @@ def parse_player_speech(text: str) -> dict[str, Any] | None:
         return {"type": "move", "direction": "up"}
     if t in ("d", "down"):
         return {"type": "move", "direction": "down"}
-    if re.search(r"\b(share|bounty|file work|file the take|throw workers|assign workers|open the (box|temple|ward))\b", t) or t in ("share", "work", "file", "bounty", "open"):
+    if re.search(r"\b(share|bounty|file work|file the take|throw workers|assign workers|open the (box|temple|ward))\b", t) or t in ("share", "work", "file", "bounty"):
         return {"type": "work", "raw": (text or "").strip()[:240]}
-    if re.search(r"\b(slay|kill|fight|stab|hit|attack|strike)\b", t) or t in ("attack", "strike"):
-        m = re.search(r"\b(?:slay|kill|fight|stab|hit|attack|strike)\s+(?:the |a |an )?(.+)$", t)
-        out = {"type": "attack"}
-        if m:
-            out["target"] = (m.group(1) or "").strip()[:80]
-        return out
+    if re.search(r"\b(slay|kill|fight|stab|hit)\b", t) or t in ("attack", "strike"):
+        return {"type": "attack"}
     if re.search(r"\b(freeze state|freeze game|game freeze|dump state|save freeze)\b", t):
         return {"type": "freeze"}
     if re.search(r"\b(help|what can i do|options|commands|legal)\b", t):
         return {"type": "help"}
-    if re.search(r"\b(inventory|inv|what do i (have|carry)|gear|pack)\b", t):
+    # Evennia CmdInventory (general.py): key=inventory aliases=["inv","i"] arg_regex=r"$".
+    # Bare "i" was None → table_turn long-IC talk belt. Exact token only (no extra args).
+    if t == "i" or re.search(r"\b(inventory|inv|what do i (have|carry)|gear|pack)\b", t):
         return {"type": "inventory"}
     if re.search(
         r"\b(rumor|rumours|rumors|gossip|news|what('s| is) the (word|news)|ask (the )?barkeep)\b",
@@ -2821,33 +2945,1591 @@ def parse_player_speech(text: str) -> dict[str, Any] | None:
         t,
     ):
         return {"type": "move", "direction": "out"}
-    if t in ("wait", "z") or re.match(r"^wait\b", t):
-        return {"type": "wait"}
-    if re.search(r"\b(listen|hear|eavesdrop)\b", t):
-        return {"type": "listen"}
-    if re.search(r"\b(sneak|creep|steal up|stalk|hide)\b", t):
-        return {"type": "sneak", "target": "merchant", "raw": (text or "").strip()[:240]}
-    if re.search(r"\b(cut|free|untie|loose)\b", t) and re.search(r"\b(rope|him|merchant|captive|loose)\b", t):
-        return {"type": "take", "item": "rope"}
-    if re.search(r"\b(take|grab|get|pick up|pick)\b", t):
-        m = re.search(r"\b(?:take|grab|get|pick up|pick)\s+(?:the |a |an )?(.+)$", t)
-        return {"type": "take", "item": ((m.group(1) if m else "").strip()[:80])}
+    # Inform DM4 Miscellany 20/21 / parser AGAIN (g):
+    # Bare again|g with no prior command → "You can hardly repeat that."
+    # Misuse like "look, again" / trailing junk → Miscellany 20 short refuse.
+    # Never fall through to talk belt. Do not eat gather/gaining/go/get/give.
+    if re.match(r"^(again|g)(\b|$)", t) and not t.startswith(
+        ("gather", "gaining", "against", "ago", "agency", "agenda", "go ", "get ", "give ", "gaze")
+    ):
+        # exact bare g/again only; "g east" / "again look" = misuse (not go)
+        if re.match(r"^(again|g)$", t):
+            return {"type": "again", "raw": (text or "").strip()[:240]}
+        if re.match(r"^(again|g)\s+\S", t):
+            return {"type": "again", "misuse": True, "raw": (text or "").strip()[:240]}
+        # "g," or odd trailing — still again, short refuse path
+        if re.match(r"^(again|g)\b", t):
+            return {"type": "again", "misuse": True, "raw": (text or "").strip()[:240]}
+
+    # Inform Standard Rules Wait / Wear / Disrobe (DM4 §A4):
+    # Wait → "Time passes."; Wear bare → need noun; miss/not wearable → short refuse.
+    # Evennia clothing contrib: wear/remove never fall through to say.
+    # Bare wait/wear/remove were None → table_turn long-IC talk belt.
+    # Handle take off / put on BEFORE take/drop so "take off cloak" is not take(item=off cloak).
+    if re.match(r"^(wait|z)(\b|$)", t) and not t.startswith(
+        ("waiting", "waiter", "waitress", "waits", "waited", "zulu", "zoom")
+    ):
+        return {"type": "wait", "raw": (text or "").strip()[:240]}
+    if re.match(r"^(wear|don)(\b|$)", t) or re.match(r"^put\s+on(\b|$)", t):
+        m = re.match(
+            r"^(?:wear|don|put\s+on)\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+            t,
+        )
+        item = ((m.group(1) if m else "") or "").strip()[:80]
+        if item in ("the", "a", "an", "on"):
+            item = ""
+        return {"type": "wear", "item": item, "raw": (text or "").strip()[:240]}
+    if re.match(r"^(remove|doff)(\b|$)", t) or re.match(r"^take\s+off(\b|$)", t):
+        # do not eat "remove from <place>" as wardrobe; still short refuse not talk
+        if re.search(r"\bremove\s+from\b", t):
+            pass  # fall through — not clothing remove
+        else:
+            m = re.match(
+                r"^(?:remove|doff|take\s+off)\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+                t,
+            )
+            item = ((m.group(1) if m else "") or "").strip()[:80]
+            if item in ("the", "a", "an", "off"):
+                item = ""
+            return {"type": "remove", "item": item, "raw": (text or "").strip()[:240]}
+    if re.search(r"\b(drop|put\s+down|discard)\b", t):
+        # Evennia CmdDrop: bare drop → "Drop what?"; miss → "You aren't carrying X."
+        # Must not fall through to talk (table_turn long-IC belt).
+        m = re.search(r"\b(?:drop|put\s+down|discard)\s+(?:the |a |an )?(.+)$", t)
+        item = ((m.group(1) if m else "").strip()[:80])
+        if item in ("down", "the", "a", "an"):
+            item = ""
+        return {"type": "drop", "item": item}
+    # Inform Extinguish soft (SwitchOff / put out / douse / blow out) — BEFORE put
+    # so "put out torch" never Insert-belts with item="out torch".
+    # Field: Understand "extinguish/douse/put out [something]" / "put [something] out"
+    # / "blow out [something]" (dualtransform.ni / I7 switching off). Soft floors only.
+    # Do NOT steal: Burn/use/fire/"light the"/Calcifer quench; real put X in/on Y; bare blow.
+    if re.match(r"^(extinguish|douse)(\b|$)", t) and not t.startswith(
+        ("extinguished", "extinguishing", "extinguisher", "doused", "dousing", "douses")
+    ):
+        m = re.match(
+            r"^(?:extinguish|douse)\s+(?:the\s+|a\s+|an\s+)?(.+?)(?:\s+with\s+.+)?$",
+            t,
+        )
+        target = ((m.group(1) if m else "") or "").strip()[:80]
+        if target in ("the", "a", "an", "with", "out"):
+            target = ""
+        return {"type": "extinguish", "target": target, "raw": (text or "").strip()[:240]}
+    # put out / put X out — must precede Insert/PutOn put organ
+    if re.match(r"^put\s+out\b", t) or re.match(
+        r"^put\s+(?:the\s+|a\s+|an\s+)?.+\sout$", t
+    ):
+        if re.match(r"^put\s+out$", t):
+            return {"type": "extinguish", "target": "", "raw": (text or "").strip()[:240]}
+        m1 = re.match(r"^put\s+out\s+(?:the\s+|a\s+|an\s+)?(.+)$", t)
+        if m1:
+            target = (m1.group(1) or "").strip()[:80]
+            if target in ("the", "a", "an"):
+                target = ""
+            return {"type": "extinguish", "target": target, "raw": (text or "").strip()[:240]}
+        m2 = re.match(r"^put\s+(?:the\s+|a\s+|an\s+)?(.+?)\s+out$", t)
+        if m2:
+            target = (m2.group(1) or "").strip()[:80]
+            if target in ("the", "a", "an", "out"):
+                target = ""
+            return {"type": "extinguish", "target": target, "raw": (text or "").strip()[:240]}
+    # blow out X / blow X out — extinguish soft before Blow organ eats "out …" as target
+    if re.match(r"^blow\s+out\b", t) or re.match(
+        r"^blow\s+(?:the\s+|a\s+|an\s+)?.+\sout$", t
+    ):
+        if re.match(r"^blow\s+out$", t):
+            return {"type": "extinguish", "target": "", "raw": (text or "").strip()[:240]}
+        m1 = re.match(r"^blow\s+out\s+(?:the\s+|a\s+|an\s+)?(.+)$", t)
+        if m1:
+            target = (m1.group(1) or "").strip()[:80]
+            if target in ("the", "a", "an"):
+                target = ""
+            return {"type": "extinguish", "target": target, "raw": (text or "").strip()[:240]}
+        m2 = re.match(r"^blow\s+(?:the\s+|a\s+|an\s+)?(.+?)\s+out$", t)
+        if m2:
+            target = (m2.group(1) or "").strip()[:80]
+            if target in ("the", "a", "an", "out"):
+                target = ""
+            return {"type": "extinguish", "target": target, "raw": (text or "").strip()[:240]}
+
+    # Inform DM4 §A4 Insert / PutOn — put/insert/place never talk-belt.
+    # Grammar (Evennia/Inform verb index):
+    #   put on X / put X on → Wear (handled above)
+    #   put down X → Drop (handled above)
+    #   put|insert|place X in|into|inside Y → Insert
+    #   put|place X on|onto Y → PutOn
+    # Bare put/insert/place → Put what?
+    # Do not eat putter/putting alone; "put on" already returned as wear.
+    if re.match(r"^(put|insert|place)(\b|$)", t) and not t.startswith(
+        ("putter", "putting", "putrid", "putty", "inserted", "placing", "placement")
+    ):
+        # Insert: put|insert|place <item> in|into|inside <container>
+        m_ins = re.match(
+            r"^(?:put|insert|place)\s+(?:the\s+|a\s+|an\s+)?(.+?)\s+"
+            r"(?:in|into|inside)\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+            t,
+        )
+        if m_ins:
+            item = (m_ins.group(1) or "").strip()[:80]
+            container = (m_ins.group(2) or "").strip()[:80]
+            if item in ("the", "a", "an", "in", "into", "inside"):
+                item = ""
+            if container in ("the", "a", "an"):
+                container = ""
+            return {
+                "type": "put",
+                "mode": "into",
+                "item": item,
+                "target": container,
+                "raw": (text or "").strip()[:240],
+            }
+        # PutOn: put|place <item> on|onto <supporter> (not "put on <wearable>")
+        m_on = re.match(
+            r"^(?:put|place)\s+(?:the\s+|a\s+|an\s+)?(.+?)\s+"
+            r"(?:on|onto)\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+            t,
+        )
+        if m_on:
+            item = (m_on.group(1) or "").strip()[:80]
+            target = (m_on.group(2) or "").strip()[:80]
+            if item in ("the", "a", "an", "on", "onto"):
+                item = ""
+            if target in ("the", "a", "an"):
+                target = ""
+            return {
+                "type": "put",
+                "mode": "onto",
+                "item": item,
+                "target": target,
+                "raw": (text or "").strip()[:240],
+            }
+        # insert <item> (missing into) or bare put/insert/place
+        m_bare_ins = re.match(
+            r"^insert\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+            t,
+        )
+        if m_bare_ins:
+            item = (m_bare_ins.group(1) or "").strip()[:80]
+            if item in ("the", "a", "an", "into", "in"):
+                item = ""
+            return {
+                "type": "put",
+                "mode": "into",
+                "item": item,
+                "target": "",
+                "raw": (text or "").strip()[:240],
+            }
+        # bare put / place / insert
+        if re.match(r"^(put|insert|place)$", t):
+            return {
+                "type": "put",
+                "mode": "into",
+                "item": "",
+                "target": "",
+                "raw": (text or "").strip()[:240],
+            }
+        # put <something> with no in/on → still put, short refuse (not talk)
+        m_partial = re.match(
+            r"^(?:put|place)\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+            t,
+        )
+        if m_partial:
+            item = (m_partial.group(1) or "").strip()[:80]
+            if item in ("the", "a", "an", "on", "down"):
+                item = ""
+            return {
+                "type": "put",
+                "mode": "into",
+                "item": item,
+                "target": "",
+                "raw": (text or "").strip()[:240],
+            }
+
+    # Inform Grammar Transfer (Grammar.h) + verblibm TransferSub:
+    #   Verb 'transfer' * noun 'to' noun -> Transfer;
+    #   TransferSub → AttemptToTake then PutOn / Drop / Insert.
+    # Mag has no separate Transfer organ — hang on existing put (Insert/PutOn floors).
+    # Bare transfer was None → table_turn long-IC talk belt.
+    # Do NOT invent containers/supporters; do NOT steal transformer/transferred alone;
+    # Burn stays use; compass move stays move; Knock hangs just below.
+    if re.match(r"^transfer(\b|$)", t) and not t.startswith(
+        (
+            "transferring", "transferred", "transfers", "transferable",
+            "transformer", "transform", "transfusion", "transgress",
+        )
+    ):
+        m_to = re.match(
+            r"^transfer\s+(?:the\s+|a\s+|an\s+)?(.+?)\s+to\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+            t,
+        )
+        if m_to:
+            item = (m_to.group(1) or "").strip()[:80]
+            target = (m_to.group(2) or "").strip()[:80]
+            if item in ("the", "a", "an", "to"):
+                item = ""
+            if target in ("the", "a", "an"):
+                target = ""
+            return {
+                "type": "put",
+                "mode": "into",
+                "item": item,
+                "target": target,
+                "raw": (text or "").strip()[:240],
+            }
+        if re.match(r"^transfer$", t):
+            return {
+                "type": "put",
+                "mode": "into",
+                "item": "",
+                "target": "",
+                "raw": (text or "").strip()[:240],
+            }
+        m_partial = re.match(
+            r"^transfer\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+            t,
+        )
+        if m_partial:
+            item = (m_partial.group(1) or "").strip()[:80]
+            if item in ("the", "a", "an", "to"):
+                item = ""
+            return {
+                "type": "put",
+                "mode": "into",
+                "item": item,
+                "target": "",
+                "raw": (text or "").strip()[:240],
+            }
+
+
+    # Inform 7 Handbook knocking-on (I7 custom — not DM4 §A4 Grammar.h).
+    # Stock I7 maps bare "knock"→Attack; Mag refuses that belt and hangs soft floors.
+    # Understand "knock on [something]" / "tap on [something]" / "rap on|at …".
+    # Bare → What do you want to knock on?; Report → You tap gently… nothing happens.
+    # Check: self → hollow sound; person → wouldn't be polite.
+    # Do NOT steal: attack|hit|fight|kill|swing (attack organ); Burn (use/fire);
+    # knockoff/knockout/knocking alone as IC; compass move; enter/gate→move.
+    # Never invent Calcifer on keep_gate; never dump room.desc.
+    if re.match(r"^(knock|tap|rap)(\b|$)", t) and not t.startswith(
+        (
+            "knocking", "knocked", "knocks", "knockoff", "knockout", "knockdown",
+            "knockabout", "tapping", "tapped", "taps", "taproot", "tapas", "tapestry",
+            "rapping", "rapped", "raps", "rapid", "raptor", "rapport", "rapture",
+        )
+    ):
+        # tap alone without on/at stays None (too ambiguous vs tap dance / tap water)
+        if re.match(r"^tap$", t):
+            pass
+        else:
+            m = re.match(
+                r"^(?:knock|tap|rap)(?:\s+(?:on|at|upon))?\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+                t,
+            )
+            if re.match(r"^(?:knock|rap)(?:\s+(?:on|at|upon))?$", t):
+                target = ""
+            else:
+                target = ((m.group(1) if m else "") or "").strip()[:80]
+                if target in ("the", "a", "an", "on", "at", "upon", "hard", "gently", "politely", "twice", "thrice"):
+                    target = ""
+            if m or re.match(r"^(?:knock|rap)(?:\s+(?:on|at|upon))?$", t):
+                return {
+                    "type": "knock",
+                    "target": target,
+                    "raw": (text or "").strip()[:240],
+                }
+
+    # Inform DM4 §A4 Exit1 + Leave (Grammar.h) — before take/get/climb/talk.
+    # Verb 'exit' 'out' 'outside' → Exit; Verb 'leave': bare→VagueGo, noun→Exit,
+    # noun=ADirection→Go (move). Mag has no enter-furniture organ yet.
+    # Do NOT steal: bare out / leave the tavern|inn|bar / go out (move organ earlier);
+    # leave north (move); enter/gate move; Calcifer invent; room.desc dump.
+    if t in ("outside", "outside now") or (
+        re.match(r"^outside\b", t) and not t.startswith(("outsider", "outsides"))
+    ):
+        return {"type": "exit", "target": "", "raw": (text or "").strip()[:240]}
+    m_leave = re.match(r"^(leave)\b(.*)$", t)
+    if m_leave and not t.startswith(
+        ("leaving", "leaved", "leaver", "leaves", "leaf", "leaflet", "league")
+    ):
+        rest = (m_leave.group(2) or "").strip()
+        m_ent = re.match(
+            r"^(?:into|in|inside|through)\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+            rest,
+        )
+        if m_ent:
+            ent_tgt = (m_ent.group(1) or "").strip()[:80]
+            if ent_tgt in ("the", "a", "an", "into", "in", "inside", "through"):
+                ent_tgt = ""
+            return {
+                "type": "enter",
+                "target": ent_tgt,
+                "raw": (text or "").strip()[:240],
+            }
+        if not rest:
+            return {"type": "vague_go", "raw": (text or "").strip()[:240]}
+        noun = re.sub(r"^(?:the\s+|a\s+|an\s+)", "", rest).strip()[:80]
+        _dirs = {
+            "n", "s", "e", "w", "u", "d", "north", "south", "east", "west",
+            "up", "down", "in", "out", "northeast", "northwest", "southeast",
+            "southwest", "ne", "nw", "se", "sw",
+        }
+        if noun in _dirs or rest in _dirs:
+            return {"type": "move", "direction": noun if noun in _dirs else rest}
+        if noun in ("the", "a", "an"):
+            noun = ""
+        if not noun:
+            return {"type": "vague_go", "raw": (text or "").strip()[:240]}
+        return {
+            "type": "exit",
+            "target": noun,
+            "raw": (text or "").strip()[:240],
+        }
+    if t in ("exit", "get out", "get off", "climb out", "climb off") or re.match(
+        r"^(exit|get\s+out(?:\s+of)?|get\s+off(?:\s+of)?|climb\s+(?:out(?:\s+of)?|off))(\b|$)",
+        t,
+    ):
+        if not t.startswith(("exiting", "exited", "exits", "getting", "climbing")):
+            m_ex = re.match(
+                r"^(?:exit|get\s+out(?:\s+of)?|get\s+off(?:\s+of)?|"
+                r"climb\s+(?:out(?:\s+of)?|off))\s+"
+                r"(?:of\s+|from\s+)?(?:the\s+|a\s+|an\s+)?(.+)$",
+                t,
+            )
+            ex_tgt = ((m_ex.group(1) if m_ex else "") or "").strip()[:80]
+            if ex_tgt in ("the", "a", "an", "of", "from", "out", "off"):
+                ex_tgt = ""
+            return {
+                "type": "exit",
+                "target": ex_tgt,
+                "raw": (text or "").strip()[:240],
+            }
+
+    # Inform DM4 §A4 Enter + Sit/Stand + GetOff residual — never dump room.desc / talk belt.
+    # Enter: 1 already in  2 "That's not something you can enter."  3 closed  4 freestanding  5 get onto
+    # Sit is Enter. Stand when not on a supporter: "You are already standing."
+    # GetOff: "But you aren't on <x1> at the moment." (exit with target, above)
+    # Mag has no enter-furniture organ yet → Enter2 / Enter3 / Sit on what? / already standing.
+    # Do NOT steal: enter/gate/keep/door/tavern/inn/hall/lantern → later gate heuristic (move north).
+    # Do NOT steal Ask (talk) or Burn (use/fire). climb in stays climb. leave tavern/go out/bare out stay move.
+    _keep_enter = (
+        "gate", "keep", "door", "tavern", "inn", "hall", "lantern",
+        "road", "courtyard", "cellar", "cave", "fork", "camp", "town",
+        "north", "south", "east", "west",
+    )
+
+    def _keep_scale(noun: str) -> bool:
+        n = (noun or "").strip().lower()
+        if not n:
+            return False
+        bits = re.split(r"[\s'-]+", n)
+        return any(b in _keep_enter for b in bits if b)
+
+    # sit / sit down / sit on|in|at|upon X — before compass so "sit down" never walks down
+    if re.match(r"^(sit)(\b|$)", t) and not t.startswith(
+        ("sitting", "sitter", "sits", "site", "situat", "sitcom")
+    ):
+        m_sit = re.match(
+            r"^sit(?:\s+down)?(?:\s+(?:on|in|at|upon)\s+(?:the\s+|a\s+|an\s+)?(.+))?$",
+            t,
+        )
+        sit_tgt = ((m_sit.group(1) if m_sit else "") or "").strip()[:80]
+        if sit_tgt in ("the", "a", "an", "on", "in", "at", "upon", "down"):
+            sit_tgt = ""
+        return {
+            "type": "sit",
+            "target": sit_tgt,
+            "raw": (text or "").strip()[:240],
+        }
+
+    # stand / stand up — before compass so "stand up" never walks up
+    if re.match(r"^(stand)(\b|$)", t) and not t.startswith(
+        ("standing", "standard", "stands", "standpoint", "standby", "standstill")
+    ):
+        if re.match(r"^stand\s+(?:on|in|upon)\s+", t):
+            m_st = re.match(
+                r"^stand\s+(?:on|in|upon)\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+                t,
+            )
+            st_tgt = ((m_st.group(1) if m_st else "") or "").strip()[:80]
+            if st_tgt in ("the", "a", "an", "on", "in", "upon"):
+                st_tgt = ""
+            return {
+                "type": "sit",
+                "target": st_tgt,
+                "raw": (text or "").strip()[:240],
+            }
+        return {"type": "stand", "raw": (text or "").strip()[:240]}
+
+    # get up is Stand, not take
+    if t in ("get up", "get up now") or re.match(r"^get\s+up$", t):
+        return {"type": "stand", "raw": (text or "").strip()[:240]}
+
+    # lie / lie down / lie on X — not "lie to" (talk) / lieutenant
+    if re.match(r"^(lie)(\b|$)", t) and not t.startswith(
+        ("lieutenant", "lies", "lied", "lien", "lier")
+    ):
+        if re.match(r"^lie\s+to\b", t):
+            pass  # talk organ later
+        else:
+            m_lie = re.match(
+                r"^lie(?:\s+down)?(?:\s+(?:on|in|upon)\s+(?:the\s+|a\s+|an\s+)?(.+))?$",
+                t,
+            )
+            lie_tgt = ((m_lie.group(1) if m_lie else "") or "").strip()[:80]
+            if lie_tgt in ("the", "a", "an", "on", "in", "upon", "down"):
+                lie_tgt = ""
+            return {
+                "type": "sit",
+                "target": lie_tgt,
+                "mode": "lie",
+                "raw": (text or "").strip()[:240],
+            }
+
+    # enter <furniture> — bare enter / enter gate|keep|door stay later gate heuristic
+    if re.match(r"^(enter)(\b|$)", t) and not t.startswith(
+        ("entering", "entered", "enters", "enterprise", "entertain", "entire")
+    ):
+        if t in ("enter", "enter in"):
+            pass  # GoIn → gate heuristic (move north)
+        else:
+            m_en = re.match(r"^enter\s+(?:the\s+|a\s+|an\s+)?(.+)$", t)
+            en_tgt = ((m_en.group(1) if m_en else "") or "").strip()[:80]
+            if en_tgt in ("the", "a", "an"):
+                en_tgt = ""
+            if en_tgt and not _keep_scale(en_tgt):
+                return {
+                    "type": "enter",
+                    "target": en_tgt,
+                    "raw": (text or "").strip()[:240],
+                }
+            # keep-scale: fall through to gate heuristic
+
+    # get in/into/on/onto — before take so "get in the crate" is not take
+    # get out/off already returned as exit. get on with → enter refuse (not take).
+    if re.match(r"^get\s+(in|into|on|onto)\b", t) and not t.startswith("getting"):
+        if re.match(r"^get\s+on\s+with\b", t):
+            return {
+                "type": "enter",
+                "target": "",
+                "raw": (text or "").strip()[:240],
+            }
+        m_gi = re.match(
+            r"^get\s+(?:in(?:to)?|on(?:to)?)(?:\s+(?:the\s+|a\s+|an\s+)?(.+))?$",
+            t,
+        )
+        gi_tgt = ((m_gi.group(1) if m_gi else "") or "").strip()[:80]
+        if gi_tgt in ("the", "a", "an", "in", "into", "on", "onto"):
+            gi_tgt = ""
+        if gi_tgt and _keep_scale(gi_tgt):
+            return {"type": "move", "direction": "north"}
+        return {
+            "type": "enter",
+            "target": gi_tgt,
+            "raw": (text or "").strip()[:240],
+        }
+
+    # go into <furniture> — go in / go inside stay later (inside→north; go in handled below)
+    if re.match(r"^go\s+into\b", t) and not t.startswith("going"):
+        m_go = re.match(
+            r"^go\s+into\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+            t,
+        )
+        go_tgt = ((m_go.group(1) if m_go else "") or "").strip()[:80]
+        if go_tgt in ("the", "a", "an"):
+            go_tgt = ""
+        if go_tgt and _keep_scale(go_tgt):
+            return {"type": "move", "direction": "north"}
+        return {
+            "type": "enter",
+            "target": go_tgt,
+            "raw": (text or "").strip()[:240],
+        }
+    if t in ("go in", "go inside"):
+        return {"type": "move", "direction": "north"}
+
+    # Inform DM4 Sleep idiom before take: "take a nap" must not become take item=nap.
+    # Also snooze / have a nap|doze — soft Sleep floor; rest|sleep|camp|heal stay rest later.
+    if re.match(
+        r"^(?:take\s+(?:a\s+|an\s+)?nap|have\s+(?:a\s+|an\s+)?(?:nap|doze|snooze)|snooze)(\b|$)",
+        t,
+    ) and not t.startswith(("taken", "taking", "takes", "having", "snoozing", "snoozed", "snoozes")):
+        return {"type": "sleep", "raw": (text or "").strip()[:240]}
+
+    if re.search(r"\b(take|grab|get|pick\s+up|pick)\b", t):
+        # Evennia CmdGet: pick up is one verb; bare "pick up" has no noun (not item=up).
+        m = re.search(r"\b(?:pick\s+up|take|grab|get|pick)\s+(?:the |a |an )?(.+)$", t)
+        item = ((m.group(1) if m else "").strip()[:80])
+        if item in ("up", "the", "a", "an"):
+            item = ""
+        return {"type": "take", "item": item}
+    if re.search(r"\b(give|hand)\b", t):
+        # Evennia CmdGive: give <inv> to <target> — bare/miss never fall through to talk.
+        # Usage floor when rhs missing; inventory miss → You aren't carrying X.
+        m = re.search(
+            r"\b(?:give|hand)\s+(?:the |a |an )?(.+?)\s+(?:to|=)\s+(?:the\s+)?(.+)$",
+            t,
+        )
+        if m:
+            item = (m.group(1) or "").strip()[:80]
+            target = (m.group(2) or "").strip()[:80]
+            return {"type": "give", "item": item, "target": target}
+        m2 = re.search(r"\b(?:give|hand)\s+(?:the |a |an )?(.+)$", t)
+        item = ((m2.group(1) if m2 else "").strip()[:80])
+        if item in ("the", "a", "an", "to"):
+            item = ""
+        return {"type": "give", "item": item, "target": ""}
+    if re.search(r"\b(open|close|shut|cover|uncover|unwrap)\b", t):
+        # Evennia CmdOpenCloseDoor (simpledoor): empty args → usage then return.
+        # Bare "open" used to be work (talk/work dump). Crate/door open is in-world.
+        # "open the box|temple|ward" stays work (matched above).
+        # Inform Grammar.h: Verb 'close' 'shut' 'cover' → Close (* up noun);
+        # Verb 'open' 'unwrap' 'uncover' 'undo' → Open. Hang cover/uncover/unwrap
+        # on existing open/close organ only — no new type, no Calcifer invent.
+        closing = bool(re.search(r"\b(close|shut|cover)\b", t))
+        if re.search(r"\b(uncover|unwrap)\b", t):
+            closing = False
+        m = re.search(
+            r"\b(?:open|close|shut|cover|uncover|unwrap)\s+(?:up\s+)?(?:the |a |an )?(.+)$",
+            t,
+        )
+        item = ((m.group(1) if m else "").strip()[:80])
+        if item in ("the", "a", "an", "up"):
+            item = ""
+        return {"type": "close" if closing else "open", "item": item}
     if re.search(r"\b(wink|nod|wave)\s+at\b", t):
+        # Inform [someone] / Evennia caller.search: social verbs are local-scope.
+        # Bare "wink at" must not teleport to Calcifer; empty target lets _talk_events
+        # ask "Talk to whom?" or floor "No one answers." Explicit "wink at calcifer" still works.
         m = re.search(r"\b(?:wink|nod|wave)\s+at\s+(?:the\s+)?(.+)$", t)
         who = ((m.group(1) if m else "").strip()[:80])
-        return {"type": "talk", "raw": (text or "").strip()[:240], "target": who or "calcifer"}
-    if t in ("talk", "speak", "say") or re.match(r"^(talk|speak|say)\s+", t):
-        out = {"type": "talk", "raw": (text or "").strip()[:240]}
-        m = re.search(r"^(?:talk|speak|say)\s+(?:to\s+|with\s+)?(?:the\s+)?([a-z][\w'-]*)", t)
-        if m and m.group(1) not in ("to", "the", "a", "an"):
-            out["target"] = m.group(1)
-        return out
+        return {"type": "talk", "raw": (text or "").strip()[:240], "target": who}
+    if re.search(r"\bwhisper\b", t):
+        # Evennia CmdWhisper (general.py): key=whisper; empty lhs/rhs →
+        # "Usage: whisper <character> = <message>" then return. Bare whisper was
+        # None → table_turn long-IC talk belt. Never invent NPC chatter for miss.
+        # Accept Evennia "=" form plus voice-friendly "whisper to NAME MSG".
+        m = re.search(
+            r"\bwhisper\s+(?:to\s+)?(?:the\s+)?(.+?)\s*=\s*(.+)$",
+            t,
+        )
+        if m:
+            target = (m.group(1) or "").strip()[:80]
+            message = (m.group(2) or "").strip()[:240]
+            if target in ("the", "a", "an", "to"):
+                target = ""
+            return {"type": "whisper", "target": target, "message": message, "raw": (text or "").strip()[:240]}
+        m2 = re.search(
+            r"\bwhisper\s+(?:to\s+)?(?:the\s+)?([a-z][\w'-]*)(?:\s+(.+))?$",
+            t,
+        )
+        if m2:
+            target = (m2.group(1) or "").strip()[:80]
+            message = (m2.group(2) or "").strip()[:240]
+            if target in ("the", "a", "an", "to", "at"):
+                target = ""
+                message = ""
+            return {"type": "whisper", "target": target, "message": message, "raw": (text or "").strip()[:240]}
+        return {"type": "whisper", "target": "", "message": "", "raw": (text or "").strip()[:240]}
+    # Evennia CmdPose (general.py): key=pose aliases=[":","emote"] arg_regex=None.
+    # Bare pose/emote was None → table_turn long-IC talk belt. Never invent NPC chatter.
+    # Colon alias only at line start (:waves); pose's form keeps apostrophe glued to name.
+    if t.startswith(":") or re.match(r"^(pose|emote)(?:\s|$|'s\b)", t):
+        raw_in = (text or "").strip()
+        if raw_in.startswith(":"):
+            pose_body = raw_in[1:]
+        else:
+            mpose = re.match(r"^(?:pose|emote)('s)?\s*(.*)$", raw_in, re.I)
+            if not mpose:
+                pose_body = ""
+            else:
+                apost = mpose.group(1) or ""
+                rest = (mpose.group(2) or "").strip()
+                if apost:
+                    # Evennia pose's X → args="'s X" (no space before apostrophe)
+                    pose_body = apost + ((" " + rest) if rest else "")
+                else:
+                    pose_body = rest
+        return {"type": "pose", "pose": pose_body, "raw": raw_in[:240]}
+    # Inform DM4 §A4 Smell / Taste / Touch. Bare smell/taste/touch were None →
+    # table_turn long-IC talk belt. Short sensory floors only; never room.desc.
+    # Mag voice: sniff≈smell, feel≈touch. Do not eat smelling/tasting/touching/feeling alone.
+    if re.match(r"^(smell|sniff|taste|touch|feel)(\b|$)", t) and not t.startswith(
+        ("smelling", "smelly", "tasting", "tasty", "touching", "feeling", "feels", "felt")
+    ):
+        m = re.match(
+            r"^(?:smell|sniff|taste|touch|feel)(?:\s+(?:the\s+|a\s+|an\s+|at\s+))?(.+)?$",
+            t,
+        )
+        target = ((m.group(1) if m else "") or "").strip()[:80]
+        if target in ("the", "a", "an", "at", "carefully", "closely", "hard", "gently"):
+            target = ""
+        if t.startswith(("smell", "sniff")):
+            sense = "smell"
+        elif t.startswith("taste"):
+            sense = "taste"
+        else:
+            sense = "touch"
+        return {"type": sense, "target": target, "raw": (text or "").strip()[:240]}
+
+    # Inform DM4 §A4 Pronouns + NotifyOn/Off + Verify; Inform Version (banner).
+    # Bare pronouns|nouns|notify|verify|version were None → table_turn long-IC talk belt.
+    # Mag: no pronoun-antecedent organ yet → Pronouns4 only. Notify hangs score_notify flag.
+    # Verify always intact (no gamefile CRC organ). Version is Mag banner, not room.desc.
+    # Do NOT steal: notification/notified/pronoun/noun singular/verifying/verified/versions;
+    # consult stays read; score stays score; brief stays lmode.
+    if re.match(r"^(pronouns|nouns)$", t):
+        return {"type": "pronouns", "raw": (text or "").strip()[:240]}
+    if re.match(r"^notify(\s+on)?$", t):
+        return {"type": "notify", "mode": "on", "raw": (text or "").strip()[:240]}
+    if t == "notify off":
+        return {"type": "notify", "mode": "off", "raw": (text or "").strip()[:240]}
+    if re.match(r"^(verify|verif)$", t):
+        return {"type": "verify", "raw": (text or "").strip()[:240]}
+    if t == "version":
+        return {"type": "version", "raw": (text or "").strip()[:240]}
+
+    # Inform DM4 §A4 / I6 PG §A.3.3 ScriptOn/Off + noscript/unscript aliases.
+    # Bare script|transcript|script on|script off|noscript|unscript were None → table_turn long-IC talk belt.
+    # Mag: no Z-machine transcript stream — hang camp["transcript"] flag + short floors only.
+    # Do NOT steal: scripting/scripts/scripture/typescript; bare "commands" stays help; version/score stay.
+    if re.match(r"^(script|transcript)(\s+on)?$", t):
+        return {"type": "script", "mode": "on", "raw": (text or "").strip()[:240]}
+    if re.match(r"^(script|transcript)\s+off$", t) or re.match(r"^(noscript|unscript)$", t):
+        return {"type": "script", "mode": "off", "raw": (text or "").strip()[:240]}
+
+    # Inform I6 PG §A.3.3 Recording / Replay (CommandsOn/Off/Read).
+    # Bare recording|recording on|recording off|replay were None → table_turn long-IC talk belt.
+    # Mag: no Z-machine command-file / input_stream organ — hang camp["recording"] flag; soft floors only.
+    # Do NOT steal: record/recorded/recordings/replaying/replayed; bare "commands" (help organ above).
+    # Never invent Calcifer on keep_gate; never dump room.desc; never open a file dialog.
+    if re.match(r"^recording(\s+on)?$", t):
+        return {"type": "recording", "mode": "on", "raw": (text or "").strip()[:240]}
+    if re.match(r"^recording\s+off$", t):
+        return {"type": "recording", "mode": "off", "raw": (text or "").strip()[:240]}
+    if re.match(r"^replay$", t):
+        return {"type": "replay", "raw": (text or "").strip()[:240]}
+
+    # Inform DM4 / verblib AMUSING_PROVIDED end-menu stub (Amusing entry point).
+    # Bare "amusing" was None → table_turn long-IC talk belt.
+    # Mag has no deadflag=2 victory organ — soft refuse only; never room.desc; never invent Calcifer.
+    # Do NOT steal: amuse/amused/amusingly; "amusing mira"; Burn (use/fire).
+    # Ask soft floors: bare / ask about only (see ask block near Answer).
+    if re.match(r"^amusing$", t):
+        return {"type": "amusing", "raw": (text or "").strip()[:240]}
+
+    # Inform DM4 §A4 Quit/Restart/Restore/Save + Miscellany Undo/Oops.
+    # Bare quit|restart|restore|save|undo|oops were None → table_turn long-IC talk belt.
+    # Mag: Verkle is the only save (ironman). Soft floors only — never wipe camp, never kill /wave,
+    # never invent Z-machine file dialog, never invent Calcifer on keep_gate.
+    # Do NOT steal: die (attack synonym), bare q (ambiguous), save freeze (freeze organ above),
+    # undo NOUN (Inform open synonym), bare o, quitting/restarted/restoring/saved/undone/oopsie.
+    if re.match(r"^quit$", t):
+        return {"type": "quit", "raw": (text or "").strip()[:240]}
+    if re.match(r"^restart$", t):
+        return {"type": "restart", "raw": (text or "").strip()[:240]}
+    if re.match(r"^restore$", t):
+        return {"type": "restore", "raw": (text or "").strip()[:240]}
+    if re.match(r"^save$", t):
+        return {"type": "save", "raw": (text or "").strip()[:240]}
+    if re.match(r"^undo$", t):
+        return {"type": "undo", "raw": (text or "").strip()[:240]}
+    if re.match(r"^oops$", t):
+        return {"type": "oops", "mode": "bare", "raw": (text or "").strip()[:240]}
+    if re.match(r"^oops\s+\S+$", t):
+        return {"type": "oops", "mode": "word", "raw": (text or "").strip()[:240]}
+    if re.match(r"^oops\s+\S+\s+\S+", t):
+        return {"type": "oops", "mode": "multi", "raw": (text or "").strip()[:240]}
+
+    # Inform DM4 §A4 LMode1/2/3 + Objects + Places — bare brief|verbose|superbrief|objects|places
+    # were None → table_turn long-IC talk belt. Short Inform floors only; never room.desc.
+    # Mag: no look-mode / visited / handled organs yet — speak + optional look_mode flag / inv hang.
+    # Do NOT steal: short|long|normal (ambiguous); object/place singular; briefcase; scoreboard.
+    # sleep|rest|heal|camp stay rest. nap/doze/yawn → Sleep soft above. Score/Push/Pull below.
+    if re.match(r"^(brief|verbose|superbrief)$", t):
+        return {"type": "lmode", "mode": t, "raw": (text or "").strip()[:240]}
+    if re.match(r"^(objects|places)$", t):
+        return {"type": t, "raw": (text or "").strip()[:240]}
+    if re.match(r"^objects\s+i\s+have\s+handled$", t) or t == "objects handled":
+        return {"type": "objects", "raw": (text or "").strip()[:240]}
+    if re.match(r"^places\s+i\s+have\s+visited$", t) or t == "places visited":
+        return {"type": "places", "raw": (text or "").strip()[:240]}
+
+    # Inform DM4 §A4 Score / Push / Pull (Turn shares Pull floors; parse block just below).
+    # Bare score|push|pull were None → table_turn long-IC talk belt. Short Inform floors only.
+    # Mag has no MAX_SCORE organ yet — scored 0 / possible 0. Do not break enter/gate→move.
+    # Exact word boundaries: scoreboard/scores/scoring/pushes/pushing/pulling alone stay None.
+    if re.match(r"^(score|fullscore|full\s+score)$", t):
+        return {"type": "score", "raw": (text or "").strip()[:240]}
+    if re.match(r"^(push|pull)(\b|$)", t) and not t.startswith(
+        ("pushing", "pushes", "pushed", "pushy", "pulling", "pulls", "pulled", "pulley", "pullout")
+    ):
+        m = re.match(
+            r"^(?:push|pull)\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+            t,
+        )
+        target = ((m.group(1) if m else "") or "").strip()[:80]
+        if target in ("the", "a", "an", "hard", "gently", "carefully", "aside", "away"):
+            target = ""
+        verb = "push" if t.startswith("push") else "pull"
+        # Inform Grammar: push|move|shift|clear|press noun 'to' noun → Transfer (not Push).
+        # Mag only routes push (not pull) noun-to-noun onto put; Pull stays Pull.
+        # Direction seconds stay PushDir below. Never invent a container organ.
+        if verb == "push" and target:
+            m_xfer = re.match(
+                r"^(.+?)\s+to\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+                target,
+            )
+            if m_xfer:
+                x_item = (m_xfer.group(1) or "").strip()[:80]
+                x_dest = (m_xfer.group(2) or "").strip()[:80]
+                _xfer_dirs = (
+                    "north", "south", "east", "west",
+                    "northeast", "northwest", "southeast", "southwest",
+                    "n", "s", "e", "w", "ne", "nw", "se", "sw",
+                    "up", "down", "in", "out",
+                )
+                if x_dest and x_dest not in _xfer_dirs and x_item not in ("the", "a", "an"):
+                    return {
+                        "type": "put",
+                        "mode": "into",
+                        "item": x_item,
+                        "target": x_dest,
+                        "raw": (text or "").strip()[:240],
+                    }
+        # Inform DM4 §A4 PushDir — push|pull NOUN DIR / DIR alone.
+        # Mag has no AllowPushDir scenery organ → short floors; never room.desc; never move.
+        # Do NOT steal bare n/s/e/w (already move). Swing stays attack.
+        _dirs = (
+            "north", "south", "east", "west",
+            "northeast", "northwest", "southeast", "southwest",
+            "n", "s", "e", "w", "ne", "nw", "se", "sw",
+            "up", "down", "in", "out",
+        )
+        if target:
+            parts = target.split()
+            last = parts[-1]
+            # strip trailing "to the DIR" / "to DIR"
+            if last in _dirs:
+                noun_parts = parts[:-1]
+                while noun_parts and noun_parts[-1] in ("to", "the", "a", "an"):
+                    noun_parts = noun_parts[:-1]
+                noun = " ".join(noun_parts).strip()
+                if not noun:
+                    # push north — direction alone is not a pushable
+                    return {
+                        "type": "pushdir",
+                        "code": 2,
+                        "direction": last,
+                        "target": "",
+                        "raw": (text or "").strip()[:240],
+                    }
+                if last in ("up", "down"):
+                    return {
+                        "type": "pushdir",
+                        "code": 3,
+                        "direction": last,
+                        "target": noun[:80],
+                        "raw": (text or "").strip()[:240],
+                    }
+                return {
+                    "type": "pushdir",
+                    "code": 1,
+                    "direction": last,
+                    "target": noun[:80],
+                    "raw": (text or "").strip()[:240],
+                }
+        return {"type": verb, "target": target, "raw": (text or "").strip()[:240]}
+    # Inform DM4 §A4 Turn (see Pull) + English synonyms rotate/twist/screw/unscrew.
+    # Bare turn was None → table_turn long-IC talk belt. Shares Push/Pull floors.
+    # turn on|off / turn X on|off → SwitchOn/Off (existing switch organ); never invent dial.
+    # Do NOT steal: turning/turned/turns/turner/turnip/tournament; Burn (use/fire);
+    # push/pull stay their organs; set fire stays use.
+    if re.match(r"^(turn|rotate|twist|screw|unscrew)(\b|$)", t) and not t.startswith(
+        (
+            "turning", "turned", "turns", "turner", "turnip", "turnout", "turnover",
+            "turnpike", "turntable", "tournament", "tornado",
+            "rotating", "rotated", "rotates", "rotary", "rotation",
+            "twisting", "twisted", "twists", "twister",
+            "screwing", "screwed", "screws", "screwdriver", "screwball",
+            "unscrewing", "unscrewed", "unscrews",
+        )
+    ):
+        # SwitchOn/Off grammar rides on turn (Inform English library).
+        if re.match(r"^turn\s+(on|off)(\b|$)", t):
+            m = re.match(
+                r"^turn\s+(?:on|off)\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+                t,
+            )
+            target = ((m.group(1) if m else "") or "").strip()[:80]
+            if target in ("the", "a", "an", "on", "off"):
+                target = ""
+            return {"type": "switch", "target": target, "raw": (text or "").strip()[:240]}
+        if re.match(r"^turn\s+(?:the\s+|a\s+|an\s+)?.+\s+(on|off)$", t):
+            m = re.match(
+                r"^turn\s+(?:the\s+|a\s+|an\s+)?(.+?)\s+(?:on|off)$",
+                t,
+            )
+            target = ((m.group(1) if m else "") or "").strip()[:80]
+            if target in ("the", "a", "an", "on", "off"):
+                target = ""
+            return {"type": "switch", "target": target, "raw": (text or "").strip()[:240]}
+        m = re.match(
+            r"^(?:turn|rotate|twist|screw|unscrew)\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+            t,
+        )
+        target = ((m.group(1) if m else "") or "").strip()[:80]
+        if target in ("the", "a", "an", "around", "aside", "away", "hard", "gently", "carefully"):
+            target = ""
+        # strip leading "around " residue
+        if target.startswith("around "):
+            target = target[7:].strip()[:80]
+        return {"type": "turn", "target": target, "raw": (text or "").strip()[:240]}
+    # Inform DM4 §A4 Sleep — Grammar.h Verb 'sleep' 'nap' 'doze' → Sleep.
+    # Mag rest organ owns rest|heal|camp|sleep (HP heal). Hang ONLY nap/doze/yawn soft floors
+    # so bare nap/doze never belt to long-IC talk. Do NOT steal sleep/rest/camp/heal.
+    # Do not eat napping/napped/naps/napkin, dozing/dozed/dozes, yawning/yawned/yawns alone as IC.
+    # Never invent Calcifer on keep_gate; never dump room.desc.
+    if re.match(r"^(nap|doze|yawn)(\b|$)", t) and not t.startswith(
+        (
+            "napping", "napped", "naps", "napkin", "napoleon", "naphtha",
+            "dozing", "dozed", "dozes", "dozen", "dozy",
+            "yawning", "yawned", "yawns", "yawner",
+        )
+    ):
+        return {
+            "type": "sleep",
+            "raw": (text or "").strip()[:240],
+        }
+
+    # Inform DM4 §A4 Jump / JumpOver / Sing / Think / Kiss.
+    # Bare jump|sing|think|kiss were None → table_turn long-IC talk belt.
+    # sleep|rest|heal|camp stay rest organ below — do not steal Sleep verb word itself.
+    # Do not eat jumper/jumping alone, singer/singing alone, thinker alone, kissing alone as IC.
+    if re.match(r"^(jump)(\b|$)", t) and not t.startswith(
+        ("jumper", "jumping", "jumped", "jumpsuit", "jumpstart")
+    ):
+        m = re.match(
+            r"^jump\s+(?:over\s+)?(?:the\s+|a\s+|an\s+)?(.+)$",
+            t,
+        )
+        target = ((m.group(1) if m else "") or "").strip()[:80]
+        if target in ("the", "a", "an", "over", "up", "down", "around"):
+            target = ""
+        # "jump over X" or "jump X" → JumpOver floor when target present
+        over = bool(re.match(r"^jump\s+over\b", t)) or bool(target)
+        return {
+            "type": "jump",
+            "over": over and bool(target),
+            "target": target,
+            "raw": (text or "").strip()[:240],
+        }
+    if re.match(r"^(sing)(\b|$)", t) and not t.startswith(
+        ("singer", "singing", "single", "singular", "singapore")
+    ):
+        return {"type": "sing", "raw": (text or "").strip()[:240]}
+    if re.match(r"^(think)(\b|$)", t) and not t.startswith(
+        ("thinker", "thinking", "thinks", "thought")
+    ):
+        # bare think only; "think about X" still think (short floor)
+        return {"type": "think", "raw": (text or "").strip()[:240]}
+    if re.match(r"^(kiss)(\b|$)", t) and not t.startswith(
+        ("kisser", "kissing", "kisses", "kissed")
+    ):
+        m = re.match(
+            r"^kiss\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+            t,
+        )
+        target = ((m.group(1) if m else "") or "").strip()[:80]
+        if target in ("the", "a", "an"):
+            target = ""
+        return {"type": "kiss", "target": target, "raw": (text or "").strip()[:240]}
+    # Inform DM4 §A4 Swim/Dig/Cut/Wake/Pray — miss verbs were None → table_turn talk belt.
+    # Do NOT steal Burn here: burn|set fire already maps to use/fire earlier.
+    # Do NOT eat swimming/digger/cutter/waking/prayer alone as IC.
+    if re.match(r"^(swim|dive)(\b|$)", t) and not t.startswith(
+        ("swimmer", "swimming", "swims", "diver", "diving", "dives", "dividend", "diverse")
+    ):
+        return {"type": "swim", "raw": (text or "").strip()[:240]}
+    if re.match(r"^(dig)(\b|$)", t) and not t.startswith(
+        ("digger", "digging", "digits", "digital", "digest", "dignity")
+    ):
+        m = re.match(
+            r"^dig\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+            t,
+        )
+        target = ((m.group(1) if m else "") or "").strip()[:80]
+        if target in ("the", "a", "an", "with", "up", "down"):
+            target = ""
+        # strip trailing "with X"
+        target = re.sub(r"\s+with\s+.+$", "", target).strip()[:80]
+        return {"type": "dig", "target": target, "raw": (text or "").strip()[:240]}
+    if re.match(r"^(cut|chop|slice|prune)(\b|$)", t) and not t.startswith(
+        ("cutter", "cutting", "cuts", "cute", "cutoff", "chopper", "chopping", "slicer", "slicing", "pruner", "pruning")
+    ):
+        m = re.match(
+            r"^(?:cut|chop|slice|prune)\s+(?:the\s+|a\s+|an\s+|up\s+)?(.+)$",
+            t,
+        )
+        target = ((m.group(1) if m else "") or "").strip()[:80]
+        if target in ("the", "a", "an", "up", "down", "with"):
+            target = ""
+        target = re.sub(r"\s+with\s+.+$", "", target).strip()[:80]
+        return {"type": "cut", "target": target, "raw": (text or "").strip()[:240]}
+    if re.match(r"^(wake)(\b|$)", t) and not t.startswith(
+        ("waker", "waking", "wakes", "wakeful", "wakeup")
+    ):
+        # wake / wake up / wake X → Wake floor (not rest); WakeOther same short refusal
+        return {"type": "wake", "raw": (text or "").strip()[:240]}
+    if re.match(r"^(pray)(\b|$)", t) and not t.startswith(
+        ("prayer", "praying", "prays", "prayed")
+    ):
+        return {"type": "pray", "raw": (text or "").strip()[:240]}
+    # Inform DM4 §A4 Swing — Grammar.h Verb 'swing' * noun → Swing * 'on' noun → Swing.
+    # Floor: There's nothing sensible to swing here.
+    # Weakest link: swing on rope / swing the rope hit attack catchall → combat belt.
+    # Steal ONLY object/on|from forms. Keep bare swing / swing at X as attack synonym.
+    # Do NOT steal: attack|hit|fight|strike|kill|stab|slash; Burn (use/fire).
+    # Never invent Calcifer on keep_gate; never dump room.desc.
+    if re.match(r"^(swing)(\b|$)", t) and not t.startswith(
+        (
+            "swinging", "swung", "swings", "swingset", "swinger", "swinging",
+        )
+    ):
+        # bare swing → fall through to attack catchall
+        if re.match(r"^swing$", t):
+            pass
+        # swing at X → attack (combat aim)
+        elif re.match(r"^swing\s+at\b", t):
+            pass
+        # swing sword at goblin → attack
+        elif re.search(r"\bat\b", t):
+            pass
+        else:
+            m_on = re.match(
+                r"^swing\s+(?:on|from)\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+                t,
+            )
+            m_noun = re.match(
+                r"^swing\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+                t,
+            )
+            if m_on:
+                target = (m_on.group(1) or "").strip()[:80]
+            elif m_noun:
+                target = (m_noun.group(1) or "").strip()[:80]
+            else:
+                target = ""
+            if target in ("the", "a", "an", "on", "from", "at", "hard", "gently", "wildly"):
+                target = ""
+            # strip trailing "with X" residue
+            target = re.sub(r"\s+with\s+.+$", "", target).strip()[:80]
+            if m_on or m_noun:
+                return {
+                    "type": "swing",
+                    "target": target,
+                    "raw": (text or "").strip()[:240],
+                }
+
+    # Inform DM4 §A4 Rub/Squeeze/WaveHands/Climb — miss verbs were None → table_turn talk belt.
+    # Swing object/on|from stolen above; bare swing / swing at stay attack synonym below.
+    # Do NOT steal "wave at" (social→talk earlier).
+    # Do NOT break enter/gate→move. Do NOT eat rubber/squeezer/waving/climber alone.
+    if re.match(r"^(rub)(\b|$)", t) and not t.startswith(
+        ("rubber", "rubbing", "rubs", "rubbish", "rubble")
+    ):
+        m = re.match(
+            r"^rub\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+            t,
+        )
+        target = ((m.group(1) if m else "") or "").strip()[:80]
+        if target in ("the", "a", "an"):
+            target = ""
+        return {"type": "rub", "target": target, "raw": (text or "").strip()[:240]}
+    if re.match(r"^(squeeze)(\b|$)", t) and not t.startswith(
+        ("squeezer", "squeezing", "squeezes", "squeezed")
+    ):
+        m = re.match(
+            r"^squeeze\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+            t,
+        )
+        target = ((m.group(1) if m else "") or "").strip()[:80]
+        if target in ("the", "a", "an"):
+            target = ""
+        return {"type": "squeeze", "target": target, "raw": (text or "").strip()[:240]}
+    if re.match(r"^(wave)(\b|$)", t) and not t.startswith(
+        ("waver", "waving", "waves", "wavelength", "waveform")
+    ):
+        # "wave at X" already returned talk earlier; bare wave / wave <obj>
+        m = re.match(
+            r"^wave\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+            t,
+        )
+        target = ((m.group(1) if m else "") or "").strip()[:80]
+        if target in ("the", "a", "an", "around", "hello", "goodbye", "bye"):
+            target = ""
+        # strip "at ..." if somehow reached here
+        if target.startswith("at "):
+            target = target[3:].strip()[:80]
+        return {"type": "wave", "target": target, "raw": (text or "").strip()[:240]}
+    if re.match(r"^(climb)(\b|$)", t) and not t.startswith(
+        ("climber", "climbing", "climbs", "climbed", "climate", "climax")
+    ):
+        m = re.match(
+            r"^climb\s+(?:(?:up|down|over|on|onto)\s+)?(?:the\s+|a\s+|an\s+)?(.+)$",
+            t,
+        )
+        target = ((m.group(1) if m else "") or "").strip()[:80]
+        if target in ("the", "a", "an", "up", "down", "over", "on", "onto"):
+            target = ""
+        return {"type": "climb", "target": target, "raw": (text or "").strip()[:240]}
+    # Inform DM4 §A4 Blow/Buy/Tie/Sorry/LookUnder — miss verbs were None (or look-under→look)
+    # → table_turn talk belt / wrong look. Do NOT steal Burn (use/fire). Do NOT eat
+    # buyer/buying alone as buy when "buy a drink" already drink. Do NOT break search→look.
+    if re.match(r"^(blow)(\b|$)", t) and not t.startswith(
+        ("blower", "blowing", "blows", "blown", "blowout", "blowup")
+    ):
+        m = re.match(
+            r"^blow\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+            t,
+        )
+        target = ((m.group(1) if m else "") or "").strip()[:80]
+        if target in ("the", "a", "an", "on", "out", "up"):
+            target = ""
+        return {"type": "blow", "target": target, "raw": (text or "").strip()[:240]}
+    if re.match(r"^(buy|purchase)(\b|$)", t) and not t.startswith(
+        ("buyer", "buying", "buys", "bought", "buyout")
+    ):
+        # "buy a drink" already returned drink earlier; remaining buy → shop floor.
+        m = re.match(
+            r"^(?:buy|purchase)\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+            t,
+        )
+        target = ((m.group(1) if m else "") or "").strip()[:80]
+        if target in ("the", "a", "an"):
+            target = ""
+        return {"type": "buy", "target": target, "raw": (text or "").strip()[:240]}
+    if re.match(r"^(tie|fasten)(\b|$)", t) and not t.startswith(
+        ("tier", "tied", "ties", "tying", "tiebreaker", "fastener", "fastening", "fastens")
+    ):
+        m = re.match(
+            r"^(?:tie|fasten)\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+            t,
+        )
+        target = ((m.group(1) if m else "") or "").strip()[:80]
+        if target in ("the", "a", "an", "up", "down", "to", "onto"):
+            target = ""
+        # strip "to X" residual for short floor
+        target = re.sub(r"\s+to\s+.+$", "", target).strip()[:80]
+        return {"type": "tie", "target": target, "raw": (text or "").strip()[:240]}
+    # Inform community Untie soft (I7 has no built-in Untie; stock says
+    # "That's not a verb I recognise." Field: Untying / Untying it from —
+    # https://intfiction.org/t/built-in-verb-for-opposite-of-tie-attach/42145
+    # Understand "untie/unfasten [something]" / "untie [something] from [something]".
+    # Check block: "There's nothing to be achieved by that."
+    # Mag: bare → What do you want to untie?; noun → field refuse.
+    # Hang BEFORE talk catch-all so "untie mira" is not belted by mira keyword.
+    # Do NOT steal: cut/rope free organ; tie/fasten; Calcifer invent; room.desc.
+    if re.match(r"^(untie|unfasten)(\b|$)", t) and not t.startswith(
+        (
+            "untied", "untying", "unties", "untieable",
+            "unfastened", "unfastening", "unfastens",
+        )
+    ):
+        m = re.match(
+            r"^(?:untie|unfasten)\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+            t,
+        )
+        target = ((m.group(1) if m else "") or "").strip()[:80]
+        if target in ("the", "a", "an", "from", "off", "up"):
+            target = ""
+        # strip "from X" residual (Untying it from) for short floor
+        target = re.sub(r"\s+from\s+.+$", "", target).strip()[:80]
+        return {"type": "untie", "target": target, "raw": (text or "").strip()[:240]}
+    if re.match(r"^(sorry|apologize|apologise)(\b|$)", t) and not t.startswith(
+        ("sorrow", "sorryness")
+    ):
+        return {"type": "sorry", "raw": (text or "").strip()[:240]}
+    # LookUnder before later look/look-up paths so "look under X" is not look(item=under X).
+    if re.match(r"^look\s+(under|underneath|beneath)(\b|$)", t):
+        m = re.match(
+            r"^look\s+(?:under|underneath|beneath)\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+            t,
+        )
+        target = ((m.group(1) if m else "") or "").strip()[:80]
+        if target in ("the", "a", "an", "here", "there"):
+            target = ""
+        return {"type": "look_under", "target": target, "raw": (text or "").strip()[:240]}
+    # Inform DM4 §A4 Soft Yes/No + Set/SetTo + Switch + ThrowAt — miss verbs were None
+    # → table_turn talk belt. Do NOT steal "n" (north), "throw workers" (work), attack/slay.
+    # Do NOT invent switch organ. Bare y only (n already move north).
+    if t in ("yes", "y", "yeah", "yep") or re.match(r"^(yes)(\b|$)", t):
+        if t.startswith(("yesterday", "yester", "yeast", "yellow")):
+            pass
+        else:
+            return {"type": "yes", "raw": (text or "").strip()[:240]}
+    if t in ("no", "nope", "nah") or (
+        re.match(r"^(no)(\b|$)", t)
+        and not t.startswith(
+            (
+                "north",
+                "note",
+                "notch",
+                "none",
+                "nothing",
+                "nobody",
+                "nowhere",
+                "now",
+                "noble",
+                "noise",
+                "nod",
+            )
+        )
+    ):
+        # bare no / nope; "no thanks" still rhetorical Soft No
+        return {"type": "no", "raw": (text or "").strip()[:240]}
+    if re.match(r"^(set)(\b|$)", t) and not t.startswith(
+        ("settle", "setting", "sets", "setup", "settee", "setter")
+    ):
+        # set fire / set X on fire stays use (parsed later); do not steal burn.
+        if not (
+            re.search(r"\b(fire|alight|ablaze)\b", t) or " on fire" in t
+        ):
+            m = re.match(
+                r"^set\s+(?:the\s+|a\s+|an\s+)?(.+?)(?:\s+to\s+(.+))?$",
+                t,
+            )
+            target = ((m.group(1) if m else "") or "").strip()[:80]
+            set_to = ((m.group(2) if m else "") or "").strip()[:80]
+            if target in ("the", "a", "an", "to"):
+                target = ""
+            out = {"type": "set", "target": target, "raw": (text or "").strip()[:240]}
+            if set_to:
+                out["set_to"] = set_to
+            return out
+    if re.match(r"^(switch)(\b|$)", t) and not t.startswith(
+        ("switched", "switching", "switches", "switcher")
+    ):
+        if t in ("switch", "switch on", "switch off"):
+            return {"type": "switch", "target": "", "raw": (text or "").strip()[:240]}
+        m = re.match(
+            r"^switch\s+(?:(?:on|off)\s+)?(?:the\s+|a\s+|an\s+)?(.+)$",
+            t,
+        )
+        target = ((m.group(1) if m else "") or "").strip()[:80]
+        if target in ("the", "a", "an", "on", "off"):
+            target = ""
+        target = re.sub(r"\s+(on|off)$", "", target).strip()[:80]
+        return {"type": "switch", "target": target, "raw": (text or "").strip()[:240]}
+    if re.match(r"^(throw)(\b|$)", t) and not t.startswith(
+        ("thrown", "throws", "throwing", "throwback")
+    ):
+        # "throw workers" already work earlier; remaining throw → ThrowAt floor
+        if re.search(r"\bworkers?\b", t):
+            pass
+        else:
+            m = re.match(
+                r"^throw\s+(?:the\s+|a\s+|an\s+)?(.+?)(?:\s+at\s+(?:the\s+|a\s+|an\s+)?(.+))?$",
+                t,
+            )
+            if m:
+                obj = (m.group(1) or "").strip()[:80]
+                at = (m.group(2) or "").strip()[:80]
+                if obj in ("the", "a", "an", "at"):
+                    obj = ""
+                if obj.startswith("at "):
+                    at = obj[3:].strip()[:80]
+                    obj = ""
+                target = at or obj
+            else:
+                target = ""
+            return {"type": "throw_at", "target": target, "raw": (text or "").strip()[:240]}
+    # Inform DM4 §A4 Mild / Strong — miss swear floors; bare (or trailing punct) only.
+    # Longer IC speech with a mid-line swear stays None → talk. Do not invent Mild organ.
+    m_mild = re.match(r"^(damn|darn|heck|bloody)\b(.*)$", t)
+    if m_mild and re.fullmatch(r"[\s!?.]*", m_mild.group(2) or ""):
+        return {"type": "mild", "raw": (text or "").strip()[:240]}
+    m_strong = re.match(r"^(fuck|shit|asshole|bastard|bitch)\b(.*)$", t)
+    if m_strong and re.fullmatch(r"[\s!?.]*", m_strong.group(2) or ""):
+        return {"type": "strong", "raw": (text or "").strip()[:240]}
+    # Inform DM4 §A4 Fill — miss fillables; no water organ yet.
+    if re.match(r"^(fill)(\b|$)", t) and not t.startswith(
+        ("filling", "filled", "filler", "fillet")
+    ):
+        if t == "fill":
+            return {"type": "fill", "target": "", "with_what": "", "raw": (text or "").strip()[:240]}
+        m = re.match(
+            r"^fill\s+(?:the\s+|a\s+|an\s+)?(.+?)(?:\s+with\s+(?:the\s+|a\s+|an\s+)?(.+))?$",
+            t,
+        )
+        target = ((m.group(1) if m else "") or "").strip()[:80]
+        with_what = ((m.group(2) if m else "") or "").strip()[:80]
+        if target in ("the", "a", "an", "with"):
+            target = ""
+        if with_what in ("the", "a", "an"):
+            with_what = ""
+        return {
+            "type": "fill",
+            "target": target,
+            "with_what": with_what,
+            "raw": (text or "").strip()[:240],
+        }
+    # Inform DM4 §A4 EmptyT — miss empties; no container organ yet.
+    # Do not steal empty-handed / emptying / emptied / emptiness.
+    if re.match(r"^(empty)(\b|$)", t) and not t.startswith(
+        ("emptying", "emptied", "emptiness", "empty-handed", "emptyhanded", "empty-")
+    ):
+        if t in ("empty", "empty out"):
+            return {"type": "empty", "target": "", "raw": (text or "").strip()[:240]}
+        m = re.match(
+            r"^empty\s+(?:out\s+)?(?:the\s+|a\s+|an\s+)?(.+)$",
+            t,
+        )
+        target = ((m.group(1) if m else "") or "").strip()[:80]
+        if target in ("the", "a", "an", "out"):
+            target = ""
+        return {"type": "empty", "target": target, "raw": (text or "").strip()[:240]}
+    # Inform EmptyT cousin — Mag soft Pour (stock Grammar.h has no Pour verb).
+    # Empty: noun / out noun / noun out / noun to|into|on|onto noun → EmptyT.
+    # Hang before talk catch-all so "pour mira" never talk-belts.
+    # Do NOT steal: pouring/poured/pours; drink phrases (drink organ earlier:
+    # "pour yourself a drink" / "pour a drink"); fill/empty organs; Calcifer invent.
+    if re.match(r"^(pour)(\b|$)", t) and not t.startswith(
+        ("pouring", "poured", "pours", "pourable")
+    ):
+        # leave long IC with drink keywords to earlier drink path (already returned)
+        if t in ("pour", "pour out"):
+            return {"type": "pour", "target": "", "into": "", "raw": (text or "").strip()[:240]}
+        m = re.match(
+            r"^pour\s+(?:out\s+)?(?:the\s+|a\s+|an\s+)?(.+?)"
+            r"(?:\s+(?:into|in|on|onto|to)\s+(?:the\s+|a\s+|an\s+)?(.+))?$",
+            t,
+        )
+        target = ((m.group(1) if m else "") or "").strip()[:80]
+        into = ((m.group(2) if m else "") or "").strip()[:80]
+        if target in ("the", "a", "an", "out", "into", "in", "on", "onto", "to"):
+            target = ""
+        if into in ("the", "a", "an"):
+            into = ""
+        # "pour out the jug" → target jug
+        if target.startswith("out "):
+            target = target[4:].strip()[:80]
+        return {
+            "type": "pour",
+            "target": target,
+            "into": into,
+            "raw": (text or "").strip()[:240],
+        }
+    # Inform DM4 §A4 Show — miss show; do NOT steal share (work) or examine/look.
+    if re.match(r"^(show|display|present)(\b|$)", t) and not t.startswith(
+        (
+            "showing",
+            "showed",
+            "shower",
+            "shown",
+            "displaying",
+            "displayed",
+            "presents",
+            "presented",
+            "presenting",
+            "presentation",
+        )
+    ):
+        if t in ("show", "display", "present"):
+            return {"type": "show", "item": "", "target": "", "raw": (text or "").strip()[:240]}
+        m = re.match(
+            r"^(?:show|display|present)\s+(?:the\s+|a\s+|an\s+)?(.+?)\s+to\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+            t,
+        )
+        if m:
+            item = (m.group(1) or "").strip()[:80]
+            target = (m.group(2) or "").strip()[:80]
+            if item in ("the", "a", "an", "to"):
+                item = ""
+            if target in ("the", "a", "an"):
+                target = ""
+            return {
+                "type": "show",
+                "item": item,
+                "target": target,
+                "raw": (text or "").strip()[:240],
+            }
+        m = re.match(
+            r"^(?:show|display|present)\s+(?:the\s+)?(\S+)\s+(?:the\s+|a\s+|an\s+)(.+)$",
+            t,
+        )
+        if m:
+            # show Y the X → item=X, target=Y
+            target = (m.group(1) or "").strip()[:80]
+            item = (m.group(2) or "").strip()[:80]
+            if target in ("the", "a", "an"):
+                target = ""
+            if item in ("the", "a", "an"):
+                item = ""
+            return {
+                "type": "show",
+                "item": item,
+                "target": target,
+                "raw": (text or "").strip()[:240],
+            }
+        m = re.match(
+            r"^(?:show|display|present)\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+            t,
+        )
+        item = ((m.group(1) if m else "") or "").strip()[:80]
+        if item in ("the", "a", "an", "to"):
+            item = ""
+        return {"type": "show", "item": item, "target": "", "raw": (text or "").strip()[:240]}
+    # Inform DM4 §A4 Search (2/4/5/6) + VagueGo + Answer — never dump room.desc.
+    #   Search2 "There is nothing on <x1>."  Search4 "You find nothing of interest."
+    #   Search5 "You can't see inside, since <x1> is/are closed."  Search6 "<x1> is/are empty."
+    #   VagueGo "You'll have to say which compass direction to go in."
+    #   Answer  "There is no reply."
+    # Before the look branch on purpose: bare "search" matched \b(...|search|...)\b there and
+    # returned {look} with no item -> _narrate_room dump. "look in|inside|into X" returned
+    # {look, item:"in the crate"}. Both are the room-dump bug, not a Search.
+    # Do NOT eat: research/searching/searched/rummaging, "look up" (read/consult),
+    # "look under" (look_under), "go north"/"go out" (move), "answer <person>" (talk organ).
+    if (
+        re.match(r"^(search|rummage)(\b|$)", t)
+        and not t.startswith(
+            ("searching", "searched", "searcher", "searches", "rummaging", "rummaged")
+        )
+    ) or re.match(r"^look\s+(in|inside|into|through)(\b|$)", t):
+        m = re.match(
+            r"^(?:search|rummage|look\s+(?:in|inside|into|through))"
+            r"(?:\s+(?:in|inside|into|through|for))?"
+            r"(?:\s+(?:the|a|an))?\s*(.+)?$",
+            t,
+        )
+        target = ((m.group(1) if m else "") or "").strip()[:80]
+        target = re.sub(r"^(?:the|a|an)\s+", "", target).strip()[:80]
+        if target in (
+            "the", "a", "an", "in", "inside", "into", "through", "for",
+            "around", "here", "room", "everything",
+        ):
+            target = ""
+        return {"type": "search", "target": target, "raw": (text or "").strip()[:240]}
+    # VagueGo: exact bare motion tokens only. "go north" / "go out" / "go to the keep"
+    # already reach the direction / leave / gate organs later and stay untouched.
+    if t in (
+        "go", "go on", "walk", "walk on", "head", "head on", "move", "move on",
+        "travel", "proceed", "onward", "onwards", "forward", "keep going", "keep walking",
+    ):
+        return {"type": "vague_go", "raw": (text or "").strip()[:240]}
+    # Answer: bare, or answering a non-person (yes/no/nothing/quoted line). A named
+    # person keeps falling through to the talk organ ("answer mira" -> talk).
+    m_ans = re.match(r"^(answer|reply|respond)\b(.*)$", t)
+    if m_ans and not t.startswith(
+        (
+            "answered", "answering", "answers", "replied", "replying", "replies",
+            "responded", "responding", "responds", "response", "responsible",
+        )
+    ):
+        rest = (m_ans.group(2) or "").strip()
+        rest = re.sub(r"^(?:to|with)\s+", "", rest).strip()
+        bare = rest.strip("\"'“”.,!?").strip()
+        if (
+            not rest
+            or rest.startswith(("\"", "'", "“"))
+            or bare in (
+                "yes", "y", "yeah", "yep", "no", "nope", "nah", "nothing",
+                "anything", "something", "honestly", "truthfully", "it",
+                "him", "her", "them", "the question",
+            )
+        ):
+            return {"type": "answer", "raw": (text or "").strip()[:240]}
+        # else: a named topic/person — leave it to the talk organ below.
+    # Inform follow.inf (IF Archive) / Grammar-adjacent Follow soft floors.
+    # Verb "follow" "chase" "pursue" "trail" → Follow; bare → Miscellany 48 whom;
+    # noun in location → "No need!" (FollowSub). Mag has no follow_direction organ yet.
+    # Do NOT steal: talk/ask mira; follower/following/followed/follows; Calcifer invent; room.desc.
+    # Hang BEFORE talk catch-all so "follow mira" is not belted by mira keyword.
+    m_follow = re.match(r"^(follow|chase|pursue|trail)\b(.*)$", t)
+    if m_follow and not t.startswith(
+        ("follower", "following", "followed", "follows", "chaseable", "pursued", "pursuit", "trailer", "trailing")
+    ):
+        rest = (m_follow.group(2) or "").strip()
+        if rest.startswith("after "):
+            rest = rest[6:].strip()
+        elif rest == "after":
+            rest = ""
+        m_tgt = re.match(r"^(?:the\s+|a\s+|an\s+)?(.+)$", rest) if rest else None
+        target = ((m_tgt.group(1) if m_tgt else "") or "").strip()[:80]
+        if target in ("the", "a", "an", "after"):
+            target = ""
+        if not target:
+            return {"type": "follow", "mode": "whom", "raw": (text or "").strip()[:240]}
+        return {"type": "follow", "target": target, "raw": (text or "").strip()[:240]}
+    # Inform Miscellany 48 / Ask soft floors — bare ask / ask about TOPIC were None
+    # (or belt via talk) when no creature. Named-person Ask stays talk.
+    # Do NOT steal: ask mira / ask the stranger (talk); ask the barkeep (rumor earlier);
+    # ask for help (help earlier); ask for the key (leave talk); Burn (use/fire).
+    # Never invent Calcifer on keep_gate; never dump room.desc.
+    m_ask = re.match(r"^ask\b(.*)$", t)
+    if m_ask and not t.startswith(
+        ("asked", "asking", "asks", "askance", "askew", "askari")
+    ):
+        rest = (m_ask.group(1) or "").strip()
+        if rest.startswith("for "):
+            pass  # ask for help/key — help/talk organs
+        elif (not rest) or rest.startswith("about"):
+            return {"type": "ask", "mode": "whom", "raw": (text or "").strip()[:240]}
+        # else: ask [the] NAME … → talk/rumor organs below
+    # Inform DM4 §A4 Tell + Order + Exit + Eat — never dump room.desc / talk belt.
+    #   Tell1 "You talk to yourself a while."  Tell2 "This provokes no reaction."
+    #   Order "<x1> has/have better things to do."
+    #   Exit1 "But you aren't in anything at the moment."
+    #   Eat1 "That's/They're plainly inedible."
+    # Ask soft floors hang above (bare / ask about only). Do NOT steal Burn (use/fire).
+    # Do NOT break: "order a drink" (drink organ earlier), "tell me"/"tell mira" (talk),
+    # "leave the tavern"/"go out" (move), enter/gate move.
+    if re.match(r"^(tell)(\b|$)", t) and not t.startswith(
+        ("telling", "teller", "tells", "telly", "telegram", "telephone", "teleport")
+    ):
+        # "tell me …" stays talk (Ask-ish). Named person → talk organ.
+        if re.match(r"^tell\s+me\b", t):
+            pass  # fall through to talk
+        elif re.match(r"^tell\s+(?:the\s+)?[a-z][\w'-]*(?:\s+about\b.*)?$", t) and not re.match(
+            r"^tell\s+about\b", t
+        ):
+            # tell <person> [about …] → talk organ below
+            pass
+        else:
+            # bare tell / tell about <topic> / tell <scenery>
+            m = re.match(r"^tell\s+(?:about\s+)?(?:the\s+|a\s+|an\s+)?(.+)$", t)
+            target = ((m.group(1) if m else "") or "").strip()[:80]
+            if target in ("the", "a", "an", "about"):
+                target = ""
+            return {"type": "tell", "target": target, "raw": (text or "").strip()[:240]}
+    # Order: bare or "order <npc> [to …]". Drink already caught "order a …".
+    if re.match(r"^(order)(\b|$)", t) and not t.startswith(
+        ("ordering", "ordered", "orders", "orderly", "ordinal", "ordinary")
+    ):
+        if re.search(r"\border\s+a\b", t):
+            pass  # drink path already returned, or fall through
+        elif t == "order":
+            return {"type": "order", "target": "", "raw": (text or "").strip()[:240]}
+        else:
+            m = re.match(
+                r"^order\s+(?:the\s+|a\s+|an\s+)?(.+?)(?:\s+to\s+.+)?$",
+                t,
+            )
+            target = ((m.group(1) if m else "") or "").strip()[:80]
+            target = re.sub(r"^(?:the|a|an)\s+", "", target).strip()[:80]
+            if target in ("the", "a", "an", "to"):
+                target = ""
+            return {
+                "type": "order",
+                "target": target,
+                "raw": (text or "").strip()[:240],
+            }
+    # Eat — no edible organ yet; Eat1 for any noun; bare → Eat what?
+    if re.match(r"^(eat|consume|devour|nibble|munch)(\b|$)", t) and not t.startswith(
+        (
+            "eating", "eaten", "eater", "eats", "eaves", "each",
+            "consuming", "consumed", "devouring", "devoured",
+            "nibbling", "nibbled", "munching", "munched",
+        )
+    ):
+        if t in ("eat", "consume", "devour", "nibble", "munch"):
+            return {"type": "eat", "item": "", "raw": (text or "").strip()[:240]}
+        m = re.match(
+            r"^(?:eat|consume|devour|nibble|munch)\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+            t,
+        )
+        item = ((m.group(1) if m else "") or "").strip()[:80]
+        if item in ("the", "a", "an"):
+            item = ""
+        return {"type": "eat", "item": item, "raw": (text or "").strip()[:240]}
+    # Inform Standard Rules / WI §7.7: bare "listen" = listening to the location.
+    # Default report: "You hear nothing unexpected." Bare listen was None →
+    # table_turn long-IC talk belt. Never dump room.desc. Mag voice: hear / eavesdrop.
+    # Accept "listen/hear/eavesdrop [to|at|for] <noun>" so "hear the gate" never
+    # falls through to move (gate→north). Do not eat listener/listening alone.
+    if re.match(r"^(listen|hear|eavesdrop)(\b|$)", t) and not t.startswith(
+        ("listener", "listening", "hearsay", "hearing aid")
+    ):
+        m = re.match(
+            r"^(?:listen|hear|eavesdrop)(?:\s+(?:to|at|for))?\s*(?:the\s+|a\s+|an\s+)?(.+)?$",
+            t,
+        )
+        target = ((m.group(1) if m else "") or "").strip()[:80]
+        if target in ("the", "a", "an", "to", "at", "for", "carefully", "closely", "hard"):
+            # adverbs alone = bare room listen
+            target = ""
+        return {"type": "listen", "target": target, "raw": (text or "").strip()[:240]}
+    # Evennia CmdHome (general.py): key=home; arg_regex=r"$".
+    # Bare "home" was None → table_turn long-IC talk belt. Exact token only (no homesick).
+    # Mag voice: go/head home (still not homeward/homework).
+    if t == "home" or t in ("go home", "head home"):
+        return {"type": "home", "raw": (text or "").strip()[:240]}
+    if t in ("talk", "speak", "say"):
+        return {"type": "talk", "raw": (text or "").strip()[:240]}
     if re.search(r"\b(howdy|hiya|greetings)\b", t):
         return {"type": "talk", "raw": (text or "").strip()[:240]}
-    if re.search(r"\b(burn|set fire|on fire|light the|torch the|set the .+ on fire)\b", t):
+    # Inform DM4 §A4 Burn — Grammar.h Verb 'burn' * noun / * noun 'with' noun → Burn.
+    # Bare burn → Miscellany 49 incomplete. Burn+noun → completed Burn soft refuse.
+    # Mag use/fire keeps: set fire / on fire / light the / torch the / set the X on fire.
+    # Do NOT steal: use organ; light/torch idioms; Calcifer invent; room.desc dump.
+    if re.match(r"^burn$", t):
+        return {"type": "burn", "raw": (text or "").strip()[:240]}
+    m_burn = re.match(
+        r"^burn\s+(?:the\s+|a\s+|an\s+)?(.+?)(?:\s+with\s+(?:the\s+|a\s+|an\s+)?(.+))?$",
+        t,
+    )
+    if m_burn:
+        target = (m_burn.group(1) or "").strip()[:80]
+        with_item = ((m_burn.group(2) or "") or "").strip()[:80]
+        if target in ("the", "a", "an", "with"):
+            target = ""
+        if target:
+            out = {"type": "burn", "target": target, "raw": (text or "").strip()[:240]}
+            if with_item and with_item not in ("the", "a", "an"):
+                out["with"] = with_item
+            return out
+    if re.search(r"\b(set fire|on fire|light the|torch the|set the .+ on fire)\b", t):
         return {"type": "use", "raw": (text or "").strip()[:240], "item": "fire"}
+    # Inform Consult ("look up …"): must run BEFORE look/l/ls so "look up X" is not look(item=up X).
+    if re.match(r"^look\s+up(\b|$)", t):
+        m = re.match(
+            r"^look\s+up\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+            t,
+        )
+        item = ((m.group(1) if m else "") or "").strip()[:80]
+        if item in ("the", "a", "an", "up"):
+            item = ""
+        if " in " in item:
+            item = item.split(" in ", 1)[0].strip()[:80]
+        return {"type": "read", "item": item, "raw": (text or "").strip()[:240]}
+
+    # Evennia CmdLook (general.py): key=look aliases=["l","ls"] arg_regex=r"\s|$".
+    # Bare "l"/"ls" was None → table_turn long-IC talk belt. look/examine already apply.
+    # Do not eat "look"/"listen"/"leave" — only exact l/ls or l/ls + space (arg_regex).
+    m_l = re.match(r"^(l|ls)(?:\s+(?:at |the |a |an )?(.+))?$", t)
+    if m_l:
+        item = (m_l.group(2) or "").strip()[:80]
+        if item and item not in ("around", "here", "room"):
+            return {"type": "look", "item": item}
+        return {"type": "look"}
+    # Inform Grammar.h Verb 'examine' 'x//' 'watch' 'describe' 'check'
+    # https://inform-fiction.org/source/library/Grammar/Grammar_3_4.html
+    # Mag already maps examine/describe→look; bare x / x NOUN / watch|check were None
+    # (and "x mira" wrongly hit talk). Hang on look organ only.
+    # Do NOT steal: talk organ; use/fire; Calcifer invent; room.desc dump.
+    m_x = re.match(r"^x(?:\s+(?:at |the |a |an )?(.+))?$", t)
+    if m_x:
+        item = (m_x.group(1) or "").strip()[:80]
+        if item and item not in ("around", "here", "room"):
+            return {"type": "look", "item": item}
+        return {"type": "look"}
+    m_watch_check = re.match(r"^(?:watch|check)(?:\s+(?:at |the |a |an )?(.+))?$", t)
+    if m_watch_check:
+        item = (m_watch_check.group(1) or "").strip()[:80]
+        if item and item not in ("around", "here", "room"):
+            return {"type": "look", "item": item}
+        return {"type": "look"}
     if re.search(r"\b(look|where am i|describe|status|what do i see|examine|search|peer)\b", t):
-        m = re.search(r"\b(?:look|examine|inspect|peer)\s+(?:at |the |a |an )?(.+)$", t)
+        m = re.search(r"\b(?:look|examine|inspect|peer|describe|watch|check)\s+(?:at |the |a |an )?(.+)$", t)
         item = (m.group(1).strip()[:80] if m else "")
         if item and item not in ("around", "here", "room"):
             return {"type": "look", "item": item}
@@ -2894,6 +4576,52 @@ def parse_player_speech(text: str) -> dict[str, Any] | None:
     ):
         if re.search(rf"\b(go |move |head |walk |run )?(to )?{d}\b", t) or t.strip() == d:
             return {"type": "move", "direction": d}
+    # Inform DM4 §A4 Consult / Lock / Unlock — never talk dump.
+    # Consult: "You discover nothing of interest in <x1>."
+    # Lock 1 / Unlock 1: "That doesn't seem to be something you can lock/unlock."
+    # Bare read|unlock|lock were None → table_turn long-IC talk belt.
+    # "lock the gate" was misparsed as move north (gate→keep heuristic). Handle BEFORE enter/gate.
+    if re.match(r"^(read|consult)(\b|$)", t) or re.match(r"^look\s+up(\b|$)", t):
+        if t.startswith(("ready", "reader", "readily", "readiness", "reading room")):
+            pass  # fall through — not the read verb
+        else:
+            m = re.match(
+                r"^(?:read|consult|look\s+up)\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+                t,
+            )
+            item = ((m.group(1) if m else "") or "").strip()[:80]
+            if item in ("the", "a", "an", "up"):
+                item = ""
+            # "look up X in Y" — keep topic noun only (before " in ")
+            if " in " in item:
+                item = item.split(" in ", 1)[0].strip()[:80]
+            return {"type": "read", "item": item, "raw": (text or "").strip()[:240]}
+    if re.match(r"^unlock(\b|$)", t):
+        m = re.match(
+            r"^unlock\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+            t,
+        )
+        item = ((m.group(1) if m else "") or "").strip()[:80]
+        if item in ("the", "a", "an", "with"):
+            item = ""
+        # drop trailing " with <key>" for short refuse path
+        if " with " in item:
+            item = item.split(" with ", 1)[0].strip()[:80]
+        return {"type": "unlock", "item": item, "raw": (text or "").strip()[:240]}
+    if re.match(r"^lock(\b|$)", t) and not t.startswith(
+        ("locker", "locket", "locking", "locked out", "locksmith")
+    ):
+        m = re.match(
+            r"^lock\s+(?:the\s+|a\s+|an\s+)?(.+)$",
+            t,
+        )
+        item = ((m.group(1) if m else "") or "").strip()[:80]
+        if item in ("the", "a", "an", "with", "up"):
+            item = ""
+        if " with " in item:
+            item = item.split(" with ", 1)[0].strip()[:80]
+        return {"type": "lock", "item": item, "raw": (text or "").strip()[:240]}
+
     if re.search(r"\b(enter|gate|to the keep|inside|through the (gate|door))\b", t):
         return {"type": "move", "direction": "north"}
     if re.search(r"\b(fight (a |some )?|go (fight|hunt)|find (a )?monster|random fight)\b", t):

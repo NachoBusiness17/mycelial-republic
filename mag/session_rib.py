@@ -175,7 +175,9 @@ def ab_test(*, dry: bool = True, per_invariant: int = 2) -> dict[str, Any]:
     LEDGER.parent.mkdir(parents=True, exist_ok=True)
     for t in d["tasks"]:
         LEDGER.open("a", encoding="utf-8").write(
-            json.dumps({"ts": _now(), "schema": SCHEMA, **t}, ensure_ascii=False) + "\n")
+            json.dumps({"ts": _now(), "schema": SCHEMA,
+                        "provenance": "planned" if dry else "dispatched",
+                        "dry": dry, **t}, ensure_ascii=False) + "\n")
     # fold winners: learn from the A/B feedback (self-improving)
     learn = {}
     if not dry:

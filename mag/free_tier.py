@@ -49,10 +49,12 @@ def _key_present(env_names: list[str]) -> bool:
 
 # ── THE FREE BODIES (grounded in providers.yaml + fuel_feed + this session) ─────────────
 FREE_SURFACES: list[dict[str, Any]] = [
-    {"id": "z_ai", "models": ["glm-4.7-flash", "glm-4.5-flash"], "keys": ["ZAI_API_KEY"],
+    {"id": "z_ai3", "models": ["glm-5.3-flash"], "keys": ["ZAI_API_KEY_Lite"],
      "tier": "T2", "kind": "cache_mining", "speed": "medium", "strength": "medium",
      "best_for": ["cache_mined_self", "cheap_bulk", "daily_agentic"],
-     "note": "FREE all tiers; cache-mined FROZEN_SELF; admission 1305(overload)/1302(hard)"},
+     "note": "Lite API (GLM Coding Lite V3 yearly) — RELIT 09-04 Calcifer, PINNED glm-5.3-flash "
+             "(mag/fuel_feed.py FREE_LANES is the record of record; pace-guarded 1400/day by "
+             "mag/lite_guard.py). Explicit calls only — never automatic defaults (09-05 runbook law)."},
     {"id": "groq", "models": [], "keys": ["GROQ_API_KEY"], "tier": "T2", "kind": "fast",
      "speed": "fast", "strength": "medium", "best_for": ["fast_bulk", "cheap_bulk"],
      "note": "~1.9s/call at 91% ok — the fast lane"},

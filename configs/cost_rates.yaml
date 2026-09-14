@@ -1,8 +1,92 @@
-# per-million-token USD estimates (operator editable — not billing truth)
-# Used by mag/cost_simulator.py for swarm wave planning
+# Per-million-token USD rates and planning estimates.
+# The model_rates block is the canonical dashboard/receipt pricing join.
+# The seats block remains an intentionally coarse planning prior for cost_simulator.py.
 
-schema: cost_rates.v1
+schema: cost_rates.v2
 currency: USD
+
+model_rates:
+  deepseek-v4-flash:
+    provider: deepseek
+    schedule:
+      # Official DeepSeek schedule: weekday 01:00-04:00 and 06:00-10:00 UTC.
+      offpeak: {cache_hit_per_m: 0.007, cache_miss_per_m: 0.22, output_per_m: 0.66}
+      peak: {cache_hit_per_m: 0.014, cache_miss_per_m: 0.44, output_per_m: 1.32}
+    source: https://api-docs.deepseek.com/quick_start/pricing/
+  deepseek-v4-pro:
+    provider: deepseek
+    schedule:
+      offpeak: {cache_hit_per_m: 0.022, cache_miss_per_m: 0.66, output_per_m: 1.98}
+      peak: {cache_hit_per_m: 0.044, cache_miss_per_m: 1.32, output_per_m: 3.96}
+    source: https://api-docs.deepseek.com/quick_start/pricing/
+
+  glm-4.7-flash:
+    provider: z_ai
+    free: true
+    source: https://docs.z.ai/guides/overview/pricing
+  glm-4.5-flash:
+    provider: z_ai
+    free: true
+    source: https://docs.z.ai/guides/overview/pricing
+  glm-5.3-flash:
+    provider: z_ai
+    rates: {cache_hit_per_m: 0.015, cache_miss_per_m: 0.075, output_per_m: 0.25}
+    source: https://docs.z.ai/guides/overview/pricing
+  glm-5.3:
+    provider: z_ai
+    rates: {cache_hit_per_m: 0.26, cache_miss_per_m: 1.4, output_per_m: 4.4}
+    source: https://docs.z.ai/guides/overview/pricing
+    plan_surface_unknown: true
+  glm-5.2:
+    provider: z_ai
+    rates: {cache_hit_per_m: 0.26, cache_miss_per_m: 1.4, output_per_m: 4.4}
+    source: https://docs.z.ai/guides/overview/pricing
+    plan_surface_unknown: true
+  glm-5.1:
+    provider: z_ai
+    rates: {cache_hit_per_m: 0.26, cache_miss_per_m: 1.4, output_per_m: 4.4}
+    source: https://docs.z.ai/guides/overview/pricing
+    plan_surface_unknown: true
+  glm-5:
+    provider: z_ai
+    rates: {cache_hit_per_m: 0.2, cache_miss_per_m: 1.0, output_per_m: 3.2}
+    source: https://docs.z.ai/guides/overview/pricing
+    plan_surface_unknown: true
+  glm-5-turbo:
+    provider: z_ai
+    rates: {cache_hit_per_m: 0.24, cache_miss_per_m: 1.2, output_per_m: 4.0}
+    source: https://docs.z.ai/guides/overview/pricing
+    plan_surface_unknown: true
+  glm-4.7:
+    provider: z_ai
+    rates: {cache_hit_per_m: 0.11, cache_miss_per_m: 0.6, output_per_m: 2.2}
+    source: https://docs.z.ai/guides/overview/pricing
+    plan_surface_unknown: true
+  glm-4.7-flashx:
+    provider: z_ai
+    rates: {cache_hit_per_m: 0.01, cache_miss_per_m: 0.07, output_per_m: 0.4}
+    source: https://docs.z.ai/guides/overview/pricing
+    plan_surface_unknown: true
+  glm-4.6:
+    provider: z_ai
+    rates: {cache_hit_per_m: 0.11, cache_miss_per_m: 0.6, output_per_m: 2.2}
+    source: https://docs.z.ai/guides/overview/pricing
+    plan_surface_unknown: true
+  glm-4.5:
+    provider: z_ai
+    rates: {cache_hit_per_m: 0.11, cache_miss_per_m: 0.6, output_per_m: 2.2}
+    source: https://docs.z.ai/guides/overview/pricing
+    plan_surface_unknown: true
+  glm-4.5-air:
+    provider: z_ai
+    rates: {cache_hit_per_m: 0.03, cache_miss_per_m: 0.2, output_per_m: 1.1}
+    source: https://docs.z.ai/guides/overview/pricing
+    plan_surface_unknown: true
+
+  grok-4.5:
+    provider: xai
+    rates: {cache_hit_per_m: 0.3, cache_miss_per_m: 2.0, output_per_m: 6.0}
+    source: https://docs.x.ai/developers/pricing
 
 seats:
   ollama:
@@ -14,17 +98,17 @@ seats:
 
   deepseek:
     label: DeepSeek API (Mag agent seat)
-    input_per_m: 0.28
-    output_per_m: 0.42
+    input_per_m: 0.22
+    output_per_m: 0.66
     fixed_per_call: 0.0
-    notes: "Flash-tier ballpark — verify against DeepSeek pricing page"
+    notes: "Planning prior: off-peak cache-miss + output for v4-flash; exact receipt pricing uses model_rates"
 
   grok:
     label: Grok / xAI (CLI or TUI)
-    input_per_m: 3.0
-    output_per_m: 15.0
+    input_per_m: 2.0
+    output_per_m: 6.0
     fixed_per_call: 0.0
-    notes: "Scarce architect seat — use for [priority] plan only"
+    notes: "Planning prior for grok-4.5 short context; API pricing and TUI subscription remain separate"
 
   cursor:
     label: Cursor Composer (subscription amortized)

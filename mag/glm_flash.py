@@ -38,7 +38,7 @@ _STANDING = (
 
 FROZEN_SELF = _BRIEF + "\n\n" + _STANDING
 
-MODEL = "glm-4.7-flash"  # FREE at all tiers (verified 2026-08-24/25)
+MODEL = "glm-4.7-flash"  # FREE at all tiers — cadence may drop to 4.5-flash on 1305
 
 
 def cached_chat(task: str, context: str = "", *, max_tokens: int = 2000) -> dict[str, Any]:
@@ -55,14 +55,31 @@ def cached_chat(task: str, context: str = "", *, max_tokens: int = 2000) -> dict
     from models.providers import chat_provider
 
     user = task + (f"\n\nCONTEXT:\n{context[:12000]}" if context else "")
+    lane = "z_ai3"  # funded Lite API — never coding-plan z_ai (hangs /paas/v4)
     try:
-        with hold("glm-4.7-flash", timeout=180, owner="glm_flash"):
-            r = chat_provider("z_ai", system=FROZEN_SELF, user=user, model=MODEL,
+        from mag.lane_cadence import pick_free_glm
+        model = pick_free_glm(lane)
+    except Exception:  # noqa: BLE001
+        model = MODEL
+    try:
+        with hold(model, timeout=8, owner="glm_flash", lane=lane):
+            r = chat_provider(lane, system=FROZEN_SELF, user=user, model=model,
                               thinking=False, max_tokens=max_tokens, tier="T2")
     except TimeoutError:
+        r = {"ok": False, "error": "concurrency timeout: no flash slot free within 8s"}
+    if not r.get("ok"):
+        from models.providers import burst_mill, should_burst
+        err = str(r.get("error") or "")
+        if should_burst(err):
+            b = burst_mill(FROZEN_SELF, user, max_tokens=max_tokens, reason=f"{lane}: {err}")
+            b["lane"] = "deepseek"
+            b["orig_lane"] = lane
+            b["model"] = b.get("model") or "deepseek-v4-flash"
+            b["cost"] = None
+            return b
         return {"ok": False, "text": "", "cached_tokens": 0, "prompt_tokens": 0,
-                "completion_tokens": 0, "cost": 0.0, "lane": "z_ai", "model": MODEL,
-                "error": "concurrency timeout: no flash slot free within 180s"}
+                "completion_tokens": 0, "cost": 0.0, "lane": lane, "model": MODEL,
+                "error": err[:200]}
     usage = r.get("usage") or {}
     details = usage.get("prompt_tokens_details") or {}
     return {
@@ -73,7 +90,7 @@ def cached_chat(task: str, context: str = "", *, max_tokens: int = 2000) -> dict
         "prompt_tokens": int(usage.get("prompt_tokens") or 0),
         "completion_tokens": int(usage.get("completion_tokens") or 0),
         "cost": 0.0,  # flash: free at all tiers
-        "lane": "z_ai", "model": MODEL,
+        "lane": lane, "model": model,
         "error": str(r.get("error") or "")[:200],
     }
 

@@ -566,9 +566,9 @@ def build_idea_flow() -> dict[str, Any]:
         "ok": True,
         "ts": datetime.now(timezone.utc).isoformat(),
         "note": (
-            "Local chat path: est out tokens (chars/4). "
-            "Provider path: real in+out when reported. "
-            "Grok TUI not metered here."
+            "This tab is activity telemetry: local output tokens are estimated from chars/4 and provider "
+            "rows show reported volume. See Cost truth above for receipt-priced dollars. "
+            "Grok TUI and subscription usage are not metered here."
         ),
         "spend": {
             "local_chat": chat["totals"],

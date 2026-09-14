@@ -34,12 +34,12 @@ def test_reveal_intent_gated_and_deterministic():
 
 
 def test_render_places_building_in_ascii():
-    gwr.reveal(player="tester", direction="south")
+    reveal = gwr.reveal(player="tester", direction="south")
     r = gwr.render()
     assert r["ok"] is True and r["grid"] == [gwr.GRID_W, gwr.GRID_H]
     assert r["buildings_revealed"] >= 1
     # the building glyph is actually in the grid
-    assert any(b["glyph"] in row for row in r["ascii"].splitlines())
+    assert any(reveal["glyph"] in row for row in r["ascii"].splitlines())
 
 
 def test_walk_reveal_then_render():

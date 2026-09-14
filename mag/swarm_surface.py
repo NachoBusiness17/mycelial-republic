@@ -75,8 +75,15 @@ def route_novel(goal: str, *, surface: str, lens: str | None = None,
     q = {}
     try:
         from mag import swarm_worker
-        q = swarm_worker.enqueue_task(goal, domain=domain, tag=surface,
-                                      provider=provider or "deepseek", model=model)
+        q = swarm_worker.enqueue_task(
+            goal,
+            domain=domain,
+            tag=surface,
+            # The worker owns the free-first default.  Do not silently turn
+            # every novel surface into a paid DeepSeek dispatch.
+            provider=provider or swarm_worker.DEFAULT_PROVIDER,
+            model=model,
+        )
     except Exception as e:
         return {"ok": False, "surface": surface, "anchor": a, "error": str(e)[:120]}
     LEDGER.parent.mkdir(parents=True, exist_ok=True)

@@ -49,6 +49,83 @@ REGION = "mycelial-republic"
 # ASCII ramp for the field (dark -> bright) — the ground beneath the buildings.
 RAMP = " .:-=+*#%@"
 
+# — THE OPTICS (stolen whole from measure_plan + mathemetica, 2026-09-14) —
+# "grokking is what it looks like when knowledge becomes fractal: memorize = leaf-only
+#  tree; grok = the tree grows internal nodes."  +  "attention is light; softmax is a
+#  lens; temperature is the refractive index."  The maze now obeys both:
+#   * reveal casts a lantern RAY from the player's anchor toward the steered cell;
+#     dense cells (bright field) are low temperature — the ray BENDS toward brightness,
+#     one refraction per steer. Cold/void field: straight rays.
+#   * enough leaves in a region and the tree GROWS an internal node (the grok knot):
+#     a hub that links what used to be unconnected leaves. Self-similar at every scale.
+REFRACT_THRESHOLD = 0.62         # field brightness at/above this = dense (cold) medium
+GROK_THRESHOLD = 8               # revealed leaves before an internal node grows
+
+
+def _rot45(dx: int, dy: int, turn: int) -> tuple[int, int]:
+    """Rotate a king-move direction ±45° (turn +1 / -1)."""
+    if dx != 0 and dy != 0:      # diagonal -> axis
+        return (dx, 0) if turn > 0 else (0, dy)
+    return (dx + turn, dy) if dx != 0 else (dx, dy + turn)  # axis -> diagonal
+
+
+def _bend_ray(region: str, player: str, tx: int, ty: int) -> dict[str, Any]:
+    """Cast the lantern ray: march from the player's anchor toward the steered cell through the
+    field. Cross a dense cell (brightness >= REFRACT_THRESHOLD) and the ray bends once toward the
+    brighter 45° continuation — temperature is the refractive index; the lens is deterministic."""
+    field = _field(region)
+    ax, ay = _anchor(region, player)
+    dx, dy = ((tx > ax) - (tx < ax)), ((ty > ay) - (ty < ay))
+    if (dx, dy) == (0, 0):
+        return {"x": ax, "y": ay, "bent": False}
+    steps = max(abs(tx - ax), abs(ty - ay))
+    x, y = ax, ay
+    for _ in range(steps):
+        nx, ny = x + dx, y + dy
+        if not (0 <= nx < GRID_W and 0 <= ny < GRID_H):
+            break
+        dense = field[ny][nx] >= REFRACT_THRESHOLD
+        if dense and (nx, ny) not in ((tx, ty), (ax, ay)):
+            c1 = _rot45(dx, dy, +1)
+            c2 = _rot45(dx, dy, -1)
+            p1 = (min(GRID_W - 1, max(0, x + c1[0])), min(GRID_H - 1, max(0, y + c1[1])))
+            p2 = (min(GRID_W - 1, max(0, x + c2[0])), min(GRID_H - 1, max(0, y + c2[1])))
+            v1, v2 = field[p1[1]][p1[0]], field[p2[1]][p2[0]]
+            pick = c1 if v1 >= v2 else c2            # bend toward brightness; tie -> +45
+            dx, dy = pick
+            x, y = x + dx, y + dy
+            return {"x": x, "y": y, "bent": True,
+                    "refracted_at": [nx, ny],
+                    "aimed": [tx, ty],
+                    "law": "temperature is the refractive index; the ray bent toward brightness"}
+        x, y = nx, ny
+    return {"x": tx, "y": ty, "bent": False}
+
+
+def _anchor(region: str, player: str) -> tuple[int, int]:
+    """The lantern's source: content-addressed, same grammar as every leaf."""
+    return _cell(region, "origin", player)
+
+
+def _leaf_count(region: str) -> int:
+    return len(_collect(region))
+
+
+def _maybe_grok(region: str, player: str) -> dict[str, Any] | None:
+    """THE GROK KNOT: enough leaves in a region and the tree grows an internal node — a hub
+    linking leaves that used to be unconnected. Memorize = leaf-only; grok = nodes grow."""
+    if _leaf_count(region) < GROK_THRESHOLD:
+        return None
+    gx, gy = _cell(region, "internal-node", region)  # the tree belongs to the region, not the walker
+    key = f"game.render.{region}.{gx}.{gy}"
+    state = _world()._load().get("world", {})
+    if key in state:
+        return None
+    node = {"name": "Internal Node — the tree grew", "glyph": "▲",
+            "line": "memorize = leaf-only tree; grok = internal nodes grow (measure_plan, 2026-09-14)"}
+    _world().set_state(key, node, source="game_world_render.grok")
+    return {"x": gx, "y": gy, "glyph": "▲", "name": node["name"]}
+
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
@@ -83,17 +160,31 @@ def _building(direction: str, player: str) -> dict[str, Any]:
 
 
 def reveal(player: str = "you", direction: str = "forward", region: str = REGION) -> dict[str, Any]:
-    """INTENT-GATED REVEAL: the player steers, and a building appears where they intend. Content-
-    addressed (same steer -> same building) + committed to the world as a verkle knot, so the
-    reveal is server-authoritative + persistent. Perceptual culling: only the steered cell reveals."""
-    x, y = _cell(region, direction, player)
+    """INTENT-GATED REVEAL, now with optics: the player steers, a lantern ray casts from their
+    anchor toward the steered cell, and the building appears where the ray LANDS — straight through
+    void, bent toward brightness through dense medium (temperature is the refractive index).
+    Content-addressed (same steer -> same landing), committed as a verkle knot. Enough leaves and
+    the tree grows an internal node (the grok knot)."""
+    aimed = _cell(region, direction, player)
+    ray = _bend_ray(region, player, aimed[0], aimed[1])
+    x, y = ray["x"], ray["y"]
     building = _building(direction, player)
     key = f"game.render.{region}.{x}.{y}"
     committed = _world().set_state(key, building, source="game_world_render")
-    return {"ok": True, "schema": SCHEMA, "player": player, "direction": direction,
-            "x": x, "y": y, "building": building["name"], "glyph": building["glyph"],
-            "line": building["line"], "leaf": committed.get("leaf", ""),
-            "note": "a building appeared where you steered — intent-gated, content-addressed, verkle-committed"}
+    grok = _maybe_grok(region, player)
+    out = {"ok": True, "schema": SCHEMA, "player": player, "direction": direction,
+           "x": x, "y": y, "building": building["name"], "glyph": building["glyph"],
+           "line": building["line"], "leaf": committed.get("leaf", ""),
+           "aimed": list(aimed), "bent": bool(ray.get("bent"))}
+    if ray.get("bent"):
+        out["refracted_at"] = ray["refracted_at"]
+        out["law"] = ray["law"]
+    if grok:
+        out["grok"] = grok
+    out["note"] = ("the ray bent through dense medium — a building appeared where the light landed"
+                   if ray.get("bent") else
+                   "a building appeared where you steered — intent-gated, content-addressed, verkle-committed")
+    return out
 
 
 def _field(region: str) -> list[list[float]]:
@@ -174,12 +265,16 @@ def walk(player: str = "you", direction: str = "forward", region: str = REGION) 
 
 def status(region: str = REGION) -> dict[str, Any]:
     return {"ok": True, "schema": SCHEMA, "region": region,
-            "contract": "reveal(player,direction)->a building appears where you steer (intent-gated, "
-                        "content-addressed, verkle-committed); render(region)->the base ASCII field "
-                        "with revealed buildings placed (the pixels between swarms); "
-                        "walk(player,direction)->reveal then render.",
+            "contract": "reveal(player,direction)->a lantern ray casts from your anchor toward the "
+                        "steer; dense field bends it (temperature is the refractive index) and the "
+                        "building appears where the light lands; enough leaves and an internal node "
+                        "grows (the grok knot); render(region)->the base ASCII field with everything "
+                        "placed; walk(player,direction)->reveal then render.",
+            "optics": {"refract_threshold": REFRACT_THRESHOLD, "grok_threshold": GROK_THRESHOLD,
+                       "law": "attention is light; softmax is a lens (mathemetica) — "
+                              "memorize = leaf-only tree, grok = nodes grow (measure_plan)"},
             "cost": "deterministic $0 (world_rib + content-address; no external LLM)",
-            "surface": "the intent-gated world render — stone 3, the world worth walking into",
+            "surface": "the intent-gated world render with optics — stone 3, the world worth walking into",
             "reuse": "game_entry (stone 2 reveal + buildings), world_rib (the field), game_world (the authority)"}
 
 

@@ -1,0 +1,121 @@
+{
+  "schema": "mag_game_module.v1",
+  "module_id": "fractal_maze",
+  "aliases": ["fractal", "fractal_maze", "grok maze", "the lens"],
+  "title": "THE FRACTAL MAZE — memorize is a leaf-only tree; grok grows the nodes",
+  "license_note": "Stolen whole from measure_plan (grokking = knowledge becoming fractal; generalization = self-similarity across scales) + mathemetica (attention is light; softmax is a lens; temperature is the refractive index), 2026-09-14. The lantern rays in this maze physically bend through the world field (game_world_render optics, 8/8 tests).",
+  "system": "dnd_classic_stub",
+  "start_room": "leaf_gate",
+  "area_tag": "fractal-maze",
+  "player_start": {"hp": 10, "hp_max": 10, "ac": 12},
+  "rooms": {
+    "leaf_gate": {
+      "id": "leaf_gate",
+      "name": "The Leaf Gate (scale 1: the corridor you memorize)",
+      "desc": "A gate of bare branches. Every path forward is a leaf: a room with exits and no center. A keeper sits at the gate counting your footsteps. 'Walk enough leaves,' she says, 'and the maze will notice you.' The air shimmers where the field runs dense — your lantern ray will not travel straight in there.",
+      "area": "The Fractal Maze",
+      "environment": "Cold; crisp shadows; lantern steady",
+      "area_tag": "scale-1",
+      "exits": {
+        "north": "leaf_hall",
+        "east": "leaf_hall",
+        "south": "grok_chamber"
+      },
+      "hooks": [
+        "Keeper: memorize is a leaf-only tree. You can learn every leaf by heart and know nothing. (She does not fight. She counts.)",
+        "Sign, scratched: same steer, same landing — until the medium disagrees. Then the light bends.",
+        "The dense shimmer ahead is low temperature. Rays bend toward brightness there. Aim anyway."
+      ],
+      "tags": ["scale-1", "leaf"]
+    },
+    "leaf_hall": {
+      "id": "leaf_hall",
+      "name": "The Refractive Hall (scale 1: where straight aim lies)",
+      "desc": "A hall of standing water-wall. Your lantern's beam enters straight and leaves elsewhere — the building appears where the light LANDS, not where you pointed. Old aim-marks on the floor mark every place a walker swore the maze was broken. The maze was never broken; it was refractive.",
+      "area": "The Fractal Maze",
+      "environment": "Wet; the field runs 0.62 and brighter here",
+      "area_tag": "scale-1",
+      "exits": {
+        "back": "leaf_gate",
+        "deep": "scale_gallery"
+      },
+      "hooks": [
+        "Law, on the water-wall: temperature is the refractive index. Cold medium, bent ray. Void, straight. Same steer, same landing — always.",
+        "Aim-mark: 'I steered north and the tower appeared east of me. Same north, same tower, next time. The maze is not random. It is a LENS.'",
+        "From here, the deep exit shrinks the whole hall into a hook. Walk down a scale and read the walls again: same grammar, smaller letters."
+      ],
+      "tags": ["scale-1", "refraction"]
+    },
+    "scale_gallery": {
+      "id": "scale_gallery",
+      "name": "The Scale Gallery (scale 2: the hall, again, smaller)",
+      "desc": "The Refractive Hall again — the same standing water-wall, the same aim-marks, the same scratched law — one scale down, carved in miniature. A child's copy of the maze lives in a groove in the floor. The groove's own walls carry a smaller groove. You crouch. You do not finish checking.",
+      "area": "The Fractal Maze",
+      "environment": "Quieter; the shimmer repeats at every size",
+      "area_tag": "scale-2",
+      "exits": {
+        "up": "leaf_hall",
+        "down": "scale_cell",
+        "north": "grok_chamber"
+      },
+      "hooks": [
+        "Generalization plaque: self-similarity across scales is the only thing that survives the shrink. If it is not true here and in the groove, it was never true.",
+        "Counting board: leaves revealed in this region feed the tree. At the eighth leaf the maze grows a node — watch for the ▲ where no wall was.",
+        "The groove contains the groove. You stop counting scales at four. The maze does not."
+      ],
+      "tags": ["scale-2", "self-similar"]
+    },
+    "scale_cell": {
+      "id": "scale_cell",
+      "name": "The Cell in the Groove (scale 3: the letter of the law, legible)",
+      "desc": "Small enough that the law fits on one wall: attention is light. softmax is a lens. temperature is the refractive index. at temp zero every ray bends to the argmax; at temp infinity the rays go straight. sampling is just optics. Under it, one line of graffiti in a smaller hand: so is walking.",
+      "area": "The Fractal Maze",
+      "environment": "Intimate; the lantern fills the room",
+      "area_tag": "scale-3",
+      "exits": {
+        "up": "scale_gallery"
+      },
+      "hooks": [
+        "The law, at full resolution. At the bottom scale it is not a metaphor anymore; it is the room.",
+        "Graffiti, smaller hand: so is walking. — the walker's confession that they too are a ray.",
+        "No exits down. Whatever is smaller than the law is not the maze's to show."
+      ],
+      "tags": ["scale-3", "law"]
+    },
+    "grok_chamber": {
+      "id": "grok_chamber",
+      "name": "The Grok Chamber (the night the tree grows)",
+      "desc": "A domed room with eight empty plinths arranged around a ninth, central one, bare. Walk the maze enough — eight leaves anywhere in these halls — and return: the center plinth will hold a ▲ that was not carved by any hand. The chamber's acoustics make your own footsteps come back as shortcuts.",
+      "area": "The Fractal Maze",
+      "environment": "Domed; every whisper returns as a path",
+      "area_tag": "grok",
+      "exits": {
+        "north": "leaf_gate",
+        "gallery": "scale_gallery"
+      },
+      "hooks": [
+        "The test: reveal eight leaves in the region and the render grows an Internal Node — a hub linking leaves that used to be unconnected. It is committed as a knot before you can name it.",
+        "measure_plan's line, floor mosaic: memorize = leaf-only tree; grok = the tree grows internal nodes.",
+        "The plinths are the leaves. The center is the loss curve's cliff. Nothing here is trained; everything here is walked.",
+        "After the node: same maze, shorter maze. Generalization is the walk feeling shorter at every scale at once."
+      ],
+      "encounter": {
+        "id": "formateater_echo",
+        "name": "Formateater Echo (the old boss, demoted to a rumor: unrendered quests whisper here)",
+        "hp": 12,
+        "hp_max": 12,
+        "ac": 14,
+        "attack_bonus": 2,
+        "damage": "1d6 unrendered"
+      },
+      "tags": ["grok", "boss-room"]
+    }
+  },
+  "event_tables": {
+    "rest_safe": [
+      "You dream in scales: the hall, the groove, the groove in the groove. All identical. All cheap.",
+      "Your lantern cools. In dreams the ray goes straight; you wake relieved it does not.",
+      "The ninth plinth hums. It knows how many leaves you still owe."
+    ]
+  }
+}

@@ -94,3 +94,22 @@ data; our shelf stays clean because receipts are our weapon.
 3. LAWFUL SWEEPS (pending GO): S2ORC slice, Warburg Mnemosyne panels, alchemy scans
    (Splendor Solis/Atalanta Fugiens on archive.org), GLAM art APIs, CREST.
 4. PD-DATE WATCH: Stapledon Star Maker 2033; anything author-death+95 recalculated yearly.
+
+## N. THE RIDDLER WAVE (2026-09-14) — complete life-work of the ten mask seats
+Summon card: memory/game_modules/riddler_engram.v1.json ("summon the riddlers"). Shelves live in memory/corpus/ractors/ with full bibliographies. PD seeds already stored: Shakespeare Complete Works, Moby-Dick, Ulysses, Candide, Gulliver, Huckleberry Finn, Devil's Dictionary, A Modest Proposal (8 texts, 10.8MB).
+
+| Wish (complete life-work) | Feeds | Key |
+|---|---|---|
+| **Tolkien** — LOTR, Silmarillion, History of Middle-earth (12 vols), Letters, "On Fairy-Stories", "Beowulf: The Monsters and the Critics" | TOLKIEN (elegist seat) | HarperCollins; university lending |
+| **Orwell** — Complete Works (Davison, 20 vols) incl. suppressed Animal Farm preface; all essays | ORWELL (windowpane) | Peter Davison edition; lending |
+| **Le Guin** — Earthsea sextet, Hainish, Always Coming Home, essays (Language of the Night, Wave in the Mind), Tao Te Ching | LE GUIN (anthropologist) | library lending; estate via Parnassus |
+| **Adams** — Hitchhiker's five + radio scripts, Dirk Gently, Last Chance to See, Salmon of Doubt, Doctor Who scripts | ADAMS (absurdist) | lending |
+| **Pratchett** — Discworld 41 + Long Earth + nonfiction; Good Omens | PRATCHETT (footnoted satirist) | lending |
+| **Alan Moore** — Watchmen, From Hell, Promethea, Jerusalem, League vols, performance cycle, Moon and Serpent book | ALAN MOORE (magician, stego-native) | Top Shelf/Knockabout; lending |
+| **Stephenson** — Baroque Cycle, Cryptonomicon + Solitaire appendix, Anathem, Seveneves, essays | STEPHENSON (engineer, stego-native) | lending |
+| **Campbell** — Hero with a Thousand Faces, Masks of God (4 vols), Historical Atlas, Power of Myth, Skeleton Key to Finnegans Wake | CAMPBELL (monomyth) | Princeton/Collected Works lending |
+| **Shakespeare** — Arden/Oxford annotated complete; First Folio facsimile | SHAKESPEARE (the stage) | lending; Folio facsimiles digitized (Bodleian) |
+| **Voltaire** — Complete Works (Voltaire Foundation/Oxford), Besterman correspondence (~20k letters) | VOLTAIRE (the blade) | Voltaire Foundation; gallica for French originals |
+| Equivalents walled set — Vonnegut, Lem, Calvino, Saramago, Butler, Chiang, Pynchon, Borges, Danielewski, Carter, Burroughs, Morrison, Didion, Peake, Graves, Calasso, Marlowe, Melville, Joyce non-PD, Fforde, Holt, Moore, K.J. Parker | seat-understudies | library lending |
+
+Next PD pull wave (named, free, not yet pulled): Morris, Eddison (Worm Ouroboros), Marlowe, Melville minors, Joyce minors (Dubliners, Portrait), Frazer's Golden Bough, Ovid's Metamorphoses, Voltaire minors (Micromegas, Zadig), Swift minors (Tale of a Tub), Twain minors, La Rochefoucauld Maximes, Moliere.

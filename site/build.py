@@ -15,6 +15,7 @@ PAGES = [
     ("watch/onboard/WELCOME.md", "onboard/index.html", "Welcome — start here"),
     ("watch/onboard/ORIENT.md", "onboard/orient.html", "Orientation"),
     ("watch/onboard/GAMEBOOK.md", "onboard/gamebook.html", "The Gamebook"),
+    ("watch/onboard/TEAM.md", "onboard/team.html", "The Team — play, write, build"),
     ("watch/onboard/GLOSSARY.md", "onboard/glossary.html", "Glossary"),
     ("watch/onboard/GUEST_PROTOCOL.md", "onboard/guest-protocol.html", "Guest Protocol"),
     ("watch/onboard/FAQ.md", "onboard/faq.html", "FAQ"),
@@ -69,9 +70,9 @@ def page(body_html, title):
 <body>{NAV}<main class="md">{body_html}</main>{FOOT}</body></html>"""
 
 def main():
-    if OUT.exists(): shutil.rmtree(OUT)
-    (OUT / "onboard").mkdir(parents=True)
-    (OUT / "games").mkdir(parents=True)
+    if OUT.exists(): shutil.rmtree(OUT, ignore_errors=True)
+    (OUT / "onboard").mkdir(parents=True, exist_ok=True)
+    (OUT / "games").mkdir(parents=True, exist_ok=True)
     md = markdown.Markdown(extensions=["extra", "sane_lists", "toc"])
     for src, out, title in PAGES:
         p = ROOT / src
@@ -82,7 +83,9 @@ def main():
         (OUT / out).write_text(page(html, title), encoding="utf-8")
         print("built", out)
     for g in GAMES:
-        gp = ROOT / "dashboard" / "static" / g
+        gp = ROOT / "dashboard" / "static" / "games" / g
+        if not gp.exists():
+            gp = ROOT / "dashboard" / "static" / g
         if gp.exists():
             shutil.copy(gp, OUT / "games" / g); print("built games/" + g)
     # constellation data — maze_arena ?real=1 fetches /static/rounds_real.json; without this

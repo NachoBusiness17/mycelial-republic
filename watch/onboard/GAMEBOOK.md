@@ -14,11 +14,20 @@ Same grammar at every scale: field, stones, territory, sediment, witnesses. An o
 
 ### The playable surfaces
 
-Three browser games in the dashboard. You can play all three.
+The shelf is at **/games**. Current build:
 
-- **maze_arena** — navigate a maze; the walls are the point, not the exit.
-- **arrakis** — desert map, resource pressure, the truck never waits. (The operator will fill in specifics.)
-- **arena_operator_field** — the operator's own field; you watch the fleet move on it. (The operator will fill in specifics.)
+- **MUD** — the flagship. A torch-lit dungeon crawler where the dark is real: walls cast
+  shadows, and what you can't see can still reach you. The horde learns your tactics —
+  kite them and spitters start mining your escape routes; survive a swarm and packs
+  start hunting as one. The First Dragon shatters into whelps that shatter into sparks.
+  A SUPERHOT powerup freezes time while you stand still. Keys, pressure plates, and a
+  vault that grinds open. Level-up boon drafts — pick one of three god gifts. Every
+  loop, Ascension makes the whole horde meaner. Forever.
+- **maze_arena** — navigate a maze; the walls are the point, not the exit. Constellation
+  mode bends light through the field.
+- **swarm** — the disco science skate. Move with A/D; everything else is automatic.
+- **arrakis** — the desert wing: spice blooms, a hunting worm.
+- **arena_operator_field** — the operator's own field; you watch the fleet move on it.
 
 Play them. Describe what you see. Your description becomes a grounded row on the guest wall.
 

@@ -1,0 +1,60 @@
+=== DOGFOOD RECEIPT 2026-09-14 ===
+Mon Sep 14 07:52:06 UTC 2026
+
+--- mag doctor ---
+status=degraded live_stale=True
+missing: integral Mag process (watch+companion heartbeat); fresh live board (age=71113s)
+  L0_ollama: ok=False Ollama unavailable or no local models are loaded
+  L1_openrouter: ok=True 
+  L2_grok: ok=True grok CLI on PATH
+{
+  "ok": false,
+  "status": "degraded",
+  "ts": "2026-09-14T07:52:08.666159+00:00",
+  "integral": {
+    "heartbeat": {
+      "ok": true,
+      "alive": false,
+      "age_seconds": 71416.896224,
+      "watch": "ok",
+      "watch_interval": 5.0,
+      "ts": "2026-09-13T12:01:50.476542+00:00",
+      "pid": 19880,
+      "status": "starting",
+      "last_action": "assigned",
+      "last_reason": "unchecked [mag]/[assign] todo",
+      "mag_interval": 120.0,
+      "catch_up": true,
+      "catch_up_ok": true,
+      "note": "Heartbeat stale \u2014 cage lab slot may be wedged. First: mag.cmd doctor (venv read, no spawn). If dash still dead AND docker works: docker compose restart mag. Do not run host python main.py lab (second supervisor). Do not wait on Docker access to FILE doctor."
+    },
+    "pid": 19880,
+    "pid_alive": false,
+    "port_8765": true,
+    "board_api": true,
+
+--- verkle-audit --dry ---
+    "counts": {
+      "open": 11,
+      "done": 2,
+      "abandoned": 1,
+      "improve": 69,
+      "todo": 11,
+      "verkle_gaps": 1
+    }
+  },
+  "backfill": null,
+  "fix": null,
+  "synth": null,
+  "full": false,
+  "dry": true
+}
+
+--- autorun --once --dry ---
+{
+  "schema": "autorun_once.v1",
+  "ts": "2026-09-14T07:52:12.733555+00:00",
+  "action": "blocked_host_runtime",
+  "detail": "Docker-only runtime is active; run autorun inside the Mag container",
+  "steps": []
+}

@@ -2,10 +2,10 @@
 
 **LLMs: load framework first → `docs/FRAMEWORK_LOAD.md`** (or repo root `LOAD.md`) · then **`docs/ref/MAG_MYCELIAL_REPUBLIC_COMPASS.md`** (compass)
 
-This project is the **Mag Resource Harness** (standalone product home): local Ollama **janitors** first (`gemma:2b` scut, `gemma4` short worker), **remote specialist scarce** for hard inference, Hermes **parked**, biographer + orchestrator.
+This project is the **Mag Resource Harness** (standalone product home): local Ollama **janitors** first (`gemma:2b` scut, `gemma4` short worker), **remote specialist scarce** for hard inference, Hermes **dormant but dispatch-capable** (dispatch log active 2026-09-09, $220 armed — audit 2026-09-14), biographer + orchestrator.
 
 **DNA:** residual + registry + leaf = filed workdays (`docs/DNA.md`). Lab is optional ops.  
-**Zeitgeist:** beads (this repo) + forest (mycelial-republic) — `docs/ZEITGEIST.md`. No core-mirror throne.
+**Zeitgeist:** beads (this repo) + forest (mycelial-republic) — `docs/archive/ZEITGEIST.md` (era 003: THE POUR; the `docs/ZEITGEIST.md` path cited before 2026-09-14 never existed). No core-mirror throne.
 
 ## Shared artifact boundary — every client
 
@@ -24,7 +24,7 @@ The machine contract is `watch/inbox/SHARED_SURFACE_CONTRACT.json`. Read the ind
 > It looks like you're trying to work on Mag. Would you like a reminder? *(You do not have a choice. The rope is verkle-committed.)*
 
 - **New window?** → execute the frozen spec: `/memories/session/next-window-handoff.md`. Design is done; this is **execution → LOW tier** (flash-off or local).
-- **Tests:** 39 deterministic green (+2 model-gated). Run `pytest -q` before claiming done. **Trust bytes, not reports.**
+- **Tests:** 1,341 tests / 264 files (2026-09-14 census: 1305 passed / 34 failed / 9 skipped, ~12 min — the old "39 deterministic green" was a fossil). Run `pytest -q` before claiming done, file the real numbers, and never trust a hand-written count. **Trust bytes, not reports.**
 - **Deliberate-ask:** strong asks = frozen RIB (system+bootloader+manifest+verkle tip) + small ask + output contract + quantize target. **Pay the context tax once.**
 - **Thinking-mode is the axis** (not flash vs pro) — tune it before tier (design_vague proved it).
 - **Pile habit:** escalation/session-close → `mag.state_snapshot.capture_summary`; overnight → `main.py pile-classify`. Contribute your state summary before you go.

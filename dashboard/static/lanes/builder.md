@@ -124,3 +124,33 @@ LAW-055 written; lattice at 55 laws; mirrors refreshed.
 - where: None
 - ttl: None
 - state: REFUSED
+
+### GATED DROP 
+- gate: FAIL missing:task,missing:where,missing:why,ttl:missing
+- where: None
+- ttl: None
+- state: REFUSED
+
+### GATED DROP 
+- gate: FAIL missing:task,missing:where,missing:why,ttl:missing
+- where: None
+- ttl: None
+- state: REFUSED
+
+### GATED DROP 
+- gate: FAIL missing:task,missing:where,missing:why,ttl:missing
+- where: None
+- ttl: None
+- state: REFUSED
+
+### GATED DROP 
+- gate: FAIL missing:task,missing:where,missing:why,ttl:missing
+- where: None
+- ttl: None
+- state: REFUSED
+
+### GATED DROP 
+- gate: FAIL missing:task,missing:where,missing:why,ttl:missing
+- where: None
+- ttl: None
+- state: REFUSED

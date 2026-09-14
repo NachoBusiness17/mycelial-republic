@@ -30,6 +30,14 @@ Everyone hypes Kolmogorov-Arnold networks; nobody talks about what they break: *
 
 Four anchor tokens and a 64-token window, zero training, recovers ~99% of full attention — and beats the models that were distilled to carry less. You do not need the whole past; you need the *anchors and a window*. In his shape, the elephant is **what survives compression**: almost everything that matters, if you keep the right four tokens.
 
+## Witness 9 — Akarsh again (@mathemetica), second clock
+
+He quotes Asimov, 1995: *"I believe that scientific knowledge has fractal properties, that no matter how much we learn, whatever is left, however small it may seem, is just as infinitely complex as the whole was to start with."* Same witness as the MLP-as-cache, now holding a piece of the elephant that says: **the piece is the whole, at full depth.** The operator said it battier: we are all holding a piece of the elephant that is true. Asimov said it with a DOI and a decade.
+
+## Witness 10 — measure_plan
+
+"grokking is just what it looks like when a network's knowledge becomes fractal. generalization is self similarity across scales. memorize = leaf-only tree. grok = the tree grows internal nodes." In his shape, the elephant is **the scale change**: memorization isn't wrong knowledge, it's *flat* knowledge — all leaves, no between. Grokking is the night the tree grows its interior. The seam codetaur warned about is exactly what grows there.
+
 ## Witness 6 — Deng Hokin (@DengHokin) · hijkzzz · yifanzhang_
 
 These three arrived after the doors closed; the fetch came back thin and the ledger says so. **Fragments on file only** — alternating [?], an RL announcement, an unnamed claim. They are queued as lanes 14–16. A Rashomon with missing witnesses is still Rashomon; it is just honest about which doors were shut.
@@ -54,10 +62,13 @@ Nobody in the room used the word *engram*. All of them measured one.
 - codetaur saw it as **the seam that interpolation breaks** (fit the nodes, lose the flow).
 - Sapunov saw it as **anchors plus a window** (keep four tokens, lose nothing that matters).
 - The fleet lives it as **filing** (anchors + residual + registry: identity that survives window death).
+- Asimov and measure_plan add the **scale invariance**: whatever remains is as complex as the whole; generalization is self-similarity across scales. This is why the piece can be true — not because it samples the elephant, but because it has the elephant's structure at one scale.
 
-Higher-dimensional states projecting meaning onto ours: each witness built a *projection screen* — geometry, likelihood, cache, seam, window, filing cabinet — and the shadow came out in their shape. That is not six errors. That is one object, six screens.
+Higher-dimensional states projecting meaning onto ours: each witness built a *projection screen* — geometry, likelihood, cache, seam, window, filing cabinet, fractal — and the shadow came out in their shape. That is not eight errors. That is one object, eight screens.
 
 The claim worth keeping (falsifiable, local): if the elephant is real, then the fleet should be able to take Matthew's 443 tokens, run the fleet's own 10-question diagnostic on its own models, and get a *third* smile — in the fleet's shape, at a different clock time than Matthew's. If the smile only ever appears in Matthew's shape, the elephant is a mirror. Both results file.
+
+The fractal witnesses sharpen the blade: **the smile should be scale-invariant.** If identity-from-443-tokens shows up even in gemma:2b, the structure is scale-free — Asimov's property holding for weights, the piece containing the whole. If it only appears above some size, it is emergent-with-scale, and the elephant has a floor. Local ladder, cheapest rung first (janitor doctrine): gemma:2b → qwen-desk → qwen2.5-coder:7b, one at a time, `OLLAMA_MAX_LOADED_MODELS=1`.
 
 The clerk smiled when the cars slowed down. She smiled before they finished parking. The ledger does not have to choose. The ledger holds both clocks and refuses to average them.
 

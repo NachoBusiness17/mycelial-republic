@@ -787,6 +787,7 @@ function update(dt) {
         while (diff < -Math.PI) diff += Math.PI*2;
         if (Math.abs(diff) < arc/2) {
           let dmg = playerDmg() * rnd(0.9,1.1);
+          if (player._riposte > 0) { dmg *= 2; player._riposte = 0; addMsg('RIPOSTE', '#8af'); }
           if (player.boonCrit && Math.random() < 0.2) { dmg *= 2; }
           if (e.packBoost) dmg *= 0.75;   // the shield wall: packed formations feel your blade less
           e.hp -= dmg;
@@ -846,6 +847,7 @@ function update(dt) {
   const pdy = player.y - (player._ly == null ? player.y : player._ly);
   player._lx = player.x; player._ly = player.y;
   player._vx = pdx / Math.max(dt, 0.001); player._vy = pdy / Math.max(dt, 0.001);
+  if (player._riposte > 0) player._riposte -= dt;
   if (enemies.length >= 9) {
     lore._sw = (lore._sw || 0) + dt;
     if (lore._sw > 8) { lore._sw = 0; lore.swarm++; if (!lore.pack && lore.swarm >= 4) loreUnlock('pack'); loreSave(); }
@@ -891,6 +893,7 @@ function update(dt) {
   for (let i=enemies.length-1;i>=0;i--) {
     const e = enemies[i];
     if (e.hp <= 0) { killEnemy(i); continue; }
+    if (e.stun > 0) { e.stun -= dt; e.vx *= 0.8; e.vy *= 0.8; continue; }
     if (e.flash > 0) e.flash -= dt;
     if (e.attackCd > 0) e.attackCd -= dt;
     if (e.dodgeCd > 0) e.dodgeCd -= dt;
@@ -901,7 +904,11 @@ function update(dt) {
     const nx = dx/d, ny = dy/d;
     // the monastery: nothing wakes until it sees you — and once it sees you, it remembers
     if (!e.aggro) {
-      if ((d < (e.aggroR || 260) && canSee(e.x, e.y, player.x, player.y)) || e.grudged) e.aggro = true;
+      if ((d < (e.aggroR || 260) && canSee(e.x, e.y, player.x, player.y)) || e.grudged) {
+        e.aggro = true;
+        // scarlet-monastery pull: wake the pack — one sighted mob brings its friends
+        for (const o of enemies) if (o.room === e.room && !o.aggro && Math.hypot(o.x - e.x, o.y - e.y) < 180) o.aggro = true;
+      }
       else {
         e.vx = Math.cos(G.time * 0.6 + (e.homeSeed || 1)) * 14;
         e.vy = Math.sin(G.time * 0.45 + (e.homeSeed || 1)) * 14;
@@ -928,11 +935,26 @@ function update(dt) {
         } else e.packBoost = false;
       }
       e.vx = tx * e.speed; e.vy = ty * e.speed;
-      if (d < e.r + player.r + 4 && e.attackCd <= 0) {
-        hurtPlayer(e.dmg);
-        if (player.boonThorns) { e.hp -= 12; e.flash = 0.15; }
-        e.attackCd = 0.9;
+      if (d < e.r + player.r + 4 && e.attackCd <= 0 && !e.windup) {
+        // wind-up telegraph: the swing is dodgeable — souls grammar
+        e.windup = 0.35; e.attackCd = 1.2; e.telegraph = 0.35;
       }
+      if (e.windup > 0) {
+        e.windup -= dt;
+        e.vx *= 0.12; e.vy *= 0.12;   // the swing winds up, the walker plants
+        if (e.windup <= 0) {
+          if (d < e.r + player.r + 10) {
+            if (player.rollT > 0) {
+              // perfect dodge: the walker stumbles, your next strike bites twice
+              e.stun = 0.8;
+              player._riposte = 1.0;
+              chronicle((e.name || 'the walker') + ' stumbles — riposte window', '#8af');
+            } else hurtPlayer(e.dmg);
+          }
+          e.windup = 0;
+        }
+      }
+      if (player.boonThorns) { e.hp -= 12 * dt; }
     } else if (e.type === 'spitter') {
       if (lore.traps && Math.random() < Math.min(0.36 * dt, 0.05) && mines.length < 6 && d < 420) {
         mines.push({ x: e.x, y: e.y, arm: 0.8, life: 14 });
@@ -1370,6 +1392,8 @@ function killEnemy(i) {
     makeLoot(e.x, e.y);
     makeLoot(e.x+30, e.y);
   }
+  // champions always pay out — the monastery's tithe
+  if (e.isChampion) { makeLoot(e.x - 24, e.y); makeLoot(e.x + 24, e.y + 12); }
   // life on kill
   if (player.lifeOnKill > 0) {
     player.hp = Math.min(player.maxHp, player.hp + player.lifeOnKill);

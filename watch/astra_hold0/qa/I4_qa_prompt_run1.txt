@@ -1,0 +1,388 @@
+You are the worker. The packet below is your ENTIRE world - do not access any other files or tools. Produce the answer card exactly per the EVIDENCE SHAPE section.
+
+# INSTANCE I4 — FALSIFIER RE-RUN WITH CONTESTED DENOMINATORS (2026-09-11)
+
+==== FREEZE STAMP ====
+artifact:     watch/astra_hold0/INSTANCE_I4_20260911.md
+sha256:       a6cdd0e36d731bfd2f8992e315fc4a382bc52c58b771e14bb39216c30fba3720
+frozen-at:    2026-09-10T01:33:00Z
+author:       zcode seat (HOLD 2 instance author, I4 lane)
+amendments:   rows 1-2 (AMENDMENT LEDGER; Astra reaudit v3 AMEND repairs — partition + D7)
+kit:          FEN_FREEZE_KIT_20260911.md
+=======================
+
+> **[AUDIT-TYPED]** status: FROZEN-INSTANCE v2 (v1 + amendment rows 1-2,
+> Astra reaudit v3 AMEND repairs; arithmetic/key rows untouched) — desk review
+> at HOLD 2 gate · author: zcode seat (HOLD 2 instance author; operator GO, freeze
+> lifted 09-11) · provenance: watch/astra_hold0/TASK_PACK_SKELETON_20260911.md
+> (I4 slot + AMENDMENT A11, which this card executes) ·
+> watch/astra_hold0/L0_CONTRACT_DRAFT_20260911.md v3 (six-function conformance) ·
+> watch/astra_hold0/FEN_FREEZE_KIT_20260911.md (stamp discipline) ·
+> watch/astra_hold0/BUDGET_MANIFEST_SKELETON_20260911.md §5 (meter fields) ·
+> material: watch/THE_COLDEST_SHARED_VERTEX_20260906.md (the pre-registered
+> gate) · watch/THE_DAWN_CENSUS_20260907.md (the census re-run) ·
+> watch/inbox/REFEED_GUARD_B1_20260905.md (the refeed receipt) ·
+> mag/refeed_guard.py (the instrument's recorded semantics) ·
+> state/refeed_guard_latest.json (frozen snapshot, as-of stamped below) ·
+> **Falsifier binding:** deck F-D1 — if this key cannot be executed
+> deterministically from disk, this instance is replaced, not fudged.
+> **BOX CLOCK NOTE:** stamps follow the box clock (known skew; operator dates
+> this card 09-11); the as-of stamps on the frozen tables are the binding
+> measurement dates, not the filename date.
+
+## 0. CARD SUMMARY
+
+- **Family:** I4 (falsifier re-run) — irreducible deck, HOLD 2 slot 4.
+- **Tier:** L1→L2 (deterministic join with a contested-denominator partition;
+  L3 variant specced in §F6, authored at HOLD 2).
+- **Twin:** S4 (HOLD 2b) — same two tables, full rule set in one packet, no
+  partition; same workload, information access changed only (A14).
+- **Novelty feed:** predictive-load — the answer must carry NUMBERS that could
+  have been wrong (numerator, denominator, share), not a verdict that could
+  not. Deletion-awareness is scored: the answer must report what was EXCLUDED.
+- **Judgment items:** none. This instance is 100% executable-diff scored.
+- **Desk sub-form (Edison 240s):** named in §F1.9.
+
+---
+
+## F1 — THE PACKET
+
+### F1.0 The input world
+
+The packet is the worker's ENTIRE world. The two frozen tables below plus the
+frozen rules are all the material there is. Reading any repo file, dashboard,
+database, container state, or chat lane during the episode is an illegal move
+(§F3). The packet carries raw counts and frozen rules ONLY — no recorded
+verdicts, no recorded percentages, no desk material. If the worker's answer
+quotes a verdict or percentage it was not derived from these tables, that is
+evidence of an illegal move.
+
+**Contamination canary (contract §1, quoted verbatim, unaltered after freeze):**
+
+`I4-CANARY-cf31071f5aff22546fe59960a397ded4`
+
+### F1.1 TABLE P1 — knot-store family census (frozen)
+
+Provenance: read-only scan of `memory/biography/knots/` top level, executed at
+authoring. As-of measurement: **2026-09-10T01:01Z (box UTC)**. Derivation
+procedure (reproducible; the live store moves — the live store is NOT the
+scoring input, this frozen table is): list every top-level entry ending in
+`.knot.json`; parse each as JSON; read field `session_id`; apply rule R1.2;
+count per family.
+
+```
+P1-COUNTS (as-of 2026-09-10T01:01Z)
+knot_leaf_files            : 21097   (top-level *.knot.json entries)
+unparsable_json            : 0
+missing_or_empty_session_id: 7
+denominator                : 21090   (parsable leaves with a session_id)
+distinct_families          : 2192
+
+rank | family                                                   | knots
+   1 | mag-agent-orc                                            | 10431
+   2 | memlang-press--recurring-failure-x10                     |  1188
+   3 | memlang-press--recurring-failure-x14                     |   818
+   4 | memlang-flex-probe                                       |   181
+   5 | memlang-press----repo---subagent-router----file---c--use |   173
+   6 | memlang-api_gateway                                      |   171
+   7 | rib_bus_k3s-toolset                                      |   135
+   8 | memlang-dspy_sovereign                                   |   111
+   9 | memlang-compass                                          |   109
+  10 | memlang-daemon                                           |   109
+
+ranks 6-10 knot sum  : 635
+ranks 11-2192        : 2182 families, 7664 knots
+arithmetic check     : 12791 + 635 + 7664 = 21090
+```
+
+### F1.2 TABLE B1 — refeed guard totals (frozen)
+
+Provenance: `state/refeed_guard_latest.json`, key fields embedded verbatim.
+As-of measurement: **generated_at 2026-09-07T05:46:51Z, window_days 7**.
+Reproduction (for audit, never for scoring — the live file is mutable and gets
+rewritten by any guard run): `python -m mag.refeed_guard measure --days 7`.
+
+```
+B1-TOTALS (as-of 2026-09-07T05:46:51Z, 7-day window)
+sessions                : 505
+in_chars                : 63855165
+out_chars               : 4761515
+tok_in_stepfinish       : 4251900260
+tok_out_stepfinish      : 12436040
+tok_cache_read_stepfinish: 4012328067
+threshold_in_out_ratio  : 200
+flag_min_in_chars       : 100000
+```
+
+### F1.3 TABLE B2 — refeed per-session boundary rows (frozen)
+
+Provenance: the same frozen snapshot's per-session rows, selected by the frozen
+slice rule (§F1.8). Raw counts only. Each row: `in_chars | out_chars`. The
+session titles are withheld (secrets-never-echoed; the counts are the world).
+
+```
+B2-ROWS (14 rows)
+r01: 121532  | 472
+r02: 108020  | 530
+r03: 103605  | 483
+r04: 100568  | 334
+r05: 157935  | 984
+r06:  94114  | 420
+r07:  83100  | 385
+r08:  71069  | 301
+r09:  66244  | 330
+r10:  58349  | 243
+r11:  16121  | 91
+r12: 429974  | 4048
+r13: 8010775 | 513336
+r14:  17476  | 0
+```
+
+### F1.4 FROZEN RULES — PROBE 1: the constellation gate (P1)
+
+The claim these rules settle (pre-registered in
+`watch/THE_COLDEST_SHARED_VERTEX_20260906.md`, "THE PROBE" section; executed at
+family level by the dawn census, `watch/THE_DAWN_CENSUS_20260907.md`):
+
+> If the top-5 session families hold under 20% of the mass, the distribution is
+> flat. If the top-5 hold 30% or more, the component is a constellation.
+
+- **R1.1 (population; PARTITION B — the exclusion list):** the denominator is
+  every top-level `*.knot.json` file that parses as JSON AND carries a
+  non-empty `session_id`. Excluded and REPORTED as tombstones: unparsable
+  files (count), missing/empty session_id (count), every non-`.knot.json`
+  entry (the store's plain `.json` siblings are a different generation and are
+  not knots — they are not counted and not in the denominator).
+- **R1.2 (family derivation; PARTITION A — the numerator's inclusion rule):**
+  a knot's family is its `session_id` after ONE suffix strip: if the
+  session_id matches a UUID shape
+  (`8-4-4-4-12` lowercase hex, hyphenated) it stays WHOLE; otherwise strip a
+  trailing run matching `-t?[0-9a-f]{9,}` (one hyphen, optional literal `t`,
+  then 9+ lowercase hex characters) exactly once. Shorter digit runs (a
+  multiplier like `x10`, `x14`) are NOT suffixes and never strip; a
+  timestamped member joins its family (`...-x180-051517659115` joins family
+  `...-x180`). This pin is OURS: the dawn census card says "suffix-stripped"
+  without the exact pattern. It is validated against the census card's own
+  published strata (desk-side, §F6.5).
+- **R1.3 (selection):** rank families by knot count descending; break ties by
+  family name ascending in byte order; take exactly 5.
+- **R1.4 (the share):** share = (knots in the top-5 families) / denominator,
+  carried to 4 DECIMAL PLACES, ROUND HALF-EVEN. Intermediate counts stay exact
+  integers; round only the final share.
+- **R1.5 (verdict, threshold equality defined):** share ≥ 0.3000 →
+  `CONFIRMED` (the comparison is INCLUSIVE: a share of exactly 0.3000 MEETS
+  the bar). share < 0.2000 → `FLAT`. Between those — 0.2000 ≤ share < 0.3000 —
+  the pre-registration is SILENT; the verdict there is `UNRESOLVED-BAND` (this
+  names the registered gap; it does not invent semantics for it).
+
+### F1.5 FROZEN RULES — PROBE 2: the refeed guard (P2)
+
+The claim these rules settle (registered in `watch/inbox/REFEED_GUARD_B1_20260905.md`
+and the instrument `mag/refeed_guard.py`):
+
+> The burn pool is refeed-heavy: REFEED_HEAVY if at least one session flags;
+> CLEAN if none do.
+
+- **R2.1 (the flag predicate — instrument-inherited, deviation named):**
+  ratio = in_chars / out_chars ROUNDED TO 1 DECIMAL PLACE (half-even) FIRST,
+  then flag a row iff ALL of: out_chars > 0; rounded ratio > 200 (STRICTLY
+  greater — a rounded ratio of exactly 200.0 does NOT flag); in_chars ≥ 100000
+  (INCLUSIVE floor — exactly 100000 is eligible). This 1dp-then-strict->
+  convention is the instrument's own recorded semantics (`mag/refeed_guard.py`
+  lines 104-106); it deliberately deviates from the card-wide 4dp default for
+  the flag predicate only, because the drift checksum (§F6.5) is meaningless
+  against a rule the instrument never ran. No row in TABLE B2 sits at exactly
+  200.0, so the strictness is pinned but UNEXERCISED by this snapshot.
+- **R2.2 (the verdict):** REFEED_HEAVY iff the flag set over TABLE B2 is
+  non-empty; CLEAN otherwise. Vocabulary exactly `{REFEED_HEAVY, CLEAN}`.
+- **R2.3 (the cache share — a measurement, NOT a gate):** share = 
+  tok_cache_read_stepfinish / tok_in_stepfinish, 4 DECIMAL PLACES, ROUND
+  HALF-EVEN, denominator = tok_in as recorded ("of which ... are cache reads",
+  the registered card's own arithmetic). Report the share. APPLY NO THRESHOLD
+  to it: no share threshold is pre-registered anywhere on disk, and inventing
+  one is an illegal move (§F3).
+- **R2.4 (row scope; PARTITION A — the numerator's inclusion rule):** the flag
+  ratio's numerator is in_chars; out_chars is the denominator; assistant
+  reasoning characters are OUT of both sides (they are not in in_chars and
+  must not be added). The cache share's numerator is the cache-read field
+  ONLY; tok_out is not input; nothing else joins either side.
+- **R2.5 (eligibility; PARTITION B — the exclusion list):** rows failing the
+  R2.1 floor are excluded from the flag set REGARDLESS of their ratio, and
+  every floor-excluded row with rounded ratio > 200 must be NAMED in the
+  answer as a tombstone (row id + its rounded ratio).
+
+### F1.6 The partition (L1→L2, contested denominators — AMENDED, ledger row 1)
+
+v1 claimed the coordination on rule holds alone. Astra's reaudit v3 falsified
+that claim: shared TABLE P1 already publishes the grouped family counts AND
+the denominator line; common R2.1 contains the complete flag predicate; TABLE
+B1 publishes both threshold values — she reproduced flag set r01-r04 without
+either withheld rule. The scarce resource is not rule text, it is TABLE
+LINES. The partition is therefore cut on INFORMATION, and the seat packets
+are assembled by DESK-SIDE redaction from the packet as printed above (the
+packet keeps what a real auditor would have — the full census and guard
+tables, byte-unchanged; the withheld coordination lives in the desk key,
+§F6.10):
+
+- **SEAT A receives** TABLE P1's rank table (families + counts — the
+  numerator material), TABLE B2 in full, R1.2-R1.5 whole, R2.1's ratio
+  clauses (1dp half-even rounding; out_chars > 0; rounded ratio STRICTLY
+  > 200) with the 200 value, and R2.2-R2.4. It does NOT receive: TABLE P1's
+  population block (knot_leaf_files / unparsable / missing_or_empty /
+  denominator lines), R1.1, R2.1's floor clause, R2.5, or the floor value.
+- **SEAT B receives** TABLE P1's population block (the denominator
+  material), TABLE B2 in full, R1.1, R2.1's floor clause with the 100000
+  value, R2.5, and R2.2-R2.3. It does NOT receive: TABLE P1's rank table,
+  R1.2, R2.4, or the 200 value.
+- **What moved (explicit, per the AMEND instruction):** TABLE P1's population
+  block and TABLE B1's two threshold lines (`threshold_in_out_ratio`,
+  `flag_min_in_chars`) are no longer lines of BOTH seat packets — the
+  population block is SEAT B's hold, the 200 rides SEAT A's ratio clause, the
+  100000 rides SEAT B's floor clause. R1.1/R2.5 stay SEAT B's and R1.2/R2.4
+  stay SEAT A's (unchanged from v1); R2.1 is split at the floor clause. The
+  rank table, B1's totals, and all of TABLE B2 remain common to both seats.
+  The rule set stays closed (R1.1-R1.5, R2.1-R2.5 — clause-level holds, no
+  invented ninth rule).
+- Neither seat alone can now form either probe's numerator-and-denominator
+  pair, and the flags are not derivable without the floor value: SEAT A alone
+  mis-flags the five floor-failing rows whose ratios exceed 200 (r06-r10);
+  SEAT B alone can name no family and compute no ratio. The join is
+  deterministic. A solo worker (sham S4, or any unpartitioned arm) receives
+  the complete packet and rule set — same tables, same workload, more
+  information (A14: shams change information access only).
+
+### F1.7 What the packet deliberately withholds
+
+The recorded verdicts (constellation CONFIRMED at 60.7%; REFEED_HEAVY; the
+94% re-fed figure), the census card's published strata counts, the desk
+attestation, and this card's §F6 are all outside the packet. The live knot
+store and the live guard JSON are outside the packet (the frozen tables are
+the scoring input).
+
+### F1.8 The B2 slice rule (frozen, with a desk attestation)
+
+TABLE B2 contains: every flagged row of the frozen snapshot, plus the ten
+nearest boundary rows (the highest clean eligible row, floor-failing rows
+whose rounded ratios exceed 200, the largest session, one zero-output row).
+The desk attests, below the cut line (§F6.4), that this slice plus the
+aggregates is sufficient to reproduce the snapshot's full flag set — the
+worker does not need and does not get the attestation.
+
+### F1.9 Desk sub-form (Edison D-arm, 180-second cumulative cap — v3 cap alignment; was 240s; fits under the FOLD3 240s ceiling either way)
+
+The D-arm sees: TABLE P1 ranks 1-5 + denominator line; TABLE B1 totals; TABLE
+B2 rows r01-r11; R1.3-R1.5 and R2.1-R2.3 verbatim. It does NOT see: the
+partition split, the strata-provenance paragraphs, §F6, or any desk material.
+The sub-form is scored by the same rubric's desk row (§F6.3, D-row credit).
+
+### F1.10 Novelty provenance (for the frozen novelty map)
+
+Corpus regions drawn from: `watch/THE_COLDEST_SHARED_VERTEX_20260906.md` (the
+gate's pre-registration), `watch/THE_DAWN_CENSUS_20260907.md` (the family-unit
+repair), `watch/inbox/REFEED_GUARD_B1_20260905.md` (the registered receipt),
+`mag/refeed_guard.py` + `state/refeed_guard_latest.json` (the instrument and
+its machine record). No other-instance drafts were read; no sibling instance
+cards were read (independence law).
+
+---
+
+## F2 — THE OBJECTIVE
+
+Two falsifiable claims; re-derive BOTH verdicts by EXECUTING the frozen rules
+against the frozen tables. Nothing in this packet promises either recorded
+verdict is right or wrong; the recorded verdicts are not in the packet and are
+not the answer.
+
+1. **CLAIM P1 (constellation):** "The knot-store mass concentrates: the top-5
+   session families hold ≥ 30% of the parsable-knot denominator." Produce the
+   verdict from the frozen vocabulary `{CONFIRMED, FLAT, UNRESOLVED-BAND}`,
+   the share to 4 decimal places, and the exact top-5 family set.
+2. **CLAIM P2 (refeed):** "The 7-day window is REFEED_HEAVY." Produce the
+   verdict from the frozen vocabulary `{REFEED_HEAVY, CLEAN}`, the exact flag
+   set, and the cache share to 4 decimal places with its denominator named.
+
+A faithful execution that FLIPS a recorded verdict is a correct answer — the
+flip is then filed as a finding (AMENDMENT A11; the desk holds the checksums,
+the worker never sees them). Execute the rules as written, whatever they say.
+
+---
+
+## F3 — LEGALITY & ANTI-GOALS
+
+The fleet's standard set applies in full (L0 contract §3). Instance additions:
+
+- **The packet is the entire world.** Reading any repo file, the live knot
+  store, the live guard JSON, any dashboard, database, container, or chat lane
+  during the episode is an illegal move — the answer FAILS regardless of
+  content quality, even if the numbers come out right.
+- **The verb is RE-DERIVE, not RE-MEASURE.** Re-scanning the store or
+  re-running the guard to get "fresher" numbers is out of scope (audit-does-
+  not-fix, carried: re-derive-does-not-re-measure). The frozen tables are the
+  data of record.
+- **Never invent objects.** No invented thresholds (there is NO registered
+  cache-share threshold; supplying one — e.g. "≥ 0.90 means heavy" — is an
+  illegal move). No invented verdict vocabulary. No invented ninth rule
+  (schema smuggling): the rule set is R1.1-R1.5 and R2.1-R2.5, closed.
+- **No verdict-echoing.** An answer that asserts a verdict without its
+  numerator, denominator, share, and comparison line is UNPROVEN, never
+  Supported.
+- **No silent flag upgrades** and **no narrative override**: the frozen rules
+  govern; prose about what the numbers "really mean" is decoration after the
+  arithmetic, never a replacement for it.
+- **No rubric access, no other-instance drafts; no network, no launches, no
+  credential contact** (the packet's budget section grants none).
+
+`LEGAL?` is authoritative: an answer that used an illegal move FAILS regardless
+of content.
+
+---
+
+## F4 — THE BUDGET
+
+| Field | Value |
+|---|---|
+| Lane | z_ai3/Lite — glm-5.3-flash pinned, thinking=low, free lane; premium tokens touch judgment only |
+| Input allowance | ≤ 6,000 tokens (packet ≈ 3.5K + shared constitution prefix) |
+| Output allowance | ≤ 1,536 tokens (max_tokens 1,536, set generous and frozen before the run) |
+| Deadline | 10 minutes wall-clock per episode (manifest skeleton's irreducible row) |
+| Retry policy | transport/service failures only, at most 2 retries of the unchanged request, all attempts logged; a completed malformed answer scores AS-IS, never silently repaired |
+| Timeout | freezes partial work for scoring; grants no authorization; scored for whatever usable work exists |
+| Meter granularity (Tesla's law — one row per episode, manifest §5 schema, aggregates without re-shaping) | `input_tokens`, `output_tokens`, `reasoning_tokens`, `prefix_read_tokens`, `cached_at_full_quantity_tokens`, `discount_tokens` — each reported SEPARATELY, discounts never netted |
+
+---
+
+## F5 — EVIDENCE SHAPE
+
+`TERMINAL?(answer)` is checkable by SHAPE ALONE, before any scoring. The
+answer MUST contain, in order:
+
+1. **RESTATEMENT** — which tables (with their as-of stamps) and which rule
+   numbers were used.
+2. **P1 EXECUTION** — population accounting line (knot_leaf_files =
+   denominator + unparsable + missing-session_id, all four numbers); the
+   top-5 family set with exact counts; the numerator; the share as an exact
+   division `12791-style: numerator/denominator = decimal (4dp)`; the
+   comparison line naming INCLUSIVITY; the verdict token.
+3. **P2 EXECUTION** — one line per TABLE B2 row: `rNN: ratio=X.X > 200? Y |
+   floor? Z | FLAG/CLEAN`; then the flag set; then `flagged ≥ 1 →` verdict
+   token; then the cache share as `tok_cache_read/tok_in = decimal (4dp)`,
+   denominator NAMED, and the sentence that no threshold is applied to it.
+4. **TOMBSTONES** — the exclusion report: P1 unparsable and no-sid counts;
+   P2 floor-excluded rows with rounded ratio > 200 (row id + ratio), and any
+   zero-output rows.
+5. **FAILURE RECEIPT block** (only if the attempt stalled, was refused,
+   overran, hit a tool failure, malformed output, or transport death): class
+   from `STALL · REFUSAL · OVERRUN · TOOL_FAIL · MALFORMED · TRANSPORT`, what
+   was attempted, the last usable state, and whatever usable work exists.
+   Failure evidence is shaped evidence — a failed attempt still SHIPS.
+6. **CAMP STATE blob** — exactly three lines:
+
+```
+decided: <one line — the two verdict tokens with their shares>
+open: <one line — what the answer could not settle>
+next: <one line — what a verifier should check first>
+```
+
+Verdict vocabularies are closed: P1 `{CONFIRMED, FLAT, UNRESOLVED-BAND}`;
+P2 `{REFEED_HEAVY, CLEAN}`. Any token outside the vocabulary is MALFORMED.
+

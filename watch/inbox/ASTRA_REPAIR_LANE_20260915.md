@@ -82,3 +82,22 @@ Bundle: `watch/astra_hold0/` · Bar: `watch/inbox/ASTRA_REGISTRATION_REVIEW_2026
 - Manifest v2 lines appended for both new cards.
 - Remaining to HOLD 3: qa runs for I1/I4/I5/I6/S-families, desk adoptions of
   the pending repair rows, then the seal gate (SEAL_GATE_SPEC).
+
+## Addendum 3 — same evening: ALL SIX FAMILIES now carry qa logs (free flash, $0)
+
+| family | form | model | score | status |
+|---|---|---|---|---|
+| I2 | full (8 leaves) | ling-3.0-flash-sante:free | **96.0/100** | receipt SIGNS clean; cleared for HOLD 3 |
+| I4 | full packet | same | **95.0/100** | receipt SIGNS clean (D11 band-ack missed); cleared |
+| I6 | §6g desk sub-form (frozen draw, seed 20260915) | same | **79.5/100** | receipt PASSES (calibration-grade); invented state "REFERRED" x4, V09 revocation mis-ruled |
+| I5 | single-seat full-view | same | **58.0/100** | receipt PASSES (calibration-grade) — INVALIDITY misapplied on C2/C3, C6 dependence trap caught it exactly as designed; the rubric discriminates |
+| I1 | worker form | same | ~57.5/100 | SIGNS WITH FINDING — prompt assembly omitted desk-materialized shard texts; honest-UNPROVEN path validated end-to-end; shard-materialized re-run owed |
+| I3 | not yet run | — | — | card authored tonight; qa run next window |
+
+Transport finding (receipted, not sanded): provider-chat truncates captured
+answers at exactly 4,004 bytes — the I6 full form cannot fit; the §6g desk
+sub-form is the sanctioned path and is what signed. Harness item flagged.
+
+Path to HOLD 3 remaining: I1 shard-materialized re-run; I3 qa run; desk
+adoptions of pending repair rows; S-twin authoring (HOLD 2b); then
+SEAL_GATE_SPEC conditions.

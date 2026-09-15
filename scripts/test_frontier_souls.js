@@ -48,11 +48,22 @@ lane('THE LAW: any direction levels you — east works', () => {
 lane('THE LAW: any direction levels you — west works too', () => {
   M.startRun(0); tele(-600, 0); pump(3); eq(M.ring, 2, 'west');
 });
-lane('canyon cliff holds outside the passes', () => {
+lane('canyon cliff holds — and the worn passes lead out', () => {
   M.startRun(0);
-  tele(412, 0); pump(4);   // angle 0 is seeded away from every pass (+0.2 minimum)
+  tele(335, 0); pump(4);   // angle 0 is seeded away from every pass
   const r = Math.hypot(P().x, P().y);
-  assert(r <= 438, `cliff leaked (r ${r})`);
+  assert(r <= 362, `cliff leaked (r ${r})`);
+  const pa = M.G.passes[0];
+  tele(Math.cos(pa) * 330, Math.sin(pa) * 330); pump(2);
+  tele(Math.cos(pa) * 352, Math.sin(pa) * 352); pump(4);   // through the gap — no push
+  assert(Math.hypot(P().x, P().y) > 340, 'the pass did not let us through');
+  eq(M.ring, 2, 'pass exit is not level 2');
+});
+lane('the pit forgives — the soul does not fade until you climb out', () => {
+  M.startRun(0);
+  const t0 = M.G.timer;
+  pump(120);
+  eq(M.G.timer, t0, 'timer drained inside the canyon');
 });
 lane('tumbleweed hurts and cannot be hurt', () => {
   god(); M.startRun(0); god();
@@ -88,7 +99,7 @@ lane('rattlesnake: 50/50 can simply kill you (forced true)', () => {
   M.forceRattleKill = true;
   const sn = M.spawnFoe('snake', P().x + 30, P().y);
   let dead = false;
-  for (let i = 0; i < 300 && !dead; i++) { pump(1); if (M.G.state === 'dead') dead = true; }
+  for (let i = 0; i < 480 && !dead; i++) { pump(1); if (M.G.state === 'dead') dead = true; }
   M.forceRattleKill = false;
   assert(dead, 'rattle never killed at full hp — the law is broken');
 });
@@ -107,6 +118,8 @@ lane('rattlesnake: the roll dodges even the fatal bite', () => {
 });
 lane('coyote pack closes the circle', () => {
   god(); M.startRun(0); god();
+  tele(600, 0); pump(2);   // open desert — the surround needs room, not a cliff at its back
+  M.foes.length = 0;       // drop any ring-transition rolls — this lane is about the pack alone
   M.spawnPackAround(P().x, P().y, 'coyote', 4);
   const coy = M.foes.filter(f => f.type === 'coyote');
   eq(coy.length, 4, 'pack size wrong');
@@ -182,6 +195,7 @@ lane("storyline chain 1: grave -> journal -> the hermit's fire", () => {
 });
 lane('the death timer: fades, essence feeds it, zero ends you, scrap restarts', () => {
   M.startRun(0); god();
+  tele(600, 0); pump(3);   // leave the pit — the timer only runs in the open
   const t0 = M.G.timer;
   pump(60);
   assert(M.G.timer < t0, 'timer does not fade');

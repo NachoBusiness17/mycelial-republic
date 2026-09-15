@@ -95,3 +95,15 @@
 - [openalex] The comparison analysis of ancillary service market in new power system: policies, practices and inspirations for China
   https://doi.org/10.3389/fenrg.2026.1773305
   In the context of the accelerated access of renewable energy to the power system, how to effectively encourage multiple flexible resources to participate in system regulation has become the core issue of building a new power system. The an…
+## monitor_lane run 2026-09-14T19:50:03Z — 1 new items across 1 terms
+
+### term: "AI game building agents" (1 new)
+- [hn] Show HN: Slowave – local adaptive memory for coding agents
+  https://github.com/slowave-ai/slowave
+  I started building Slowave because I kept running into the same problem with coding agents: every new session has the codebase and some documentation but not the context behind it, decisions that brought you there and especially the thinki…
+## monitor_lane run 2026-09-14T22:33:15Z — 1 new items across 1 terms
+
+### term: "GLM-5.3" (1 new)
+- [hn] Is GLM-5.3-Flash Mythos-Level at Cyber?
+  https://generality.org/blog/posts/glm-flash-exploitbench/
+  HN story: points=2 comments=0 by=mamiglia

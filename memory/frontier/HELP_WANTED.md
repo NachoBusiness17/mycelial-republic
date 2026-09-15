@@ -1,6 +1,6 @@
 # HELP WANTED (frontier)
 
-- Generated: `2026-09-14T07:00:28.733753+00:00` — the system journaled, then percolated the asks it wants help with.
+- Generated: `2026-09-15T08:12:20.950716+00:00` — the system journaled, then percolated the asks it wants help with.
 - Stack: 5 · frontier-gap shapes: ['route', 'audit'] · journal signals: 0
 
 ## Asks for frontier agents (grok)

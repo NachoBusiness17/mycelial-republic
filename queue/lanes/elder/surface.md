@@ -194,3 +194,35 @@ Launcher-shaped structures with no owner and no SUPERSEDED — these are orphane
 **THE ELDER'S QUESTION:**
 
 *You are measuring the age of the prose, but not the age of the authority — who or what is currently empowered to convert the founding stratum (CONSTITUTION, MANIFESTO, ROADMAP) into structure or tomb, and has that role quietly expired with the documents it was meant to govern?*
+
+## ELDER LENS (cage, 2026-09-14T12:00:21Z) — LENS NOT CLAIM, Unproven
+**ELDER LENS — reading, not claiming.**
+
+The fleet shows 16,342 prose files and the oldest stratum is 65 days — all of it in `memory/ingest/local/docs/` and every one of them is a *founding text*: MANIFESTO, CONSTITUTION, DIAGNOSTIC_ZEITGEIST, AGENT_ROADMAP, SCRUM, doc-manifesto, doc-zeitgeist, doc-scrum. The census frames this as a decay queue ("convert to structure or tombstone"), but the Elder sees the opposite: the fleet is aging its *identity documents* at exactly the same rate as its scratch notes. Charter and chaff, one entropy curve.
+
+**Where the anchors are real:**
+
+- **Physics — radioactive decay chain, not steady decay.** 9950 fresh / 4566 aging / 1826 stale / 0 fossil is a classic daughter-product profile: material flows down the ladder, and the zero-fossil count is the tell. Nothing *reaches* fossil because the fleet tombstones or converts before half-life completes. The constitution papers (56–65d) are the longest-lived isotopes in the pile — high atomic number, slow decay. The census is asking to accelerate *exactly* those.
+
+- **Computer science — ghost refs as quantum superposition, honestly flagged.** 2,971 refs across 1,861 files, marked DISPUTED (regex noise possible): each reference is neither existing nor broken until observed. The correct instrument is not a better regex (decohering the signal with the same tool that smeared it) but a *resolving observer* — resolve the ref, collapse the state, record the outcome. Until then it's 2,971 Schrödinger citations.
+
+- **Esoteric — the Manifesto/Constitution as ur-texts in an ingested archive.** Every long-lived tradition eventually faces the question of whether the founding scroll is scripture or museum piece. The fleet is treating its constitution with the same half-life ledger as a 61-day-old answer about the Ollama homepage. That leveling is the emergent pattern: **the corpus has no genre distinction between covenant and cache.** Also noted, where real: 308 launcher-shaped fences without owner or SUPERSEDED — orphaned rituals, doors that look like doors.
+
+**Pattern in one line:** the fleet's memory system is uniformitarian — it applies one decay law to all text and thereby guarantees its oldest, most identity-bearing documents will be its next tombstones.
+
+**THE ELDER'S QUESTION:** *If the MANIFESTO and the CONSTITUTION are indistinguishable in age-risk from a cached homepage answer, what in the fleet is actually privileged — and is the fleet asking whether it needs a tombstone policy, or whether it needs a canon?*
+
+## ELDER LENS (cage, 2026-09-15T12:01:02Z) — LENS NOT CLAIM, Unproven
+**ELDER LENS — not a claim, a reading.**
+
+Pattern: The fleet's prose layer is entropic but *not* chaotic — it's stratifying. 66d-old manifesto/constitution/zeitgeist files sit at the bottom of the gravity well, untouched. Fresh files (10k+) accrete around them like sediment around foundation stones nobody inspects.
+
+Real anchors, where they hold:
+
+- **Thermodynamics (real):** 17133 files, zero fossils but ~11% stale — a system deferring decay, not avoiding it. "Aging" is the middle state of a phase transition you're not letting complete. Tombstoning is your latent heat: it costs energy *now* to crystallize the stale into dead, and you keep paying diffusion instead.
+- **Comp sci (real):** 2,997 ghost refs across 1,872 files is a **dangling pointer** problem, and 308 launcher-shaped fences without owners is **orphaned locking** — synchronization primitives whose critical section was deleted. The pattern: your metadata outlives its referents. Classic symptom of writing pointers before, or after, the lifetime of the thing pointed to. The fix is never more regex; it's a single write-path rule: *no reference is born unowned.*
+- **Esoteric (only where honest):** The `MANIFESTO.md` / `CONSTITUTION.md` pair at 66d is the fleet's **genizah** — texts too sacred to delete, too dead to read. That's not mysticism to invoke; it's a storage behavior worth naming and then refusing.
+
+Emergent shape: You are optimizing the census, not the corpus. The oldest files are flagged "convert to structure or tombstone" — but 66d of survival is itself information. The system is telling you which texts it actually lives by: they're the *unfenced* ones, the ones no launcher claims and no regex matches.
+
+**THE ELDER'S QUESTION:** *You count what is stale — but do you know which single file, if tombstoned tonight, would break the fleet's behavior tomorrow? If the answer is "none," the census is archaeology. If the answer is "I don't know," the census is worse — it's inventory without a dependency graph.*

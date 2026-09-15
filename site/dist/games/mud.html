@@ -94,20 +94,30 @@ const walls = [
   {x:-20,y:WORLD_H,w:WORLD_W+40,h:20},
   {x:-20,y:-20,w:20,h:WORLD_H+40},
   {x:WORLD_W,y:-20,w:20,h:WORLD_H+40},
-  // band: top rooms / mid rooms (y400-440), doors at x300-390 and x940-1030
+  // band: top rooms / mid rooms (y400-440), doors at x300-390 (d2) and x940-1030 (d4)
   {x:60,y:400,w:240,h:40},
   {x:390,y:400,w:550,h:40},
-  {x:940,y:400,w:320,h:40},
+  {x:1030,y:400,w:230,h:40},
   // band: mid rooms / bottom rooms (y800-840), doors at x300-390 and x940-1030
   {x:60,y:800,w:240,h:40},
   {x:390,y:800,w:550,h:40},
   {x:1030,y:800,w:230,h:40},
   // wall: infirmary / scriptorium (x660-700), door at y180-270
   {x:660,y:60,w:40,h:120},
-  {x:660,y:270,w:40,h:870},
-  // wall: crypt / nave (x1260-1300), door at y560-650
+  {x:660,y:270,w:40,h:930},
+  // wall: crypt / forge column (x1260-1300), door at y560-650
   {x:1260,y:60,w:40,h:500},
-  {x:1260,y:650,w:40,h:490},
+  {x:1260,y:650,w:40,h:550},
+  // forge / nave divider (y400-440), door d7 at x1420-1510
+  {x:1300,y:400,w:120,h:40},
+  {x:1510,y:400,w:310,h:40},
+  // south of the forge — sealed drafts, nothing down there
+  {x:1300,y:800,w:620,h:40},
+  // east flank between the great hall and the forge column
+  {x:1820,y:400,w:100,h:400},
+  // flank fillers — the void outside the rooms is not a road
+  {x:0,y:-20,w:60,h:1240},
+  {x:60,y:-20,w:1860,h:80},
   // pillars — the light needs something to break on
   {x:340,y:220,w:30,h:30},
   {x:940,y:560,w:30,h:30},
@@ -122,7 +132,8 @@ const ROOMS = {
   scriptorium: { name: 'The Scriptorium', x: 700,  y: 60,   w: 520, h: 320, queue: ['rogue','rogue'], champion: { type: 'cleric', name: 'SISTER HALVANE, HIGH CLERIC' }, spots: [[760,160],[1080,300],[900,120],[1160,280]], aggroR: 240 },
   crypt:       { name: 'The Crypt',       x: 700,  y: 440,  w: 520, h: 320, queue: ['walker','dodger','walker'], champion: { type: 'rogue', name: 'VERAK THE UNSEEN, ROGUE-CAPTAIN' }, spots: [[760,520],[1140,700],[900,560],[1120,500]], aggroR: 220 },
   forge:       { name: 'The Forging Hall',x: 1300, y: 440,  w: 520, h: 320, queue: ['bmage','spitter','ranger'], champion: { type: 'bmage', name: 'MAGUS OLDRIN, WAR MAGE' }, spots: [[1360,520],[1720,700],[1500,480],[1820,660]], aggroR: 250 },
-  nave:        { name: 'The Nave of the First Dragon', x: 1300, y: 60, w: 520, h: 320, queue: [], champion: null, dragon: true, spots: [] },
+  ossuary:     { name: 'The Ossuary',     x: 700,  y: 840,  w: 560, h: 320, queue: ['rogue','dodger','walker','spitter'], champion: null, drip: true, spots: [[800,940],[980,1090],[1150,910],[1200,1060]], aggroR: 200 },
+  nave:        { name: 'The Nave of the First Dragon', x: 1300, y: 60, w: 620, h: 320, queue: [], champion: null, dragon: true, spots: [] },
 };
 const DOORS = {
   d1: { x: 300, y: 800, w: 90, h: 40, locked: false, after: 'courtyard' },
@@ -130,10 +141,12 @@ const DOORS = {
   d3: { x: 660, y: 180, w: 40, h: 90, locked: true,  after: 'infirmary' },
   d4: { x: 940, y: 400, w: 90, h: 40, locked: true,  after: 'scriptorium' },
   d5: { x: 940, y: 800, w: 90, h: 40, locked: true,  after: 'crypt' },
-  d6: { x: 1260, y: 560, w: 40, h: 90, locked: true, after: 'forge', needSigils: 4 },
+  d6: { x: 1260, y: 560, w: 40, h: 90, locked: true, after: 'crypt' },
+  d7: { x: 1420, y: 400, w: 90, h: 40, locked: true, after: 'forge', needSigils: 4 },
 };
 const SPIKES = [
   { x: 345, y: 820 }, { x: 985, y: 420 }, { x: 680, y: 225 }, { x: 1280, y: 605 }, { x: 345, y: 420 },
+  { x: 860, y: 1060 }, { x: 1120, y: 930 },
 ];
 const SIGILS = { count: 0 };
 const CHAMPIONS = {
@@ -145,6 +158,43 @@ const CHAMPIONS = {
 const ROOM_STATE = {};
 let doorRects = [];
 let curRoom = 'courtyard';
+
+// ---- Traps & the living monastery (swarm-game steals) ----
+const BEARTRAPS = [
+  { x: 830, y: 1010 }, { x: 1180, y: 940 },   // ossuary floor
+  { x: 520, y: 930 },                          // courtyard approach
+  { x: 1560, y: 540 },                         // forge lane
+  { x: 880, y: 600 },                          // crypt center
+];
+const DARTS = [
+  { x: 412, y: 452 }, { x: 1120, y: 452 },     // corridor floor plates by the upper doors
+  { x: 820, y: 852 },                          // ossuary approach
+];
+const CHANDS = [
+  { x: 360, y: 610 }, { x: 980, y: 610 }, { x: 1180, y: 200 }, // refectory, crypt, scriptorium
+];
+const VENTS = [
+  { x: 1450, y: 560 }, { x: 1650, y: 640 }, { x: 1500, y: 700 }, // forge floor
+];
+const KABUKI = ['"NONE SHALL PASS"', '"THE DRAGON REMEMBERS"', '"LANTERN, BURN"', '"FOR THE CHAIN!"'];
+let allies = [];   // ghost allies — the fallen who rise grateful (swarm-steal)
+let trail = [];    // your scent — the horde follows it when you break line of sight
+let trailT = 0;
+let corpses = [];  // the dead stay visible — the room remembers
+const NEXT_AFTER = { infirmary: 'scriptorium', scriptorium: 'crypt', crypt: 'ossuary', forge: 'nave' };
+const DOOR_OF = { refectory: 'd1', infirmary: 'd2', scriptorium: 'd3', crypt: 'd4', ossuary: 'd5', forge: 'd6', nave: 'd7' };
+const ROUTE_EXIT = { refectory: ['d1','d2'], infirmary: ['d2','d3'], scriptorium: ['d3','d4'], crypt: ['d4','d5','d6'], ossuary: ['d5'], forge: ['d6','d7'] };
+const ROOM_ORDER = ['refectory', 'infirmary', 'scriptorium', 'crypt', 'ossuary', 'forge', 'nave'];
+function doorCenter(d) { return { x: d.x + d.w / 2, y: d.y + d.h / 2 }; }
+function ROUTE_DOORS(rid) { return (ROUTE_EXIT[rid] || []).map(k => doorCenter(DOORS[k])); }
+function dropChandelier(ch) {
+  ch.dropped = true;
+  poof(ch.x, ch.y, '#fc8', 24); G.shake = 9;
+  for (const e of enemies) if (Math.hypot(e.x - ch.x, e.y - ch.y) < 85) { e.hp -= 70; e.stun = 0.9; e.flash = 0.2; e.aggro = true; }
+  if (Math.hypot(player.x - ch.x, player.y - ch.y) < 70) hurtPlayer(22);
+  chronicle('a chandelier falls — the ceiling joins the fight', '#fc8');
+  beep(70, 0.4, 'sawtooth', 0.07); beep(500, 0.15, 'square', 0.03);
+}
 
 // Exanima-steal: torch-light vision with wall occlusion
 const visionSegs = [];
@@ -276,15 +326,21 @@ let qtRoot = null;
 const bonfires = [
   {x:200,y:1080,r:40},
   {x:350,y:220,r:40},
+  {x:1100,y:1010,r:40},
 ];
+const DOOR_NEXT = {}; for (const k in DOOR_OF) DOOR_NEXT[DOOR_OF[k]] = k;
 function allWalls() { return walls.concat(doorRects); }
 function syncDoors() {
-  // doors unlock when the room before them is cleared; the Nave also demands all four sigils
-  for (const d of Object.values(DOORS)) {
+  // a door opens when the room before it is cleared (+sigils for the nave);
+  // an active, uncleared room seals its own doors — fight, then leave
+  for (const k of Object.keys(DOORS)) {
+    const d = DOORS[k];
     const s = ROOM_STATE[d.after];
-    d.locked = !(s && s.cleared) || !!(d.needSigils && SIGILS.count < d.needSigils);
+    let locked = !(s && s.cleared) || !!(d.needSigils && SIGILS.count < d.needSigils);
+    const ns = ROOM_STATE[DOOR_NEXT[k]];
+    if (ns && ns.activated && !ns.cleared) locked = true;
+    d.locked = locked;
   }
-  DOORS.d1.locked = false;
   doorRects = [];
   for (const d of Object.values(DOORS)) if (d.locked) doorRects.push({ x: d.x, y: d.y, w: d.w, h: d.h, door: true });
   rebuildVision();
@@ -298,7 +354,7 @@ function resetRooms(fullReset) {
   for (const id of Object.keys(ROOMS)) {
     const s = ROOM_STATE[id] || (ROOM_STATE[id] = {});
     if (fullReset || !s.cleared) {
-      s.activated = id === 'courtyard'; s.cleared = id === 'courtyard'; s.idx = 0; s.spawned = 0; s.fused = false;
+      s.activated = id === 'courtyard'; s.cleared = id === 'courtyard'; s.idx = 0; s.spawned = 0; s.fused = false; s.prepop = false;
       for (let i = enemies.length - 1; i >= 0; i--) if (enemies[i].room === id) enemies.splice(i, 1);
     }
   }
@@ -320,7 +376,7 @@ const player = {
   facing: 0,
   attackT: 0, attackCd: 0,
   rollT: 0, rollCd: 0, rollDir: {x:0,y:0},
-  iframes: 0,
+  iframes: 0, snared: 0,
   xp: 0, xpNext: 20, level: 1,
   statPoints: 0,
   might: 0, vigor: 0, swiftness: 0,
@@ -337,7 +393,6 @@ const player = {
   lifeOnKill: 0,
   bonusSpeed: 0,
   hitFlash: 0,
-  respawnX: 150, respawnY: 150,
 };
 function weapon() { return player.weapons[player.weaponIdx]; }
 function playerDmg() {
@@ -579,7 +634,7 @@ function spawnBoss() {
   const hpMult = 1 + a * 0.15 + G.ng * 0.05;
   const dmgMult = 1 + a * 0.22 + G.ng * 0.08;
   enemies.push({
-    type:'boss', x: 1750, y: 600, r: 40, color:'#c22',
+    type:'boss', x: 1600, y: 220, r: 40, color:'#c22',
     hp: 500 * hpMult, maxHp: 500 * hpMult,
     speed: 90 * Math.min(hpMult, 1.8), dmg: 32 * dmgMult,
     xp: 100, souls: 300, vx:0, vy:0, flash:0,
@@ -631,6 +686,7 @@ function roomTick(dt) {
   const R = ROOMS[rid];
   const alive = aliveInRoom(rid);
   st.t -= dt;
+  if (st.cleared) return;   // a cleared room pays once — not every frame you loiter
     if (!st.activated) {
       st.activated = true; st.spawned = 0; st.t = 0.6;
       if (rid === 'nave') G.naveEverActive = true;
@@ -638,12 +694,24 @@ function roomTick(dt) {
       syncDoors();
       chronicle('— ' + R.name + ' —', '#e8b45a');
       if (R.dragon) spawnBoss();
+      // the bell-ringer: the fortress talks — kill him before he warns the next room
+      if (!R.drip && !R.dragon && R.champion && ((window.MUD && window.MUD.forceBell) || Math.random() < 0.45) && NEXT_AFTER[rid]) {
+        const sp = R.spots[rndi(0, R.spots.length - 1)];
+        const rn = spawnRoomEnemy(rid, 'dodger', sp[0], sp[1]);
+        rn.runner = true; rn.aggro = false; rn.hp = rn.maxHp = 26; rn.color = '#dd9'; rn.r = 10;
+        rn.name = 'the Bell-Ringer'; rn.speed = 185; rn.xp = 12; rn.souls = 25;
+        chronicle('a bell-ringer breaks for the door — stop him', '#fc8');
+      }
       if (!R.drip && R.queue.length) {
       for (let i = 0; i < R.queue.length; i++) {
         const sp = R.spots[i % R.spots.length];
         spawnRoomEnemy(rid, R.queue[i], sp[0] + (i % 2) * 16, sp[1] + ((i >> 1) % 2) * 16);
       }
     }
+      if (st.prepop) {
+        for (const e2 of enemies) if (e2.room === rid) e2.aggro = true;
+        chronicle('they heard the bell — formed up, waiting', '#f84');
+      }
     return;
   }
     if (R.drip && st.spawned < R.queue.length && alive === 0 && st.t <= 0) {
@@ -653,7 +721,8 @@ function roomTick(dt) {
       st.t = 1.1;
       return;
     }
-  if (R.champion && st.spawned >= R.queue.length && alive === 0 && !st.champOut) {
+  // the champion walks out while the last escort still lives — kill the champion and the escort's nerve breaks
+  if (R.champion && st.spawned >= R.queue.length && st.spawned > 0 && alive <= 1 && !st.champOut) {
     st.champOut = true;
     spawnChampion(rid);
     st.t = 0.8;
@@ -677,7 +746,7 @@ function spawnAllEnemies() {
   for (const id of Object.keys(ROOMS)) {
     const s = ROOM_STATE[id] || (ROOM_STATE[id] = { activated: false, cleared: false, idx: 0, spawned: 0, champOut: false });
     if (s.cleared) continue;
-    s.activated = false; s.spawned = 0; s.champOut = false;
+    s.activated = false; s.spawned = 0; s.champOut = false; s.prepop = false;
     for (let i = enemies.length - 1; i >= 0; i--) if (enemies[i].room === id) enemies.splice(i, 1);
   }
   syncDoors();
@@ -701,6 +770,7 @@ function aabb(e) { return {x:e.x-e.r, y:e.y-e.r, w:e.r*2, h:e.r*2}; }
 function resolveWalls(e) {
   for (const w of walls.concat(doorRects)) {
     if (w.open) continue;
+    if (w.door && (e.runner || e.rout > 0)) continue;   // the bell-passage: natives slip sealed doors
     const ex = e.x - e.r, ey = e.y - e.r, ew = e.r*2, eh = e.r*2;
     if (ex < w.x+w.w && ex+ew > w.x && ey < w.y+w.h && ey+eh > w.y) {
       const overlapL = (ex+ew) - w.x;
@@ -739,13 +809,14 @@ function update(dt) {
 
   // Roll
   if (player.rollCd > 0) player.rollCd -= dt;
+  if (player.snared > 0) player.snared -= dt;
   if (player.rollT > 0) {
     player.rollT -= dt;
     player.x += player.rollDir.x * 420 * dt;
     player.y += player.rollDir.y * 420 * dt;
     player.iframes = Math.max(player.iframes, 0.02);
   } else {
-    const spd = (player.speed + player.bonusSpeed + player.swiftness * 5) * (player.stamina > 0 ? 1 : 0.5);
+    const spd = (player.speed + player.bonusSpeed + player.swiftness * 5) * (player.stamina > 0 ? 1 : 0.5) * (player.snared > 0 ? 0.4 : 1);
     player.x += mx * spd * dt;
     player.y += my * spd * dt;
   }
@@ -765,8 +836,29 @@ function update(dt) {
     if (player.boonDash) player.attackCd = 0;
     const a = (mx||my) ? Math.atan2(my,mx) : player.facing;
     player.rollDir = {x:Math.cos(a), y:Math.sin(a)};
+    player.snared = 0;   // a roll tears free of a snare
     beep(220, 0.1, 'sawtooth', 0.03);
   }
+
+  // The shout (swarm-steal): knock everything back — and wake everything you knock
+  if (G.shoutCd > 0) G.shoutCd -= dt;
+  if (keys['KeyF_p'] && G.shoutCd <= 0 && player.stamina >= 25) {
+    player.stamina -= 25; G.shoutCd = 5;
+    G.shoutTxt = { txt: KABUKI[rndi(0, KABUKI.length - 1)], t: 1.2 };
+    for (const e of enemies) {
+      const sd = Math.hypot(e.x - player.x, e.y - player.y);
+      if (sd < 340) {
+        const kx = (e.x - player.x) / (sd || 1), ky = (e.y - player.y) / (sd || 1);
+        e.vx += kx * 420; e.vy += ky * 420;
+        e.windup = 0; e.telegraph = 0;
+        e.stun = Math.max(e.stun || 0, 0.3);
+        e.aggro = true;   // the price: everything heard you
+      }
+    }
+    for (const s of soulOrbs) { const sd = Math.hypot(s.x - player.x, s.y - player.y); if (sd < 340 && sd > 0.1) { s.vx += (s.x - player.x) / sd * 300; s.vy += (s.y - player.y) / sd * 300; } }
+    G.shake = 6; beep(95, 0.3, 'sawtooth', 0.06);
+  }
+  if (G.shoutTxt) { G.shoutTxt.t -= dt; if (G.shoutTxt.t <= 0) G.shoutTxt = null; }
 
   // Attack
   if ((mouse.justDown || keys['Space_p']) && player.attackCd <= 0 && player.stamina >= 15 && player.rollT <= 0) {
@@ -779,6 +871,7 @@ function update(dt) {
     const arc = Math.PI * 0.7 * (player.boonArc ? 1.5 : 1);
     for (let i=enemies.length-1;i>=0;i--) {
       const e = enemies[i];
+      if (!e) continue;
       const d = Math.hypot(e.x-player.x, e.y-player.y);
       if (d < range + e.r) {
         const ang = Math.atan2(e.y-player.y, e.x-player.x);
@@ -796,6 +889,7 @@ function update(dt) {
           poof(e.x, e.y, '#f44', 5);
           if (e.hp > 0) {
             e.hitsSurvived = (e.hitsSurvived || 0) + 1;
+            e.rout = 0;   // struck mid-flight, the router finds its nerve
             if (!e.grudged && e.type !== 'k3' && (e.hitsSurvived >= 2 || Math.random() < 0.25)) {
               e.grudged = true;
               if (!e.name) e.name = genName();
@@ -819,8 +913,19 @@ function update(dt) {
               beep(1400, 0.06, 'square', 0.02);
             }
           }
-          if (e.hp <= 0) killEnemy(i);
+          if (e.hp <= 0) killEnemy(e);
         }
+      }
+    }
+    // a swing near a chandelier cuts the rope — lure them under first
+    for (const ch of CHANDS) {
+      if (ch.dropped) continue;
+      if (Math.hypot(ch.x - player.x, ch.y - player.y) < 80) {
+        const ca = Math.atan2(ch.y - player.y, ch.x - player.x);
+        let cdiff = ca - player.facing;
+        while (cdiff > Math.PI) cdiff -= Math.PI*2;
+        while (cdiff < -Math.PI) cdiff += Math.PI*2;
+        if (Math.abs(cdiff) < 1.0) { dropChandelier(ch); break; }
       }
     }
   }
@@ -861,23 +966,29 @@ function update(dt) {
     if (rewindBuf.length > 12) rewindBuf.shift();
   }
 
+  // Your scent (swarm-steal): the trail you leave pulls the horde when you break sight
+  trailT -= dt;
+  if (trailT <= 0) { trailT = 0.22; trail.push({ x: player.x, y: player.y, a: 0 }); if (trail.length > 26) trail.shift(); }
+  for (const tp of trail) tp.a += dt;
+
   // Clamp player
   player.x = clamp(player.x, player.r, WORLD_W - player.r);
   player.y = clamp(player.y, player.r, WORLD_H - player.r);
   resolveWalls(player);
 
-  // Bonfire interactions
+  // Bonfire interactions — one rest, then it needs time to breathe again
   for (const b of bonfires) {
-    if (dist2(player, b) < (b.r+player.r)*(b.r+player.r)) {
-      if (player.hp < player.maxHp || enemies.length > 0) {
-        player.hp = player.maxHp;
-        player.stamina = player.maxStamina;
-        player.respawnX = b.x; player.respawnY = b.y;
-        spawnAllEnemies();
-        addMsg('Bonfire rested — enemies respawned', '#fc8');
-        beep(330, 0.3, 'sine', 0.05);
-        beep(440, 0.3, 'sine', 0.04);
-      }
+    b.cd = Math.max(0, (b.cd || 0) - dt);
+    if (b.cd <= 0 && dist2(player, b) < (b.r+player.r)*(b.r+player.r) && (player.hp < player.maxHp || player.stamina < player.maxStamina)) {
+      player.hp = player.maxHp;
+      player.stamina = player.maxStamina;
+      player.respawnX = b.x; player.respawnY = b.y;
+      b.cd = 4;
+      lore.fires = (lore.fires || 0) + 1; loreSave();
+      spawnAllEnemies();
+      addMsg('Bonfire rested — the monastery stirs anew', '#fc8');
+      beep(330, 0.3, 'sine', 0.05);
+      beep(440, 0.3, 'sine', 0.04);
     }
   }
 
@@ -892,12 +1003,53 @@ function update(dt) {
   for (const e of enemies) qtInsert(qtRoot, e, 0);
   for (let i=enemies.length-1;i>=0;i--) {
     const e = enemies[i];
-    if (e.hp <= 0) { killEnemy(i); continue; }
-    if (e.stun > 0) { e.stun -= dt; e.vx *= 0.8; e.vy *= 0.8; continue; }
+    if (!e) continue;   // a fuse mid-loop reorders the array — trust identity, not index
+    if (e.hp <= 0) { killEnemy(e); continue; }
+    if (e.stun > 0) { e.stun -= dt; e.vx *= 0.8; e.vy *= 0.8; e.x += e.vx * dt; e.y += e.vy * dt; resolveWalls(e); continue; }
+    if (e.snare > 0) e.snare -= dt;
     if (e.flash > 0) e.flash -= dt;
     if (e.attackCd > 0) e.attackCd -= dt;
     if (e.dodgeCd > 0) e.dodgeCd -= dt;
     if (e.telegraph > 0) e.telegraph -= dt;
+
+    // grief: an ally saw the kill — it keens, then it comes for you
+    if (e.mourn > 0) {
+      e.mourn -= dt; e.vx *= 0.8; e.vy *= 0.8;
+      if (e.mourn <= 0) { e.aggro = true; e.speed *= 1.1; chronicle((e.name || 'the mourner') + ' rises from the keening', '#f66'); }
+      e.x += e.vx * dt; e.y += e.vy * dt; resolveWalls(e); continue;
+    }
+    // rout: the champion fell and this one's nerve went with it — it runs until it escapes or is struck
+    if (e.rout > 0) {
+      let fx = e.homeX, fy = e.homeY, fd = 1e9;
+      for (const dc of ROUTE_DOORS(e.room)) { const dd2 = Math.hypot(dc.x - e.x, dc.y - e.y); if (dd2 < fd) { fd = dd2; fx = dc.x; fy = dc.y; } }
+      const fdx = fx - e.x, fdy = fy - e.y, fdd = Math.hypot(fdx, fdy) || 1;
+      e.vx = fdx / fdd * e.speed * 1.3; e.vy = fdy / fdd * e.speed * 1.3;
+      if (roomOf(e.x, e.y) !== e.room) {
+        for (const nid of ROOM_ORDER) {
+          const ns = ROOM_STATE[nid];
+          if (nid !== e.room && ns && !ns.cleared && ROOMS[nid].queue && ROOMS[nid].queue.length < 9) {
+            ROOMS[nid].queue.push(e.type);
+            chronicle((e.name || 'a survivor') + ' fled — ' + ROOMS[nid].name + ' takes them in', '#fc8');
+            break;
+          }
+        }
+        enemies.splice(i, 1); continue;
+      }
+      e.x += e.vx * dt; e.y += e.vy * dt; resolveWalls(e); continue;
+    }
+    // the bell-ringer ignores you utterly — it only runs
+    if (e.runner) {
+      const after = NEXT_AFTER[e.room];
+      const dc = doorCenter(DOORS[DOOR_OF[after]]);
+      const rdx = dc.x - e.x, rdy = dc.y - e.y, rdd = Math.hypot(rdx, rdy) || 1;
+      e.vx = rdx / rdd * e.speed; e.vy = rdy / rdd * e.speed;
+      if (rdd < 46) {
+        const st2 = ROOM_STATE[after] || (ROOM_STATE[after] = { activated: false, cleared: false });
+        if (!st2.cleared) { st2.prepop = true; chronicle('the bell rang — ' + ROOMS[after].name + ' will be waiting', '#f84'); }
+        enemies.splice(i, 1); continue;
+      }
+      e.x += e.vx * dt; e.y += e.vy * dt; resolveWalls(e); continue;
+    }
 
     const dx = player.x - e.x, dy = player.y - e.y;
     const d = Math.hypot(dx,dy) || 1;
@@ -1054,10 +1206,31 @@ function update(dt) {
         addMsg('THE GATEKEEPER AWAKENS', '#f44');
         beep(110, 0.8, 'sawtooth', 0.06);
       }
+      // phase two (swarm-steal): at half blood the dragon stops toying
+      if (!e.phase2 && e.hp < e.maxHp * 0.5) {
+        e.phase2 = true; e.speed *= 1.4;
+        addMsg('THE DRAGON OPENS ITS EYE', '#f44');
+        chronicle('the dragon opens its eye — it was toying with you', '#f44');
+        beep(60, 0.7, 'sawtooth', 0.07); G.shake = 10;
+      }
+      if (e.phase2) {
+        e._sumT = (e._sumT || 4) - dt;
+        if (e._sumT <= 0) {
+          e._sumT = 6;
+          if (enemies.filter(o => o.type === 'k8').length < 10) {
+            for (let k = 0; k < 3; k++) {
+              const a2 = Math.random() * Math.PI * 2;
+              const w2 = spawnEnemy('k8', clamp(e.x + Math.cos(a2) * 80, 20, WORLD_W - 20), clamp(e.y + Math.sin(a2) * 80, 20, WORLD_H - 20), 'nave');
+              w2.aggro = true;
+            }
+            chronicle('the dragon tears whelps from its own hide', '#f44');
+          }
+        }
+      }
       e.patternT -= dt;
       if (e.patternT <= 0) {
         e.pattern = (e.pattern + 1) % 2;
-        e.patternT = e.pattern === 0 ? 2.5 : 3.0;
+        e.patternT = e.pattern === 0 ? (e.phase2 ? 1.8 : 2.5) : (e.phase2 ? 2.2 : 3.0);
       }
       if (e.pattern === 0) {
         // chase
@@ -1093,12 +1266,26 @@ function update(dt) {
       });
       e.vx += rx; e.vy += ry;
     }
-  // Dijkstra-steal: the flow field routes the aggroed horde around walls
+  // Dijkstra-steal: the flow field routes the aggroed horde around walls.
+  // Swarm-steal on top: your fresh scent overrides the flow — they track the trail you left.
   if (e.aggro && e.type !== 'boss' && !canSee(e.x, e.y, player.x, player.y)) {
-    const dir = flowDir(e.x, e.y);
-    if (dir) { const sp = Math.hypot(e.vx, e.vy) || e.speed; e.vx = dir.x * sp; e.vy = dir.y * sp; }
+    let steered = null;
+    for (let ti = trail.length - 1; ti >= 0; ti--) {   // newest scent first — stop when it goes cold
+      const tp = trail[ti];
+      if (tp.a > 4) break;
+      if (Math.hypot(tp.x - e.x, tp.y - e.y) < 95 && canSee(e.x, e.y, tp.x, tp.y)) { steered = tp; break; }
+    }
+    if (steered) {
+      const sdx = steered.x - e.x, sdy = steered.y - e.y, sdd = Math.hypot(sdx, sdy) || 1;
+      const sp2 = Math.hypot(e.vx, e.vy) || e.speed;
+      e.vx = sdx / sdd * sp2; e.vy = sdy / sdd * sp2;
+    } else {
+      const dir = flowDir(e.x, e.y);
+      if (dir) { const sp = Math.hypot(e.vx, e.vy) || e.speed; e.vx = dir.x * sp; e.vy = dir.y * sp; }
+    }
   }
-    e.x += e.vx * dt; e.y += e.vy * dt;
+    const moveK = e.snare > 0 ? 0.35 : 1;
+    e.x += e.vx * moveK * dt; e.y += e.vy * moveK * dt;
     e.x = clamp(e.x, e.r, WORLD_W - e.r);
     e.y = clamp(e.y, e.r, WORLD_H - e.r);
     resolveWalls(e);
@@ -1109,6 +1296,15 @@ function update(dt) {
     const p = projectiles[i];
     p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
     if (p.life <= 0) { projectiles.splice(i,1); continue; }
+    // trap darts don't take sides — the corridor shoots whoever hurries through
+    if (p.trap) {
+      let hitE = false;
+      for (const e of enemies) {
+        if (e.hp <= 0) continue;
+        if (Math.hypot(e.x - p.x, e.y - p.y) < p.r + e.r) { e.hp -= p.dmg; e.flash = 0.15; e.aggro = true; hitE = true; break; }
+      }
+      if (hitE) { projectiles.splice(i,1); continue; }
+    }
     if (dist2(p, player) < (p.r + player.r)*(p.r + player.r)) {
       if (player.iframes <= 0) hurtPlayer(p.dmg);
       projectiles.splice(i,1);
@@ -1157,7 +1353,10 @@ function update(dt) {
     const s = soulOrbs[i];
     const dx = player.x - s.x, dy = player.y - s.y;
     const d = Math.hypot(dx,dy) || 1;
-    if (d < 200) {
+    // skitter (swarm-steal): orbs bolt from a bearer who comes in loud, settle when you slow
+    const pspd = Math.abs(player._vx || 0) + Math.abs(player._vy || 0);
+    if (d < 60 && pspd > 260) { s.vx = -dx / d * 300; s.vy = -dy / d * 300; }
+    else if (d < 200) {
       s.vx = dx/d * 400; s.vy = dy/d * 400;
     }
     s.x += s.vx*dt; s.y += s.vy*dt;
@@ -1175,6 +1374,8 @@ function update(dt) {
   for (let i=superOrbs.length-1;i>=0;i--) {
     const s = superOrbs[i];
     s.t = (s.t||0) + dt;
+    s.life = (s.life == null ? 30 : s.life) - dt;
+    if (s.life <= 0) { superOrbs.splice(i,1); continue; }
     const dx = player.x - s.x, dy = player.y - s.y;
     const d = Math.hypot(dx,dy) || 1;
     if (d < 220) { s.vx = (s.vx||0) + dx/d * 500 * dt; s.vy = (s.vy||0) + dy/d * 500 * dt; }
@@ -1197,7 +1398,7 @@ function update(dt) {
   flowT -= dt;
   if (flowT <= 0) { flowT = 0.3; rebuildFlow(player.x, player.y); }
 
-  // Mines (the horde's answer to kiting)
+  // Mines (the horde's answer to kiting) — and your answer to the horde: bait them onto their own iron
   for (let i=mines.length-1;i>=0;i--) {
     const m = mines[i];
     if (m.arm > 0) m.arm -= dt;
@@ -1210,6 +1411,17 @@ function update(dt) {
       beep(70, 0.25, 'sawtooth', 0.07);
       mines.splice(i,1);
       continue;
+    }
+    if (m.arm <= 0) {
+      let blew = false;
+      for (const e of enemies) {
+        if (e.hp > 0 && Math.hypot(e.x - m.x, e.y - m.y) < 30) {
+          e.hp -= 22; e.stun = 0.4; e.flash = 0.2; e.aggro = true;
+          poof(m.x, m.y, '#f44', 14); beep(70, 0.2, 'sawtooth', 0.05);
+          mines.splice(i,1); blew = true; break;
+        }
+      }
+      if (blew) continue;
     }
     if (m.life <= 0) mines.splice(i,1);
   }
@@ -1237,11 +1449,93 @@ function update(dt) {
     if (dc.life <= 0) deathClouds.splice(i,1);
   }
 
-  // monastery spike traps: the floor breathes, and it bites
+  // monastery spike traps: the floor breathes, and it bites — whoever walks badly
   for (const s of SPIKES) {
     s.phase = (s.phase || Math.random() * 3) + dt;
     s.up = (s.phase % 3) > 1.9;
     if (s.up && Math.hypot(player.x - s.x, player.y - s.y) < 26 && player.iframes <= 0) { hurtPlayer(12); player.iframes = 0.4; }
+    if (s.up) {
+      for (const e of enemies) {
+        if (e.hp <= 0 || e.runner) continue;
+        if (Math.hypot(e.x - s.x, e.y - s.y) < 24) {
+          e.hp -= 12; e.stun = 0.35; e.flash = 0.15; e.aggro = true;
+          poof(s.x, s.y, '#c44', 4);
+        }
+      }
+    }
+  }
+
+  // bear traps: they bite whoever steps badly — you included (pull them through!)
+  for (const bt of BEARTRAPS) {
+    if (bt.rearm > 0) { bt.rearm -= dt; if (bt.rearm <= 0) bt.armed = true; }
+    if (!bt.armed) continue;
+    if (player.iframes <= 0 && player.rollT <= 0 && Math.hypot(player.x - bt.x, player.y - bt.y) < 22) {
+      bt.armed = false; bt.rearm = 7;
+      hurtPlayer(18); player.snared = 1.6;
+      poof(bt.x, bt.y, '#c44', 8); beep(120, 0.2, 'square', 0.05);
+      continue;
+    }
+    for (const e of enemies) {
+      if (e.hp <= 0 || e.runner) continue;
+      if (Math.hypot(e.x - bt.x, e.y - bt.y) < 22) {
+        bt.armed = false; bt.rearm = 7;
+        e.hp -= 18; e.flash = 0.15; e.stun = 0.5; e.snare = 2.5; e.aggro = true;
+        poof(bt.x, bt.y, '#c44', 8); beep(120, 0.2, 'square', 0.05);
+        break;
+      }
+    }
+  }
+
+  // dart nozzles: the corridor shoots back at whatever hurries through
+  for (const dn of DARTS) {
+    dn.cd = Math.max(0, (dn.cd || 0) - dt);
+    if (dn.cd > 0) continue;
+    let victim = null;
+    if (Math.hypot(player.x - dn.x, player.y - dn.y) < 30) victim = player;
+    else for (const e of enemies) if (e.hp > 0 && !e.runner && Math.hypot(e.x - dn.x, e.y - dn.y) < 30) { victim = e; break; }
+    if (victim) {
+      dn.cd = 2.8;
+      const va = Math.atan2(victim.y - dn.y, victim.x - dn.x);
+      for (let k = -1; k <= 1; k++) projectiles.push({ x: dn.x, y: dn.y, vx: Math.cos(va + k * 0.18) * 260, vy: Math.sin(va + k * 0.18) * 260, r: 4, dmg: 9, life: 2, color: '#da4', trap: true });
+      beep(700, 0.05, 'square', 0.02);
+    }
+  }
+
+  // chandeliers: three bodies beneath and the rope gives up on its own
+  for (const ch of CHANDS) {
+    if (ch.dropped) continue;
+    let crowd = 0;
+    for (const e of enemies) if (e.hp > 0 && Math.hypot(e.x - ch.x, e.y - ch.y) < 62) crowd++;
+    if (crowd >= 3) dropChandelier(ch);
+  }
+
+  // forge vents: the floor exhales on a rhythm — learn it or wear it
+  for (let vi = 0; vi < VENTS.length; vi++) {
+    const v = VENTS[vi];
+    const ph = (G.time * 0.5 + vi * 1.33) % 4;
+    v.hot = ph > 3.0; v.warn = ph > 2.4 && ph <= 3.0;
+    if (v.hot) {
+      if (Math.hypot(player.x - v.x, player.y - v.y) < 46 && player.iframes <= 0) hurtPlayer(14);
+      for (const e of enemies) if (e.hp > 0 && Math.hypot(e.x - v.x, e.y - v.y) < 46) { e.hp -= 30 * dt; e.flash = 0.1; }
+    }
+  }
+
+  // ghost allies (swarm-steal): the grateful risen hunt the horde, then rest
+  for (let i = allies.length - 1; i >= 0; i--) {
+    const a = allies[i];
+    a.t -= dt; a.ph += dt;
+    if (a.t <= 0) { allies.splice(i, 1); continue; }
+    let tgt = null, td = 520;
+    for (const e of enemies) {
+      if (e.hp <= 0 || !e.aggro) continue;
+      const dd = Math.hypot(e.x - a.x, e.y - a.y);
+      if (dd < td) { td = dd; tgt = e; }
+    }
+    if (tgt) {
+      const ddx = tgt.x - a.x, ddy = tgt.y - a.y, ddd = Math.hypot(ddx, ddy) || 1;
+      a.x += ddx / ddd * 185 * dt; a.y += ddy / ddd * 185 * dt;
+      if (ddd < tgt.r + 16) { tgt.hp -= 26 * dt; tgt.flash = 0.1; }
+    }
   }
 
   // Lost souls pickup
@@ -1363,7 +1657,7 @@ function playerDie() {
   for (const id of Object.keys(ROOMS)) {
     const s = ROOM_STATE[id] || (ROOM_STATE[id] = { activated: false, cleared: false, idx: 0, spawned: 0, champOut: false });
     if (s.cleared) continue;
-    s.activated = false; s.spawned = 0; s.champOut = false;
+    s.activated = false; s.spawned = 0; s.champOut = false; s.prepop = false;
     for (let i = enemies.length - 1; i >= 0; i--) if (enemies[i].room === id) enemies.splice(i, 1);
   }
   syncDoors();
@@ -1371,9 +1665,10 @@ function playerDie() {
   beep(80, 1.0, 'sawtooth', 0.08);
 }
 
-function killEnemy(i) {
-  const e = enemies[i];
+function killEnemy(e) {
   poof(e.x, e.y, e.color, e.isBoss ? 40 : 15);
+  corpses.push({ x: e.x, y: e.y, r: Math.max(5, e.r * 0.8), c: e.color });
+  if (corpses.length > 42) corpses.shift();
   player.xp += e.xp;
   // souls drop as orbs
   const n = e.isBoss ? 5 : 1;
@@ -1413,13 +1708,34 @@ function killEnemy(i) {
       w.name = 'THE FUSED WARDEN OF THE ' + (ROOMS[e.room] ? ROOMS[e.room].name.split(' ').pop().toUpperCase() : 'HALL');
       w.isChampion = true;
       for (const o of alive) enemies.splice(enemies.indexOf(o), 1);
+      if (st) st.champOut = true;   // the warden IS the champion now — no second one queues behind it
       chronicle('THEY COMBINE — ' + w.name, '#f44');
       beep(90, 0.4, 'sawtooth', 0.05);
     }
   }
-  enemies.splice(i,1);
+  // the fuse block above may have spliced survivors — index i is stale, find the corpse by identity
+  const ei = enemies.indexOf(e);
+  if (ei >= 0) enemies.splice(ei, 1);
   if (player.boonLeech) player.hp = Math.min(player.maxHp, player.hp + 6);
   if (player.boonCloud) deathClouds.push({ x: e.x, y: e.y, r: 44, life: 3 });
+  // ghost ally (swarm-steal): a riposte kill is an honorable kill — sometimes the fallen rise grateful
+  if (player._riposte > 0 && allies.length < 3 && e.type !== 'boss' && !e.runner && ((window.MUD && window.MUD.forceGhost) || Math.random() < 0.4)) {
+    allies.push({ x: e.x, y: e.y, t: 9, ph: Math.random() * 6 });
+    chronicle((e.name || 'the fallen') + ' rises grateful — for a moment', '#8af');
+  }
+  // grief: nearby idle allies keen over the body — then come for you
+  for (const o of enemies) {
+    if (o.hp > 0 && !o.aggro && !o.runner && o.mourn == null && Math.hypot(o.x - e.x, o.y - e.y) < 130 && Math.random() < 0.45) o.mourn = 2.2;
+  }
+  // rout: the champion died and the room's nerve broke
+  if (e.isChampion && e.room) {
+    for (const o of enemies) {
+      if (o.room === e.room && o.hp > 0 && !o.isChampion && !o.runner && o.hp < o.maxHp * 0.6 && o.rout == null) {
+        o.rout = 3.5;
+        chronicle((o.name || 'a survivor') + ' breaks — routing', '#fc8');
+      }
+    }
+  }
   // The horde remembers how you kill: far-away kills read as kiting, close kills as brawling
   if (Math.hypot(e.x - player.x, e.y - player.y) > 150) {
     lore.kite++;
@@ -1516,6 +1832,14 @@ function draw() {
     ctx.globalAlpha = 1;
   }
 
+  // the dead stay in the floor — the room remembers
+  for (const c of corpses) {
+    ctx.fillStyle = 'rgba(18,12,16,0.85)';
+    ctx.beginPath(); ctx.ellipse(c.x, c.y + 4, c.r * 1.25, c.r * 0.7, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(60,30,34,0.5)';
+    ctx.beginPath(); ctx.ellipse(c.x, c.y + 2, c.r * 0.7, c.r * 0.4, 0.4, 0, Math.PI * 2); ctx.fill();
+  }
+
   // the inversion shrine (scriptorium): the geometry torn apart and rebuilt
   const shrineX = 960, shrineY = 220, shrineR = 150;
   const shrineNear = Math.hypot(player.x - shrineX, player.y - shrineY) < VISION_R * 1.25;
@@ -1529,6 +1853,9 @@ function draw() {
     if (e.shrineLit && !canSee(player.x, player.y, e.x, e.y)) ctx.globalAlpha = 0.55;
     if (e.stealth) ctx.globalAlpha = 0.12 + 0.06 * Math.sin(G.time * 6);
     if (e.name) { ctx.fillStyle = '#c9b96a'; ctx.font = '8px monospace'; ctx.textAlign = 'center'; ctx.fillText(e.name, 0, -e.r - 5); }
+    if (e.mourn > 0) { ctx.fillStyle = '#aab'; ctx.font = '8px monospace'; ctx.textAlign = 'center'; ctx.fillText('…keens…', 0, -e.r - 14); }
+    if (e.rout > 0) { ctx.fillStyle = '#fc8'; ctx.font = '8px monospace'; ctx.textAlign = 'center'; ctx.fillText('flee!', 0, -e.r - 14); }
+    if (e.runner) { ctx.fillStyle = '#dd9'; ctx.fillRect(-3, -e.r - 4, 6, 5); }
     if (e.telegraph > 0) {
       ctx.strokeStyle = '#f44'; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.arc(0, 0, e.r + 6, 0, Math.PI*2); ctx.stroke();
@@ -1541,6 +1868,10 @@ function draw() {
       ctx.beginPath(); ctx.arc(0, 0, e.r * 0.55 * ds, 0, Math.PI*2); ctx.fill();
       ctx.fillStyle = '#f44';
       ctx.beginPath(); ctx.arc(0, 0, Math.max(2, (e.r * 0.3 + Math.sin(G.time*6)*2) * ds), 0, Math.PI*2); ctx.fill();
+      if (e.isBoss && e.phase2) {
+        ctx.fillStyle = '#ffd'; ctx.fillRect(-e.r * 0.5, -3, e.r, 3);
+        ctx.fillStyle = '#f44'; ctx.fillRect(-2, -4, 4, 5);
+      }
     }
     ctx.restore();
     if (e.hp < e.maxHp) {
@@ -1593,6 +1924,13 @@ function draw() {
     ctx.globalAlpha = Math.max(0, dn.life / 0.8);
     ctx.fillStyle = dn.color; ctx.font = 'bold 13px monospace'; ctx.textAlign = 'center';
     ctx.fillText(dn.val, dn.x, dn.y);
+    ctx.globalAlpha = 1;
+  }
+
+  if (G.shoutTxt) {
+    ctx.globalAlpha = Math.max(0, G.shoutTxt.t);
+    ctx.fillStyle = '#fc8'; ctx.font = 'bold 12px monospace'; ctx.textAlign = 'center';
+    ctx.fillText(G.shoutTxt.txt, player.x, player.y - 30);
     ctx.globalAlpha = 1;
   }
 
@@ -1683,6 +2021,53 @@ function draw() {
     ctx.strokeStyle = 'rgba(255,80,80,' + (0.25 + 0.35 * pulse).toFixed(2) + ')';
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.arc(m.x, m.y, 10 + pulse * 4, 0, Math.PI*2); ctx.stroke();
+  }
+
+  // the traps of the monastery — seen by torchlight, survived by rhythm
+  for (const bt of BEARTRAPS) {
+    const open = !bt.armed;
+    ctx.strokeStyle = open ? '#665' : '#c44'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(bt.x, bt.y, 9, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(bt.x - 8, bt.y + (open ? 2 : -4)); ctx.lineTo(bt.x, bt.y + (open ? 6 : -9)); ctx.lineTo(bt.x + 8, bt.y + (open ? 2 : -4));
+    ctx.stroke();
+  }
+  for (const dn of DARTS) {
+    ctx.fillStyle = '#8a6a2a'; ctx.fillRect(dn.x - 4, dn.y - 4, 8, 8);
+    ctx.fillStyle = '#fc8'; ctx.fillRect(dn.x - 1, dn.y - 1, 2, 2);
+  }
+  for (const ch of CHANDS) {
+    if (ch.dropped) {
+      ctx.fillStyle = '#3a3a40'; ctx.beginPath(); ctx.ellipse(ch.x, ch.y + 6, 16, 5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#556'; ctx.beginPath(); ctx.moveTo(ch.x - 10, ch.y + 4); ctx.lineTo(ch.x + 12, ch.y + 8); ctx.stroke();
+    } else {
+      ctx.strokeStyle = '#7a6a4a'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(ch.x, ch.y - 90); ctx.lineTo(ch.x, ch.y - 10); ctx.stroke();
+      const sway = Math.sin(G.time * 2 + ch.x) * 3;
+      ctx.strokeStyle = '#c9b96a'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(ch.x + sway, ch.y, 10, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = '#fc8';
+      for (let ci = -1; ci <= 1; ci++) ctx.fillRect(ch.x + sway + ci * 8 - 1.5, ch.y - 3, 3, 7);
+    }
+  }
+  for (const v of VENTS) {
+    ctx.fillStyle = '#2a2a30'; ctx.fillRect(v.x - 18, v.y - 10, 36, 20);
+    ctx.strokeStyle = '#4a4a50'; ctx.lineWidth = 1;
+    for (let gi = -2; gi <= 2; gi++) { ctx.beginPath(); ctx.moveTo(v.x - 16, v.y + gi * 4); ctx.lineTo(v.x + 16, v.y + gi * 4); ctx.stroke(); }
+    if (v.warn) { ctx.fillStyle = 'rgba(255,120,40,' + (0.15 + 0.2 * Math.sin(G.time * 20)).toFixed(2) + ')'; ctx.beginPath(); ctx.arc(v.x, v.y, 40, 0, Math.PI * 2); ctx.fill(); }
+    if (v.hot) {
+      const fh = 26 + Math.sin(G.time * 30 + v.x) * 6;
+      const vg = ctx.createLinearGradient(v.x, v.y, v.x, v.y - fh);
+      vg.addColorStop(0, 'rgba(255,220,120,0.9)'); vg.addColorStop(1, 'rgba(255,80,20,0)');
+      ctx.fillStyle = vg;
+      ctx.fillRect(v.x - 16, v.y - fh, 32, fh);
+    }
+  }
+  for (const a of allies) {
+    ctx.globalAlpha = 0.35 + 0.2 * Math.sin(a.ph * 8);
+    ctx.fillStyle = '#8cf';
+    ctx.beginPath(); ctx.arc(a.x, a.y, 9, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
   }
 
   // torch-light darkness (the Exanima steal): carve a visibility polygon out of the dark
@@ -1836,6 +2221,11 @@ function startGame() {
   try { G.ng = Math.max(0, parseInt(localStorage.getItem('mud_asc') || '0', 10) || 0); } catch (e) {}
   spawnAllEnemies();
   puzzleReset();
+  SIGILS.count = 0; G.naveEverActive = false; G.curRoom = 'courtyard';
+  allies.length = 0; trail.length = 0; corpses.length = 0;
+  for (const ch of CHANDS) ch.dropped = false;
+  for (const bt of BEARTRAPS) { bt.armed = true; bt.rearm = 0; }
+  G.shoutCd = 0; G.shoutTxt = null;
   G.time = 0; G.state = 'play';
   G.super = 0; superOrbs.length = 0; mines.length = 0; rewindBuf.length = 0; G.rewindOffer = false;
   if (G.ng > 0) addMsg('ASCENSION ' + Math.min(G.ng, 20) + ' — the dragon remembers you', '#f84');
@@ -1845,6 +2235,8 @@ function respawn() {
   spawnAllEnemies();
   player.hp = player.maxHp;
   player.stamina = player.maxStamina;
+  player.snared = 0;
+  for (const bt of BEARTRAPS) { bt.armed = true; bt.rearm = 0; }
   G.super = 0; superOrbs.length = 0; mines.length = 0; rewindBuf.length = 0; G.rewindOffer = false;
   G.state = 'play';
   beep(160, 0.25, 'sine', 0.05);
@@ -1900,7 +2292,7 @@ function frame(now) {
 requestAnimationFrame(frame);
 
 // DFHack-style handle: let agents drive/test the game
-window.MUD = { get G() { return G; }, get player() { return player; }, get enemies() { return enemies; }, get superOrbs() { return superOrbs; }, get mines() { return mines; }, get lore() { return lore; }, get qt() { return qtRoot; }, get puzzle() { return puzzle; }, get boonDraft() { return G.boonDraft; }, get DOORS() { return DOORS; }, get SIGILS() { return SIGILS; }, get ROOM_STATE() { return ROOM_STATE; }, get walls() { return walls; }, get doorRects() { return doorRects; }, resolveWalls, get chron() { return chron; }, get mudOthers() { return mudOthers; }, get DOORS() { return DOORS; }, get SIGILS() { return SIGILS; }, get ROOM_STATE() { return ROOM_STATE; }, puzzleReset, syncDoors, keys, startGame, addMsg, nextLoop, spawnEnemy, spawnCascade, loreUnlock, stepUpdate: update,
+window.MUD = { get G() { return G; }, get player() { return player; }, get enemies() { return enemies; }, get superOrbs() { return superOrbs; }, get mines() { return mines; }, get lore() { return lore; }, get qt() { return qtRoot; }, get puzzle() { return puzzle; }, get boonDraft() { return G.boonDraft; }, get DOORS() { return DOORS; }, get SIGILS() { return SIGILS; }, get ROOM_STATE() { return ROOM_STATE; }, get walls() { return walls; }, get doorRects() { return doorRects; }, resolveWalls, get chron() { return chron; }, get mudOthers() { return mudOthers; }, get allies() { return allies; }, get corpses() { return corpses; }, get trail() { return trail; }, get SPIKES() { return SPIKES; }, get soulOrbs() { return soulOrbs; }, get projectiles() { return projectiles; }, get BEARTRAPS() { return BEARTRAPS; }, get DARTS() { return DARTS; }, get CHANDS() { return CHANDS; }, get VENTS() { return VENTS; }, forceBell: false, forceGhost: false, puzzleReset, syncDoors, keys, startGame, addMsg, nextLoop, spawnEnemy, spawnCascade, loreUnlock, stepUpdate: update,
   step: function (dt) { last = performance.now(); handleStateKeys(); update(dt || 0.016); draw(); },
   pump: function (n, dt) { for (let i = 0; i < (n || 1); i++) this.step(dt || 0.016); return this.enemies.length; } };
 

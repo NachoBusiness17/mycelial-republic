@@ -1,6 +1,9 @@
 # FRONTIER SOULS — buildable canon v1 (from Adam's bible, 2026-09-15)
 
-Full intake: `watch/inbox/FRONTIER_SOULS_INTAKE_20260915.md`. Spike: `dashboard/static/games/frontier_souls.html` (+ `scripts/test_frontier_souls.js`).
+Full intake: `watch/inbox/FRONTIER_SOULS_INTAKE_20260915.md`. Spike: `dashboard/static/games/frontier_souls.html` (+ `scripts/test_frontier_souls.js`, 36 lanes).
+
+## Mud-steals round (2026-09-15, "this is pretty basic — steal our mud stuff")
+Chronicle panel (DF log writes itself) · procedural names + grudges (named survivors hunt faster) · THE DESERT REMEMBERS (fs_lore localStorage: rolls→snakes read your roll, range-kills→cowboys strafe, close-kills→packs grow) · SIGNS level-up draft (8 omens, world pauses; Dead Man's Hand, Preacher's Last Word, Rattlesnake's Secret…) · dynamite-tossing gang leaders · THE COMBINE (two wounded cowboys → THE DEPUTY, mud's ractor-tavern rule) · whiskey bullet-time orb · one rewind per run (T on death) · prospector's cache (key → box → mod+essence+whiskey) · quicksand patches · damage numbers · wake-on-sight + linked pack wake · pairwise separation.
 
 ## The two clocks (Adam's law)
 | clock | drives | implementation |

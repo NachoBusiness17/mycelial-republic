@@ -123,6 +123,7 @@ lane('coyote pack closes the circle', () => {
   M.spawnPackAround(P().x, P().y, 'coyote', 4);
   const coy = M.foes.filter(f => f.type === 'coyote');
   eq(coy.length, 4, 'pack size wrong');
+  tele(coy[0].x + 150, coy[0].y); pump(4);   // walk into sight — the pack wakes as one
   const d0 = coy.reduce((s, f) => s + Math.hypot(f.x - P().x, f.y - P().y), 0) / 4;
   let minD = 1e9;
   for (let i = 0; i < 600; i++) { god(); pump(1); minD = Math.min(minD, ...coy.map(f => Math.hypot(f.x - P().x, f.y - P().y))); }
@@ -143,6 +144,7 @@ lane('lone gunman duels, dies, pays the fire-rate mod', () => {
   M.forceGunman = false;
   const gm = M.foes.find(f => f.type === 'gunman');
   assert(gm, 'no gunman from the event roll');
+  tele(gm.x + 150, gm.y); pump(4);   // walk into his sight — the duel begins
   let fired = false;
   for (let i = 0; i < 300 && !fired; i++) { god(); pump(1); if (M.eshots.length > 0) fired = true; }
   assert(fired, 'gunman never fired');
@@ -230,6 +232,152 @@ lane('perf: 100 foes keep steps under 8ms', () => {
   pump(200);
   const ms = Number(process.hrtime.bigint() - t0) / 1e6 / 200;
   assert(ms < 8, `avg step ${ms.toFixed(2)}ms`);
+});
+
+// ================= mud steals =================
+M.startRun(0); god();
+lane('CHRONICLE: the run writes its own log', () => {
+  const c0 = M.chron.length;
+  const e = M.spawnFoe('scorpion', P().x + 30, P().y);
+  e.hp = 0; pump(2);
+  assert(M.chron.length > c0 && M.chron.some(c => c.text.includes('falls')), 'chronicle never logged a kill');
+});
+lane('GRUDGES: survivors get named, faster, remembered', () => {
+  M.startRun(0); god();
+  const cb = M.spawnFoe('cowboy', P().x + 60, P().y);
+  cb.asleep = false; cb.arrive = 0;
+  cb.hp = cb.maxHp = 200;   // overheal so two swings survive
+  const spd0 = cb.spd;
+  for (let i = 0; i < 6 && !cb.grudged; i++) {
+    P().facing = Math.atan2(cb.y - P().y, cb.x - P().x);
+    P().atkCd = 0;
+    M.playerSwing();
+    pump(2);
+  }
+  assert(cb.grudged === true, 'no grudge formed');
+  assert(typeof cb.name === 'string' && cb.name.length > 2, 'grudge granted no name');
+  assert(cb.spd > spd0, 'grudge grants no speed');
+});
+lane('SIGNS: level-up offers a draft and the world holds', () => {
+  M.startRun(0); god();
+  P().xp = P().xpNext;
+  M.spawnEssence(P().x, P().y, 5);
+  pump(3);
+  assert(M.G.draft && M.G.draft.length === 3, 'no draft offered');
+  const foe = M.spawnFoe('scorpion', P().x + 40, P().y);
+  foe.asleep = false; foe.arrive = 0;
+  const fx0 = foe.x;
+  pump(30);
+  eq(foe.x, fx0, 'the world did not hold during the draft');
+  press('Digit1'); pump(2);
+  eq(M.G.draft, null, 'draft never resolved');
+  assert(Object.keys(P().signs || {}).length === 1, 'sign not taken');
+});
+lane("DEAD MAN'S HAND: every 8th shot doubles", () => {
+  M.startRun(0); god();
+  M.giveSign('deadmin');
+  assert(P().deadHand === true, 'sign did not apply');
+});
+lane("PREACHER'S LAST WORD: cheats death once", () => {
+  M.startRun(0); god();
+  M.giveSign('preacher');
+  P().iframes = 0;
+  M.hurt(9999, 'the gallows');
+  assert(M.G.state === 'play', 'last word did not hold');
+  assert(P().hp > 0 && P().hp <= P().maxHp * 0.2, 'rose at the wrong sliver');
+});
+lane("RATTLESNAKE'S SECRET: the rattle never out-right kills", () => {
+  M.startRun(0); god();
+  P().iframes = 0;
+  M.giveSign('rattle');
+  const sc = M.foes.find(f => f.type === 'scorpion'); if (sc) sc.hp = 0;
+  M.ambient.length = 0;
+  M.forceRattleKill = true;
+  const sn = M.spawnFoe('snake', P().x + 30, P().y);
+  let struck = false;
+  for (let i = 0; i < 500 && !struck; i++) { P().hp = Math.max(P().hp, 100); pump(1); if (P().hp < 100) struck = true; }
+  M.forceRattleKill = false;
+  assert(struck && M.G.state === 'play', 'the ward failed');
+});
+lane('DYNAMITE: the leader lobs it, it telegraphs, it hurts both sides', () => {
+  M.startRun(0); god();
+  M.spawnPackAround(P().x, P().y, 'cowboy', 1);
+  const lead = M.foes.find(f => f.type === 'boss');
+  assert(lead, 'no leader');
+  tele(lead.x + 120, lead.y); pump(4);   // wake him — nothing hunts until it sees you
+  let tossed = false;
+  for (let i = 0; i < 900 && !tossed; i++) { god(); pump(1); if (M.dyns.length > 0) tossed = true; }
+  assert(tossed, 'leader never threw dynamite');
+  const hp0 = P().hp;
+  tele(M.dyns[0].tx, M.dyns[0].ty);
+  P().iframes = 0;
+  pump(70);
+  assert(P().hp < hp0 || M.G.state === 'dead', 'dynamite never bit');
+});
+lane('THE COMBINE: wounded cowboys merge into THE DEPUTY', () => {
+  M.startRun(0); god();
+  const a = M.spawnFoe('cowboy', P().x + 40, P().y);
+  const b = M.spawnFoe('cowboy', P().x + 90, P().y);
+  a.arrive = 0; b.arrive = 0;
+  a.hp = a.maxHp * 0.4; b.hp = b.maxHp * 0.4;
+  a.hp = 0; pump(3);
+  const dep = M.foes.find(f => f.name === 'THE DEPUTY OF THE FLATS');
+  assert(dep, 'the deputy never rose');
+  assert(dep.hp > a.maxHp, 'deputy too weak');
+  dep.hp = 0; pump(3);
+  assert(P().essence >= 40, 'deputy paid nothing');
+});
+lane('WHISKEY: the world drinks slow, you do not', () => {
+  M.startRun(0); god();
+  M.spawnWhiskey(P().x + 10, P().y);
+  pump(3);
+  assert(M.G.still > 0, 'whiskey did not slow the world');
+});
+lane('REWIND: the desert gives back five seconds, once', () => {
+  M.startRun(0); god();
+  pump(140);   // snapshots every half-second — build the buffer
+  P().iframes = 0; M.hurt(9999, 'the test');
+  assert(M.G.state === 'dead' && M.G.rewindOffer, 'no rewind offered');
+  press('KeyT');
+  eq(M.G.state, 'play', 'rewind failed');
+  assert(M.G.rewUsed === true, 'rewind not consumed');
+  P().iframes = 0; M.hurt(9999, 'the test again');
+  assert(M.G.rewindOffer === false, 'rewind offered twice');
+  press('KeyR');
+});
+lane('CACHE: key, box, payout', () => {
+  M.startRun(0); god();
+  P().essence = 0;
+  M.events.push({ t: 'cachekey', x: P().x + 10, y: P().y, used: false });
+  press('KeyE'); pump(2);
+  eq(M.G.hasCacheKey, true, 'key not taken');
+  M.events.push({ t: 'cache', x: P().x + 10, y: P().y, used: false });
+  press('KeyE'); pump(2);
+  assert(P().essence >= 60, 'cache paid nothing');
+  assert(P().mod !== 'none', 'cache paid no mod');
+});
+lane('QUICKSAND: the sand drags', () => {
+  M.startRun(0); god();
+  M.G.leftCanyon = true;
+  tele(1500, 1500);
+  K['KeyD'] = true; pump(30); K['KeyD'] = false;
+  const free = P().x - 1500;
+  // a patch squarely on the next stretch of path
+  M.decor.push({ t: 'sandpatch', x: P().x + 60, y: P().y, s: 1 });
+  M.decor.push({ t: 'sandpatch', x: P().x + 120, y: P().y, s: 1 });
+  const x0 = P().x;
+  K['KeyD'] = true; pump(30); K['KeyD'] = false;
+  const slow = P().x - x0;
+  assert(slow < free * 0.7, `sand did not drag (free ${free.toFixed(0)} vs slow ${slow.toFixed(0)})`);
+});
+lane('SLEEP: nothing hunts until it sees you', () => {
+  M.startRun(0); god();
+  const cb = M.spawnFoe('cowboy', P().x + 500, P().y);
+  const x0 = cb.x;
+  pump(60);
+  assert(Math.abs(cb.x - x0) < 20, 'a sleeping foe went hunting');
+  tele(cb.x - 100, cb.y); pump(3);
+  assert(cb.asleep === false, 'foe never woke at close range');
 });
 
 const fails = results.filter(r => !r[2]);

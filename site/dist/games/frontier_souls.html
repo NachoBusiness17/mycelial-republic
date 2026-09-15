@@ -108,6 +108,8 @@ const G = {
   cam: { x: 0, y: 0 }, shake: 0, hitStop: 0, hurtFlash: 0,
   msg: '', msgT: 0, banner: '', bannerT: 0,
   timer: 130, TIMER_MAX: 130,
+  still: 0, draft: null, rewindOffer: false, rewUsed: false, deputyAlive: false, hasCacheKey: false,
+  sandT: 0,
   nextEventStep: 220,
   windA: rnd(0, Math.PI * 2),
   passes: [],            // canyon gap angles (any direction can be the way out)
@@ -138,6 +140,59 @@ const MODS = {
   heavy: { name: 'HEAVY', color: '#d8c890' },
 };
 
+// ---- the desert chronicle (DF-steal via the mud): the log writes itself from real events ----
+const NAME_A = ['Ash', 'Kane', 'Rook', 'Dutch', 'Silas', 'Mose', 'Cass', 'Gideon', 'Tate', 'Wren'];
+const NAME_B = ['Two-Graves', 'Slowdusk', 'Copperhead', 'the Patient', 'Coffin-face', 'Deadwater', 'the Vulture-Fed', 'Rust', 'the Quiet', 'Kin-to-None'];
+function genName() { return NAME_A[rndi(0, NAME_A.length - 1)] + ' ' + NAME_B[rndi(0, NAME_B.length - 1)]; }
+let chron = [];
+function chronicle(t, c) { chron.push({ t: G.time || 0, text: t, color: c || '#a89874' }); if (chron.length > 40) chron.shift(); }
+
+// ---- the desert remembers (mud learning-horde steal): what you do across runs, it answers ----
+let lore = Object.assign({ rolls: 0, ranged: 0, close: 0, rollRead: false, fanOut: false, packsGrow: false }, (() => { try { return JSON.parse(localStorage.getItem('fs_lore') || '{}'); } catch (e) { return {}; } })());
+function loreSave() { try { localStorage.setItem('fs_lore', JSON.stringify(lore)); } catch (e) {} }
+function remember(what) {
+  if (what === 'rollRead' && !lore.rollRead) { lore.rollRead = true; loreSave(); banner('THE DESERT REMEMBERS', '#c05038'); chronicle('the snakes have seen that roll before', '#c05038'); }
+  if (what === 'fanOut' && !lore.fanOut) { lore.fanOut = true; loreSave(); banner('THE DESERT REMEMBERS', '#c05038'); chronicle('the cowboys have learned your range', '#c05038'); }
+  if (what === 'packsGrow' && !lore.packsGrow) { lore.packsGrow = true; loreSave(); banner('THE DESERT REMEMBERS', '#c05038'); chronicle('the packs grow — you bite too close', '#c05038'); }
+}
+
+// ---- signs: the level-up draft (Hades-steal via the mud), gritty omens instead of gods ----
+const SIGNS = [
+  { id: 'scorpion', name: "SCORPION'S BARGAIN", desc: 'your blade bites true — crits come twice as often', apply: () => { player.critChance = (player.critChance || 0.08) + 0.08; } },
+  { id: 'vulture', name: "VULTURE'S PATIENCE", desc: 'your soul fades a fifth slower', apply: () => { player.slowSoul = true; } },
+  { id: 'coyote', name: 'COYOTE PACT', desc: 'the roll comes back a third faster', apply: () => { player.rollFast = true; } },
+  { id: 'rattle', name: "RATTLESNAKE'S SECRET", desc: 'the rattle never kills you outright', apply: () => { player.snakeWard = true; } },
+  { id: 'deadmin', name: "DEAD MAN'S HAND", desc: 'every 8th shot strikes for double', apply: () => { player.deadHand = true; } },
+  { id: 'preacher', name: "PREACHER'S LAST WORD", desc: 'cheat death once — rise at a sliver', apply: () => { player.lastWord = true; } },
+  { id: 'iron', name: 'IRON FATHER', desc: '+3 to every wound you deal', apply: () => { player.ironBonus = (player.ironBonus || 0) + 3; } },
+  { id: 'longride', name: 'THE LONG RIDE', desc: 'your boots eat the miles — move faster', apply: () => { player.speedBonus = (player.speedBonus || 0) + 25; } },
+];
+function offerDraft() {
+  const have = player.signs || (player.signs = {});
+  const pool = SIGNS.filter(s => !have[s.id]);
+  if (!pool.length) return;
+  const picks = [];
+  const bag = pool.slice();
+  while (picks.length < 3 && bag.length) picks.push(bag.splice(rndi(0, bag.length - 1), 1)[0]);
+  G.draft = picks;
+  addMsg('THE DESERT OFFERS A SIGN — 1 / 2 / 3', '#e8b45a');
+  tone(520, 0.15, 'triangle', 0.04);
+}
+function handleDraft() {
+  for (let i = 0; i < G.draft.length; i++) {
+    if (keys[['Digit1', 'Digit2', 'Digit3'][i] + '_p']) {
+      const s = G.draft[i];
+      player.signs[s.id] = true;
+      s.apply();
+      chronicle('you take the sign: ' + s.name, '#e8b45a');
+      tone(660, 0.15, 'triangle', 0.04);
+      G.draft = null;
+      keys['Digit1_p'] = keys['Digit2_p'] = keys['Digit3_p'] = false;
+      return;
+    }
+  }
+}
+
 // ---- entities ----
 let player = null;
 let foes = [];      // attackable: scorpion, rattlesnake, coyote, cowboy, gunman, hermit? (hermit is event), death
@@ -150,6 +205,10 @@ let decals = [];    // blood + bones, persists the run
 let parts = [];     // dust + sparks
 let decor = [];     // cacti, rocks, bones, skulls — seeded per run
 let buzzards = [{ a: 0, r: 60 }, { a: 2.1, r: 80 }, { a: 4.2, r: 70 }];
+let dyns = [];       // thrown dynamite — the leader's answer to distance
+let dmgs = [];       // damage numbers, muted — the desert doesn't shout
+let rewBuf = [];     // the desert's mercy: 5 seconds, once a run
+let rewT = 0;
 
 function makePlayer(idx) {
   const a = ARCH[ARCH_KEYS[idx]];
@@ -165,7 +224,7 @@ function makePlayer(idx) {
     _lx: 0, _ly: 120,
   };
 }
-function dmgOf() { return player.a.dmg + (player.level - 1) * 2; }
+function dmgOf() { return player.a.dmg + (player.level - 1) * 2 + (player.ironBonus || 0); }
 function atkCdOf() { return player.a.atkCd * (player.rapid ? 0.82 : 1); }
 
 // ---- world seeding ----
@@ -184,6 +243,7 @@ function seedWorld() {
     else if (h < 0.17) decor.push({ t: 'rock', x: wx + hash2(cx, cy) * 120, y: wy + hash2(cy, cx) * 120, s: 0.7 + hash2(cx, cy + 1) * 0.8 });
     else if (h < 0.24) decor.push({ t: 'bones', x: wx + hash2(cx, cy) * 120, y: wy + hash2(cy, cx) * 120, s: 1 });
     else if (h < 0.265) decor.push({ t: 'skull', x: wx + hash2(cx, cy) * 120, y: wy + hash2(cy, cx) * 120, s: 1 });
+    else if (h < 0.30 && r > CANYON_R) decor.push({ t: 'sandpatch', x: wx + hash2(cx, cy) * 120, y: wy + hash2(cy, cx) * 120, s: 1 });
   }
 }
 function bloodDecal(x, y, n) {
@@ -195,7 +255,6 @@ function dust(x, y, n, col) {
 }
 function addMsg(t, c) { G.msg = t; G.msgC = c || '#c9b896'; G.msgT = 2.6; }
 function banner(t, c) { G.banner = t; G.bannerC = c || '#c9b896'; G.bannerT = 2.4; }
-function chronicle(t) { console.log('[chronicle] ' + t); }
 
 // ---- collision: canyon cliff band + rim clamp + decor solids ----
 const PASS_HALF = 0.12;
@@ -235,11 +294,22 @@ function hurt(dmg, src) {
   player.hp -= dmg;
   player.iframes = 0.55;
   G.shake = 7;
+  G.hurtFlash = 0.3;
   bloodDecal(player.x, player.y, 5);
   dust(player.x, player.y, 6, '#7a3028');
   tone(140, 0.12, 'sawtooth', 0.05);
   addMsg((src ? src + ' — ' : '') + '-' + Math.round(dmg), '#c05038');
-  if (player.hp <= 0) { die('killed by ' + (src || 'the desert')); }
+  if (player.hp <= 0) {
+    if (player.lastWord) {   // Preacher's Last Word: cheat death once
+      player.lastWord = false;
+      player.hp = Math.max(1, Math.round(player.maxHp * 0.15));
+      player.iframes = 1.6;
+      addMsg("PREACHER'S LAST WORD — not today", '#e8b45a');
+      chronicle('you should have died — the word held', '#e8b45a');
+      return false;
+    }
+    die('killed by ' + (src || 'the desert'));
+  }
   return true;
 }
 function die(why) {
@@ -250,6 +320,8 @@ function die(why) {
   shotNoise(0.08);
   G.best.steps = Math.max(G.best.steps, G.steps);
   G.best.ring = Math.max(G.best.ring, G.maxRing);
+  // the desert's mercy: once a run, it offers five seconds back
+  if (!G.rewUsed && rewBuf.length >= 4) G.rewindOffer = true;
   try {
     const u = JSON.parse(localStorage.getItem('fs_unlocks') || '{}');
     u.runs = (u.runs || 0) + 1;
@@ -274,12 +346,16 @@ function spawnFoe(type, x, y, opts) {
   }, opts || {});
   // packs arrive with a dust cloud — nothing materializes on top of you
   if (['coyote', 'cowboy', 'boss', 'gunman'].includes(type)) f.arrive = 0.8;
+  // nothing hunts until it sees you
+  if (['coyote', 'cowboy', 'boss', 'gunman', 'scorpion'].includes(type)) f.asleep = true;
   foes.push(f);
   return f;
 }
 function spawnAmbient(type, x, y) {
   ambient.push({ type, x, y, vx: 0, vy: 0, t: rnd(0, 9), r: type === 'tumble' ? 12 : 6 });
 }
+function spawnWhiskey(x, y) { orbs.push({ whiskey: true, x, y, v: 0, t: 0 }); }
+function addDmg(x, y, val, col) { dmgs.push({ x, y, val: Math.round(val), col: col || '#d8d2c0', life: 0.6 }); if (dmgs.length > 40) dmgs.shift(); }
 function spawnEssence(x, y, v) { if (orbs.length > 30) orbs.shift(); orbs.push({ x: x + rnd(-8, 8), y: y + rnd(-8, 8), v: v || 5, t: rnd(0, 6) }); }
 
 function spawnPackAround(px, py, kind, n) {
@@ -294,7 +370,7 @@ function spawnPackAround(px, py, kind, n) {
       const a = rnd(0, Math.PI * 2), d = rnd(380, 480);
       x = clamp(px + Math.cos(a) * d, -2800, 2800); y = clamp(py + Math.sin(a) * d, -2800, 2800);
     }
-    if (kind === 'coyote') spawnFoe('coyote', x, y, { pack: { base: rnd(0, 6.28), i, n: 4, pounce: 0 } });
+    if (kind === 'coyote') spawnFoe('coyote', x, y, { pack: { base: rnd(0, 6.28), i, n, pounce: 0 } });
     else if (kind === 'gunman') spawnFoe('gunman', x, y);
     else spawnFoe(i === 0 && n === 1 ? 'boss' : 'cowboy', x, y);
   }
@@ -329,14 +405,20 @@ function tryEvent() {
     return;
   }
   if (window.FS && window.FS.forceGunman) { spawnPackAround(px, py, 'gunman', 1); addMsg('a lone figure waits on the flats', '#c9b896'); return; }
-  if (roll < 0.16) { spawnPackAround(px, py, 'coyote', 4); addMsg('coyotes — they circle', '#a89874'); return; }
-  if (roll < 0.24 && G.steps > 500) { spawnPackAround(px, py, 'gunman', 1); addMsg('a lone figure waits on the flats', '#c9b896'); return; }
-  if (roll < 0.52) { spawnPackAround(px, py, 'cowboy', Math.random() < 0.5 ? 1 : 3); addMsg('cowboys', '#a89874'); return; }
-  if (roll < 0.64 && !events.some(e => e.t === 'grave') && !G.graveFound) {
+  if (roll < 0.15) { spawnPackAround(px, py, 'coyote', lore.packsGrow ? 5 : 4); addMsg('coyotes — they circle', '#a89874'); return; }
+  if (roll < 0.22 && G.steps > 500) { spawnPackAround(px, py, 'gunman', 1); addMsg('a lone figure waits on the flats', '#c9b896'); return; }
+  if (roll < 0.50) { spawnPackAround(px, py, 'cowboy', Math.random() < 0.5 ? 1 : 3); addMsg('cowboys', '#a89874'); return; }
+  if (roll < 0.58 && !events.some(e => e.t === 'cache') && !events.some(e => e.t === 'cachekey')) {
+    const s1 = spot(), s2 = spot();
+    events.push({ t: 'cache', x: s1.x, y: s1.y, used: false }, { t: 'cachekey', x: s2.x, y: s2.y, used: false });
+    addMsg('an iron box, and somewhere — its key', '#c9b896');
+    return;
+  }
+  if (roll < 0.72 && !events.some(e => e.t === 'grave') && !G.graveFound) {
     const s = spot(); events.push({ t: 'grave', x: s.x, y: s.y, used: false });
     addMsg('wind carries something — a marker, out there', '#c9b896'); return;
   }
-  if (roll < 0.78 && !events.some(e => e.t === 'well')) { const s = spot(); events.push({ t: 'well', x: s.x, y: s.y, used: false }); addMsg('a wishing well — out here?', '#c9b896'); return; }
+  if (roll < 0.82 && !events.some(e => e.t === 'well')) { const s = spot(); events.push({ t: 'well', x: s.x, y: s.y, used: false }); addMsg('a wishing well — out here?', '#c9b896'); return; }
   if (roll < 0.90 && !events.some(e => e.t === 'merchant')) { const s = spot(); events.push({ t: 'merchant', x: s.x, y: s.y, used: false }); addMsg('smoke — a merchant\'s camp', '#c9b896'); return; }
   if (!events.some(e => e.t === 'oasis')) { const s = spot(); events.push({ t: 'oasis', x: s.x, y: s.y }); addMsg('green on the horizon — water', '#8aa06a'); return; }
 }
@@ -365,6 +447,9 @@ function newRun(charIdx, scrap) {
   G.graveFound = false; G.hermitDue = false;
   G.rimReached = false; G.windStopped = false;
   G.leftCanyon = false; G.tut = 0; G.roamT = 8; G.hitStop = 0; G.hurtFlash = 0;
+  G.still = 0; G.draft = null; G.rewindOffer = false; G.rewUsed = false;
+  G.deputyAlive = false; G.hasCacheKey = false; G.sandT = 0;
+  rewBuf.length = 0; rewT = 0;
   if (windGain) windGain.gain.value = 0.05;
   seedWorld();
   // the canyon tutorial: first enemy is a scorpion (Adam's storyboard)
@@ -393,9 +478,10 @@ function playerSwing() {
     while (diff > Math.PI) diff -= Math.PI * 2;
     while (diff < -Math.PI) diff += Math.PI * 2;
     if (Math.abs(diff) < 0.85) {
-      const crit = Math.random() < 0.08;   // the fencing-sword promise: crit exists in this family
+      const crit = Math.random() < (player.critChance || 0.08);
       let dmg = dmgOf() * (crit ? 2.2 : 1) * rnd(0.9, 1.1);
       f.hp -= dmg; f.flash = 0.12;
+      addDmg(f.x, f.y - f.r, dmg, crit ? '#e8b45a' : '#d8d2c0');
       // the thunk: hit-stop, flinch, knockback — swings should land like they mean it
       G.hitStop = Math.max(G.hitStop, 0.05);
       f.flinch = 0.14;
@@ -403,6 +489,17 @@ function playerSwing() {
       bloodDecal(f.x, f.y, 3);
       tone(120, 0.06, 'square', 0.04);
       if (crit) addMsg('CRIT', '#e8b45a');
+      // grudges: survivors get named, faster, and remembered
+      if (f.hp > 0) {
+        f.hits = (f.hits || 0) + 1;
+        if (!f.grudged && ['cowboy', 'boss', 'coyote'].includes(f.type) && (f.hits >= 2 || Math.random() < 0.25)) {
+          f.grudged = true;
+          if (!f.name) f.name = genName();
+          f.spd *= 1.15;
+          chronicle(f.name + ' holds a grudge', '#c05038');
+          tone(200, 0.12, 'square', 0.03);
+        }
+      }
       if (f.hp <= 0) killFoe(f);
     }
   }
@@ -411,7 +508,12 @@ function playerShot() {
   if (player.shotCd > 0) return;
   player.shotCd = player.a.shotCd * (player.rapid ? 0.82 : 1) * (player.mod === 'heavy' ? 1.3 : 1);
   const col = MODS[player.mod].color;
-  shots.push({ x: player.x + Math.cos(player.facing) * 14, y: player.y + Math.sin(player.facing) * 14, vx: Math.cos(player.facing) * 480, vy: Math.sin(player.facing) * 480, life: 1.1, col, dmg: Math.max(3, dmgOf() * player.a.shotMul) });
+  let mult = 1, crit = false;
+  if (player.deadHand) {
+    player.shotN = (player.shotN || 0) + 1;
+    if (player.shotN % 8 === 0) { mult = 2; crit = true; }
+  }
+  shots.push({ x: player.x + Math.cos(player.facing) * 14, y: player.y + Math.sin(player.facing) * 14, vx: Math.cos(player.facing) * 480, vy: Math.sin(player.facing) * 480, life: 1.1, col: crit ? '#e8b45a' : col, dmg: Math.max(3, dmgOf() * player.a.shotMul * mult) });
   shotNoise(0.045);
   tone(190, 0.05, 'square', 0.02);
 }
@@ -421,8 +523,38 @@ function killFoe(f) {
   G.hitStop = Math.max(G.hitStop, 0.04);
   if (f.ess > 0) { const n = f.ess > 20 ? 3 : 1; for (let i = 0; i < n; i++) spawnEssence(f.x, f.y, Math.ceil(f.ess / n)); }
   G.timer = Math.min(G.TIMER_MAX, G.timer + 2);   // every kill buys a little more road
+  chronicle((f.name || 'a ' + f.type) + ' falls', '#a89874');
+  // whiskey: rare — the world drinks slow for a while
+  if (f.type !== 'death' && !orbs.some(o => o.whiskey) && Math.random() < 0.07) spawnWhiskey(f.x, f.y);
+  // ractor-tavern rule, carried over from the mud: if you're beating them, the wounded combine
+  if (f.type === 'cowboy' && !G.deputyAlive) {
+    const other = foes.find(o => o.type === 'cowboy' && o !== f && o.hp > 0 && o.hp < o.maxHp * 0.6 && Math.hypot(o.x - f.x, o.y - f.y) < 150);
+    if (other) {
+      const mx2 = (other.x + f.x) / 2, my2 = (other.y + f.y) / 2;
+      foes.splice(foes.indexOf(other), 1);
+      const dep = spawnFoe('boss', mx2, my2);
+      dep.hp = dep.maxHp = Math.round((other.maxHp + f.maxHp) * 1.4);
+      dep.dmg = Math.round(Math.max(other.dmg, f.dmg) * 1.3);
+      dep.name = 'THE DEPUTY OF THE FLATS';
+      dep.arrive = 0;
+      G.deputyAlive = true;
+      chronicle('THEY COMBINE — ' + dep.name, '#c05038');
+      banner('THEY COMBINE', '#c05038');
+      G.shake = 10; tone(80, 0.4, 'sawtooth', 0.06);
+    }
+  }
   foes.splice(foes.indexOf(f), 1);
   tone(240, 0.08, 'square', 0.02);
+  // the desert remembers how you kill: far kills read as range-work, close kills as brawling
+  if (Math.hypot(f.x - player.x, f.y - player.y) > 160) {
+    lore.ranged = (lore.ranged || 0) + 1;
+    if (lore.ranged >= 10) remember('fanOut');
+    loreSave();
+  } else {
+    lore.close = (lore.close || 0) + 1;
+    if (lore.close >= 12) remember('packsGrow');
+    loreSave();
+  }
   if (f.type === 'coyote' && f.pack) {
     const left = foes.filter(o => o.type === 'coyote' && o.pack && o.pack.base === f.pack.base).length;
     if (left === 0) { G.timer = Math.min(G.TIMER_MAX, G.timer + 6); addMsg('the pack is broken — the desert quiets', '#8aa06a'); }
@@ -430,6 +562,12 @@ function killFoe(f) {
   if (f.type === 'gunman') {
     player.rapid = true;   // Adam's rule: beat the lone gunman, take his fire-rate mod
     addMsg('his pistol is yours — fire rate up', '#e8b45a');
+  }
+  if (f.name === 'THE DEPUTY OF THE FLATS') {
+    G.deputyAlive = false;
+    player.essence += 40; G.timer = Math.min(G.TIMER_MAX, G.timer + 10);
+    spawnWhiskey(f.x, f.y);
+    chronicle('the deputy falls — the flats are richer by one badge', '#e8b45a');
   }
   if (f.isDeath) {
     G.state = 'victory';
@@ -448,11 +586,19 @@ function hurtPlayerFromShot(s) {
 function update(dt) {
   if (G.state !== 'play') return;
   G.time += dt;
+  if (G.draft) { handleDraft(); for (const k in keys) if (k.endsWith('_p')) keys[k] = false; mouse.justDown = false; mouse.justRight = false; return; }   // the world holds while a sign is offered
   if (G.hitStop > 0) { G.hitStop -= dt; dt *= 0.15; }   // the world holds its breath on a landed blow
   if (G.shake > 0) G.shake -= dt * 30;
   if (G.hurtFlash > 0) G.hurtFlash -= dt;
   if (G.msgT > 0) G.msgT -= dt;
   if (G.bannerT > 0) G.bannerT -= dt;
+  // the desert's mercy: snapshots for the one rewind
+  rewT -= dt;
+  if (rewT <= 0) {
+    rewT = 0.5;
+    rewBuf.push({ x: player.x, y: player.y, hp: player.hp, timer: G.timer });
+    if (rewBuf.length > 10) rewBuf.shift();
+  }
 
   // input + movement
   let mx = 0, my = 0;
@@ -464,6 +610,17 @@ function update(dt) {
   if (ml > 0) { mx /= ml; my /= ml; }
   const wmx = mouse.x + G.cam.x, wmy = mouse.y + G.cam.y;
   player.facing = Math.atan2(wmy - player.y, wmx - player.x);
+
+  // quicksand: the ground itself has opinions — roll across it, don't wade
+  let inSand = false;
+  for (const d of decor) {
+    if (d.t !== 'sandpatch') continue;
+    if (Math.hypot(player.x - d.x, player.y - d.y) < 46) { inSand = true; break; }
+  }
+  if (inSand && player.rollT <= 0) {
+    G.sandT += dt;
+    if (G.sandT > 1.0) { G.sandT -= 0.7; hurt(3, 'the sinking sand'); }
+  } else G.sandT = Math.max(0, G.sandT - dt * 2);
 
   if (player.rollCd > 0) player.rollCd -= dt;
   if (player.iframes > 0) player.iframes -= dt;
@@ -477,15 +634,17 @@ function update(dt) {
     player.y += player.rollDir.y * 380 * dt;
     player.iframes = Math.max(player.iframes, 0.02);
   } else {
-    const spd = player.a.speed * (keys['ShiftLeft'] ? 1 : 1);
+    const spd = player.a.speed * (1 + (player.speedBonus || 0) / 100) * (inSand && player.rollT <= 0 ? 0.55 : 1);
     player.x += mx * spd * dt;
     player.y += my * spd * dt;
   }
   if (keys['ShiftLeft'] && player.rollT <= 0 && player.rollCd <= 0 && (ml > 0 || true)) {
     const rdx = ml > 0 ? mx : Math.cos(player.facing);   // standing roll goes where you aim
     const rdy = ml > 0 ? my : Math.sin(player.facing);
-    player.rollT = 0.26; player.rollCd = player.a.rollCd; player.iframes = 0.34;
+    player.rollT = 0.26; player.rollCd = player.a.rollCd * (player.rollFast ? 0.7 : 1); player.iframes = 0.34;
     player.rollDir = { x: rdx, y: rdy };
+    lore.rolls = (lore.rolls || 0) + 1;
+    if (lore.rolls >= 8) remember('rollRead');
     dust(player.x, player.y, 5);
   }
   if (mouse.justDown) playerSwing();
@@ -505,7 +664,7 @@ function update(dt) {
     if (ring <= 6) banner('LEVEL ' + ring, '#c9b896');
     tone(220 + ring * 40, 0.18, 'triangle', 0.04);
     // per-ring pressure: the deeper you walk, the meaner it gets
-    if (ring >= 2 && Math.random() < 0.5) spawnPackAround(player.x, player.y, 'coyote', 4);
+    if (ring >= 2 && Math.random() < 0.5) spawnPackAround(player.x, player.y, 'coyote', lore.packsGrow ? 5 : 4);
     if (ring >= 2 && Math.random() < 0.45) spawnPackAround(player.x, player.y, 'cowboy', Math.random() < 0.5 ? 1 : 3);
     if (ring >= 2 && Math.random() < 0.3) spawnFoe('snake', player.x + rnd(-360, 360), player.y + rnd(-360, 360));
     if (ring >= 3 && Math.random() < 0.4) { spawnFoe('scorpion', player.x + rnd(-300, 300), player.y + rnd(-300, 300)); spawnFoe('scorpion', player.x + rnd(-300, 300), player.y + rnd(-300, 300)); }
@@ -515,7 +674,7 @@ function update(dt) {
 
   // the death timer: pressure builds the deeper you walk — the pit forgives while you learn
   if (G.leftCanyon) {
-    G.timer -= dt * (G.ring <= 2 ? 1 : G.ring <= 4 ? 1.15 : G.ring <= 6 ? 1.3 : 1.6);
+    G.timer -= dt * (player.slowSoul ? 0.8 : 1) * (G.ring <= 2 ? 1 : G.ring <= 4 ? 1.15 : G.ring <= 6 ? 1.3 : 1.6);
     if (G.timer <= 0) { G.timer = 0; die('your soul faded'); return; }
   }
   // the canyon talks, once each — hints, not hand-holding
@@ -542,6 +701,13 @@ function update(dt) {
     if (d < 100 && d > 1) { o.x += (player.x - o.x) / d * 280 * dt; o.y += (player.y - o.y) / d * 280 * dt; }
     if (d < player.r + 12) {
       orbs.splice(i, 1);
+      if (o.whiskey) {
+        G.still = 2.5;
+        addMsg('WHISKEY — the world drinks slow, you don\'t', '#e8b45a');
+        chronicle('a swallow of whiskey — the world slows', '#e8b45a');
+        tone(300, 0.3, 'sine', 0.04);
+        continue;
+      }
       player.essence += o.v;
       G.timer = Math.min(G.TIMER_MAX, G.timer + 7);
       player.xp += o.v;
@@ -554,6 +720,7 @@ function update(dt) {
         player.hp = Math.min(player.maxHp, player.hp + player.maxHp * 0.3);
         addMsg('LEVEL ' + player.level, '#e8b45a');
         tone(520, 0.15, 'sine', 0.04); tone(780, 0.2, 'sine', 0.03);
+        offerDraft();
       }
       continue;
     }
@@ -591,6 +758,11 @@ function update(dt) {
   }
 
   // foes
+  // foes — whiskey slows the world, not you
+  const stillOn = G.still > 0;
+  if (stillOn) G.still -= dt;
+  const savedDt = dt;
+  if (stillOn) dt = savedDt * 0.4;
   for (let i = foes.length - 1; i >= 0; i--) {
     const f = foes[i];
     if (f.hp <= 0) { killFoe(f); continue; }
@@ -605,9 +777,23 @@ function update(dt) {
       cliffResolve(f);
       continue;
     }
+    if (f.burn > 0) { f.burn -= dt; f.hp -= 8 * dt; if (f.hp <= 0) { killFoe(f); continue; } }
     const dx = player.x - f.x, dy = player.y - f.y;
     const d = Math.hypot(dx, dy) || 1;
     const nx = dx / d, ny = dy / d;
+    // nothing hunts until it sees you — and when one wakes, its brothers wake
+    if (f.asleep) {
+      const aggro = f.type === 'coyote' ? 300 : f.type === 'scorpion' ? 130 : f.type === 'gunman' ? 460 : 380;
+      if (d < aggro) {
+        f.asleep = false;
+        for (const o of foes) if (o.asleep && Math.hypot(o.x - f.x, o.y - f.y) < 220) o.asleep = false;
+      } else {
+        f.x += Math.cos(G.time * 0.5 + f.seed) * 12 * dt;
+        f.y += Math.sin(G.time * 0.4 + f.seed) * 12 * dt;
+        cliffResolve(f);
+        continue;
+      }
+    }
 
     if (f.type === 'scorpion') {
       if (d < 110 && f.cd <= 0 && f.state !== 'lunge') { f.state = 'lunge'; f.lt = 0.25; f.cd = 1.6; f.lx = nx; f.ly = ny; }
@@ -624,17 +810,20 @@ function update(dt) {
       }
     } else if (f.type === 'snake') {
       // the rattle: a long, loud warning before the strike — 50/50 death, always dodgeable
+      // and the desert remembers: snakes that have seen your roll strike sooner and farther
+      const reach = lore.rollRead ? 78 : 58;
+      const tell = lore.rollRead ? 0.34 : 0.45;
       if (d < 190 && !f.warned) { f.warned = true; rattleSound(); }
       if (d < 190) f.warnT = (f.warnT || 0) + dt;
       if (f.flee > 0) { f.flee -= dt; f.x -= nx * 80 * dt; f.y -= ny * 80 * dt; }
-      else if (d < 58 && f.cd <= 0) { f.state = 'strike'; f.st = 0.45; f.cd = 2.2; }
+      else if (d < reach && f.cd <= 0) { f.state = 'strike'; f.st = tell; f.cd = 2.2; }
       else if (d > 50) { f.x += nx * 40 * dt; f.y += ny * 40 * dt; }   // it always comes back — into the strike
       if (f.state === 'strike') {
         f.st -= dt;
         if (f.st <= 0) {
           f.state = 'idle';
           f.flee = 1.2;   // it strikes and slips back into the sand
-          const kill = (window.FS && window.FS.forceRattleKill != null) ? window.FS.forceRattleKill : Math.random() < 0.5;
+          const kill = player.snakeWard ? false : ((window.FS && window.FS.forceRattleKill != null) ? window.FS.forceRattleKill : Math.random() < 0.5);
           if (kill) hurt(9999, 'a rattlesnake');
           else hurt(f.dmg, 'a rattlesnake');
         }
@@ -667,11 +856,27 @@ function update(dt) {
           f.cd = 3.0; f.state = 'aim';
         }
       } else {
+        // the desert remembers your range: learned cowboys strafe the mid-band instead of crowding in
         if (d > 240) { f.x += nx * f.spd * dt; f.y += ny * f.spd * dt; }
-        else if (d < 150) { f.x -= nx * f.spd * 0.6 * dt; f.y -= ny * f.spd * 0.6 * dt; }
+        else if (d < (lore.fanOut ? 200 : 150)) {
+          const sx2 = -ny, sy2 = nx;
+          const dir2 = (f.seed % 2 < 1) ? 1 : -1;
+          f.x += (sx2 * dir2 * 0.8 - nx * 0.5) * f.spd * dt;
+          f.y += (sy2 * dir2 * 0.8 - ny * 0.5) * f.spd * dt;
+        }
         if (f.cd <= 0 && d < 460) {
           f.cd = f.type === 'boss' ? 1.8 : 2.4;
           f.aim = 0.55;
+        }
+        // the leader's answer to a runner: dynamite, on a longer fuse
+        if (f.type === 'boss' && f.cd2 === undefined) f.cd2 = 3.5;
+        if (f.type === 'boss') {
+          f.cd2 -= dt;
+          if (f.cd2 <= 0 && d > 130 && d < 340) {
+            f.cd2 = 4.5;
+            dyns.push({ tx: player.x, ty: player.y, t: 0.9 });
+            tone(500, 0.1, 'square', 0.02);
+          }
         }
         if (f.aim !== undefined && f.aim > 0) {
           f.aim -= dt;
@@ -723,6 +928,26 @@ function update(dt) {
       f.x = oa.x + fdx / fdd * 120; f.y = oa.y + fdy / fdd * 120;
     }
   }
+  // nobody stands inside anybody
+  for (let i = 0; i < foes.length; i++) for (let j = i + 1; j < foes.length; j++) {
+    const a = foes[i], b = foes[j];
+    const ddx = b.x - a.x, ddy = b.y - a.y, ddd = Math.hypot(ddx, ddy) || 1, min = a.r + b.r;
+    if (ddd < min) { const pp = (min - ddd) / 2; a.x -= ddx / ddd * pp; a.y -= ddy / ddd * pp; b.x += ddx / ddd * pp; b.y += ddy / ddd * pp; }
+  }
+  dt = savedDt;
+  // thrown dynamite: a red wink in the dust, then the crater
+  for (let i = dyns.length - 1; i >= 0; i--) {
+    const dn = dyns[i];
+    dn.t -= dt;
+    if (dn.t <= 0) {
+      dyns.splice(i, 1);
+      G.shake = 10; shotNoise(0.09); tone(60, 0.3, 'sawtooth', 0.07);
+      decals.push({ x: dn.tx, y: dn.ty, r: 16, a: 0.45 });
+      if (Math.hypot(player.x - dn.tx, player.y - dn.ty) < 78 && player.iframes <= 0) hurt(24, 'dynamite');
+      for (const fo of foes) if (Math.hypot(fo.x - dn.tx, fo.y - dn.ty) < 78) { fo.hp -= 30; fo.flash = 0.2; if (fo.hp <= 0) killFoe(fo); }
+      dust(dn.tx, dn.ty, 22, '#6a5a48');
+    }
+  }
 
   // player shots
   for (let i = shots.length - 1; i >= 0; i--) {
@@ -747,16 +972,16 @@ function update(dt) {
     }
     if (hit) { shots.splice(i, 1); continue; }
   }
-  // burn ticks
-  for (const f of foes) if (f.burn > 0) { f.burn -= dt; f.hp -= 4 * dt * 2; if (f.hp <= 0) killFoe(f); }
 
-  // enemy shots
+  // enemy shots — still inside the whiskey slow
+  if (G.still > 0) dt = savedDt * 0.4;
   for (let i = eshots.length - 1; i >= 0; i--) {
     const s = eshots[i];
     s.x += s.vx * dt; s.y += s.vy * dt; s.life -= dt;
     if (s.life <= 0) { eshots.splice(i, 1); continue; }
     if (hurtPlayerFromShot(s)) { eshots.splice(i, 1); continue; }
   }
+  dt = savedDt;
 
   // events: interact + oasis soak
   for (const ev of events) {
@@ -827,6 +1052,23 @@ function doInteract(ev) {
     player.level++; player.maxHp += 12; player.hp = player.maxHp;
     addMsg('one wish, spent — the water remembers you', '#8ab0c0');
     tone(660, 0.3, 'sine', 0.04); tone(880, 0.4, 'sine', 0.03);
+  } else if (ev.t === 'cachekey') {
+    ev.used = true;
+    G.hasCacheKey = true;
+    addMsg('a cold brass key — heavy as a promise', '#c9b896');
+    tone(1046, 0.12, 'triangle', 0.04);
+  } else if (ev.t === 'cache') {
+    if (G.hasCacheKey) {
+      ev.used = true;
+      G.hasCacheKey = false;
+      const pool = ['fire', 'storm', 'heavy'].filter(m => m !== player.mod);
+      player.mod = pool[rndi(0, pool.length - 1)];
+      player.essence += 60;
+      spawnWhiskey(ev.x, ev.y);
+      addMsg('the cache pays — a part, sixty souls, a swallow of whiskey', '#e8b45a');
+      chronicle('the prospector\'s cache opens', '#e8b45a');
+      tone(660, 0.2, 'sine', 0.04); tone(990, 0.3, 'sine', 0.03);
+    } else addMsg('locked iron — find its key', '#a89874');
   } else if (ev.t === 'merchant') {
     if (player.essence >= 60) {
       player.essence -= 60;
@@ -927,6 +1169,13 @@ function draw() {
       ctx.fillRect(-3.5, 3, 7, 4);
       ctx.fillStyle = '#93825f';
       ctx.fillRect(-3, -1, 2, 2.5); ctx.fillRect(1, -1, 2, 2.5);
+    } else if (d.t === 'sandpatch') {
+      ctx.fillStyle = 'rgba(96,82,60,0.55)';
+      ctx.beginPath(); ctx.ellipse(0, 0, 44, 32, 0.4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(78,66,48,0.5)';
+      ctx.beginPath(); ctx.ellipse(6, -4, 26, 18, 0.9, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(60,50,38,0.4)';
+      for (let qi = 0; qi < 4; qi++) { ctx.beginPath(); ctx.arc(Math.sin(qi * 2.3) * 24, Math.cos(qi * 1.7) * 16, 4 + qi, 0, Math.PI * 2); ctx.fill(); }
     }
     ctx.restore();
   }
@@ -972,12 +1221,32 @@ function draw() {
       ctx.fillStyle = '#3a3026';
       ctx.fillRect(-6, -16, 9, 20);
       ctx.beginPath(); ctx.arc(-1.5, -18, 4, 0, Math.PI * 2); ctx.fill();
+    } else if (ev.t === 'cache') {
+      ctx.fillStyle = '#4a4438';
+      ctx.fillRect(-12, -8, 24, 16);
+      ctx.fillStyle = '#8a8274';
+      ctx.fillRect(-12, -2, 24, 3);
+      ctx.fillStyle = G.hasCacheKey ? '#e8b45a' : '#2c2a24';
+      ctx.fillRect(-2, -3, 4, 6);
+    } else if (ev.t === 'cachekey') {
+      const kb = Math.sin(G.time * 3) * 2;
+      ctx.fillStyle = '#c9b068';
+      ctx.beginPath(); ctx.arc(-4, kb, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillRect(-1, kb - 1.5, 9, 3);
+      ctx.fillRect(5, kb + 1, 2, 4);
     }
     ctx.restore();
   }
 
   // essence orbs
   for (const o of orbs) {
+    if (o.whiskey) {
+      ctx.fillStyle = 'rgba(160,110,50,0.9)';
+      ctx.fillRect(o.x - 3, o.y - 7, 6, 12);
+      ctx.fillStyle = '#e8b45a';
+      ctx.fillRect(o.x - 3, o.y - 2, 6, 3);
+      continue;
+    }
     const b = Math.sin(o.t * 4) * 2;
     ctx.fillStyle = 'rgba(220,190,120,0.9)';
     ctx.beginPath(); ctx.arc(o.x, o.y + b, 4, 0, Math.PI * 2); ctx.fill();
@@ -1144,14 +1413,84 @@ function draw() {
     ctx.globalAlpha = 1;
   }
 
+  // dynamite in the air: watch the wink
+  for (const dn of dyns) {
+    const fl = 1 - dn.t / 0.9;
+    const bx = lerp(dn.sx == null ? (dn.sx = dn.tx + rnd(-60, 60)) : dn.sx, dn.tx, fl);
+    const by = lerp(dn.sy == null ? (dn.sy = dn.ty + rnd(-60, 60)) : dn.sy, dn.ty, fl) - Math.sin(fl * Math.PI) * 46;
+    ctx.fillStyle = '#8a2c22';
+    ctx.fillRect(bx - 3, by - 4, 6, 8);
+    ctx.fillStyle = 'rgba(255,180,90,' + (0.4 + 0.5 * Math.sin(G.time * 26)).toFixed(2) + ')';
+    ctx.beginPath(); ctx.arc(bx, by - 5, 2, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(220,90,60,' + (0.25 + 0.2 * Math.sin(G.time * 16)).toFixed(2) + ')';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(dn.tx, dn.ty, 78, 0, Math.PI * 2); ctx.stroke();
+  }
+
+  // damage numbers, muted — the desert doesn't shout
+  for (let i = dmgs.length - 1; i >= 0; i--) {
+    const dn = dmgs[i];
+    dn.y -= 26 * 0.016; dn.life -= 0.016;
+    if (dn.life <= 0) { dmgs.splice(i, 1); continue; }
+    ctx.globalAlpha = Math.max(0, dn.life / 0.6);
+    ctx.fillStyle = dn.col; ctx.font = '11px monospace'; ctx.textAlign = 'center';
+    ctx.fillText(dn.val, dn.x, dn.y);
+    ctx.globalAlpha = 1;
+  }
+
+  // the desert chronicle — the run writes its own log
+  if (chron.length) {
+    const show = chron.slice(-5);
+    ctx.font = '10px monospace'; ctx.textAlign = 'left';
+    show.forEach((c, i) => {
+      ctx.globalAlpha = Math.max(0.3, 1 - (show.length - i) * 0.15);
+      ctx.fillStyle = c.color;
+      ctx.fillText('» ' + c.text, 12, BASE_H - 92 + i * 13);
+    });
+    ctx.globalAlpha = 1;
+  }
+
   // interact prompt
   if (G.near) {
-    const labels = { grave: '[E] read the marker', hermit: '[E] share the fire', well: '[E] one wish', merchant: '[E] mod — 60 essence · [Q] tonic — 20' };
+    const labels = { grave: '[E] read the marker', hermit: '[E] share the fire', well: '[E] one wish', merchant: '[E] mod — 60 essence · [Q] tonic — 20', cache: G.hasCacheKey ? '[E] open the cache' : 'locked iron — find its key', cachekey: '[E] take the brass key' };
     ctx.fillStyle = '#e8dcc0'; ctx.font = '12px monospace'; ctx.textAlign = 'center';
     ctx.fillText(labels[G.near.t] || '[E]', G.near.x, G.near.y - 30);
   }
 
   ctx.restore();
+
+  // whiskey: the whole world drinks slow
+  if (G.still > 0) {
+    ctx.fillStyle = 'rgba(180,130,50,' + (0.06 + 0.03 * Math.sin(G.time * 8)).toFixed(3) + ')';
+    ctx.fillRect(0, 0, BASE_W, BASE_H);
+    ctx.fillStyle = '#e8b45a'; ctx.font = 'bold 15px monospace'; ctx.textAlign = 'center';
+    ctx.fillText('WHISKEY', BASE_W / 2, 50);
+  }
+
+  // the sign draft — the world holds
+  if (G.draft) {
+    ctx.fillStyle = 'rgba(16,12,8,0.72)';
+    ctx.fillRect(0, 0, BASE_W, BASE_H);
+    ctx.fillStyle = '#e8b45a'; ctx.font = 'bold 18px monospace'; ctx.textAlign = 'center';
+    ctx.fillText('THE DESERT OFFERS A SIGN', BASE_W / 2, BASE_H / 2 - 120);
+    G.draft.forEach((s, i) => {
+      const x = BASE_W / 2 + (i - 1) * 190;
+      ctx.fillStyle = '#1c1814';
+      ctx.fillRect(x - 78, BASE_H / 2 - 90, 156, 170);
+      ctx.strokeStyle = '#8a7a5c'; ctx.lineWidth = 1.5;
+      ctx.strokeRect(x - 78, BASE_H / 2 - 90, 156, 170);
+      ctx.fillStyle = '#e8b45a'; ctx.font = 'bold 11px monospace';
+      ctx.fillText('[' + (i + 1) + ']', x, BASE_H / 2 - 66);
+      ctx.fillStyle = '#e8dcc0'; ctx.font = 'bold 12px monospace';
+      const words = s.name.split(' '); let ln = '', yy = BASE_H / 2 - 40;
+      for (const wd of words) { if ((ln + ' ' + wd).length > 16) { ctx.fillText(ln.trim(), x, yy); yy += 15; ln = wd; } else ln = (ln + ' ' + wd).trim(); }
+      ctx.fillText(ln.trim(), x, yy);
+      ctx.fillStyle = '#a89874'; ctx.font = '9px monospace';
+      const dw = s.desc.split(' '); let dl = '', dy2 = yy + 22;
+      for (const wd of dw) { if ((dl + ' ' + wd).length > 24) { ctx.fillText(dl.trim(), x, dy2); dy2 += 11; dl = wd; } else dl = (dl + ' ' + wd).trim(); }
+      ctx.fillText(dl.trim(), x, dy2);
+    });
+  }
 
   // buzzards — the desert knows when your soul is thin
   if (G.timer < 30) {
@@ -1234,7 +1573,8 @@ function draw() {
     ctx.fillText(G.deathWhy || '', BASE_W / 2, BASE_H / 2 + 8);
     ctx.fillText('steps ' + Math.floor(G.steps) + ' · level ' + G.maxRing + ' · deaths ' + G.deaths, BASE_W / 2, BASE_H / 2 + 34);
     ctx.fillStyle = '#8a7a5c'; ctx.font = '13px monospace';
-    ctx.fillText('press R — next morning, a scrap of your soul', BASE_W / 2, BASE_H / 2 + 66);
+    if (G.rewindOffer) ctx.fillText('press T — the desert gives back five seconds (once)', BASE_W / 2, BASE_H / 2 + 66);
+    else ctx.fillText('press R — next morning, a scrap of your soul', BASE_W / 2, BASE_H / 2 + 66);
   }
   if (G.state === 'victory') {
     ctx.fillStyle = 'rgba(12,14,10,0.85)';
@@ -1291,6 +1631,18 @@ function handleStateKeys() {
     for (let i = 0; i < 3; i++) if (keys[['Digit1', 'Digit2', 'Digit3'][i] + '_p']) { audioInit(); startRun(i); return; }
     if (keys['Space_p'] || mouse.justDown) { audioInit(); startRun(0); }
   } else if (G.state === 'dead') {
+    if (keys['KeyT_p'] && G.rewindOffer) {
+      G.rewindOffer = false; G.rewUsed = true;
+      const s = rewBuf[0] || { x: player.x, y: player.y, hp: player.maxHp * 0.5, timer: 40 };
+      player.x = s.x; player.y = s.y; player._lx = s.x; player._ly = s.y;
+      player.hp = Math.max(player.hp, Math.min(s.hp, player.maxHp));
+      G.timer = Math.max(G.timer, s.timer);
+      player.iframes = 1.6;
+      G.state = 'play';
+      chronicle('the desert gives back five seconds', '#8ab0c0');
+      tone(520, 0.3, 'sine', 0.04);
+      return;
+    }
     if (keys['KeyR_p']) { G.deaths++; newRun(G.charIdx, true); }
   } else if (G.state === 'victory') {
     if (keys['KeyR_p']) { G.state = 'title'; }
@@ -1314,9 +1666,14 @@ window.FS = {
   get G() { return G; }, get player() { return player; }, get foes() { return foes; },
   get ambient() { return ambient; }, get orbs() { return orbs; }, get shots() { return shots; },
   get eshots() { return eshots; }, get events() { return events; }, get steps() { return G.steps; },
-  get ring() { return G.ring; }, ARCH, ARCH_KEYS, MODS,
+  get ring() { return G.ring; }, get chron() { return chron; }, get lore() { return lore; },
+  get dyns() { return dyns; }, get dmgs() { return dmgs; }, get allies() { return []; },
+  ARCH, ARCH_KEYS, MODS, SIGNS,
   forceRattleKill: null, forceGunman: false,
-  startRun, spawnFoe, spawnAmbient, spawnEssence, spawnPackAround, hurt,
+  startRun, spawnFoe, spawnAmbient, spawnEssence, spawnPackAround, hurt, spawnWhiskey, playerSwing,
+  get decor() { return decor; },
+  giveSign(id) { const s = SIGNS.find(x => x.id === id); if (s && player) { player.signs = player.signs || {}; if (!player.signs[id]) { player.signs[id] = true; s.apply(); } } },
+  remember,
   keys,
   step(dt) { last = performance.now(); handleStateKeys(); update(dt || 0.016); draw(); },
   pump(n, dt) { for (let i = 0; i < (n || 1); i++) this.step(dt || 0.016); },

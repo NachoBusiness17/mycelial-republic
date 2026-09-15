@@ -1,0 +1,64 @@
+# Astra repair lane — session receipt · 2026-09-15
+
+Operator GO: "go on astra" (beacon read confirmed done by operator — gate passed).
+Bundle: `watch/astra_hold0/` · Bar: `watch/inbox/ASTRA_REGISTRATION_REVIEW_20260909.md`
+
+## Found (audit before edit)
+
+- The four instance cards were already through the reaudit-v3 repair waves:
+  I1 at FROZEN-DRAFT-4 (draw-table off-by-one + independence contradiction
+  resolved), I4 at v2 (information partition + D7 rebalance), I5 row 2 filed
+  (C1 provenance graph, C6 re-key, D4/D1 precedence, L3 leak materialized),
+  I6 rows 1-2 filed (evidence partition §1h, channel states, receipt ids, veto
+  symmetry, terminal-schema fix). The CURRENT.md "repair I1/I4/I5/I6" line was
+  stale — the remaining work was the BUNDLE layer.
+- D-arm cap drift: I1 and I4 still said 240s; the law is her 180s cumulative
+  DEFAULT-FOLD amendment (I5/I6 conform). Her v2 review's 210s was superseded.
+- No I2 or I3 instance cards exist (4 of 6 families authored). Design pins are
+  adopted in the skeleton (A9 coercion/ties/rounding; A10 linkage-only,
+  "cryptographic answer key" retracted) and I3's ground truth is doubly
+  witnessed (SEED_001 scan + atlas F8: 12 missing).
+- Detached manifest had stale double lines (I5/I6 pre- and post-restamp).
+- No qa/ directory yet — all four cards promise qa_receipts before HOLD 3.
+
+## Done (this session)
+
+1. **SEED_001 amendment row 3** — her named finding repaired with a real
+   executable-oracle reconciliation:
+   - F-D1 fired and receipted: the as-of-0911 chain state is gone (knotnight
+     09-12 rewrite removed the mag-agen rows; live chain 8,368 rows; knotnight
+     pre-op backup 7,757 rows, zero mag-agen named rows).
+   - Reconstruction: chain prefix 1-7,377 from the 0911 daily backup
+     (7,553 rows) × the 0911 backup store ∪ the 0825 store → 18 missing, all
+     11 displayed names among them.
+   - **The 12th name recovered: `2026-08-08_2011_mirror_mag-agen_a7b83063`**
+     (the only silent-era mag-agen in the reconstructed set — satisfies the
+     card's own "11/12 mag-agen" law). Tri-stated: DECIDED as display repair;
+     UNPROVEN vs the lost scan-day store; OPEN on custody-copy surfacing.
+   - Empty-output convention (0/0 → 0), precision/recall credit confirmed,
+     "returned for shape repair, never scored" removed → scored-as-is law.
+2. **I1 amendment row 5 + I4 amendment row 3** — desk sub-form caps aligned to
+   the 180s cumulative amended law (FOLD3 240s noted as ceiling only).
+3. **SHAM_FLEET_SPEC_20260915.md** — bundle-level normalization + comparison
+   law: 0-100 = 100 × earned/available; six shams equal weight;
+   mean(single) − max_fleet(mean arm) ≥ 5 under matched compute; frozen
+   comparators; twin law; pilots all reported.
+4. **SEAL_GATE_SPEC_20260915.md** — HOLD 4 gate, seven simultaneous conditions:
+   simultaneous LCL B−C > +5 (Šidák), ONE block-aware method (paired block
+   bootstrap, 10k, seed 20260915 — "bootstrap OR permutation" retracted),
+   model pins before scored calls, complete instances (I2/I3 outstanding),
+   complete qa logs, detached hashes, sham spec satisfied. Sequence: HOLD 2
+   adoption → I2/I3 → HOLD 3 rehearsal (16 episodes) → twins → HOLD 4 seal.
+5. **Manifest v2** appended to `BUNDLE_RAWBYTES_SHA256_20260911.txt` —
+   deduplicated current raw-byte hashes for 22 bundle artifacts, as-of
+   stamped, v1 lines preserved as lineage.
+
+## Next (the honest remaining path to HOLD 3)
+
+- **Author INSTANCE_I2 + INSTANCE_I3** (the two unauthored families; pins
+  A9/A10 + doubly-witnessed ground truth are staged — roughly a half-day of
+  careful material-freezing work).
+- Desk adoption of the pending repair rows (I1 row 5, I4 row 3, I5 row 2,
+  I6 rows 1-2, SEED_001 row 3) + manifest verification.
+- qa_receipt runs (the HOLD 3 rehearsal) — needs the free-lane runner.
+- Sham twins S1-S6 authoring at HOLD 2b.

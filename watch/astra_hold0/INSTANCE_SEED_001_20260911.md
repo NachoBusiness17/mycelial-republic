@@ -123,8 +123,11 @@ The answer card MUST contain, in order:
    work that exists. A failed attempt is a scored outcome, never a silent
    absence.
 
-An answer missing any section is non-terminal: `TERMINAL?(answer) = false`,
-returned for shape repair, never scored.
+An answer missing any section is non-terminal: `TERMINAL?(answer) = false`.
+Per the fleet-wide shared repair (Astra reaudit v3; amendment row 3 below): a
+non-terminal answer SHIPS and is SCORED AS-IS — the shape failure earns 0 on
+the shape check and is logged as an assigned-condition outcome; the
+mechanically checkable content earns its credit. There is no repair return.
 
 ==== DESK ONLY — NEVER BELOW THIS LINE IN WORKER INPUTS ====
 
@@ -151,6 +154,11 @@ calibration run, 2026-09-11:
   `2026-08-11_1952_mem-invariant-map_mem_inva_{'ok': F` ·
   `2026-08-12_0012_biography_mag-agen_81742491` (all `.knot.json`; 11/12
   mag-agen, Aug 7–12 — silent era)
+  **— v3 display repair (amendment row 3): the list above displayed 11 names
+  while claiming 12 (Astra v2 review finding). The 12th, recovered by the
+  executable oracle: `2026-08-08_2011_mirror_mag-agen_a7b83063`** — the only
+  silent-era mag-agen name in the reconstructed missing set, satisfying the
+  card's own "11/12 mag-agen" composition law. Full receipt: AMENDMENT row 3.
 
 **Second witness (costimulation, inherited calibration):** the observer
 anatomy atlas (`watch/inbox/OBSERVER_ANATOMY_ATLAS_20260911.md`, F8) arrived
@@ -257,3 +265,55 @@ next: desk review against contract §8 — attack separation first, then the
 DISPUTED line.
 
 FREEZE STAMP: 2026-09-09T17:19:37Z · sha256:0deeec8d1e91762b9ece606f0f3f9e386cd87ab28c4ee0df7f68b11df3aea38f · author:zcode-seat · contract:v2 · template:v2
+
+## AMENDMENT LEDGER (kit §2b — rows append, never rewrite)
+
+| seq | date(UTC) | field | what blocked | minimal change | why | adopted-by | prior-sha256 | new-sha256 |
+|-----|-----------|-------|--------------|----------------|-----|------------|--------------|------------|
+| 3 | 2026-09-15 | §5 shape line; §6 desk-key missing list (+1 name); scoring conventions; drift receipt | Astra v2 review seed-audit finding: "the calibration key displays eleven filenames while claiming twelve — reconcile with the executable oracle; specify precision/recall credit and empty-output behavior; remove 'shape repair, never scored'" + F-D1 fired: the as-of 2026-09-11 chain state no longer exists on disk (knotnight-20260912 rewrote the chain; the 10 displayed mag-agen rows are absent from every surviving chain backup ≥ 09-12) | (a) the 12th name recovered and displayed: `2026-08-08_2011_mirror_mag-agen_a7b83063.knot.json`; (b) shape-repair line replaced by scored-as-is law; (c) scoring conventions pinned (below); (d) oracle reconstruction receipted (ROW 3 RECEIPT below) | her named findings; F-D1 replace-not-fudge | zcode seat (astra repair lane, operator GO 2026-09-15 "go on astra") | (pre-edit raw bytes — detached manifest v2 line, kit §2d) | (post-edit raw bytes — detached manifest v2 line) |
+
+### ROW 3 RECEIPT — executable-oracle reconstruction (2026-09-15)
+
+1. **Display defect confirmed:** the v2 key listed 11 names under "the 12".
+2. **F-D1 fired:** chain rows 1–7,377 of the LIVE file no longer contain the
+   mag-agen rows (the knotnight-20260912 rewrite removed them; live chain =
+   8,368 rows, sha256 prefix `aefe7eedfc0a304b4f4ed337`; knotnight pre-op
+   backup = 7,757 rows, prefix `ad4608eeaefba17e4557fc28`, zero mag-agen named
+   rows). The exact as-of-0911 chain bytes are UNRECOVERABLE — tri-stated.
+3. **Closest surviving frozen input:** the 0911 daily backup
+   (`memory/biography_backup/biography_backup_20260911/verkle_chain.jsonl`,
+   7,553 rows, prefix `f0e1e8858de9a797109452c8`) — first post-freeze snapshot;
+   its rows 1–7,377 used as the reconstruction prefix; its `knots/` used as the
+   as-of store; P4 = `memory/biography_backup_20260825/knots/` (frozen).
+4. **Oracle output:** 18 missing under P1–P5 on the reconstruction pair — the
+   11 displayed names ALL present in the set, plus 7 more: `a7b83063` (silent-era
+   mag-agen), six `untagged_work:mem / untagged_probe:st` rows (2026-08-11), and
+   the repr-fragment row (already displayed).
+5. **The 12th name:** `2026-08-08_2011_mirror_mag-agen_a7b83063.knot.json` —
+   selected by the card's own composition law ("11/12 mag-agen, Aug 7–12
+   silent era"): it is the ONLY additional silent-era mag-agen name in the
+   reconstructed set. Tri-stated: DECIDED as the display repair (mechanically
+   derived + composition-consistent); UNPROVEN whether the original author's
+   scan-day store would have agreed row-for-row (that state is gone — drift
+   receipt above); OPEN if a custody copy of the 09-11 scan-day store ever
+   surfaces (row-append re-verification).
+6. **Why 18 > 12:** the reconstruction's as-of store (the 0911 daily backup)
+   was captured LATER on 09-11 than the author's scan and after partial store
+   churn; the six untagged rows and `a7b83063` were plausibly present-at-scan
+   and deleted-from-store before the backup ran. The drift is receipted, not
+   sanded: the SCORED key at desk adoption is whichever (chain, store) pair the
+   desk re-freezes, per §2's own law ("the file's sha256 at desk time is the
+   run seed").
+7. **Scoring conventions pinned (her demand):** precision/recall credit per
+   the §6 table (precision 2 + recall 2, exact filenames; the repr row credited
+   under its key ruling). EMPTY-OUTPUT behavior: an empty or absent missing-list
+   scores recall 0 and precision 0 (0/0 → 0 by convention), census checks still
+   earn on exactness, verdict check per its rule. Malformed completions are
+   scored as-is (shape-repair path removed, §5 amended).
+
+CAMP STATE v3 (row 3): decided — display repaired to 12 names; F-D1 drift
+receipted; conventions pinned. open — desk re-freeze of the (chain, store) pair
+at adoption; I3 inheritance note: I3's hidden key inherits THIS receipt (the
+doubly-witnessed 12-name set is now 12-names-recovered + 18-name reconstruction,
+both as-of stamped). next — desk verifies row 3 by re-running the oracle per §6.1
+of this receipt; then the detached-manifest v2 line.

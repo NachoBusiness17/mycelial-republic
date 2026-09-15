@@ -373,11 +373,93 @@ lane('QUICKSAND: the sand drags', () => {
 lane('SLEEP: nothing hunts until it sees you', () => {
   M.startRun(0); god();
   const cb = M.spawnFoe('cowboy', P().x + 500, P().y);
+  assert(cb.asleep === true, 'foe spawned awake');
   const x0 = cb.x;
   pump(60);
   assert(Math.abs(cb.x - x0) < 20, 'a sleeping foe went hunting');
   tele(cb.x - 100, cb.y); pump(3);
   assert(cb.asleep === false, 'foe never woke at close range');
+});
+
+// ================= DEATH, properly =================
+function riseForTest() {
+  M.startRun(0); god();
+  M.G.leftCanyon = true; M.G.timer = 100;
+  tele(2600, 0); pump(4);
+  const dx = M.foes.find(f => f.isDeath);
+  assert(dx, 'death never rose');
+  return dx;
+}
+lane('DEATH has weight now: 900 blood, and he hunts', () => {
+  const dx = riseForTest();
+  eq(dx.maxHp, 900);
+  eq(dx.spd, 100);
+  assert(M.G.deathIntro > 0, 'no intro — he arrives silent');
+});
+lane('THE HUNT: the lunge closes the gap you hide behind', () => {
+  const dx = riseForTest();
+  dx.cd = 999;            // no daggers — this lane is about the lunge
+  dx.lungeCd = 0;
+  tele(dx.x - 400, dx.y); pump(4);
+  const d0 = Math.hypot(dx.x - P().x, dx.y - P().y);
+  let sawTel = false;
+  for (let i = 0; i < 120 && !sawTel; i++) { god(); pump(1); if (dx.state === 'lungeTel' || dx.state === 'lunging') sawTel = true; }
+  assert(sawTel, 'no lunge telegraph');
+  for (let i = 0; i < 60; i++) { god(); pump(1); }
+  const d1 = Math.hypot(dx.x - P().x, dx.y - P().y);
+  assert(d1 < d0 - 150, `the lunge closed nothing (${d0.toFixed(0)} -> ${d1.toFixed(0)})`);
+});
+lane('THE HARVEST: at two-thirds blood the withered rise', () => {
+  const dx = riseForTest();
+  dx.cd = 999; dx.lungeCd = 999;
+  dx.hp = dx.maxHp * 0.6; pump(4);
+  assert(M.foes.some(f => f.type === 'withered'), 'no withered at the harvest');
+});
+lane('THE REAPING: death stops walking — he steps between shadows', () => {
+  const dx = riseForTest();
+  dx.cd = 999; dx.lungeCd = 999;
+  dx.hp = dx.maxHp * 0.3; pump(4);
+  assert(dx.phase === 3, 'phase 3 never came');
+  let maxJump = 0, sawStep = false, px = dx.x, py = dx.y;
+  dx.tpT = 0.1;
+  for (let i = 0; i < 90; i++) {
+    god(); pump(1);
+    maxJump = Math.max(maxJump, Math.hypot(dx.x - px, dx.y - py));
+    if (dx.state === 'tpOut') sawStep = true;
+    px = dx.x; py = dx.y;
+  }
+  assert(sawStep && maxJump > 50, `he never stepped (max frame jump ${maxJump.toFixed(0)})`);
+});
+lane('the sweep drinks: he steals your soul and feeds', () => {
+  const dx = riseForTest();
+  dx.cd = 50; dx.lungeCd = 999;
+  dx.hp = dx.maxHp * 0.5;
+  tele(dx.x + 80, dx.y); pump(2);
+  dx.sweep = 0.05; dx.sweepA = 0; dx.sweepChain = false;
+  const t0 = M.G.timer, h0 = dx.hp;
+  let fed = false;
+  for (let i = 0; i < 200 && !fed; i++) {
+    // stay in his arc, no mercy i-frames — the scythe connects
+    P().x = dx.x + Math.cos(dx.sweepA || 0) * 80; P().y = dx.y + Math.sin(dx.sweepA || 0) * 80;
+    P().iframes = 0; P().hp = Math.max(P().hp, 100);
+    pump(1);
+    if (M.G.timer < t0 - 5 && dx.hp > h0) fed = true;
+  }
+  assert(fed, 'the sweep neither stole nor fed');
+});
+lane('his presence withers: the timer bleeds faster in close', () => {
+  const dx = riseForTest();
+  dx.cd = 999; dx.lungeCd = 999; dx.sweep = 0;
+  tele(dx.x - 400, dx.y);   // inward — away from the world clamp
+  const t0 = M.G.timer;
+  for (let i = 0; i < 120; i++) { god(); pump(1); }
+  const farDrain = t0 - M.G.timer;
+  M.G.timer = 100;
+  tele(dx.x + 150, dx.y);
+  const t1 = M.G.timer;
+  for (let i = 0; i < 120; i++) { god(); pump(1); }
+  const nearDrain = t1 - M.G.timer;
+  assert(nearDrain > farDrain * 1.5, `aura barely withers (far ${farDrain.toFixed(1)} vs near ${nearDrain.toFixed(1)})`);
 });
 
 const fails = results.filter(r => !r[2]);

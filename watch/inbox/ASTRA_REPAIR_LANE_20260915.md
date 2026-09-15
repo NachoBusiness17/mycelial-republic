@@ -62,3 +62,23 @@ Bundle: `watch/astra_hold0/` · Bar: `watch/inbox/ASTRA_REGISTRATION_REVIEW_2026
   I6 rows 1-2, SEED_001 row 3) + manifest verification.
 - qa_receipt runs (the HOLD 3 rehearsal) — needs the free-lane runner.
 - Sham twins S1-S6 authoring at HOLD 2b.
+
+## Addendum 2 — same evening: I2 + I3 AUTHORED, first qa episode graded
+
+- **INSTANCE_I3_20260915.md** authored FULL — tail-slice (rows 8,300–8,368) of
+  the frozen 2026-09-15 snapshot (sha `aefe7eed…`, 8,368 rows), leaf-hash wall
+  per A10, key executed at freeze: head INTACT / indices CONTINUOUS (0–8367,
+  zero anomalies) / 8-name missing set / DISPUTED split verdict. 60-pt rubric.
+- **INSTANCE_I2_20260915.md** authored FULL — eight real leaves verbatim
+  (three eras), rule I2-RC-v1 (coercion/argmax/tie/zero-mass/normalization/
+  schema wall), key executed: three defect classes in eight leaves
+  (NINTH_TOKEN_DOMINANT on the janitor leaf, NORMALIZATION_DRIFT sum→raw-copy,
+  ZERO_MASS_NULL convention), one scored tie case (L4). 50-pt rubric.
+- **First qa_receipt episode RUN AND GRADED** (free flash lane, $0): I2 on
+  `inclusionai/ling-3.0-flash-sante:free` via openrouter —
+  **48/50 = 96.0/100** (log: `watch/astra_hold0/qa/I2_qa_run1.log`, desk grade
+  appended). Schema wall held; single −2 was an L8 primary-class choice.
+  I2 family cleared for scored episodes at HOLD 3.
+- Manifest v2 lines appended for both new cards.
+- Remaining to HOLD 3: qa runs for I1/I4/I5/I6/S-families, desk adoptions of
+  the pending repair rows, then the seal gate (SEAL_GATE_SPEC).

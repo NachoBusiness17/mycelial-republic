@@ -50,3 +50,47 @@ cold read.
 All eight go to the playbook. Items 2, 5, and 7 are immediately reusable
 infrastructure; items 3, 4, 6, 8 are argument forms; item 1 is the standing
 law.
+
+## SECOND PASS — same night, newer material (the vein yields twice)
+
+9. **Recognition pass over your own catalog.** The "stranger's beautiful torus
+   eye" turned out to be our own visual deck at 127.0.0.1:8765 — the failure
+   was recognition, not capability. Before envying anything in the wild, run a
+   recognition pass over the deck/catalog. The estate already contains more
+   than it advertises.
+
+10. **Paired resonance decoding.** The night's drops arrived as pairs that
+    resolved into single claims: subspace paper + MoE handbook (one language,
+    routed speakers); vortex-ring video + The Rings deck (physics pairing
+    art). Mechanism: every external drop gets matched against an internal
+    artifact — the "fleet mirror" note in each LINKS row is now standing
+    practice, not decoration.
+
+11. **Sober translation.** Take an inflated claim (Gateway: "consciousness
+    controls reality") and write its falsifiable core ("updating your internal
+    model changes perception, action, and outcomes"). The claim keeps its
+    power and drops its liability. Works on mystics, vendors, and roadmap
+    slides.
+
+12. **Author-blind re-execution, now confirmed recurring.** Two F-D1
+    self-fires in one night (SEED_001 key unreproducible; I3 key not
+    slice-scoped) upgrades luck to law: NO KEY SHIPS WITHOUT AN EXECUTION
+    RECEIPT BY ANOTHER HAND. The author runs the derivation; someone (or
+    something) else re-runs it blind before ship.
+
+13. **The discrimination pair.** One clean run (I2: 96) and one
+    trap-adjacent run (I5: 58) together prove a rubric discriminates; either
+    alone proves nothing. Rubrics ship in pairs.
+
+14. **The friend-treaty form.** Concede the opponent's true point first,
+    separate the institution from the substance ("ice and plasma are the same
+    water"), and end refusing the win ("the truth doesn't need me to win a
+    thread"). Converts a roast into a treaty.
+
+15. **The fleet as a random forest, priced.** Deliberate diversity of
+    high-variance learners, averaged, beats any single tree — and the cost
+    (losing single-tree interpretability) is paid knowingly in exchange for
+    testimony. The architecture is not a preference; it is a published
+    statistical result we happen to embody.
+
+## INHERITANCE TOTAL: 15 mechanisms, two passes, one night.

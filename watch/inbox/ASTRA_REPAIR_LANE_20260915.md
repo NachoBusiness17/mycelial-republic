@@ -101,3 +101,25 @@ sub-form is the sanctioned path and is what signed. Harness item flagged.
 Path to HOLD 3 remaining: I1 shard-materialized re-run; I3 qa run; desk
 adoptions of pending repair rows; S-twin authoring (HOLD 2b); then
 SEAL_GATE_SPEC conditions.
+
+## Addendum 4 — final round of the free window
+
+- **I1 run 2** (shard-materialized packet, anchor-paragraph excerpts): **70.0/100**
+  — the worker now quotes wall-verbatim, catches the flip + blanked witness,
+  takes the UNPROVEN vector; T1/T2 unmatched-segment detection remains the open
+  frontier. Receipt continues to carry the assembly finding.
+- **I3 run 1**: **46.7/100 AS PACKAGED** — and the calibration worked exactly as
+  designed: the model returned an HONEST TOOL_FAIL (P1–P5 resolution needs disk
+  access the paper world forbids), exposing a card defect. F-D1 self-fired:
+  the v1 key had also inherited SEED_001's whole-prefix missing set instead of
+  a slice-scoped scan (true slice key: ZERO missing, verdict SUPPORTED).
+  Amendment row 2 re-scopes worker/desk split (worker: head, index,
+  ref-structure, awareness; desk: resolution). Re-run owed on the amended card.
+- Custody win: the paste-wall was verified byte-identical to its pinned sha
+  (`59bd9365…`, 121,424 bytes) before materialization; segmentation reproduced
+  the frozen census (41 boundaries / 42 segments) exactly.
+
+**Bundle state at window close: 6/6 families authored · 6/6 qa logs exist ·
+I2 + I4 sign clean · I6 + I5 pass calibration-grade · I1 + I3 carry findings
+with re-runs owed. Next window: clean-sign re-runs (I1 shard tuning, I3
+amended form), desk adoptions, S-twins, then HOLD 3.**

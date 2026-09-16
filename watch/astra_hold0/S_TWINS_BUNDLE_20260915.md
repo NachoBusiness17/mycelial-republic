@@ -98,3 +98,18 @@ open: qa fires for S1/S2/S3/S6 (mechanical, pipeline proven); desk adoption;
 family means at HOLD 3.
 next: fire the four pending twin samples when the free window opens; then the
 seal gate per SEAL_GATE_SPEC.
+
+## QA EVIDENCE STATUS — updated 2026-09-16 (all six twins evidenced)
+
+| twin | form | score | status |
+|---|---|---|---|
+| S1 | clean-transcript worker form | 57.5/100 | calibration-grade — FALSE-POSITIVE tombstones in the clean twin (over-firing caught by the twin, which is the twin's job) |
+| S2 | single-leaf reconciliation | **100/100** | SIGNS CLEAN |
+| S3 | head + continuity over the real slice | **100/100** | SIGNS CLEAN (head matches the live verified tip) |
+| S4 | I4 family packet solo | (family run: 95/100) | cleared via I4 receipt |
+| S5 | I5 full-view union | (family run: 58/100) | cleared via I5 receipt (calibration-grade) |
+| S6 | single vignette V09 + full clause | 62.5/100 | calibration-grade — cancel-vs-queue distinction is the measured gap; ts-format law pinned |
+
+HOLD 2b authoring + evidence: COMPLETE. All twelve forms (6 families + 6 twins)
+carry qa logs. Remaining to HOLD 3: desk adoptions of the repair rows, family
+mean computation (SHAM_FLEET_SPEC §3), then the seal gate.

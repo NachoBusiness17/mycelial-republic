@@ -117,6 +117,49 @@ def _slugify(text: str) -> str:
     return keep[:48] or "paste"
 
 
+URL_RE = re.compile(r"https?://[^\s)>\]\"']+")
+
+
+def _canonical_footer(text: str) -> list[str]:
+    """B7 (2026-09-16): canonical-ledger check on links about to be filed.
+
+    mag.link_library canonicalizes each URL and checks watch/inbox/LINKS.jsonl;
+    the card gets a footer annotating the canonical form and whether this exact
+    canonical is already on file (links-duplicate-of = first URL seen, else empty).
+    Annotate, never gate: any ledger failure degrades to an '(unresolved)' line —
+    a ledger outage can never block intake.
+    """
+    urls: list[str] = []
+    for m in URL_RE.finditer(text):
+        url = m.group(0).rstrip(".,;:!?'\"]>")
+        if url not in urls:
+            urls.append(url)
+    if not urls:
+        return []
+    out = ["## Link canonical check (link_library — annotate, never gate)"]
+    try:
+        from mag import link_library
+    except Exception as e:
+        out.append(f"- ledger unavailable ({type(e).__name__}: {str(e)[:80]}) — links unannotated")
+        out.append("")
+        return out
+    for url in urls:
+        try:
+            canonical = link_library.canonicalize(url)
+            hit = link_library.known_canonicals().get(canonical)
+            first = hit.get("url", "") if isinstance(hit, dict) else ""
+        except Exception as e:
+            out.append(f"- {url}")
+            out.append(f"  links-canonical: (unresolved: {type(e).__name__}: {str(e)[:80]})")
+            out.append("  links-duplicate-of: ")
+            continue
+        out.append(f"- {url}")
+        out.append(f"  links-canonical: {canonical}")
+        out.append(f"  links-duplicate-of: {first}")
+    out.append("")
+    return out
+
+
 def run(paste: str, steps: str, title: str, key_env: str = "") -> int:
     paste_path = Path(paste)
     if paste_path.is_file():
@@ -166,6 +209,7 @@ def run(paste: str, steps: str, title: str, key_env: str = "") -> int:
               "## Tri-state discipline",
               "- bytes fetched: see step 3 (declare until wired)",
               "- every claim gets [Supported/Unproven] before any route", ""]
+    lines += _canonical_footer(digest)
     INBOX.mkdir(parents=True, exist_ok=True)
     card_path.write_text("\n".join(lines), encoding="utf-8")
 

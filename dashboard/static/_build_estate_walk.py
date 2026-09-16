@@ -28,7 +28,9 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "dashboard" / "static" / "estate_walk.html"
+OUT_LOD = ROOT / "dashboard" / "static" / "estate_walk.lod.html"
 SEED = 1197
+ZONE_GRID = 4  # estate index (LOD): 4x4 spatial zones, summaries only until a zone opens
 SPAN_REPLAY_S = 120.0
 MAX_DETAIL = 140
 MAX_STARS = 1200  # the 144 commits touch 75k files; keep the load-bearing ones
@@ -147,7 +149,52 @@ def load_trails():
     return trails
 
 
-def build():
+def compute_lod_zones(nodes, edges, stars, grid=ZONE_GRID):
+    """Zone-level LOD: spatial grid over the estate bounds; per-zone counts,
+    dominant types and a few titles. Small enough to parse at startup so the
+    index view never has to load (or even JSON.parse) every node."""
+    xs = [n["x"] for n in nodes] + [s["x"] for s in stars]
+    ys = [n["y"] for n in nodes] + [s["y"] for s in stars]
+    x0, x1 = min(xs) - 20.0, max(xs) + 20.0
+    y0, y1 = min(ys) - 20.0, max(ys) + 20.0
+    w, h = (x1 - x0) / grid, (y1 - y0) / grid
+
+    def cell(x, y):
+        return (min(grid - 1, int((x - x0) / w)), min(grid - 1, int((y - y0) / h)))
+
+    zones = [{"n": 0, "e": 0, "s": 0, "types": defaultdict(int), "titles": []}
+             for _ in range(grid * grid)]
+    for n in nodes:
+        cx, cy = cell(n["x"], n["y"])
+        z = zones[cy * grid + cx]
+        z["n"] += 1
+        z["types"][n["type"]] += 1
+        z["titles"].append(n["title"])
+    for e in edges:  # e = [src_ix, dst_ix, type, weight]
+        za = cell(nodes[e[0]]["x"], nodes[e[0]]["y"])
+        zb = cell(nodes[e[1]]["x"], nodes[e[1]]["y"])
+        if za == zb:
+            zones[za[1] * grid + za[0]]["e"] += 1
+    for s in stars:
+        cx, cy = cell(s["x"], s["y"])
+        zones[cy * grid + cx]["s"] += 1
+
+    out = []
+    for i, z in enumerate(zones):
+        gx, gy = i % grid, i // grid
+        out.append({
+            "id": i,
+            "x": round(x0 + gx * w, 1), "y": round(y0 + gy * h, 1),
+            "w": round(w, 1), "h": round(h, 1),
+            "n": z["n"], "e": z["e"], "s": z["s"],
+            "types": dict(sorted(z["types"].items(), key=lambda kv: -kv[1])[:4]),
+            "top": sorted(z["titles"])[:6],
+        })
+    return {"grid": grid, "bounds": [round(x0, 1), round(y0, 1), round(x1, 1), round(y1, 1)],
+            "zones": out}
+
+
+def build(lod_only=False):
     nodes, edges, selfloops = load_nodes_edges()
     pos = layout_nodes(nodes, edges)
     commits = git_commits()
@@ -234,13 +281,27 @@ def build():
         },
     }
 
-    body = TEMPLATE.replace("__DATA__", json.dumps(data, separators=(",", ":")))
-    OUT.write_text(body, encoding="utf-8")
-    kb = OUT.stat().st_size // 1024
+    lod = compute_lod_zones(nodes, edges, stars)
+    data["lod"] = lod  # ride along on the main walk too; its template ignores it
+
+    def _safe(s):  # "</" would close an application/json script block early
+        return s.replace("</", "<\\/")
+
+    lod_body = LOD_TEMPLATE.replace("__LOD__", _safe(json.dumps(lod, separators=(",", ":"))))
+    lod_body = lod_body.replace("__DATA__", _safe(json.dumps(data, separators=(",", ":"))))
+    OUT_LOD.write_text(lod_body, encoding="utf-8")
+
     window_str = f"{datetime.fromtimestamp(t0, timezone.utc):%Y-%m-%d}..{datetime.fromtimestamp(t1, timezone.utc):%Y-%m-%d}"
-    print(f"estate_walk.html: {kb} KB | nodes {len(nodes)} edges {len(edges)} "
-          f"(+{selfloops} self-loops as rings) stars {len(stars)} commits {len(commits)} "
-          f"trail_events {data['meta']['trail_events']} | window {window_str}")
+    print(f"estate_walk.lod.html: {OUT_LOD.stat().st_size // 1024} KB | "
+          f"zones {len(lod['zones'])} (grid {lod['grid']}x{lod['grid']}) "
+          f"detail-inert-until-open | window {window_str}")
+    if not lod_only:
+        body = TEMPLATE.replace("__DATA__", json.dumps(data, separators=(",", ":")))
+        OUT.write_text(body, encoding="utf-8")
+        kb = OUT.stat().st_size // 1024
+        print(f"estate_walk.html: {kb} KB | nodes {len(nodes)} edges {len(edges)} "
+              f"(+{selfloops} self-loops as rings) stars {len(stars)} commits {len(commits)} "
+              f"trail_events {data['meta']['trail_events']} | window {window_str}")
 
 
 TEMPLATE = r"""<!DOCTYPE html>
@@ -539,5 +600,207 @@ requestAnimationFrame(step);
 </html>
 """
 
+LOD_TEMPLATE = r"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ESTATE INDEX — zone LOD</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html,body{margin:0;height:100%;background:#07090d;overflow:hidden;font:13px/1.4 ui-monospace,Consolas,monospace;color:#8fa3b8}
+  #c{position:absolute;inset:0;cursor:grab}
+  #c.drag{cursor:grabbing}
+  #hud{position:absolute;top:14px;left:16px;pointer-events:none;text-shadow:0 1px 4px #000}
+  #hud h1{margin:0;font-size:15px;letter-spacing:.35em;color:#d8e6f2;font-weight:600}
+  #hud .sub{margin-top:4px;font-size:11px;color:#5c7186}
+  #panel{position:absolute;left:16px;bottom:14px;right:16px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;
+         background:rgba(7,10,14,.82);border:1px solid #1a2634;border-radius:8px;padding:10px 14px}
+  .btn{background:#101a26;border:1px solid #24384e;color:#bcd2e4;border-radius:5px;padding:4px 12px;cursor:pointer;font:inherit}
+  .btn:hover{border-color:#3d5a7a;color:#eaf4fc}
+  #state{font-size:11px;color:#54687c}
+  #tip{position:absolute;display:none;background:rgba(9,13,19,.94);border:1px solid #24384e;border-radius:6px;
+       padding:7px 10px;max-width:360px;font-size:11px;color:#a8bdd0;pointer-events:none;z-index:5}
+  #tip b{color:#e8f2fa}
+  #note{position:absolute;right:16px;bottom:64px;font-size:10px;color:#43566b;max-width:300px;text-align:right;pointer-events:none}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud"><h1>ESTATE INDEX</h1><div class="sub" id="counts"></div></div>
+<div id="note">zone LOD — the index starts from summaries only; the full estate payload sits inert below until a zone is opened.</div>
+<div id="tip"></div>
+<div id="panel">
+  <button class="btn" id="back">&larr; overview</button>
+  <button class="btn" id="all">expand: full estate</button>
+  <span id="state">detail: not loaded</span>
+</div>
+<script type="application/json" id="full">__DATA__</script>
+<script>
+const LOD = __LOD__;
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const $ = id => document.getElementById(id);
+let full = null;              // lazily JSON.parse'd estate payload
+let mode = 'overview', zoneIx = -1;
+
+function ensureFull() {
+  if (full) return full;
+  full = JSON.parse($('full').textContent);
+  $('state').textContent = 'detail: loaded · ' + full.meta.nodes + ' nodes · ' +
+    full.meta.edges + ' corridors · ' + full.meta.stars + ' stars';
+  return full;
+}
+$('counts').textContent = LOD.zones.length + ' zones · grid ' + LOD.grid + '×' + LOD.grid +
+  ' · overview parses summaries only';
+
+// camera
+let cam = { x: 0, y: 0, s: 1 };
+const [BX0, BY0, BX1, BY1] = LOD.bounds;
+function fitRect(x0, y0, x1, y1) {
+  const W = cv.width / devicePixelRatio, H = cv.height / devicePixelRatio;
+  cam.s = Math.min(W / Math.max(1, x1 - x0 + 80), H / Math.max(1, y1 - y0 + 80)) * 0.94;
+  cam.x = (x0 + x1) / 2; cam.y = (y0 + y1) / 2;
+}
+function resize() { cv.width = innerWidth * devicePixelRatio; cv.height = innerHeight * devicePixelRatio; cv.style.width = innerWidth + 'px'; cv.style.height = innerHeight + 'px'; if (!fitted) { fit(); fitted = true; } }
+let fitted = false;
+function fit() { fitRect(BX0, BY0, BX1, BY1); }
+addEventListener('resize', resize); resize();
+
+function openZone(i) {
+  const z = LOD.zones[i]; ensureFull();
+  mode = 'zone'; zoneIx = i;
+  fitRect(z.x, z.y, z.x + z.w, z.y + z.h);
+}
+function openAll() { ensureFull(); mode = 'full'; zoneIx = -1; fit(); }
+function backToOverview() { mode = 'overview'; zoneIx = -1; fit(); }
+$('back').onclick = backToOverview;
+$('all').onclick = openAll;
+addEventListener('keydown', e => { if (e.key === 'Escape') backToOverview(); });
+
+function inView(p) {
+  if (mode !== 'zone') return true;
+  const z = LOD.zones[zoneIx];
+  return p.x >= z.x && p.x < z.x + z.w && p.y >= z.y && p.y < z.y + z.h;
+}
+
+// pan/zoom (click opens a zone only when the pointer stayed put)
+let drag = null, moved = false;
+cv.addEventListener('mousedown', e => { drag = { x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y }; moved = false; cv.classList.add('drag'); });
+addEventListener('mouseup', () => { drag = null; cv.classList.remove('drag'); });
+addEventListener('mousemove', e => {
+  if (drag) {
+    if (Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) > 4) moved = true;
+    cam.x = drag.cx - (e.clientX - drag.x) / cam.s; cam.y = drag.cy - (e.clientY - drag.y) / cam.s;
+  } else hover(e);
+});
+cv.addEventListener('wheel', e => {
+  e.preventDefault();
+  const k = Math.exp(-e.deltaY * 0.0012);
+  const wx = cam.x + (e.clientX - cv.width / (2 * devicePixelRatio)) / cam.s;
+  const wy = cam.y + (e.clientY - cv.height / (2 * devicePixelRatio)) / cam.s;
+  cam.s = Math.max(0.05, Math.min(12, cam.s * k));
+  cam.x = wx - (e.clientX - cv.width / (2 * devicePixelRatio)) / cam.s;
+  cam.y = wy - (e.clientY - cv.height / (2 * devicePixelRatio)) / cam.s;
+}, { passive: false });
+cv.addEventListener('click', e => {
+  if (moved) return;
+  if (mode === 'overview') {
+    const m = worldAt(e);
+    const z = LOD.zones.find(z => m.x >= z.x && m.x < z.x + z.w && m.y >= z.y && m.y < z.y + z.h);
+    if (z && (z.n || z.s)) openZone(z.id);
+  }
+});
+function worldAt(e) {
+  return { x: cam.x + (e.clientX - cv.width / (2 * devicePixelRatio)) / cam.s,
+           y: cam.y + (e.clientY - cv.height / (2 * devicePixelRatio)) / cam.s };
+}
+
+// hover tooltip
+function hover(e) {
+  const m = worldAt(e), tip = $('tip');
+  const show = html => { tip.style.display = 'block'; tip.style.left = Math.min(e.clientX + 14, innerWidth - 380) + 'px'; tip.style.top = (e.clientY + 14) + 'px'; tip.innerHTML = html; };
+  if (mode === 'overview') {
+    const z = LOD.zones.find(z => m.x >= z.x && m.x < z.x + z.w && m.y >= z.y && m.y < z.y + z.h);
+    if (!z) { tip.style.display = 'none'; return; }
+    const dom = Object.keys(z.types).map(k => k + '×' + z.types[k]).join(' · ');
+    show('<b>zone ' + z.id + '</b> — click to open<br>' + z.n + ' nodes · ' + z.e +
+      ' internal corridors · ' + z.s + ' stars<br>' + (dom || 'empty') +
+      (z.top.length ? '<br>' + z.top.map(esc).join('<br>') : ''));
+    return;
+  }
+  const r = 12 / cam.s; let best = null, bd = r;
+  if (mode !== 'full') for (const n of full.nodes) {
+    if (!inView(n)) continue;
+    const d = Math.hypot(n.x - m.x, n.y - m.y); if (d < bd) { bd = d; best = { n, star: null }; }
+  }
+  for (const s of full.stars) {
+    if (!inView(s)) continue;
+    const d = Math.hypot(s.x - m.x, s.y - m.y); if (d < bd) { bd = d; best = { n: null, star: s }; }
+  }
+  if (!best) { tip.style.display = 'none'; return; }
+  show(best.n ? '<b>' + esc(best.n.title) + '</b><br>' + best.n.type + ' · trust ' + best.n.trust
+              : '<b>' + esc(best.star.p) + '</b><br>' + best.star.d);
+}
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+
+function maxCount() { return Math.max(1, ...LOD.zones.map(z => z.n + z.s)); }
+
+function draw() {
+  const W = cv.width, H = cv.height;
+  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  ctx.fillStyle = '#07090d'; ctx.fillRect(0, 0, W, H);
+  ctx.setTransform(devicePixelRatio * cam.s, 0, 0, devicePixelRatio * cam.s,
+    W / 2 / devicePixelRatio - cam.x * cam.s * devicePixelRatio,
+    H / 2 / devicePixelRatio - cam.y * cam.s * devicePixelRatio);
+  if (mode === 'overview') drawOverview(); else drawDetail();
+}
+
+function drawOverview() {
+  const mx = maxCount();
+  ctx.strokeStyle = '#1a2634'; ctx.lineWidth = 1 / cam.s;
+  ctx.strokeRect(BX0, BY0, BX1 - BX0, BY1 - BY0);
+  for (const z of LOD.zones) {
+    const hot = (z.n + z.s) / mx;
+    ctx.fillStyle = z.e >= z.s ? 'rgba(63,94,133,' + (0.10 + hot * 0.40).toFixed(3) + ')'
+                               : 'rgba(74,86,112,' + (0.08 + hot * 0.32).toFixed(3) + ')';
+    ctx.fillRect(z.x, z.y, z.w, z.h);
+    ctx.strokeStyle = '#22344a'; ctx.lineWidth = 1 / cam.s;
+    ctx.strokeRect(z.x, z.y, z.w, z.h);
+    ctx.fillStyle = '#7d93a9'; ctx.font = (11 / cam.s) + 'px ui-monospace,Consolas,monospace';
+    ctx.fillText('Z' + z.id + (mode === 'overview' && zoneIx === z.id ? ' ●' : ''), z.x + 6 / cam.s, z.y + 15 / cam.s);
+    ctx.fillStyle = '#54687c';
+    ctx.fillText(z.n + 'n ' + z.e + 'e ' + z.s + 's', z.x + 6 / cam.s, z.y + 30 / cam.s);
+  }
+}
+
+function drawDetail() {
+  if (mode === 'zone') {
+    const z = LOD.zones[zoneIx];
+    ctx.strokeStyle = '#3d5a7a'; ctx.lineWidth = 1.5 / cam.s;
+    ctx.strokeRect(z.x, z.y, z.w, z.h);
+  }
+  ctx.strokeStyle = '#1c2a3d'; ctx.lineWidth = 1 / cam.s;
+  ctx.beginPath();
+  for (const e of full.edges) {
+    const a = full.nodes[e[0]], b = full.nodes[e[1]];
+    if (!inView(a) || !inView(b)) continue;
+    ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+  }
+  ctx.stroke();
+  for (const n of full.nodes) {
+    if (!inView(n)) continue;
+    ctx.fillStyle = n.type === 'seat' ? '#33486a' : '#28394e';
+    ctx.beginPath(); ctx.arc(n.x, n.y, 2.4 / Math.sqrt(cam.s), 0, 7); ctx.fill();
+  }
+  for (const s of full.stars) {
+    if (!inView(s)) continue;
+    ctx.fillStyle = '#2e3d52'; ctx.fillRect(s.x - 1.1, s.y - 1.1, 2.2, 2.2);
+  }
+}
+requestAnimationFrame(draw);
+</script>
+</body>
+</html>
+"""
+
 if __name__ == "__main__":
-    sys.exit(build())
+    sys.exit(build(lod_only="--lod-only" in sys.argv))

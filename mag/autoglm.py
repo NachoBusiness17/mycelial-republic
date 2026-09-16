@@ -31,7 +31,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parent.parent
 SCHEMA = "autoglm.v1"
 MODEL = os.environ.get("AUTOGLM_MODEL", "autoglm-phone-multilingual")
-API_URL = "https://api.z.ai/api/paas/v4/chat/completions"
+API_URL = "https://api.z.ai/api/coding/paas/v4/chat/completions"  # 09-16: coding-plan keys 1113 on the old /api/paas/v4 path even with full pool
 PINNED_SCHEME = "https"
 PINNED_HOST = "api.z.ai"
 KEY_NAMES = ("ZAI_API_KEY_Lite", "ZAI_API_KEY_Pro", "ZAI_API_KEY")  # Calcifer lane first

@@ -13,6 +13,13 @@ API (all JSON):
   POST /mud/seen   {id, name, x, y, hp, max_hp, state}  -> {"ok":true}
   GET  /mud/others?id=X                                  -> {"ok":true,"others":[...]}
   GET  /mud/ping                                         -> {"ok":true,"players":N}
+  GET  /mud/state                                        -> {"ok":true,"now":...,"expire":6.0,
+                                                              "players":[fresh lanterns],"stale":N,
+                                                              "seen_total":N}
+
+/mud/state is the spectator lens: read-only snapshot of the room. "players"
+holds every lantern seen within EXPIRE (6s) with its age in seconds;
+"stale" counts known-but-expired ids still awaiting the 24s sweep.
 
 Players expire 6s after their last /seen (clients resend ~4/s).
 
@@ -28,6 +35,7 @@ from urllib.parse import urlparse, parse_qs
 PLAYERS = {}
 LOCK = threading.Lock()
 EXPIRE = 6.0
+SEEN_TOTAL = 0  # every accepted /seen, lifetime of the process (spectator counter)
 BIND = '127.0.0.1'
 PORT = 8766
 
@@ -76,6 +84,22 @@ class Handler(BaseHTTPRequestHandler):
                 alive = [p for p in PLAYERS.values() if now - p['ts'] <= EXPIRE]
             self._send(200, {'ok': True, 'players': len(alive)})
             return
+        if path == '/mud/state':
+            now = time.time()
+            with LOCK:
+                fresh, stale = [], 0
+                for p in PLAYERS.values():
+                    age = now - p['ts']
+                    if age <= EXPIRE:
+                        row = {k: p[k] for k in ('id', 'name', 'x', 'y', 'hp', 'max_hp', 'state')}
+                        row['age'] = round(age, 2)
+                        fresh.append(row)
+                    else:
+                        stale += 1
+                total = SEEN_TOTAL
+            self._send(200, {'ok': True, 'now': round(now, 3), 'expire': EXPIRE,
+                             'players': fresh, 'stale': stale, 'seen_total': total})
+            return
         if path == '/mud/others':
             q = parse_qs(urlparse(self.path).query)
             me = (q.get('id') or [''])[0]
@@ -89,6 +113,7 @@ class Handler(BaseHTTPRequestHandler):
         self._send(404, {'ok': False, 'error': 'not found'})
 
     def do_POST(self):
+        global SEEN_TOTAL
         path = urlparse(self.path).path
         if path != '/mud/seen':
             self._send(404, {'ok': False, 'error': 'not found'})
@@ -100,6 +125,7 @@ class Handler(BaseHTTPRequestHandler):
             return
         with LOCK:
             now = time.time()
+            SEEN_TOTAL += 1
             PLAYERS[pid] = {
                 'id': pid,
                 'name': str(b.get('name') or pid)[:24],

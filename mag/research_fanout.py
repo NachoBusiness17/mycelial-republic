@@ -134,10 +134,15 @@ LANES: list[dict[str, str]] = [
      "key": "Mistral_API_KEY", "style": "openai"},
     {"id": "mistral-small", "base": "https://api.mistral.ai/v1", "model": "mistral-small-latest",
      "key": "Mistral_API_KEY", "style": "openai"},
-    {"id": "zai-air", "base": "https://api.z.ai/api/paas/v4", "model": "glm-4.5-air",
-     "key": "ZAI_API_KEY", "style": "openai"},
-    {"id": "zai-47", "base": "https://api.z.ai/api/paas/v4", "model": "glm-4.7",
-     "key": "ZAI_API_KEY", "style": "openai"},
+    {"id": "zai-lite", "base": "https://api.z.ai/api/coding/paas/v4",
+     "model": "glm-5.3-flash", "key": "ZAI_API_KEY_Lite", "style": "openai"},
+    # zai-air / zai-47 retired 2026-09-16 (operator: "self steal z.ai API, this is a solved
+    # problem"): both rode ZAI_API_KEY (the Max coding-plan seat) and hit the paid wall
+    # (code 1113 insufficient balance). The solved path is the Lite key + lite_guard pacing
+    # (mag/lite_guard.py, law 15) pinned to glm-5.3-flash — burst lane, never a default
+    # carrier; the gate below makes pacing structural. ENDPOINT LAW (verified live 09-16):
+    # coding-plan subscriptions answer on /api/coding/paas/v4; the old /api/paas/v4
+    # returns fake-1113 "insufficient balance" even with a full 10,000-credit pool.
     {"id": "or-glm52", "base": "https://openrouter.ai/api/v1", "model": "z-ai/glm-5.2:free",
      "key": "OPENROUTER_API_KEY", "style": "openai"},
     {"id": "or-nemotron", "base": "https://openrouter.ai/api/v1",
@@ -191,6 +196,18 @@ def call_lane(lane: dict[str, str], question: str, key: str, timeout: int = 90,
     t0 = time.time()
     rec: dict[str, Any] = {"lane": lane["id"], "model": lane["model"], "ts": _now(),
                            "attempt": attempt}
+    lite = str(lane.get("key", "")) == "ZAI_API_KEY_Lite"
+    if lite:
+        # law 15 made structural: the Lite seat is paced before a single token leaves
+        try:
+            from mag import lite_guard
+        except Exception:
+            import lite_guard  # type: ignore
+        g = lite_guard.check("research_fanout")
+        if not g.get("ok"):
+            rec.update({"ok": False, "error": "LITE_PACED", "detail": g.get("deny", "")})
+            rec["latency_ms"] = 0
+            return rec
     body = {"model": lane["model"], "temperature": 0.2, "max_tokens": max_tokens,
             "messages": [{"role": "system", "content": SYSTEM},
                          {"role": "user", "content": question}]}
@@ -215,6 +232,14 @@ def call_lane(lane: dict[str, str], question: str, key: str, timeout: int = 90,
         else:
             rec.update({"ok": True, "answer": txt, "chars": len(txt),
                         "usage": d.get("usage") or {}})
+            if lite:
+                try:
+                    from mag import lite_guard
+                except Exception:
+                    import lite_guard  # type: ignore
+                lite_guard.record("research_fanout",
+                                  int((d.get("usage") or {}).get("total_tokens") or 0),
+                                  note=f"lane {lane['id']}")
     except urllib.error.HTTPError as e:
         detail = e.read().decode("utf-8", "replace")[:300]
         rec.update({"ok": False, "error": f"HTTP {e.code}", "detail": detail})

@@ -38,6 +38,9 @@ LEDGER = ROOT / "watch" / "inbox" / "LINKS.jsonl"
 TRACKING_PARAMS = {
     "s", "si", "t", "cn", "mx", "igsh", "fbclid", "gclid", "ref_src", "ref_url",
     "ref", "source", "cmpid", "sgt", "sh", "hsmi", "hsenc", "mc_cid", "mc_eid",
+    # the google-ads family (seen live on a filed URL 2026-09-16) + X's own
+    "gad_source", "gad_campaignid", "gad_position", "gad_bidmatch", "gbraid",
+    "wbraid", "gclsrc", "dclid", "twclid",
 }
 HOST_COLLAPSE = {
     "twitter.com": "x.com",

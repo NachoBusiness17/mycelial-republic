@@ -1308,6 +1308,21 @@ def main(argv: list[str] | None = None) -> int:
         help="subcommand + args, passed to mag.gpipes.main (fan <goals...> | collect <id> | status <id> | kill <id> | list)",
     )
 
+    p_links = sub.add_parser(
+        "links",
+        help="Canonical URL link ledger (add/check/dupes — watch/inbox/LINKS.jsonl)",
+    )
+    links_sub = p_links.add_subparsers(dest="links_cmd")
+    p_links_add = links_sub.add_parser("add", help="Register URL(s) in the ledger")
+    p_links_add.add_argument("urls", nargs="+", help="URL(s) to file")
+    p_links_add.add_argument("--note", default="", help="Note attached to every entry")
+    p_links_add.add_argument("--writer", default="link_library", help="Writer tag on the entries")
+    p_links_check = links_sub.add_parser(
+        "check", help="Check one URL; exit 1 if its canonical is already on file"
+    )
+    p_links_check.add_argument("url", help="URL to check")
+    links_sub.add_parser("dupes", help="Show duplicate canonicals on file")
+
     p_tan = sub.add_parser(
         "tangent",
         help="Queue/run background scout (Gemini/janitor); results in memory/tangents/",
@@ -5276,6 +5291,31 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "seat-guard":
         from mag.seat_guard import main as sg_main
         return sg_main(args.sg_args)
+    if args.cmd == "links":
+        from mag import link_library
+
+        lcmd = getattr(args, "links_cmd", None)
+        if lcmd == "add":
+            for entry in link_library.add_urls(args.urls, note=args.note, writer=args.writer):
+                flag = "DUPLICATE" if entry["duplicate_of"] else "REGISTERED"
+                print(f"{flag}: {entry['canonical']}")
+            return 0
+        if lcmd == "check":
+            link_library.validate_host_safety(args.url)
+            canon = link_library.canonicalize(args.url)
+            hit = link_library.known_canonicals().get(canon)
+            print(json.dumps({"canonical": canon, "known": bool(hit), "first_entry": hit}, indent=1))
+            return 1 if hit else 0
+        if lcmd == "dupes":
+            dupes = 0
+            for entry in link_library.load_ledger():
+                if entry.get("duplicate_of"):
+                    dupes += 1
+                    print(f"{entry['url']}  ->  {entry['duplicate_of']}")
+            print(f"{dupes} duplicate submissions on file")
+            return 0
+        p_links.print_help()
+        return 2
     parser.print_help()
     return 2
 

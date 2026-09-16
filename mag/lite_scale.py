@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from scale_salon import PARABLE, CANON, CONSTRAINTS, WRITER_HEAD, OUT, _now
 import lite_guard
 
-CALL_URL = "https://api.z.ai/api/paas/v4/chat/completions"
+CALL_URL = "https://api.z.ai/api/coding/paas/v4/chat/completions"  # 09-16: coding-plan keys 1113 on the old /api/paas/v4 path even with full pool
 MODEL = "glm-5.3-flash"
 
 

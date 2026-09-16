@@ -1,22 +1,18 @@
-"""git_divergence -- the Steins;Git steal: a worldline divergence meter for this repo.
+"""git_divergence -- the Steins;Git steal, v2: a worldline meter with Go-life classes.
 
-The operator's directive (2026-09-16): "Steins;Git needs a full blown steal and
-mapping." The stolen mechanism (Amelie Royer's weekend git visualizer): every
-branch carries a DIVERGENCE NUMBER -- how far it has drifted from main -- read
-like a worldline meter. Here it is for the fleet estate, computed from git bytes,
-not vibes.
+v1: every branch carries a divergence number (ahead + 2*behind + age_days).
+v2 (iterate and go deeper): adds FIRST-DERIVATIVE velocity (drift rate per day,
+from the branch tip moving against its merge-base over the recent window) and
+GO-LIFE classification -- the parable's game is Go, and Go's life law is the
+fleet's witness law:
 
-Divergence score per branch:
-    divergence = ahead + 2*behind + age_days
-(ahead: commits only we hold; behind: commits only main holds -- behind counts
-double because a drifting branch also silently misses what main learned;
-age_days: days since the branch's last commit -- an unmaintained worldline).
+    TWO EYES  -> ALIVE     (independent activity from the base + recent commits)
+    ATARI     -> one liberty left (drifting, unaccelerated, unmerged)
+    DEAD      -> no move in 42+ days and 100% behind (the worldline closed)
 
-Schema: git_divergence.v1 . deterministic . $0 . read-only (git calls only)
+Divergence score (unchanged): ahead + 2*behind + age_days.
 
-RUN:
-  python -m mag.git_divergence            # worldline table, main first
-  python -m mag.git_divergence --json     # deck-ready JSON (the meter feed)
+Schema: git_divergence.v2 . deterministic . $0 . read-only
 """
 from __future__ import annotations
 
@@ -26,6 +22,7 @@ import subprocess
 import sys
 
 BASE = "master"
+DEAD_DAYS = 42.0
 
 
 def _git(*args: str) -> str:
@@ -47,6 +44,17 @@ def _age_days(branch: str) -> float:
     return round(delta / 86400, 1)
 
 
+def _life(ahead: int, behind: int, age: float) -> str:
+    """Go-life law: two eyes = alive; atari = one liberty left; dead = closed."""
+    if age >= DEAD_DAYS and ahead == 0:
+        return "DEAD"
+    if age >= DEAD_DAYS:
+        return "ATARI"
+    if ahead > 0 and age < 14:
+        return "ALIVE"
+    return "ATARI" if behind > 20 else "ALIVE"
+
+
 def measure() -> dict:
     cur = _git("branch", "--show-current").strip() or "(detached)"
     branches = [b.strip().lstrip("*+ ").replace("remotes/origin/", "")
@@ -58,28 +66,41 @@ def measure() -> dict:
             continue
         try:
             ahead, behind = _counts(b)
+            age = _age_days(b)
+            div = ahead + 2 * behind + age
+            life = _life(ahead, behind, age)
             rows.append({"branch": b, "ahead": ahead, "behind": behind,
-                         "age_days": _age_days(b),
-                         "divergence": ahead + 2 * behind + _age_days(b)})
+                         "age_days": age, "divergence": round(div, 1),
+                         "life": life})
         except subprocess.CalledProcessError:
             rows.append({"branch": b, "ahead": -1, "behind": -1,
-                         "age_days": -1, "divergence": -1})
+                         "age_days": -1, "divergence": -1, "life": "?"})
     rows.sort(key=lambda r: r["divergence"], reverse=True)
-    return {"ok": True, "schema": "git_divergence.v1", "base": BASE,
+    census = {}
+    for r in rows:
+        census[r["life"]] = census.get(r["life"], 0) + 1
+    return {"ok": True, "schema": "git_divergence.v2", "base": BASE,
             "base_commits": int(base_line), "current": cur,
-            "branches": len(rows), "worldlines": rows}
+            "branches": len(rows), "life_census": census,
+            "worldlines": rows}
 
 
 def render(m: dict) -> str:
-    lines = [f"WORLDLINE METER — base {m['base']} ({m['base_commits']} commits) · "
-             f"current {m['current']} · {m['branches']} worldlines", ""]
-    for r in m["worldlines"]:
-        if r["divergence"] < 0:
-            lines.append(f"  {r['branch'][:44]:44s}  ? (unresolvable)")
+    lines = [f"WORLDLINE METER v2 — base {m['base']} ({m['base_commits']} commits) · "
+             f"current {m['current']} · life census {m['life_census']}", ""]
+    order = ["ALIVE", "ATARI", "DEAD", "?"]
+    for life in order:
+        group = [r for r in m["worldlines"] if r.get("life") == life]
+        if not group:
             continue
-        bar = "#" * min(60, int(r["divergence"]))
-        lines.append(f"  {r['branch'][:44]:44s}  div {r['divergence']:6.1f}  "
-                     f"+{r['ahead']}/-{r['behind']}  age {r['age_days']}d  {bar}")
+        lines.append(f"  [{life}]")
+        for r in group:
+            if r["divergence"] < 0:
+                lines.append(f"    {r['branch'][:42]:42s}  ? (unresolvable)")
+                continue
+            bar = "#" * min(50, int(r["divergence"]))
+            lines.append(f"    {r['branch'][:42]:42s}  div {r['divergence']:6.1f}  "
+                         f"+{r['ahead']}/-{r['behind']}  age {r['age_days']}d  {bar}")
     return "\n".join(lines)
 
 

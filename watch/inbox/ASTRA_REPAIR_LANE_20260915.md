@@ -123,3 +123,24 @@ SEAL_GATE_SPEC conditions.
 I2 + I4 sign clean · I6 + I5 pass calibration-grade · I1 + I3 carry findings
 with re-runs owed. Next window: clean-sign re-runs (I1 shard tuning, I3
 amended form), desk adoptions, S-twins, then HOLD 3.**
+
+## Addendum 5 — window close, HOLD 2b authored + final calibration runs
+
+- **I1 run 3** (second sample): **77.5/100** — T1 (the omitted governance row)
+  BROKE THROUGH; T2 (epistemic-closure omission) still open. Best I1 sample.
+- **I3 run 2** (amended card): **71.7/100** — up from 46.7; the awareness
+  points law works; head + index perfect; compact format traded structure
+  detail (receipted).
+- **S_TWINS_BUNDLE_20260915.md authored** — S1–S6 inheritance mini-cards with
+  packet deltas and re-keyed rubrics; S4/S5 qa evidence already captured by
+  their family runs; S1/S2/S3/S6 fires pending (pipeline proven).
+- **Manifest v2 refresh** appended (post-edit hashes for all edited cards +
+  new artifacts, lineage preserved).
+
+**BUNDLE STATE AT FREE-WINDOW CLOSE: 6/6 families + 6/6 twins authored ·
+8 qa episodes fired ($0 total) · I2 + I4 sign clean · I6 + I5 + I1 + I3
+calibration-grade with receipted findings · remaining to HOLD 3: desk
+adoptions + clean-sign re-runs (I1 T2 frontier, I3 structure detail) + family
+means, then SEAL_GATE_SPEC.**
+
+Commits: ef59ded1f · 69cd8a4f8 · 213e594ca · ac9471408 · f391ce769 · + this one.

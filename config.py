@@ -39,6 +39,8 @@ SHELL_ALLOW = {
     "type",
     "cat",
     "python",
+    "powershell",
+    "pwsh",
     "pytest",
     "git",
 }

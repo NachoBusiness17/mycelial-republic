@@ -208,9 +208,10 @@ def check_budget(authority: dict, effect: str, policy: dict | None = None,
     default = pol.get("default_budget", {"max_calls": 3})
     with _budget_lock:
         budget = authority.get("budget")
-        if budget is None:
-            budget = dict(default)
-            authority["budget"] = budget
+        if not isinstance(budget, dict):
+            # malformed budget (string, list, etc) — fail closed: no budget
+            # means no authorization to spend
+            return False, 0
         max_calls = int(budget.get("max_calls", default.get("max_calls", 3)))
 
         # per-effect counters map effect -> calls consumed
@@ -299,8 +300,12 @@ def validate_authority(authority: dict, effect: str,
     if status not in {"AUTHORIZED", "EXECUTING"}:
         return _verdict(False, f"status {status} not executable", authority, effect, pol)
 
-    # 2. capability grant
+    # 2. capability grant — fail closed: a malformed caps field must never
+    #    pass a substring membership check (the confused-deputy bug).
     caps = authority.get("granted_capabilities", [])
+    if not isinstance(caps, list):
+        return _verdict(False, "granted_capabilities must be a list", authority, effect, pol,
+                        capability_granted=False)
     cap_ok = effect in caps
     if not cap_ok:
         return _verdict(False, f"effect {effect} not in granted_capabilities", authority, effect, pol,
@@ -335,13 +340,16 @@ def validate_authority(authority: dict, effect: str,
 
 def _verdict(ok: bool, reason: str | None, authority: dict, effect: str,
              policy: dict, **overrides) -> dict:
+    budget = authority.get("budget")
+    if not isinstance(budget, dict):
+        budget = {}
     v = {
         "ok": ok,
         "effect": effect,
         "status": authority.get("status", "UNKNOWN"),
         "reason": reason,
         "ttl_valid": True,
-        "budget_remaining": int(authority.get("budget", {}).get("max_calls", policy.get("default_budget", {}).get("max_calls", 3))),
+        "budget_remaining": int(budget.get("max_calls", policy.get("default_budget", {}).get("max_calls", 3))),
         "budget_ok": True,
         "revoked": False,
         "effect_valid": validate_effect(effect, policy),

@@ -78,6 +78,11 @@ _STATE_MACHINE = {
     "DENIED": set(),              # terminal, immutable
 }
 
+# Replay protection: event_ids that have already been granted. A second
+# proposal for the same event_id must not produce an independent AUTHORIZED
+# grant — at minimum the second is refused as a replay.
+_GRANTED_EVENT_IDS: set = set()
+
 
 def _now() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
@@ -227,6 +232,19 @@ def grant(proposal: dict, narrow_capabilities: list[str] | None = None,
         trail_append(decision)
         return decision
 
+    # --- agent-source self-authorization gate (before confirmation) ---
+    # An agent-generated/untrusted source cannot confirm its own high-impact
+    # request. The confirmation gate is an OPERATOR gate, not an agent gate.
+    label = proposal.get("authority_label", "agent-generated")
+    if label in ("agent-generated", "untrusted-instruction", "external-content"):
+        if policy_engine.require_confirmation(effect, pol):
+            decision = _denied(
+                proposal,
+                f"{label} source cannot self-authorize high-impact effect {effect}",
+                pol)
+            trail_append(decision)
+            return decision
+
     # --- operator confirmation gate ---
     if proposal.get("require_confirmation", policy_engine.require_confirmation(effect, pol)):
         decision = _defer(proposal, granted, remaining, pol)
@@ -242,6 +260,13 @@ def grant(proposal: dict, narrow_capabilities: list[str] | None = None,
     if not verdict["ok"]:
         decision = _denied(proposal, verdict.get("reason", "authority check failed"), pol,
                            policy_verdict=verdict, granted_capabilities=granted)
+        trail_append(decision)
+        return decision
+
+    # --- replay protection (same event_id must not double-grant) ---
+    eid = proposal.get("event_id", "")
+    if eid and eid in _GRANTED_EVENT_IDS:
+        decision = _denied(proposal, f"replay: event_id {eid} already granted", pol)
         trail_append(decision)
         return decision
 
@@ -263,6 +288,8 @@ def grant(proposal: dict, narrow_capabilities: list[str] | None = None,
         "ttl_expires": policy_engine.ttl_expires(proposal, pol),
     }
     trail_append(decision)
+    if eid:
+        _GRANTED_EVENT_IDS.add(eid)
     return decision
 
 

@@ -350,12 +350,16 @@ def FX_PRESENT() -> bool:  # noqa: N802 - kept shouty to read as a predicate in 
 def main(argv: list[str] | None = None) -> int:
     import argparse
     ap = argparse.ArgumentParser(prog="wow-bones")
-    ap.add_argument("cmd", nargs="?", default="status", choices=["extract", "laws", "status"])
-    a = ap.parse_args(argv)
+    ap.add_argument("cmd", nargs="?", default="status",
+                    choices=["extract", "laws", "status", "session"])
+    a, rest = ap.parse_known_args(argv)
     if a.cmd == "extract":
         out = extract(write=True)
     elif a.cmd == "laws":
         out = laws()
+    elif a.cmd == "session":
+        from mag.wow_bones_session import main as session_main
+        return session_main(rest)
     else:
         out = status()
     print(json.dumps(out, ensure_ascii=False, indent=2, default=str))

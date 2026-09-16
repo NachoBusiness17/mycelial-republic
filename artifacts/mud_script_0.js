@@ -1,0 +1,954 @@
+
+(() => {
+"use strict";
+const cvs = document.getElementById('c');
+const ctx = cvs.getContext('2d');
+
+// ---- Letterbox sizing ----
+const BASE_W = 960, BASE_H = 600;
+let scale = 1, offX = 0, offY = 0;
+function resize() {
+  const w = window.innerWidth, h = window.innerHeight;
+  scale = Math.min(w / BASE_W, h / BASE_H);
+  cvs.width = BASE_W; cvs.height = BASE_H;
+  cvs.style.width = (BASE_W * scale) + 'px';
+  cvs.style.height = (BASE_H * scale) + 'px';
+}
+window.addEventListener('resize', resize); resize();
+
+// ---- Input ----
+const keys = {};
+const mouse = { x: BASE_W/2, y: BASE_H/2, down: false, justDown: false };
+window.addEventListener('keydown', e => {
+  if (!keys[e.code]) keys[e.code+'_p'] = true;
+  keys[e.code] = true;
+  if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
+});
+window.addEventListener('keyup', e => { keys[e.code] = false; });
+cvs.addEventListener('mousemove', e => {
+  const r = cvs.getBoundingClientRect();
+  mouse.x = (e.clientX - r.left) / scale;
+  mouse.y = (e.clientY - r.top) / scale;
+});
+cvs.addEventListener('mousedown', e => { if(e.button===0){mouse.down=true;mouse.justDown=true;} });
+cvs.addEventListener('mouseup', e => { if(e.button===0) mouse.down=false; });
+cvs.addEventListener('contextmenu', e => e.preventDefault());
+
+// ---- Audio ----
+let AC = null;
+function beep(freq, dur, type='square', vol=0.04) {
+  try {
+    if (!AC) AC = new (window.AudioContext||window.webkitAudioContext)();
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.value = vol;
+    o.connect(g); g.connect(AC.destination);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + dur);
+    o.stop(AC.currentTime + dur);
+  } catch(e){}
+}
+
+// ---- Utility ----
+const rnd = (a,b)=>a+Math.random()*(b-a);
+const rndi = (a,b)=>Math.floor(rnd(a,b+1));
+const clamp = (v,a,b)=>v<a?a:v>b?b:v;
+const dist2 = (a,b)=>{const dx=a.x-b.x,dy=a.y-b.y;return dx*dx+dy*dy;};
+const lerp = (a,b,t)=>a+(b-a)*t;
+
+// ---- Game State ----
+const G = {
+  state: 'title', // title, play, dead, victory
+  time: 0,
+  deaths: 0,
+  ng: 0,
+  cam: {x:0,y:0},
+  shake: 0,
+  hitStop: 0,
+  msg: '',
+  msgT: 0,
+  victoryTime: 0,
+  spawnTimer: 0,
+  super: 0,
+};
+
+// ---- World ----
+const WORLD_W = 1920, WORLD_H = 1200;
+const walls = [
+  // border
+  {x:-20,y:-20,w:WORLD_W+40,h:20},
+  {x:-20,y:WORLD_H,w:WORLD_W+40,h:20},
+  {x:-20,y:-20,w:20,h:WORLD_H+40},
+  {x:WORLD_W,y:-20,w:20,h:WORLD_H+40},
+  // interior
+  {x:300,y:200,w:60,h:400},
+  {x:500,y:600,w:400,h:60},
+  {x:900,y:100,w:60,h:350},
+  {x:1100,y:600,w:60,h:400},
+  {x:1400,y:200,w:400,h:60},
+  {x:1200,y:900,w:400,h:60},
+  {x:200,y:900,w:300,h:60},
+  {x:700,y:1000,w:60,h:180},
+  {x:1600,y:700,w:60,h:400},
+  {x:400,y:400,w:60,h:150},
+  {x:1300,y:400,w:60,h:150},
+];
+
+const bonfires = [
+  {x:150,y:150,r:40},
+  {x:1000,y:1100,r:40},
+];
+
+// ---- Player ----
+const player = {
+  x: 150, y: 150, vx:0, vy:0, r: 14,
+  hp: 100, maxHp: 100,
+  stamina: 100, maxStamina: 100,
+  staminaRegen: 25,
+  speed: 200,
+  facing: 0,
+  attackT: 0, attackCd: 0,
+  rollT: 0, rollCd: 0, rollDir: {x:0,y:0},
+  iframes: 0,
+  xp: 0, xpNext: 20, level: 1,
+  statPoints: 0,
+  might: 0, vigor: 0, swiftness: 0,
+  souls: 0,
+  soulsLost: 0,
+  soulsLostX: 0, soulsLostY: 0,
+  hasLostSouls: false,
+  soulsDecayT: 0,
+  weapons: [
+    { name:'Rusty Sword', dmg: 12, speed: 1.0, rarity: 0 },
+    { name:'Short Blade', dmg: 8, speed: 1.3, rarity: 0 },
+  ],
+  weaponIdx: 0,
+  lifeOnKill: 0,
+  bonusSpeed: 0,
+  hitFlash: 0,
+  respawnX: 150, respawnY: 150,
+};
+function weapon() { return player.weapons[player.weaponIdx]; }
+function playerDmg() { return weapon().dmg + player.might * 3; }
+
+// ---- Entities ----
+let enemies = [];
+let projectiles = [];
+let particles = [];
+let damageNums = [];
+let lootDrops = [];
+let soulOrbs = [];
+let superOrbs = [];
+let lootBeams = [];
+
+// ---- Rarity ----
+const RARITY = [
+  {name:'Common', color:'#aaa', mult:1.0},
+  {name:'Magic', color:'#4af', mult:1.3},
+  {name:'Rare', color:'#fd4', mult:1.7},
+  {name:'Legendary', color:'#f84', mult:2.2},
+];
+const AFFIXES = [
+  {name:'+DMG', apply:(w,v)=>{w.dmg+=v;}},
+  {name:'+SPD', apply:(w,v)=>{w.speed+=v*0.05;}},
+  {name:'+STA', apply:(w,v)=>{player.maxStamina+=v*3;}},
+  {name:'+LIFE', apply:(w,v)=>{player.lifeOnKill+=v*2;}},
+];
+
+function makeLoot(x,y) {
+  const roll = Math.random();
+  let rarity = 0;
+  if (roll < 0.55) rarity = 0;
+  else if (roll < 0.85) rarity = 1;
+  else if (roll < 0.97) rarity = 2;
+  else rarity = 3;
+  const baseNames = ['Sword','Axe','Mace','Blade','Falchion'];
+  const prefix = ['','Fine ','Sharp ','Ancient ','Cursed '][Math.min(4, rarity + rndi(0,1))];
+  const w = {
+    name: prefix + baseNames[rndi(0,baseNames.length-1)],
+    dmg: Math.round(rnd(6,14) * RARITY[rarity].mult),
+    speed: rnd(0.8,1.4),
+    rarity: rarity,
+    affixes: [],
+  };
+  const nAff = rarity;
+  for (let i=0;i<nAff;i++) {
+    const a = AFFIXES[rndi(0,AFFIXES.length-1)];
+    w.affixes.push(a.name);
+  }
+  // apply affixes
+  for (const an of w.affixes) {
+    const a = AFFIXES.find(x=>x.name===an);
+    if (a) a.apply(w, 1);
+  }
+  lootDrops.push({x,y,w, bob:0, life: 30});
+  lootBeams.push({x,y,color:RARITY[rarity].color, t:0, max:1.2});
+}
+
+function lootScore(w) {
+  return w.dmg * 2 + w.speed * 10 + w.rarity * 5;
+}
+
+function pickupLoot(idx) {
+  const drop = lootDrops[idx];
+  const w = drop.w;
+  const cur = player.weapons[player.weaponIdx];
+  if (lootScore(w) > lootScore(cur)) {
+    player.weapons[player.weaponIdx] = w;
+    addMsg('Equipped ' + w.name + ' (' + RARITY[w.rarity].name + ')', RARITY[w.rarity].color);
+  } else {
+    const other = player.weapons[1-player.weaponIdx];
+    if (lootScore(w) > lootScore(other)) {
+      player.weapons[1-player.weaponIdx] = w;
+      addMsg('Stored ' + w.name, RARITY[w.rarity].color);
+    } else {
+      addMsg('Discarded ' + w.name, '#888');
+    }
+  }
+  lootDrops.splice(idx,1);
+  beep(600, 0.08, 'sine', 0.03);
+}
+
+// ---- Enemies ----
+function spawnEnemy(type, x, y) {
+  const mult = 1 + G.ng * 0.3;
+  const base = {
+    walker: { hp: 40, speed: 70, dmg: 10, r: 14, color: '#a44', xp: 8, souls: 15 },
+    spitter: { hp: 30, speed: 50, dmg: 8, r: 12, color: '#4a4', xp: 10, souls: 20 },
+    dodger: { hp: 25, speed: 130, dmg: 12, r: 11, color: '#44a', xp: 12, souls: 25 },
+  }[type];
+  enemies.push({
+    type, x, y, r: base.r, color: base.color,
+    hp: base.hp * mult, maxHp: base.hp * mult,
+    speed: base.speed * mult,
+    dmg: base.dmg * mult,
+    xp: base.xp, souls: base.souls,
+    vx:0, vy:0, flash:0, attackCd:0, state:'idle',
+    dodgeCd: 0, telegraph: 0,
+  });
+}
+
+function spawnBoss() {
+  const mult = 1 + G.ng * 0.3;
+  enemies.push({
+    type:'boss', x: 1750, y: 600, r: 40, color:'#c22',
+    hp: 500 * mult, maxHp: 500 * mult,
+    speed: 90 * mult, dmg: 25 * mult,
+    xp: 100, souls: 300, vx:0, vy:0, flash:0,
+    attackCd: 0, state:'idle', pattern: 0, patternT: 0,
+    dodgeCd: 0, telegraph: 0, isBoss: true,
+    engaged: false,
+  });
+}
+
+function spawnAllEnemies() {
+  enemies = [];
+  projectiles = [];
+  spawnEnemy('walker', 600, 300);
+  spawnEnemy('walker', 800, 800);
+  spawnEnemy('walker', 1400, 300);
+  spawnEnemy('spitter', 1000, 200);
+  spawnEnemy('spitter', 1500, 900);
+  spawnEnemy('dodger', 700, 500);
+  spawnEnemy('dodger', 1200, 1000);
+  spawnEnemy('walker', 1600, 400);
+  spawnEnemy('spitter', 300, 700);
+  spawnEnemy('dodger', 500, 1100);
+  spawnBoss();
+}
+
+// ---- Particles ----
+function poof(x,y,color,n=12) {
+  for (let i=0;i<n;i++) {
+    const a = Math.random()*Math.PI*2;
+    const s = rnd(30,120);
+    particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rnd(0.3,0.7),max:0.7,color,r:rnd(2,5)});
+  }
+}
+function addDmgNum(x,y,val,color='#fff') {
+  damageNums.push({x,y,val:Math.round(val),life:0.8,color,vy:-40});
+}
+function addMsg(text, color='#ccc') { G.msg = text; G.msgColor = color; G.msgT = 2.5; }
+
+// ---- Collision ----
+function aabb(e) { return {x:e.x-e.r, y:e.y-e.r, w:e.r*2, h:e.r*2}; }
+function resolveWalls(e) {
+  for (const w of walls) {
+    const ex = e.x - e.r, ey = e.y - e.r, ew = e.r*2, eh = e.r*2;
+    if (ex < w.x+w.w && ex+ew > w.x && ey < w.y+w.h && ey+eh > w.y) {
+      const overlapL = (ex+ew) - w.x;
+      const overlapR = (w.x+w.w) - ex;
+      const overlapT = (ey+eh) - w.y;
+      const overlapB = (w.y+w.h) - ey;
+      const min = Math.min(overlapL, overlapR, overlapT, overlapB);
+      if (min === overlapL) e.x = w.x - e.r;
+      else if (min === overlapR) e.x = w.x+w.w + e.r;
+      else if (min === overlapT) e.y = w.y - e.r;
+      else e.y = w.y+w.h + e.r;
+    }
+  }
+}
+
+// ---- Update ----
+function update(dt) {
+  if (G.state !== 'play') return;
+  G.time += dt;
+  if (G.shake > 0) G.shake -= dt * 40;
+  if (G.hitStop > 0) { G.hitStop -= dt; dt *= 0.2; }
+  if (G.msgT > 0) G.msgT -= dt;
+
+  // Player input
+  let mx = 0, my = 0;
+  if (keys['KeyW'] || keys['ArrowUp']) my -= 1;
+  if (keys['KeyS'] || keys['ArrowDown']) my += 1;
+  if (keys['KeyA'] || keys['ArrowLeft']) mx -= 1;
+  if (keys['KeyD'] || keys['ArrowRight']) mx += 1;
+  const mlen = Math.hypot(mx,my);
+  if (mlen > 0) { mx/=mlen; my/=mlen; }
+
+  // Facing
+  const wmx = mouse.x + G.cam.x, wmy = mouse.y + G.cam.y;
+  player.facing = Math.atan2(wmy - player.y, wmx - player.x);
+
+  // Roll
+  if (player.rollCd > 0) player.rollCd -= dt;
+  if (player.rollT > 0) {
+    player.rollT -= dt;
+    player.x += player.rollDir.x * 420 * dt;
+    player.y += player.rollDir.y * 420 * dt;
+    player.iframes = Math.max(player.iframes, 0.02);
+  } else {
+    const spd = (player.speed + player.bonusSpeed + player.swiftness * 5) * (player.stamina > 0 ? 1 : 0.5);
+    player.x += mx * spd * dt;
+    player.y += my * spd * dt;
+  }
+  if (player.iframes > 0) player.iframes -= dt;
+  if (player.attackCd > 0) player.attackCd -= dt;
+  if (player.attackT > 0) player.attackT -= dt;
+  if (player.hitFlash > 0) player.hitFlash -= dt;
+
+  // Dodge roll
+  if (keys['ShiftLeft'] && player.rollT <= 0 && player.rollCd <= 0 && player.stamina >= 30) {
+    player.stamina -= 30;
+    player.rollT = 0.28;
+    player.rollCd = 0.5;
+    player.iframes = 0.35;
+    const a = (mx||my) ? Math.atan2(my,mx) : player.facing;
+    player.rollDir = {x:Math.cos(a), y:Math.sin(a)};
+    beep(220, 0.1, 'sawtooth', 0.03);
+  }
+
+  // Attack
+  if ((mouse.justDown || keys['Space_p']) && player.attackCd <= 0 && player.stamina >= 15 && player.rollT <= 0) {
+    player.stamina -= 15;
+    player.attackT = 0.18;
+    player.attackCd = 0.35 / weapon().speed;
+    beep(440, 0.06, 'square', 0.03);
+    // hit detection: arc in front
+    const range = 55 + player.might * 2;
+    const arc = Math.PI * 0.7;
+    for (let i=enemies.length-1;i>=0;i--) {
+      const e = enemies[i];
+      const d = Math.hypot(e.x-player.x, e.y-player.y);
+      if (d < range + e.r) {
+        const ang = Math.atan2(e.y-player.y, e.x-player.x);
+        let diff = ang - player.facing;
+        while (diff > Math.PI) diff -= Math.PI*2;
+        while (diff < -Math.PI) diff += Math.PI*2;
+        if (Math.abs(diff) < arc/2) {
+          const dmg = playerDmg() * rnd(0.9,1.1);
+          e.hp -= dmg;
+          e.flash = 0.15;
+          addDmgNum(e.x, e.y - e.r, dmg, '#ff4');
+          poof(e.x, e.y, '#f44', 5);
+          if (e.hp <= 0) killEnemy(i);
+        }
+      }
+    }
+  }
+
+  // Stamina regen
+  const moving = mlen > 0 || player.rollT > 0;
+  if (player.attackT <= 0 && player.rollT <= 0) {
+    const regen = player.staminaRegen * (moving ? 0.5 : 1.5);
+    player.stamina = Math.min(player.maxStamina, player.stamina + regen * dt);
+  }
+
+  // SUPERHOT: while the window is live, world time is gated by your movement
+  let wdt = dt;
+  if (G.super > 0) {
+    G.super -= dt;
+    const moving = mlen > 0 || player.rollT > 0;
+    wdt = moving ? dt : dt * 0.06;
+    if (G.super <= 0) { G.super = 0; addMsg('time catches up', '#789'); }
+  }
+  dt = wdt;
+
+  // Clamp player
+  player.x = clamp(player.x, player.r, WORLD_W - player.r);
+  player.y = clamp(player.y, player.r, WORLD_H - player.r);
+  resolveWalls(player);
+
+  // Bonfire interactions
+  for (const b of bonfires) {
+    if (dist2(player, b) < (b.r+player.r)*(b.r+player.r)) {
+      if (player.hp < player.maxHp || enemies.length > 0) {
+        player.hp = player.maxHp;
+        player.stamina = player.maxStamina;
+        player.respawnX = b.x; player.respawnY = b.y;
+        spawnAllEnemies();
+        addMsg('Bonfire rested — enemies respawned', '#fc8');
+        beep(330, 0.3, 'sine', 0.05);
+        beep(440, 0.3, 'sine', 0.04);
+      }
+    }
+  }
+
+  // Lost souls decay
+  if (player.hasLostSouls) {
+    player.soulsLost *= (1 - 0.01 * dt);
+    if (player.soulsLost < 1) { player.hasLostSouls = false; player.soulsLost = 0; }
+  }
+
+  // Enemies
+  for (let i=enemies.length-1;i>=0;i--) {
+    const e = enemies[i];
+    if (e.hp <= 0) { killEnemy(i); continue; }
+    if (e.flash > 0) e.flash -= dt;
+    if (e.attackCd > 0) e.attackCd -= dt;
+    if (e.dodgeCd > 0) e.dodgeCd -= dt;
+    if (e.telegraph > 0) e.telegraph -= dt;
+
+    const dx = player.x - e.x, dy = player.y - e.y;
+    const d = Math.hypot(dx,dy) || 1;
+    const nx = dx/d, ny = dy/d;
+
+    if (e.type === 'walker') {
+      e.vx = nx * e.speed; e.vy = ny * e.speed;
+      if (d < e.r + player.r + 4 && e.attackCd <= 0) {
+        hurtPlayer(e.dmg);
+        e.attackCd = 0.9;
+      }
+    } else if (e.type === 'spitter') {
+      if (d < 200) { e.vx = -nx * e.speed; e.vy = -ny * e.speed; }
+      else if (d > 320) { e.vx = nx * e.speed; e.vy = ny * e.speed; }
+      else { e.vx = -ny * e.speed * 0.5; e.vy = nx * e.speed * 0.5; }
+      if (e.attackCd <= 0 && d < 400) {
+        e.attackCd = 1.6;
+        e.telegraph = 0.4;
+        projectiles.push({x:e.x, y:e.y, vx:nx*200, vy:ny*200, r:6, dmg:e.dmg, life:3, color:'#8f4'});
+      }
+    } else if (e.type === 'dodger') {
+      // fast, dodges when player attacks
+      if (player.attackT > 0 && d < 100 && e.dodgeCd <= 0) {
+        const perp = Math.random() < 0.5 ? 1 : -1;
+        e.vx = -ny * perp * e.speed * 2.5;
+        e.vy = nx * perp * e.speed * 2.5;
+        e.dodgeCd = 0.8;
+      } else {
+        e.vx = nx * e.speed; e.vy = ny * e.speed;
+      }
+      if (d < e.r + player.r + 4 && e.attackCd <= 0) {
+        hurtPlayer(e.dmg);
+        e.attackCd = 0.7;
+      }
+    } else if (e.type === 'boss') {
+      if (!e.engaged) {
+        e.engaged = true;
+        addMsg('THE GATEKEEPER AWAKENS', '#f44');
+        beep(110, 0.8, 'sawtooth', 0.06);
+      }
+      e.patternT -= dt;
+      if (e.patternT <= 0) {
+        e.pattern = (e.pattern + 1) % 2;
+        e.patternT = e.pattern === 0 ? 2.5 : 3.0;
+      }
+      if (e.pattern === 0) {
+        // chase
+        e.vx = nx * e.speed; e.vy = ny * e.speed;
+        if (d < e.r + player.r + 6 && e.attackCd <= 0) {
+          hurtPlayer(e.dmg);
+          e.attackCd = 0.8;
+        }
+      } else {
+        // radial burst
+        e.vx = 0; e.vy = 0;
+        if (e.attackCd <= 0) {
+          e.attackCd = 1.4;
+          for (let k=0;k<8;k++) {
+            const a = (k/8)*Math.PI*2 + G.time;
+            projectiles.push({x:e.x, y:e.y, vx:Math.cos(a)*160, vy:Math.sin(a)*160, r:7, dmg:e.dmg*0.6, life:3, color:'#f44'});
+          }
+          beep(180, 0.15, 'square', 0.04);
+        }
+      }
+    }
+
+    e.x += e.vx * dt; e.y += e.vy * dt;
+    e.x = clamp(e.x, e.r, WORLD_W - e.r);
+    e.y = clamp(e.y, e.r, WORLD_H - e.r);
+    resolveWalls(e);
+  }
+
+  // Projectiles
+  for (let i=projectiles.length-1;i>=0;i--) {
+    const p = projectiles[i];
+    p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
+    if (p.life <= 0) { projectiles.splice(i,1); continue; }
+    if (dist2(p, player) < (p.r + player.r)*(p.r + player.r)) {
+      if (player.iframes <= 0) hurtPlayer(p.dmg);
+      projectiles.splice(i,1);
+      continue;
+    }
+    let hitWall = false;
+    for (const w of walls) {
+      if (p.x > w.x && p.x < w.x+w.w && p.y > w.y && p.y < w.y+w.h) { hitWall = true; break; }
+    }
+    if (hitWall) projectiles.splice(i,1);
+  }
+
+  // Particles
+  for (let i=particles.length-1;i>=0;i--) {
+    const p = particles[i];
+    p.x += p.vx*dt; p.y += p.vy*dt;
+    p.vx *= 0.94; p.vy *= 0.94;
+    p.life -= dt;
+    if (p.life <= 0) particles.splice(i,1);
+  }
+
+  // Damage numbers
+  for (let i=damageNums.length-1;i>=0;i--) {
+    const d = damageNums[i];
+    d.y += d.vy*dt; d.vy *= 0.95; d.life -= dt;
+    if (d.life <= 0) damageNums.splice(i,1);
+  }
+
+  // Loot
+  for (let i=lootDrops.length-1;i>=0;i--) {
+    const l = lootDrops[i];
+    l.bob += dt*3;
+    l.life -= dt;
+    if (l.life <= 0) { lootDrops.splice(i,1); continue; }
+    if (dist2(l, player) < (player.r+18)*(player.r+18)) {
+      pickupLoot(i);
+    }
+  }
+  for (let i=lootBeams.length-1;i>=0;i--) {
+    lootBeams[i].t += dt;
+    if (lootBeams[i].t > lootBeams[i].max) lootBeams.splice(i,1);
+  }
+
+  // Soul orbs
+  for (let i=soulOrbs.length-1;i>=0;i--) {
+    const s = soulOrbs[i];
+    const dx = player.x - s.x, dy = player.y - s.y;
+    const d = Math.hypot(dx,dy) || 1;
+    if (d < 200) {
+      s.vx = dx/d * 400; s.vy = dy/d * 400;
+    }
+    s.x += s.vx*dt; s.y += s.vy*dt;
+    s.life -= dt;
+    if (d < player.r + 8) {
+      player.souls += s.value;
+      soulOrbs.splice(i,1);
+      beep(880, 0.05, 'sine', 0.02);
+      continue;
+    }
+    if (s.life <= 0) soulOrbs.splice(i,1);
+  }
+
+  // SUPERHOT pickups
+  for (let i=superOrbs.length-1;i>=0;i--) {
+    const s = superOrbs[i];
+    s.t = (s.t||0) + dt;
+    const dx = player.x - s.x, dy = player.y - s.y;
+    const d = Math.hypot(dx,dy) || 1;
+    if (d < 220) { s.vx = (s.vx||0) + dx/d * 500 * dt; s.vy = (s.vy||0) + dy/d * 500 * dt; }
+    s.x += (s.vx||0)*dt; s.y += (s.vy||0)*dt;
+    if (d < player.r + 14) {
+      superOrbs.splice(i,1);
+      G.super = 4;
+      addMsg('SUPERHOT — time is your movement', '#f44');
+      beep(1200, 0.12, 'square', 0.04); beep(800, 0.2, 'sine', 0.03);
+      continue;
+    }
+  }
+
+  // Lost souls pickup
+  if (player.hasLostSouls) {
+    const dx = player.x - player.soulsLostX, dy = player.y - player.soulsLostY;
+    if (dx*dx + dy*dy < 30*30) {
+      player.souls += Math.floor(player.soulsLost);
+      addMsg('Recovered ' + Math.floor(player.soulsLost) + ' souls', '#fc8');
+      player.hasLostSouls = false;
+      player.soulsLost = 0;
+      beep(660, 0.2, 'sine', 0.05);
+    }
+  }
+
+  // XP / level
+  if (player.xp >= player.xpNext) {
+    player.xp -= player.xpNext;
+    player.level++;
+    player.xpNext = Math.floor(player.xpNext * 1.5);
+    player.statPoints++;
+    addMsg('LEVEL UP! Press Z/X/C to spend stat point', '#ff4');
+    beep(550, 0.2, 'sine', 0.05);
+    beep(770, 0.2, 'sine', 0.04);
+  }
+
+  // Stat allocation
+  if (player.statPoints > 0) {
+    if (keys['KeyZ_p']) { player.might++; player.statPoints--; addMsg('+1 Might', '#f84'); }
+    if (keys['KeyX_p']) { player.vigor++; player.statPoints--; player.maxHp += 15; player.hp += 15; addMsg('+1 Vigor', '#f44'); }
+    if (keys['KeyC_p']) { player.swiftness++; player.statPoints--; addMsg('+1 Swiftness', '#4af'); }
+  }
+
+  // Weapon swap
+  if (keys['Digit1_p']) { player.weaponIdx = 0; addMsg('Weapon 1: ' + player.weapons[0].name, RARITY[player.weapons[0].rarity].color); }
+  if (keys['Digit2_p']) { player.weaponIdx = 1; addMsg('Weapon 2: ' + player.weapons[1].name, RARITY[player.weapons[1].rarity].color); }
+
+  // Camera
+  const targetCamX = clamp(player.x - BASE_W/2, 0, WORLD_W - BASE_W);
+  const targetCamY = clamp(player.y - BASE_H/2, 0, WORLD_H - BASE_H);
+  G.cam.x = lerp(G.cam.x, targetCamX, 0.15);
+  G.cam.y = lerp(G.cam.y, targetCamY, 0.15);
+
+  // Victory check
+  if (!enemies.some(e=>e.isBoss)) {
+    G.state = 'victory';
+    G.victoryTime = G.time;
+    beep(660, 0.4, 'sine', 0.06);
+    beep(880, 0.6, 'sine', 0.05);
+  }
+
+  // Clear per-frame input
+  for (const k in keys) if (k.endsWith('_p')) delete keys[k];
+  mouse.justDown = false;
+}
+
+function hurtPlayer(dmg) {
+  if (player.iframes > 0) return;
+  player.hp -= dmg;
+  player.hitFlash = 0.2;
+  player.iframes = 0.5;
+  G.shake = 8;
+  addDmgNum(player.x, player.y - player.r, dmg, '#f44');
+  beep(150, 0.15, 'sawtooth', 0.05);
+  if (player.hp <= 0) playerDie();
+}
+
+function playerDie() {
+  G.deaths++;
+  player.hasLostSouls = true;
+  player.soulsLost = player.souls;
+  player.soulsLostX = player.x;
+  player.soulsLostY = player.y;
+  player.souls = 0;
+  player.hp = player.maxHp;
+  player.stamina = player.maxStamina;
+  player.x = player.respawnX;
+  player.y = player.respawnY;
+  player.iframes = 1.5;
+  G.state = 'dead';
+  beep(80, 1.0, 'sawtooth', 0.08);
+}
+
+function killEnemy(i) {
+  const e = enemies[i];
+  poof(e.x, e.y, e.color, e.isBoss ? 40 : 15);
+  player.xp += e.xp;
+  // souls drop as orbs
+  const n = e.isBoss ? 5 : 1;
+  for (let k=0;k<n;k++) {
+    soulOrbs.push({
+      x: e.x + rnd(-10,10), y: e.y + rnd(-10,10),
+      vx: rnd(-50,50), vy: rnd(-50,50),
+      value: Math.ceil(e.souls / n),
+      life: 8, color: '#fc8',
+    });
+  }
+  // loot
+  if (!e.isBoss) {
+    if (Math.random() < 0.35) makeLoot(e.x, e.y);
+  } else {
+    makeLoot(e.x, e.y);
+    makeLoot(e.x+30, e.y);
+  }
+  // life on kill
+  if (player.lifeOnKill > 0) {
+    player.hp = Math.min(player.maxHp, player.hp + player.lifeOnKill);
+  }
+  enemies.splice(i,1);
+  if (Math.random() < 0.09 && superOrbs.length < 2) superOrbs.push({ x: e.x, y: e.y, vx: 0, vy: 0, t: 0 });
+  beep(300, 0.1, 'square', 0.03);
+}
+
+// ---- Render ----
+function draw() {
+  ctx.fillStyle = '#141418';
+  ctx.fillRect(0,0,BASE_W,BASE_H);
+
+  if (G.state === 'title') {
+    ctx.fillStyle = '#eee';
+    ctx.font = 'bold 64px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('MUD', BASE_W/2, BASE_H/2 - 40);
+    ctx.font = '20px monospace';
+    ctx.fillStyle = '#aaa';
+    ctx.fillText('press any key', BASE_W/2, BASE_H/2 + 20);
+    ctx.font = '13px monospace';
+    ctx.fillStyle = '#666';
+    ctx.fillText('WASD move · Mouse aim · LMB/Space attack · Shift roll', BASE_W/2, BASE_H/2 + 60);
+    ctx.fillText('Z/X/C spend stats · 1/2 swap weapons · Bonfires heal & respawn', BASE_W/2, BASE_H/2 + 80);
+    return;
+  }
+
+  const shakeX = G.shake > 0 ? rnd(-G.shake,G.shake) : 0;
+  const shakeY = G.shake > 0 ? rnd(-G.shake,G.shake) : 0;
+  ctx.save();
+  ctx.translate(-G.cam.x + shakeX, -G.cam.y + shakeY);
+
+  // world
+  ctx.fillStyle = '#26262e';
+  for (const w of walls) ctx.fillRect(w.x, w.y, w.w, w.h);
+
+  for (const b of bonfires) {
+    const flick = 0.7 + Math.sin(G.time * 9 + b.x) * 0.3;
+    ctx.strokeStyle = '#7a5a2a'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.stroke();
+    ctx.fillStyle = '#f80';
+    ctx.beginPath();
+    ctx.moveTo(b.x - 8*flick, b.y);
+    ctx.quadraticCurveTo(b.x, b.y - 26*flick, b.x + 8*flick, b.y);
+    ctx.fill();
+    ctx.fillStyle = '#fd4';
+    ctx.beginPath();
+    ctx.moveTo(b.x - 4*flick, b.y);
+    ctx.quadraticCurveTo(b.x, b.y - 14*flick, b.x + 4*flick, b.y);
+    ctx.fill();
+  }
+
+  if (player.hasLostSouls) {
+    const px = player.soulsLostX, py = player.soulsLostY;
+    ctx.strokeStyle = '#fc8'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(px, py, 10 + Math.sin(G.time*5)*2, 0, Math.PI*2); ctx.stroke();
+    ctx.fillStyle = '#fc8'; ctx.font = '11px monospace'; ctx.textAlign = 'center';
+    ctx.fillText(Math.floor(player.soulsLost), px, py - 16);
+  }
+
+  for (const beam of lootBeams) {
+    const a = Math.max(0, 1 - beam.t / beam.max);
+    ctx.strokeStyle = beam.color; ctx.globalAlpha = a * 0.8; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(beam.x, beam.y); ctx.lineTo(beam.x, beam.y - 60); ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  for (const d of lootDrops) {
+    const rc = RARITY[d.w.rarity].color;
+    ctx.fillStyle = rc;
+    ctx.beginPath(); ctx.arc(d.x, d.y - 4, 6, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = rc; ctx.globalAlpha = 0.4;
+    ctx.beginPath(); ctx.arc(d.x, d.y - 4, 10, 0, Math.PI*2); ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  for (const s of soulOrbs) {
+    ctx.fillStyle = s.color; ctx.globalAlpha = 0.85;
+    ctx.beginPath(); ctx.arc(s.x, s.y, 4, 0, Math.PI*2); ctx.fill();
+    ctx.globalAlpha = 0.25;
+    ctx.beginPath(); ctx.arc(s.x, s.y, 8, 0, Math.PI*2); ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
+  for (const e of enemies) {
+    ctx.save();
+    ctx.translate(e.x, e.y);
+    if (e.telegraph > 0) {
+      ctx.strokeStyle = '#f44'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(0, 0, e.r + 6, 0, Math.PI*2); ctx.stroke();
+    }
+    ctx.fillStyle = e.flash > 0 ? '#fff' : e.color;
+    ctx.beginPath(); ctx.arc(0, 0, e.r, 0, Math.PI*2); ctx.fill();
+    if (e.type === 'boss') {
+      ctx.fillStyle = '#000';
+      ctx.beginPath(); ctx.arc(0, 0, e.r*0.55, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#f44';
+      ctx.beginPath(); ctx.arc(0, 0, e.r*0.3 + Math.sin(G.time*6)*2, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+    if (e.hp < e.maxHp) {
+      ctx.fillStyle = '#300'; ctx.fillRect(e.x - e.r, e.y - e.r - 9, e.r*2, 4);
+      ctx.fillStyle = '#c33'; ctx.fillRect(e.x - e.r, e.y - e.r - 9, e.r*2 * (e.hp/e.maxHp), 4);
+    }
+  }
+
+  for (const p of projectiles) {
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+  }
+
+  for (const pt of particles) {
+    ctx.globalAlpha = Math.max(0, pt.life / pt.max);
+    ctx.fillStyle = pt.color;
+    ctx.fillRect(pt.x - pt.r/2, pt.y - pt.r/2, pt.r, pt.r);
+    ctx.globalAlpha = 1;
+  }
+
+  // player
+  ctx.save();
+  ctx.translate(player.x, player.y);
+  if (player.iframes > 0) ctx.globalAlpha = 0.5 + Math.sin(G.time * 30) * 0.3;
+  const pcol = player.hitFlash > 0 ? '#fff' : '#8cf';
+  ctx.fillStyle = pcol;
+  const stretch = player.rollT > 0 ? 1.35 : 1;
+  ctx.beginPath(); ctx.arc(0, 0, player.r * (player.rollT > 0 ? 0.8 : 1), 0, Math.PI*2); ctx.fill();
+  if (player.rollT > 0) {
+    ctx.fillStyle = 'rgba(140,200,255,0.35)';
+    ctx.beginPath(); ctx.ellipse(0, 0, player.r * stretch, player.r * 0.7, player.facing, 0, Math.PI*2); ctx.fill();
+  }
+  // sword arc while attacking
+  if (player.attackT > 0) {
+    const prog = 1 - (player.attackT / (weapon().speed * 0.25));
+    ctx.strokeStyle = '#eee'; ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.arc(0, 0, player.r + 14, player.facing - 0.9 + prog * 1.8, player.facing - 0.9 + prog * 1.8 + 0.9);
+    ctx.stroke();
+  }
+  // facing tick
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(Math.cos(player.facing) * (player.r - 2), Math.sin(player.facing) * (player.r - 2));
+  ctx.lineTo(Math.cos(player.facing) * (player.r + 5), Math.sin(player.facing) * (player.r + 5));
+  ctx.stroke();
+  ctx.restore();
+
+  for (const dn of damageNums) {
+    ctx.globalAlpha = Math.max(0, dn.life / 0.8);
+    ctx.fillStyle = dn.color; ctx.font = 'bold 13px monospace'; ctx.textAlign = 'center';
+    ctx.fillText(dn.val, dn.x, dn.y);
+    ctx.globalAlpha = 1;
+  }
+
+  ctx.restore();
+
+  // ---- HUD (screen space) ----
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#300'; ctx.fillRect(20, 20, 220, 16);
+  ctx.fillStyle = '#c33'; ctx.fillRect(20, 20, 220 * clamp(player.hp/player.maxHp,0,1), 16);
+  ctx.fillStyle = '#033'; ctx.fillRect(20, 40, 220, 10);
+  ctx.fillStyle = '#3c8'; ctx.fillRect(20, 40, 220 * clamp(player.stamina/player.maxStamina,0,1), 10);
+  ctx.fillStyle = '#114'; ctx.fillRect(20, 54, 220, 5);
+  ctx.fillStyle = '#48c'; ctx.fillRect(20, 54, 220 * clamp(player.xp/player.xpNext,0,1), 5);
+  ctx.fillStyle = '#ccc'; ctx.font = '12px monospace';
+  ctx.fillText('Lv ' + player.level + (player.statPoints > 0 ? '  ·  stat point! Z/X/C' : ''), 20, 78);
+  ctx.textAlign = 'right';
+  ctx.fillStyle = '#fc8'; ctx.font = 'bold 16px monospace';
+  ctx.fillText(player.souls + ' souls', BASE_W - 20, 34);
+  ctx.fillStyle = RARITY[weapon().rarity].color; ctx.font = '12px monospace';
+  ctx.fillText(weapon().name + (player.weapons[1].name !== weapon().name ? '  ·  1/2' : ''), BASE_W - 20, 52);
+  if (player.hasLostSouls) {
+    ctx.fillStyle = '#f66'; ctx.font = '12px monospace';
+    ctx.fillText(Math.floor(player.soulsLost) + ' souls left behind...', BASE_W - 20, 70);
+  }
+  for (const s of superOrbs) {
+    const bob = Math.sin((s.t || 0) * 5) * 3;
+    ctx.save();
+    ctx.translate(s.x, s.y + bob);
+    ctx.rotate(Math.PI / 4 + (s.t || 0) * 1.5);
+    ctx.fillStyle = '#f44'; ctx.fillRect(-7, -7, 14, 14);
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.strokeRect(-7, -7, 14, 14);
+    ctx.restore();
+  }
+  if (G.super > 0) {
+    ctx.fillStyle = 'rgba(255,60,60,' + (0.05 + 0.03 * Math.sin(G.time * 10)).toFixed(3) + ')';
+    ctx.fillRect(0, 0, BASE_W, BASE_H);
+    ctx.fillStyle = '#f44'; ctx.font = 'bold 18px monospace'; ctx.textAlign = 'center';
+    ctx.fillText('SUPERHOT', BASE_W / 2, 30);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(BASE_W / 2 - 60, 38, 120 * Math.max(0, Math.min(1, G.super / 4)), 4);
+  }
+  if (G.msgT > 0) {
+    ctx.globalAlpha = Math.min(1, G.msgT);
+    ctx.fillStyle = G.msgColor || '#ccc'; ctx.font = '14px monospace'; ctx.textAlign = 'center';
+    ctx.fillText(G.msg, BASE_W/2, BASE_H - 60);
+    ctx.globalAlpha = 1;
+  }
+  const boss = enemies.find(e => e.isBoss);
+  if (boss && boss.engaged) {
+    ctx.fillStyle = '#300'; ctx.fillRect(BASE_W/2 - 200, BASE_H - 34, 400, 14);
+    ctx.fillStyle = '#c22'; ctx.fillRect(BASE_W/2 - 200, BASE_H - 34, 400 * clamp(boss.hp/boss.maxHp,0,1), 14);
+    ctx.fillStyle = '#eee'; ctx.font = '11px monospace'; ctx.textAlign = 'center';
+    ctx.fillText('THE FIRST DRAGON', BASE_W/2, BASE_H - 38);
+  }
+
+  if (G.state === 'dead') {
+    ctx.fillStyle = 'rgba(40,0,0,0.72)'; ctx.fillRect(0,0,BASE_W,BASE_H);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#c33'; ctx.font = 'bold 58px monospace';
+    ctx.fillText('YOU DIED', BASE_W/2, BASE_H/2 - 20);
+    ctx.fillStyle = '#fc8'; ctx.font = '15px monospace';
+    if (player.soulsLost > 1) ctx.fillText(Math.floor(player.soulsLost) + ' souls remain where you fell', BASE_W/2, BASE_H/2 + 20);
+    ctx.fillStyle = '#888'; ctx.font = '14px monospace';
+    ctx.fillText('press R — the bonfire remembers you', BASE_W/2, BASE_H/2 + 55);
+  }
+  if (G.state === 'victory') {
+    ctx.fillStyle = 'rgba(30,25,0,0.8)'; ctx.fillRect(0,0,BASE_W,BASE_H);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#fd4'; ctx.font = 'bold 52px monospace';
+    ctx.fillText('THE DRAGON FALLS', BASE_W/2, BASE_H/2 - 30);
+    ctx.fillStyle = '#ccc'; ctx.font = '16px monospace';
+    ctx.fillText('time ' + Math.floor(G.victoryTime) + 's  ·  deaths ' + G.deaths + '  ·  loop ' + G.ng, BASE_W/2, BASE_H/2 + 15);
+    ctx.fillStyle = '#888'; ctx.font = '14px monospace';
+    ctx.fillText('press R — NG+ (they come back +30%)', BASE_W/2, BASE_H/2 + 50);
+  }
+}
+
+// ---- State transitions + main loop ----
+function startGame() {
+  spawnAllEnemies();
+  G.time = 0; G.state = 'play';
+  G.super = 0; superOrbs = [];
+  beep(220, 0.2, 'sine', 0.05);
+}
+function respawn() {
+  spawnAllEnemies();
+  player.hp = player.maxHp;
+  player.stamina = player.maxStamina;
+  G.super = 0; superOrbs = [];
+  G.state = 'play';
+  beep(160, 0.25, 'sine', 0.05);
+}
+function nextLoop() {
+  G.ng++;
+  spawnAllEnemies();
+  player.hp = player.maxHp;
+  player.stamina = player.maxStamina;
+  player.x = player.respawnX; player.y = player.respawnY;
+  G.state = 'play';
+  addMsg('NG+' + G.ng + ' — they hit harder now', '#f84');
+  beep(110, 0.4, 'sawtooth', 0.06);
+}
+function handleStateKeys() {
+  if (G.state === 'title') {
+    if (Object.values(keys).some(v => v) || mouse.justDown) startGame();
+  } else if (G.state === 'dead') {
+    if (keys['KeyR_p'] || keys['Enter_p'] || mouse.justDown) respawn();
+  } else if (G.state === 'victory') {
+    if (keys['KeyR_p']) nextLoop();
+  }
+}
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min((now - last) / 1000, 0.05);
+  last = now;
+  handleStateKeys();
+  update(dt);
+  draw();
+  for (const k in keys) if (k.endsWith('_p')) keys[k] = false;
+  mouse.justDown = false;
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+})();

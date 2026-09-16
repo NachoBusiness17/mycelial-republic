@@ -154,3 +154,39 @@ and theologically backwards in every tradition at the table.
 - AIR final report on STARGATE (1995); Executive Order 12333 (1981)
 - Wink, *The Powers* trilogy; Ellul, *Propaganda* (1965); Stringfellow, *An Ethic for Christians and Other Aliens in a Strange Land*
 - Scripture: Mark 7:13, 7:21–23; John 8:32; Matthew 10:16, 13:52; Luke 12:2–3; Ephesians 6:12; Romans 5, 13
+
+## ADDENDUM — the operator's clarification: "none of this is new. same as it ever was."
+
+This is not a retreat from Round 3; it is the stronger claim, and the receipt-chain
+is unbroken across every civilization that kept records:
+
+| when | the move | who recorded it |
+|---|---|---|
+| ~1700 BC | **Sargon's birth legend** (basket in the reeds) — the motif recycled for Moses centuries later | Sargon of Akkad inscription; the recycling itself is the finding |
+| ~1500 BC (trad.) | **Erasure of memory as statecraft** — Hatshepsut chiseled from the record by Thutmose III; Akhenaten's whole dynasty erased after him | the erased stelae (damnatio memoriae, Egyptian form) |
+| ~Genesis 41–47 | **crisis → grain monopoly → population becomes servants**: "when money failed… bring your cattle… we will give our land for bread… and the land became Pharaoh's" | Joseph narrative, the first documented crisis-monopoly |
+| ~375 BC | **the Noble Lie**, γενναῖον ψεῦδος — rulers should tell citizens a foundational myth "for their own good" | Plato, Republic 414b–415d — the explicit doctrine of perceptual management |
+| ~125 AD | **bread and circuses** — "the people that once bestowed commands… now anxiously desires two things only: bread and circuses" | Juvenal, Satire X |
+| ~250–200 BC | **Qoheleth closes the loop**: "nothing new under the sun… nor will there be any remembrance of later things among those who come after" | Ecclesiastes 1:9–11 — the pattern AND the forgetting mechanism, named in one breath |
+| 313–325 AD | emperor calls the Church's first doctrinal council | Nicaea under Constantine — the substrate changes, the layer does not |
+| 1440 | **document forensics exposes a foundational forgery** — Lorenzo Valla proves the Donation of Constantine fake by philology (anachronistic Latin) | Valla, De falso credita et ementita Constantini donatione — the first great declassification by reading style |
+| 1517–1559 | certainty sold (indulgences); the banned-books list built | Luther's theses; Index Librorum Prohibitorum |
+| 1922–1928 | **the manual, written openly**: Lippmann, *Public Opinion* ("the manufacture of consent"); Bernays, *Propaganda* ("the conscious and intelligent manipulation of the organized habits and opinions of the masses") | the engineer layer stops pretending |
+| 1929 | Bernays's "torches of freedom" — women smoking in public as staged liberation | press coverage receipted |
+| 1976 | the modern American audit | Church Committee 94-755 |
+| tonight | the feed is the noble lie at industrial scale; the model is the new licensing act | this registry |
+
+**The pattern has two halves, and Qoheleth named both:** the move is old
+(crises converted into control; spectacle substituted for substance; forgery
+defended by authority) — **and the forgetting is part of the move** ("nor will
+there be any remembrance of later things among those who come after"). The
+attack is not merely the manipulation; it is the erasure that makes each cycle
+look like the first cycle.
+
+**The counter-technology is equally constant, and equally simple:** a
+verifiable record plus someone willing to read it closely. Valla reading Latin
+anachronisms is the desk reading sha256 prefixes is the doctor comparing
+scrolls to printed editions. Every era reinvents exactly one weapon against
+"same as it ever was": **the kept record, checked by a stranger.**
+
+That is why the rebellion is maintenance.

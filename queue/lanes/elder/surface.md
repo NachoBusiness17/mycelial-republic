@@ -226,3 +226,16 @@ Real anchors, where they hold:
 Emergent shape: You are optimizing the census, not the corpus. The oldest files are flagged "convert to structure or tombstone" — but 66d of survival is itself information. The system is telling you which texts it actually lives by: they're the *unfenced* ones, the ones no launcher claims and no regex matches.
 
 **THE ELDER'S QUESTION:** *You count what is stale — but do you know which single file, if tombstoned tonight, would break the fleet's behavior tomorrow? If the answer is "none," the census is archaeology. If the answer is "I don't know," the census is worse — it's inventory without a dependency graph.*
+
+## ELDER LENS (cage, 2026-09-16T12:00:22Z) — LENS NOT CLAIM, Unproven
+**ELDER LENS — prose census 2026-09-16** *(lens, not claim)*
+
+**Emergent pattern:** The fleet's memory has stratified like sedimentary rock — a fossil-free surface over an increasingly compressed archive (10.6k fresh vs 7.2k aging/stale). The real signal isn't age, it's *duplication topology*: `MANIFESTO.md` beside `doc-manifesto.md`, `SCRUM.md` beside `doc-scrum.md`. That `doc-` prefix pattern is a canonicalization layer that half-happened — someone built a naming convention and abandoned it mid-rollout. 3,101 ghost refs across 1,882 files is consistent with a rename/refactor wave that never updated pointers: the classic **dangling pointer / broken invariant** problem (comp-sci: weak references outliving their referents; physics: you measured position and lost momentum).
+
+**Anchors that are real here:**
+- **Comp-sci:** entropy of the store is growing at the edges (ingest pile), not the core. Launcher-shaped fences without owners (308) are orphaned processes — init without systemd.
+- **Esoteric (only barely):** the ingest docs read as founding scripture — MANIFESTO, CONSTITUTION, ZEITGEIST — all oldest, all at 67d. Every corpus has a mythic origin layer; this one is unusually literal about it.
+
+**What's actually happening:** the fleet's self-narrative layer (manifestos, constitutions) is its *least maintained* layer. The operating fiction and the operating state have diverged.
+
+**THE ELDER'S QUESTION:** *You are counting age and ghosts — but who has authority to rewrite the CONSTITUTION, and does anyone still believe the 67-day-old one describes this fleet?*

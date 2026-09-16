@@ -143,6 +143,12 @@ LANES: list[dict[str, str]] = [
     # carrier; the gate below makes pacing structural. ENDPOINT LAW (verified live 09-16):
     # coding-plan subscriptions answer on /api/coding/paas/v4; the old /api/paas/v4
     # returns fake-1113 "insufficient balance" even with a full 10,000-credit pool.
+    {"id": "or-union-alpha", "base": "https://openrouter.ai/api/v1",
+     "model": "stealth/union-alpha", "key": "OPENROUTER_API_KEY", "style": "openai"},
+    # TIME-BOXED stealth lane: opencode's "Union Alpha" free for one week
+    # (tweet 2100236430890991782, posted 2026-09-16; window ends ~2026-09-23).
+    # Remove or re-price after the window. Steal/eval program: receipts/D23 questions
+    # + astra tri-state smoke fired against it — see watch/inbox/wave_20260916/receipts/.
     {"id": "or-glm52", "base": "https://openrouter.ai/api/v1", "model": "z-ai/glm-5.2:free",
      "key": "OPENROUTER_API_KEY", "style": "openai"},
     {"id": "or-nemotron", "base": "https://openrouter.ai/api/v1",

@@ -30,7 +30,7 @@ void dogrid(vec3 ro,vec3 rd){
      dosub(ro+rd*.001);
      vec3 src=-(ro-gsub.cell)/rd;
      src+=abs(.5*gsub.size/rd);
-     grid.d=min(src.x,min(src.z,src.z));
+     grid.d=min(src.x,min(src.y,src.z));
 }
 vec3 stepNoise(float x,float n){
     float u=smoothstep(.5-n,.5+n,fract(x));

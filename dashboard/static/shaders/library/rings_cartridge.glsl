@@ -1,6 +1,6 @@
 // THE RINGS — fleet original — one ring per day since 2026-08-25.
 // Lineage: operator's smoke-ring shader (shadertoy M3XBz4 iteration). CHAIN ROLE: SCENE.
-// uDays = fleet day count (injected by the runner).
+// uDay = fleet day count (injected by the runner — WRAP_TOP declares `uniform float uDay`).
 vec2 hash2(vec2 p){
     p=vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3)));
     return -1.+2.*fract(sin(p)*43758.5453123);
@@ -29,7 +29,7 @@ void mainImage(out vec4 fragColor,in vec2 fragCoord){
     float totalRingEnv=1.-smoothstep(0.,smokeFactor,dA);
     for(int ii=0;ii<32;ii++){
         float i=float(ii);
-        if(i>=uDays)break;
+        if(i>=uDay)break;
         float ringSpread=.01+.06*(i/10.);
         float freq=2.+mod(i,5.);
         float mainWave=ringSpread*sin((6.28318*tt+pxAng)*freq+i*1.7);

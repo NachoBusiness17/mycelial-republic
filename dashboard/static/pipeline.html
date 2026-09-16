@@ -103,6 +103,7 @@ const TRACKS=['suno/genesis.mp3','suno/aerodynamic.mp3','suno/flat_beat.mp3','su
 const TRACK_NAMES=['GENESIS — Justice','AERODYNAMIC — Daft Punk Rmx','FLAT BEAT — Mr. Oizo','D.A.N.C.E. — MSTRKRFT Rmx'];
 let AC=null,analyzer=null,srcNode=null,freqTex=null,freqData=null,trackIdx=0;
 let audio={bass:0,energy:0};
+let CARBPM=125; // default tempo for bpm-clock cartridges (wipeout_raymarch); a manifest `bpm` field overrides per cartridge
 
 function wireAudio(){
   if(!AC){AC=new (window.AudioContext||window.webkitAudioContext)();
@@ -130,7 +131,8 @@ function useCartridge(id){
     const p=makeProgram(src);
     if(!p){$('status').textContent=car.title+' — compile failed (see title)';return;}
     scene=p;sceneName=car.title;
-    for(const n of ['iResolution','iTime','iMouse','iChannel0','uBass','uEnergy','uDay'])U[n]=gl.getUniformLocation(p,n);
+    if(typeof car.bpm==='number')CARBPM=car.bpm;
+    for(const n of ['iResolution','iTime','iMouse','iChannel0','uBass','uEnergy','uDay','uBPM','uSeed','iFrame'])U[n]=gl.getUniformLocation(p,n);
     $('cname').textContent=car.title;
     $('status').textContent='RUNNING: '+car.title+' ('+car.license+')';
   }).catch(e=>{$('status').textContent='load failed: '+e;});

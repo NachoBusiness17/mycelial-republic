@@ -304,18 +304,24 @@ signed (the claim needs negative: decorrelated = better), leave-one-out stays po
 7/8 drops. Proxy corpus (33 lane_salon files → 5 usable): mean ρ +0.263 but circular
 (verdict synthesized from the witnesses) and uniformly non-significant. salon_50's tape
 cannot test the falsifier at all — one lane per question by design, no per-output grades.
-**Status: REFUTED (2026-09-16, pre-registered replicate, `receipts/SALON_ESS_REPLICATE_20260916.md`).**
-The decisive follow-up ran same-day: 36 generations, local gemma:2b, 3-temperature ladder,
-blind-graded under a seeded shuffle, pre-registration committed before generation.
-**Spearman(decorrelation, grade) = +0.327, n=36, permutation p = 0.052** — past the +0.3
-refutation line, same sign as the n=8 probe. Reading: temperature buys diversity at no
-quality cost, but diversity converts into zero quality — the mode answer grades as well as
-the tail. **The salon is a diversity pump, not a quality sampler.** The thermodynamic-sampler
-claim is struck from the canon; what survives is the honest replacement: salons are for
-*coverage and contradiction* (Rashomon witness-per-program), never sold as sampling
-efficiency. Caveats filed with the verdict: threshold graze (0.327 vs 0.3), single model,
-grader blindness procedural only. The falsifier discipline worked — it killed the pack's
-own author's analogy, by numbers, in one day.
+**Status: REFUTED — CORRECTION (witness-annotated, U5).** The decisive follow-up ran same-day:
+36 generations, local gemma:2b, 3-temperature ladder, blind-graded under a seeded shuffle,
+pre-registration committed before generation. **Spearman(decorrelation, grade) = +0.327,
+n=36, permutation p = 0.052** — past the +0.3 refutation line, same sign as the n=8 probe.
+Reading: temperature buys diversity at no quality cost, but diversity converts into zero
+quality — the mode answer grades as well as the tail; the salon is a **diversity pump, not a
+quality sampler**. Caveats filed: threshold graze, single model, grader blindness procedural
+only.
+
+**Witness correction (U5, 2026-09-16):** the outside-reader seat caught the fold overclaiming
+"REFUTED" in prose while the formal closure receipt was never filed. Honest status: **the
+refutation is conditional on formal closure** — p = 0.052 is a graze, and the threshold's
+provenance plus the variable definitions must be filed together in one closure receipt
+before the word "refuted" is earned. The falsifier discipline still worked — but the
+witness's sharpest line applies to the fold itself: receipts-before-work risks becoming
+permission laundering when the machinery grading the evidence is the machinery that produced
+it. What survives untouched: salons are for coverage and contradiction (Rashomon
+witness-per-program), never sold as sampling efficiency.
 
 **Fossil exposed, trust-bytes division:** "salon_50 fired 50/50" is a fossil — the receipt
 says 39/50 on the final pass, and NEXT-STEAL measures 55 occurrences / 44 of 50 answers

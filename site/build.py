@@ -26,7 +26,7 @@ PAGES = [
     ("dashboard/static/maze.html", "maze.html", "THE MAZE ENTRANCE"),
     ("watch/inbox/MATTHEWS_LENS.md", "lens.html", "THE LENS — the house in your terms"),
 ]
-GAMES = ["maze_arena.html", "arrakis.html", "arena_operator_field.html", "mud.html", "swarm.html"]
+GAMES = ["maze_arena.html", "arrakis.html", "arena_operator_field.html", "mud.html", "swarm.html", "toy.html", "frontier_souls.html"]
 
 CSS = """*{box-sizing:border-box}body{margin:0;background:#0a0c10;color:#d6d3cb;
 font:17px/1.7 Georgia,'Times New Roman',serif;padding:0 0 4em}

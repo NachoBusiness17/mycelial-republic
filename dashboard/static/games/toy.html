@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head><title>THE TOY — the i-frame roll</title>
+<style>body{margin:0;background:#0d0c0b;display:flex;justify-content:center;align-items:center;height:100vh;overflow:hidden}canvas{border:1px solid #33291f}</style></head>
+<body>
+<canvas id="c" width="960" height="600"></canvas>
+<script>
+// THE TOY — one arena, one walker, one verb: read -> roll -> punish (souls grammar, mud.html stripped)
+// Editor note: drafted by union-alpha (free window), fixed by U1 — dodge law rollT>0 (not iframes),
+// stable identity across start(), seed0 vs mutated lcg, applied-inputs log, windup plant, browser fixed-step pump.
+window.TOY = (() => {
+  const DT = 1/60, W = 480, H = 300, SPEED = 160, ROLL_SPEED = 420;
+  let seed0 = 0, lcg = 0, drawIndex = 0, frames = 0;
+  const G = { t: 0, state: 'play' };          // stable identity — never rebound
+  const events = [], inputs = [], tape = [], keys = {}, keysP = {};
+  const player = {}, walker = {};
+
+  // RNG law: seeded LCG, no Math.random anywhere (draw index counts every draw, first draw is 1)
+  const rng = () => { lcg = (Math.imul(lcg, 1664525) + 1013904223) >>> 0; drawIndex++; return lcg / 4294967296; };
+
+  // SHA256 (compact, sync — union-alpha's block, verified against node:crypto)
+  const sha256 = (str) => {
+    const H = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+    const K = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+    let msg = unescape(encodeURIComponent(str));
+    const bl = msg.length * 8;   // 64-bit big-endian bit length (editor fix: union's was 6 bytes, broke alignment)
+    msg += String.fromCharCode(0x80);
+    while ((msg.length % 64) !== 56) msg += String.fromCharCode(0);
+    msg += String.fromCharCode(0, 0, 0, 0, (bl >>> 24) & 255, (bl >>> 16) & 255, (bl >>> 8) & 255, bl & 255);
+    let words = []; for(let i=0;i<msg.length;i+=4) words.push((msg.charCodeAt(i)<<24)|(msg.charCodeAt(i+1)<<16)|(msg.charCodeAt(i+2)<<8)|msg.charCodeAt(i+3));
+    // editor fix: union's version hashed only the FIRST 16-word block and never folded the
+    // working vars back into the state — every real receipt is multi-block. Full Merkle-Damgård:
+    const w = new Array(64);
+    const hv = H.slice();
+    for (let off = 0; off < words.length; off += 16) {
+      for (let i = 0; i < 16; i++) w[i] = words[off + i];
+      for (let i = 16; i < 64; i++) {
+        let s=w[i-15], s0=(s>>>7)^(s>>>18)^(s>>>3)^(s<<25)^(s<<14);
+        let v=w[i-2], s1=(v>>>17)^(v>>>19)^(v>>>10)^(v<<15)^(v<<13);
+        w[i]=(w[i-16]+s0+w[i-7]+s1)>>>0;
+      }
+      let a=hv[0], b=hv[1], c=hv[2], d=hv[3], e=hv[4], f=hv[5], g=hv[6], h=hv[7];
+      for (let i = 0; i < 64; i++) {
+        let S1=(e>>>6)^(e>>>11)^(e>>>25)^(e<<26)^(e<<21)^(e<<7); let ch=(e&f)^(~e&g); let t1=(h+S1+ch+K[i]+w[i])>>>0;
+        let S0=(a>>>2)^(a>>>13)^(a>>>22)^(a<<30)^(a<<19)^(a<<10); let maj=(a&b)^(a&c)^(b&c); let t2=(S0+maj)>>>0;
+        h=g;g=f;f=e;e=(d+t1)>>>0;d=c;c=b;b=a;a=(t1+t2)>>>0;
+      }
+      hv[0]=(hv[0]+a)>>>0; hv[1]=(hv[1]+b)>>>0; hv[2]=(hv[2]+c)>>>0; hv[3]=(hv[3]+d)>>>0;
+      hv[4]=(hv[4]+e)>>>0; hv[5]=(hv[5]+f)>>>0; hv[6]=(hv[6]+g)>>>0; hv[7]=(hv[7]+h)>>>0;
+    }
+    return hv.map(x=>(x>>>0).toString(16).padStart(8,'0')).join('');
+  };
+
+  const log = o => events.push(Object.assign({ t: +(frames * DT).toFixed(3) }, o));
+  // one press/release path for BOTH live keys and the tape — the tape is the same code path, not a backdoor
+  const press = c => { if (!keys[c]) { keys[c] = true; keysP[c] = true; } log({ e: 'input', code: c, down: 1 }); };
+  const release = c => { keys[c] = false; log({ e: 'input', code: c, down: 0 }); };
+
+  const start = seed => {
+    seed0 = seed >>> 0; lcg = seed0; drawIndex = 0; frames = 0;
+    G.t = 0; G.state = 'play';
+    events.length = 0; inputs.length = 0; tape.length = 0;
+    for (const k in keys) delete keys[k];
+    for (const k in keysP) delete keysP[k];
+    Object.assign(player, { x:120, y:150, r:12, hp:100, st:100, facing:0,
+      rollT:0, rollCd:0, rollX:0, rollY:0, attackT:0, attackCd:0, iframes:0, riposte:0 });
+    Object.assign(walker, { x:300, y:150, r:14, hp:40, dmg:14, speed:70, aggro:true,
+      attackCd:0, windup:0, telegraph:0, stun:0 });
+  };
+
+  const hurtPlayer = dmg => {
+    player.hp = Math.max(0, player.hp - dmg);
+    log({ e: 'hit', enemy: 0, dmg });   // enemy id on hits too — P-LEGAL pairs hit with its telegraph
+    if (player.hp <= 0) { G.state = 'dead'; log({ e: 'end', verdict: 'dead' }); }
+  };
+
+  const pump = n => {
+    for (let i = 0; i < n; i++) {
+      while (tape.length && tape[0][0] === frames) {
+        const [f, code, down] = tape.shift();
+        inputs.push([f, code, down]);
+        if (down) press(code); else release(code);
+      }
+      if (G.state !== 'play') return;
+      frames++; G.t = frames * DT;
+
+      // move intent (4-dir, normalized); facing follows the move direction
+      let mx = (keys.ArrowRight?1:0) - (keys.ArrowLeft?1:0);
+      let my = (keys.ArrowDown?1:0) - (keys.ArrowUp?1:0);
+      const mlen = Math.hypot(mx, my), moving = mlen > 0;
+      if (moving) { mx/=mlen; my/=mlen; player.facing = Math.atan2(my, mx); }
+
+      // stamina (mud law: regen gated on attackT/rollT, 25/s, x0.5 active / x1.5 still)
+      if (player.attackT <= 0 && player.rollT <= 0)
+        player.st = Math.min(100, player.st + 25 * ((moving || player.rollT > 0) ? 0.5 : 1.5) * DT);
+
+      // roll — ShiftLeft edge, 30 sta, 0.28 roll, 0.5 cd, 0.35 iframes (the verb)
+      if (keysP.ShiftLeft && player.rollT <= 0 && player.rollCd <= 0 && player.st >= 30) {
+        player.st -= 30; player.rollT = 0.28; player.rollCd = 0.5; player.iframes = 0.35;
+        player.rollX = Math.cos(player.facing); player.rollY = Math.sin(player.facing);
+        log({ e: 'roll' });
+      }
+      if (player.rollCd > 0) player.rollCd -= DT;
+      if (player.iframes > 0) player.iframes -= DT;
+      if (player.attackT > 0) player.attackT -= DT;
+      if (player.attackCd > 0) player.attackCd -= DT;
+      if (player.riposte > 0) player.riposte -= DT;
+
+      // roll overrides walk (mud law)
+      if (player.rollT > 0) {
+        player.rollT -= DT;
+        player.x += player.rollX * ROLL_SPEED * DT; player.y += player.rollY * ROLL_SPEED * DT;
+      } else if (moving) {
+        player.x += mx * SPEED * DT; player.y += my * SPEED * DT;
+      }
+      player.x = Math.max(player.r, Math.min(W - player.r, player.x));
+      player.y = Math.max(player.r, Math.min(H - player.r, player.y));
+
+      // swing — Space edge, 15 sta, cd 0.35, arc in facing direction
+      if (keysP.Space && player.attackCd <= 0 && player.st >= 15 && player.rollT <= 0) {
+        player.st -= 15; player.attackT = 0.18; player.attackCd = 0.35;
+        const dx = walker.x - player.x, dy = walker.y - player.y, dist = Math.hypot(dx, dy);
+        let diff = Math.atan2(dy, dx) - player.facing;
+        while (diff > Math.PI) diff -= 2*Math.PI;
+        while (diff < -Math.PI) diff += 2*Math.PI;
+        const hit = walker.hp > 0 && dist < 55 + player.r + walker.r && Math.abs(diff) < Math.PI/2;
+        log({ e: 'swing', riposte: hit && player.riposte > 0, hit });
+        if (hit) {
+          let dmg = 14 * (0.9 + 0.2 * rng());          // the ONLY rng draw — on landed hits, like mud
+          if (player.riposte > 0) { dmg *= 2; player.riposte = 0; }   // punished the recovery: double bite
+          walker.hp -= dmg;
+          if (walker.hp <= 0) { walker.hp = 0; G.state = 'win'; log({ e: 'kill', enemy: 0 }); log({ e: 'end', verdict: 'win' }); }
+        }
+      }
+
+      // walker — chase; at range it winds up (the READ), plants, bites; roll through it (mud L1090-1108)
+      if (walker.stun > 0) { walker.stun -= DT; }
+      else {
+        const wdx = player.x - walker.x, wdy = player.y - walker.y;
+        const d = Math.hypot(wdx, wdy) || 1;
+        const plant = walker.windup > 0 ? 0.12 : 1;    // the swing winds up, the walker plants
+        walker.x += wdx / d * walker.speed * plant * DT;
+        walker.y += wdy / d * walker.speed * plant * DT;
+        walker.x = Math.max(walker.r, Math.min(W - walker.r, walker.x));
+        walker.y = Math.max(walker.r, Math.min(H - walker.r, walker.y));
+        if (walker.attackCd > 0) walker.attackCd -= DT;
+        if (walker.telegraph > 0) walker.telegraph -= DT;
+        if (!walker.windup && walker.attackCd <= 0 && d < walker.r + player.r + 4) {
+          walker.windup = 0.35; walker.attackCd = 1.2; walker.telegraph = 0.35;   // wind-up telegraph: dodgeable
+          log({ e: 'telegraph', enemy: 0 });
+        }
+        if (walker.windup > 0) {
+          walker.windup -= DT;
+          if (walker.windup <= 0) {
+            const d2 = Math.hypot(player.x - walker.x, player.y - walker.y);
+            if (d2 < walker.r + player.r + 10) {
+              if (player.rollT > 0) {                  // P2: rolled THROUGH the bite — it stumbles, riposte window
+                walker.stun = 0.8; player.riposte = 1.0;
+                log({ e: 'hit_dodged', enemy: 0 });
+              } else hurtPlayer(walker.dmg);
+            }
+            walker.windup = 0;
+          }
+        }
+      }
+
+      for (const k in keysP) keysP[k] = false;   // just-pressed clears per step
+    }
+  };
+
+  // P-LEGAL: every hit must be preceded by a telegraph of the same enemy ENDING exactly at the hit
+  const countNoTelegraph = () => {
+    let n = 0;
+    for (let i = 0; i < events.length; i++) {
+      if (events[i].e !== 'hit') continue;
+      let ok = false;
+      for (let j = i - 1; j >= 0; j--) {
+        const p = events[j];
+        if (p.e === 'telegraph' && p.enemy === events[i].enemy) { ok = Math.abs(p.t + 0.35 - events[i].t) <= 0.001; break; }
+      }
+      if (!ok) n++;
+    }
+    return n;
+  };
+
+  const body = () => ({
+    schema: 'toy_play.v1', seed: seed0, draw_index: drawIndex, frames,
+    inputs, events,
+    hits_taken: events.filter(e => e.e === 'hit').length,
+    hits_no_telegraph: countNoTelegraph(),
+    verdict: G.state, duration_s: +(frames * DT).toFixed(3),
+  });
+  const canonical = () => JSON.stringify(body());
+  const receipt = () => { const b = body(); b.sha256 = sha256(canonical()); return b; };
+
+  // ---- browser shell (render only; the sim advances by fixed steps, never by wall clock) ----
+  const ctx = document.getElementById('c').getContext('2d');
+  const render = () => {
+    ctx.fillStyle = '#141210'; ctx.fillRect(0, 0, 960, 600);
+    ctx.strokeStyle = '#3a332b'; ctx.strokeRect(1, 1, 958, 598);
+    ctx.fillStyle = walker.telegraph > 0 ? '#ff5b4d' : '#a4443c';   // the READ: walker flares red
+    ctx.beginPath(); ctx.arc(walker.x*2, walker.y*2, walker.r*2, 0, 7); ctx.fill();
+    if (walker.windup > 0) { ctx.strokeStyle = '#ffb0a6'; ctx.beginPath(); ctx.arc(walker.x*2, walker.y*2, (walker.r+7)*2, 0, 7); ctx.stroke(); }
+    ctx.fillStyle = player.iframes > 0 ? '#ffffff' : '#8fd98f';     // the ROLL: you flash white
+    ctx.beginPath(); ctx.arc(player.x*2, player.y*2, player.r*2, 0, 7); ctx.fill();
+    ctx.fillStyle = '#2c2c2c'; ctx.fillRect(12, 12, 200, 8); ctx.fillRect(12, 24, 200, 8);
+    ctx.fillStyle = '#7fd07f'; ctx.fillRect(12, 12, player.st*2, 8);
+    ctx.fillStyle = '#d07f7f'; ctx.fillRect(12, 24, player.hp*2, 8); ctx.fillRect(12, 36, walker.hp, 8);
+    if (G.state !== 'play') {
+      ctx.fillStyle = '#e8e0d0'; ctx.font = '16px monospace';
+      ctx.fillText(G.state === 'win' ? 'THE WALKER FALLS — refresh to run it again' : 'YOU FELL — refresh to run it again', 320, 288);
+    }
+  };
+  let last = 0, acc = 0;
+  const loop = ts => {
+    if (last) { acc += Math.min((ts - last) / 1000, 0.1); last = ts; } else last = ts;
+    while (acc >= DT) { pump(1); acc -= DT; }
+    render();
+    requestAnimationFrame(loop);
+  };
+  window.addEventListener('keydown', e => { if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault(); press(e.code); });
+  window.addEventListener('keyup', e => release(e.code));
+
+  start(1);                    // fixed default seed — the browser never calls Math.random either
+  requestAnimationFrame(loop);
+  return { start, pump, DT, keys, tape, player, walker, enemies: [walker], G, events,
+           draws: () => drawIndex, receipt, canonical, sha256 };
+})();
+</script>
+</body>
+</html>

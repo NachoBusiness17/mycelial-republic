@@ -9,6 +9,21 @@ cv.width=W;cv.height=H;
 function rs(){let s=Math.min(innerWidth/W,innerHeight/H);cv.style.width=(W*s)+'px';cv.style.height=(H*s)+'px';}
 addEventListener('resize',rs);rs();
 
+// ---- SAFE STORAGE (privacy-mode law): localStorage throws in private browsing / blocked-cookie
+// modes and would kill the game at load. ONE guarded accessor; when storage is unavailable it
+// falls back to an in-memory object for the session. Key names are unchanged. ----
+const SAFE_STORE=(()=>{
+ const mem={};let ls=null;
+ try{ls=window.localStorage;ls.setItem('__swarm_probe','1');ls.removeItem('__swarm_probe');}
+ catch(e){ls=null;}
+ return{
+  get(k,d){try{const v=ls?ls.getItem(k):mem[k];return(v===null||v===undefined)?d:v;}catch(e){return d;}},
+  set(k,v){try{if(ls)ls.setItem(k,String(v));else mem[k]=String(v);}catch(e){mem[k]=String(v);}},
+  getJSON(k,d){try{const v=this.get(k,null);if(v===null||v===undefined)return d;const p=JSON.parse(v);return(p===null||p===undefined)?d:p;}catch(e){return d;}},
+  setJSON(k,v){this.set(k,JSON.stringify(v));}
+ };
+})();
+
 // ---- DISCO SCIENCE engine (Mirwais DNA: 122bpm electro-funk, procedural — no assets, no rights) ----
 let AC=null,musicT=0,musicStep=0;
 const SPB=60/122/2; // one 8th note at 122bpm
@@ -46,25 +61,43 @@ function schedMusic(){
 }
 // ---- the suno crate: flat_beat.mp3 (Mr. Oizo energy, Mirwais-adjacent) ----
 let bgm=null,bgmAnalyser=null,bgmFreq=null,fallbackDisco=false,beatPulse=0;
-// THE JUKEBOX: the crate maps the states (Amazon library doctrine)
-let bgmUrl='suno/gift_track.mp3';
+// THE JUKEBOX (deploy law): assets live in static/suno/ but this file deploys under /games/,
+// so every track is tried against AUDIO_BASES in order — ../suno/ first, then suno/ — and when
+// all candidates fail the loader silent-skips (the fallbackDisco synth covers the beat).
+// A failed fetch only advances the candidate chain; it never breaks the game loop.
+let bgmUrl='',bgmTrack='',bgmTry=0;
+const AUDIO_BASES=['../suno/','suno/'];
+function bgmNextCandidate(){
+ bgmTry++;
+ if(!bgm)return;
+ if(bgmTry<AUDIO_BASES.length){try{bgm.src=AUDIO_BASES[bgmTry]+bgmTrack;}catch(e){fallbackDisco=true;}return;}
+ // every base failed for this track: fall back to the flat_beat crate, then silent-skip
+ if(bgmTrack!=='flat_beat_loop.mp3'){bgmTry=0;bgmTrack='flat_beat_loop.mp3';try{bgm.src=AUDIO_BASES[0]+bgmTrack;}catch(e){fallbackDisco=true;}return;}
+ fallbackDisco=true;bgmUrl='';
+}
 function bgmSwap(url){
- if(!bgm||bgm.src.endsWith(url))return;
+ if(!bgm)return;
+ const track=String(url).replace(/^suno\//,'');
+ if(bgmTrack===track)return;
  try{
   const vol=bgm.volume;const wasPlaying=!bgm.paused;
   const analyser=bgmAnalyser;
-  bgm.src=url;bgm.loop=true;bgm.volume=vol;bgmUrl=url;
+  bgmTry=0;bgmTrack=track;bgmUrl='';
+  bgm.onerror=bgmNextCandidate;
+  bgm.src=AUDIO_BASES[0]+track;bgm.loop=true;bgm.volume=vol;
   if(analyser){/* MediaElementSource survives src swap on same element */}
   if(wasPlaying)bgm.play().catch(()=>{});
- }catch(e){}
+ }catch(e){fallbackDisco=true;}
 }
 function startBgm(){
  try{
-  bgm=new Audio('suno/gift_track.mp3');bgm.loop=true;bgm.volume=0.5;
+  bgmTry=0;bgmTrack='gift_track.mp3';bgmUrl='';
+  bgm=new Audio();bgm.loop=true;bgm.volume=0.5;
+  bgm.onerror=bgmNextCandidate;
+  bgm.src=AUDIO_BASES[0]+bgmTrack;
   const src=AC.createMediaElementSource(bgm);
   bgmAnalyser=AC.createAnalyser();bgmAnalyser.fftSize=64;bgmFreq=new Uint8Array(32);
   src.connect(bgmAnalyser);bgmAnalyser.connect(AC.destination);
-  bgm.onerror=()=>{bgm=new Audio('suno/flat_beat_loop.mp3');bgm.loop=true;bgm.volume=0.5;bgm.play().catch(()=>{fallbackDisco=true;});};
   bgm.play().catch(()=>{fallbackDisco=true;});
  }catch(e){fallbackDisco=true;}
 }
@@ -184,7 +217,7 @@ function gyAt(x){
  return GY-(w1+w2)*1.0-beatPulse*10-tide*74;
 }
 let player,enemies=[],gems=[],projs=[],parts=[],dmgNums=[],platforms=[];
-let kills=0,best=parseFloat(localStorage.getItem('swarmbest')||'0');
+let kills=0,best=parseFloat(SAFE_STORE.get('swarmbest')||'0');
 let diffLevel=0,nextDiff=30,spawnT=0;
 let upg={dmg:1,rate:1,pierce:0,spread:1,speed:1,maxhp:100,magnet:60,orbit:0,orbitAng:0};
 let upgPool=[
@@ -200,12 +233,19 @@ let upgPool=[
  {n:'+FIRE RATE',d:'Attack faster',f:()=>upg.rate*=0.85},
 ];
 let levelCards=[];
-const rnd=(a,b)=>a+Math.random()*(b-a);
+// ---- RNG LAW (toy.html replay doctrine): gameplay draws flow through one seeded LCG
+// (seed → same run given same inputs). startGame() seeds each run and records runSeed;
+// cosmetic-only draws (particles, shake, mutter lines) stay on Math.random so render-time
+// noise never advances the replay stream. ----
+let lcg=1,runSeed=0,runN=0;
+function seedRun(s){runSeed=(s>>>0)||1;lcg=runSeed;}
+const rng=()=>{lcg=(Math.imul(lcg,1664525)+1013904223)>>>0;return lcg/4294967296;};
+const rnd=(a,b)=>a+rng()*(b-a);
 function poof(x,y,col,n=12){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=40+Math.random()*130;parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,t:0.5,col});}}
 // ---- VS ENGINE: multiple weapons that stack, passives that synergize ----
 let weps=[],pas={},axes=[],garlicT=0;
 let eprojs=[],ult=0,ULTMAX=100;
-let allies=[],charcoal=JSON.parse(localStorage.getItem('priv_charcoal')||'[]');
+let allies=[],charcoal=SAFE_STORE.getJSON('priv_charcoal',[]);
 // ---- THE TIDE + THE SURVEY (house doctrine: the ocean model + the fence parable) ----
 let tide=0,surveyX=null,SURVEY_RATE=7;
 // ---- THE FABLE ROOM (the salon made playable): a chair poses a riddle, you answer with your feet ----
@@ -238,15 +278,15 @@ function weatherUpdate(dt){
  }
  // scheduled fireballs (incidents happen)
  wthr.fireT-=dt;
- if(wthr.fireT<=0){wthr.fireT=45+Math.random()*40;dropFireball(player.x+rnd(-260,260));}
+ if(wthr.fireT<=0){wthr.fireT=45+rng()*40;dropFireball(player.x+rnd(-260,260));}
  // temperature decays; state machine: clear -> storm(temp>0.55) -> rain -> clear
  wthr.temp=Math.max(0,wthr.temp-0.018*dt*(wthr.state==='rain'?3:1));
- if(wthr.state==='clear'&&wthr.temp>0.55){wthr.state='storm';wthr.t=6+Math.random()*4;wthr.boltT=0;toast='STORM — the medium answers heat';toastT=3;beep(120,0.6,'sine',0.06);bgmSwap('suno/jsr_loop.mp3');}
+ if(wthr.state==='clear'&&wthr.temp>0.55){wthr.state='storm';wthr.t=6+rng()*4;wthr.boltT=0;toast='STORM — the medium answers heat';toastT=3;beep(120,0.6,'sine',0.06);bgmSwap('suno/jsr_loop.mp3');}
  if(wthr.state==='storm'){
   wthr.t-=dt;wthr.wind=Math.sin(T*1.7)*90*wthr.temp;
   wthr.boltT-=dt;
   if(wthr.boltT<=0){
-   wthr.boltT=1.2+Math.random()*0.8;
+   wthr.boltT=1.2+rng()*0.8;
    wthr.bolts.push({x:player.x+rnd(-380,380),tel:0.7,struck:false});
   }
   for(let i=wthr.bolts.length-1;i>=0;i--){
@@ -280,7 +320,7 @@ const RIDDLES=[
  {q:'duplication is —',a:0,zones:['emphasis','error']},
 ];
 function poseRiddle(){
- const R=RIDDLES[Math.floor(Math.random()*RIDDLES.length)];
+ const R=RIDDLES[Math.floor(rng()*RIDDLES.length)];
  riddle={R,zoneT:0,open:false};
  toast='A CHAIR SPEAKS: '+R.q;toastT=5;beep(440,0.3,'sine',0.04);
 }
@@ -308,8 +348,8 @@ function recompute(){
  player.hp=Math.min(player.hp,upg.maxhp);
 }
 // ---- meta progression (the death grammar: souls bank across runs, buy permanent edges) ----
-let meta=JSON.parse(localStorage.getItem('priv_meta')||'{"bank":0,"tiers":{}}');
-function metaSave(){localStorage.setItem('priv_meta',JSON.stringify(meta))}
+let meta=SAFE_STORE.getJSON('priv_meta',{bank:0,tiers:{}});
+function metaSave(){SAFE_STORE.setJSON('priv_meta',meta)}
 const METASHOP=[
  {k:'hp', n:'HEARTWOOD', d:'+20 max HP forever', cost:b=>60+b*40, f:t=>upg.maxhpBase=(upg.maxhpBase||100)+20*t},
  {k:'dmg',n:'WHETSTONE', d:'+10% damage forever', cost:b=>80+b*50, f:t=>upg.dmgMul=1+0.1*t},
@@ -518,7 +558,9 @@ function gridDraw(){
  ctx.stroke();
 }
 
-function startGame(){
+function startGame(forcedSeed){
+ // RNG LAW: each run seeds the LCG (auto seed recorded in runSeed); pass forcedSeed to replay a recorded run
+ seedRun(forcedSeed!==undefined?((forcedSeed>>>0)||1):(((Date.now()^Math.imul(++runN,2654435761))>>>0)||1));
  state='play';T=0;kills=0;diffLevel=0;nextDiff=30;spawnT=0.4;
  depth=1;depthT=0;gateOpen=null;doorPause=null;depthMods={gemMul:1,enemySpd:1,enemyHp:1,take:1,spawnMul:1};
  fishWarned=false;fishBossSpawned=false;fishCdT=0;
@@ -538,15 +580,15 @@ function startGame(){
 
 function spawnEnemy(forcedX){
  if(enemies.length>=250)return;
- let side=Math.random()<0.5?-1:1;
+ let side=rng()<0.5?-1:1;
  let ex=forcedX!==undefined?forcedX:(side<0?camX-60:camX+W/ZOOM+60);
- let r=Math.random();
+ let r=rng();
  let type=r<0.45?'walker':r<0.8?'runner':'flyer';
  let hpMul=(1+T/55)*depthMods.enemyHp;
  let e={x:ex,y:GY-30,w:22,h:28,vy:0,type,flash:0,hitT:0,burn:0,shock:0,corr:0};
  if(type==='walker'){e.hp=5*hpMul;e.spd=40*depthMods.enemySpd;e.dmg=10;e.w=26;e.h=32;}
  if(type==='runner'){e.hp=3*hpMul;e.spd=110*depthMods.enemySpd;e.dmg=7;e.w=18;e.h=24;}
- if(type==='flyer'){e.hp=4*hpMul;e.spd=70*depthMods.enemySpd;e.dmg=8;e.w=22;e.h=18;e.baseY=200+Math.random()*180;e.y=e.baseY;e.ph=Math.random()*6.28;}
+ if(type==='flyer'){e.hp=4*hpMul;e.spd=70*depthMods.enemySpd;e.dmg=8;e.w=22;e.h=18;e.baseY=200+rng()*180;e.y=e.baseY;e.ph=rng()*6.28;}
  enemies.push(e);
 }
 
@@ -560,7 +602,7 @@ function hurtFishTouch(e){
  player.hp-=e.dmg*(1-(upg.armor||0))*depthMods.take;
  player.flash=0.25;player.iframes=0.6;G.shake=10;
  beep(130,0.2,'sawtooth',0.05);
- if(player.hp<=0&&state==='play'){state='dead';meta.bank+=player.souls;metaSave();if(T>best){best=T;localStorage.setItem('swarmbest',best);}}
+ if(player.hp<=0&&state==='play'){state='dead';meta.bank+=player.souls;metaSave();if(T>best){best=T;SAFE_STORE.set('swarmbest',best);}}
 }
 function damageEnemy(e,dmg,px,py){
  if(e.kind==='bubble'&&(e.shieldT||0)>0)return;
@@ -580,7 +622,7 @@ function damageEnemy(e,dmg,px,py){
    gridForce(player.x,player.y,200,300);beep(300,0.4,'sine',0.05);
   }
   // THE NECROMANCER (letter DNA): only things that learned before they died rise again
-  if(!e.isBoss&&(e.learned||0)>6&&Math.random()<0.35&&allies.length<8)
+  if(!e.isBoss&&(e.learned||0)>6&&rng()<0.35&&allies.length<8)
    allies.push({x:e.x,y:e.y,w:e.w,h:e.h,type:e.type,t:9,ph:Math.random()*6});
   gridForce(e.x,e.y,110,320);
   for(let i=0;i<8;i++)parts.push({x:e.x,y:e.y,vx:(Math.random()-0.5)*260,vy:-Math.random()*260,t:0.6,col:'#f44'});
@@ -629,7 +671,7 @@ function levelUp(){
  }
  levelCards=[];
  for(let i=0;i<3&&pool.length;i++){
-  let j=Math.floor(Math.random()*pool.length);
+  let j=Math.floor(rng()*pool.length);
   levelCards.push(pool[j]);pool.splice(j,1);
  }
  shake=8;
@@ -841,7 +883,7 @@ function update(dt){
    } else if(e.state2==='lunge'){
     e.x+=e.lungeVX*dt;
     if(Math.abs(e.x-player.x)<30&&Math.abs(e.y-player.y)<40)hurtFishTouch(e);
-    if(e.patT<=0){e.state2='swim';e.patT=1.6+Math.random()*1.2;}
+    if(e.patT<=0){e.state2='swim';e.patT=1.6+rng()*1.2;}
     if(e.x<40||e.x>WW-40){e.x=Math.max(40,Math.min(WW-40,e.x));e.state2='swim';e.patT=1.4;}
    }
    // it eats uncollected fish to heal — harvest your crop to starve it
@@ -870,10 +912,10 @@ function update(dt){
    player.hp-=e.dmg*dt*2*(1-(upg.armor||0))*depthMods.take*(1+(upg.glass||0));player.flash=0.15;
    if(player.hp<=0&&state==='play'){
     charcoal.push(player.x);if(charcoal.length>60)charcoal.shift();
-    localStorage.setItem('priv_charcoal',JSON.stringify(charcoal));
+    SAFE_STORE.set('priv_charcoal',JSON.stringify(charcoal));
     state='dead';
     meta.bank+=player.souls;metaSave();
-    if(T>best){best=T;localStorage.setItem('swarmbest',best);}
+    if(T>best){best=T;SAFE_STORE.set('swarmbest',best);}
    }
   }
  }
@@ -886,7 +928,7 @@ function update(dt){
    if(e.dead||p.hit.includes(e))continue;
    if(Math.abs(p.x-e.x)<e.w/2+6&&Math.abs(p.y-e.y)<e.h/2+6){
     damageEnemy(e,p.dmg,p.x,p.y);
-    if(Math.random()<0.35)e.shock=2.5; // knives chain lightning
+    if(rng()<0.35)e.shock=2.5; // knives chain lightning
     p.hit.push(e);
     if(p.hit.length>p.pierce){p.dead=true;break;}
    }
@@ -977,9 +1019,9 @@ function update(dt){
  if(gateOpen&&Math.abs(player.x-(gateOpen.x+gateOpen.w/2))<40&&Math.abs(player.y-GY)<70){
   doorPause={a:null,b:null};
   let pool=DOORS.slice();
-  let ia=Math.floor(Math.random()*pool.length);
+  let ia=Math.floor(rng()*pool.length);
   doorPause.a=pool[ia];pool.splice(ia,1);
-  doorPause.b=pool[Math.floor(Math.random()*pool.length)];
+  doorPause.b=pool[Math.floor(rng()*pool.length)];
   state='doors';
  }
  if(depthT>DEPTH_LEN+0.01)depthT=DEPTH_LEN;
@@ -1240,7 +1282,7 @@ function draw(){
    ctx.strokeStyle='#fff';ctx.lineWidth=3;
    ctx.beginPath();ctx.moveTo(b.x,0);
    let yy=0,xx=b.x;
-   while(yy<gyAt(b.x)){yy+=44;xx+=rnd(-16,16);ctx.lineTo(xx,yy);}
+   while(yy<gyAt(b.x)){yy+=44;xx+=(Math.random()-0.5)*32;ctx.lineTo(xx,yy);} // cosmetic zigzag: stays off the replay stream
    ctx.stroke();
   }
  }
@@ -1590,7 +1632,7 @@ function updatePass(dt){
   if(r.z<70){
    if(Math.abs(p.x-W/2)<80){
     player.hp-=14*(1-(upg.armor||0));mtn.crash=1;shake=12;beep(90,0.3,'sawtooth',0.07);
-    if(player.hp<=0){state='dead';meta.bank+=player.souls;metaSave();if(T>best){best=T;localStorage.setItem('swarmbest',best);}}
+    if(player.hp<=0){state='dead';meta.bank+=player.souls;metaSave();if(T>best){best=T;SAFE_STORE.set('swarmbest',best);}}
    }
    mtn.rocks.splice(i,1);
   }

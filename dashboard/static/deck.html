@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>COMMAND DECK — local_sovereign_agent</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{--bg:#07090d;--panel:#0b1017;--line:#1c2a3d;--txt:#8fa3b8;--hi:#d8e6f2;--dim:#5c7186;--accent:#6fd6ff;--bad:#ff5d5d;--good:#8dff7a;--warn:#ffb347}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--txt);font:13px/1.5 ui-monospace,Consolas,monospace}
+  a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+  header{padding:26px 22px 10px;border-bottom:1px solid var(--line)}
+  header h1{margin:0;font-size:16px;letter-spacing:.35em;color:var(--hi);font-weight:600}
+  header .sub{margin-top:6px;font-size:11px;color:var(--dim)}
+  nav{display:flex;flex-wrap:wrap;gap:6px;padding:12px 22px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(7,9,13,.94);backdrop-filter:blur(4px);z-index:5}
+  nav a{font-size:11px;letter-spacing:.12em;padding:4px 10px;border:1px solid var(--line);border-radius:3px;color:var(--txt)}
+  nav a:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
+  main{max-width:1240px;margin:0 auto;padding:18px 22px 60px}
+  section{margin-top:26px}
+  h2{font-size:12px;letter-spacing:.3em;color:var(--hi);font-weight:600;border-bottom:1px solid var(--line);padding-bottom:6px}
+  h2 .n{color:var(--dim);letter-spacing:0}
+  .grid{display:grid;gap:12px}
+  .cards{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 14px}
+  .card h3{margin:0 0 4px;font-size:12px;letter-spacing:.14em;color:var(--hi)}
+  .chip{display:inline-block;font-size:10px;letter-spacing:.14em;padding:1px 8px;border-radius:3px;border:1px solid var(--line);margin-left:6px;vertical-align:1px}
+  .chip.gate{color:var(--warn);border-color:#5c4a22}
+  .chip.ok{color:var(--good);border-color:#2c4a22}
+  .chip.bad{color:var(--bad);border-color:#5a2222}
+  .card .st{font-size:11px;color:var(--accent);margin:4px 0}
+  .card p{margin:6px 0;font-size:12px}
+  ul{margin:6px 0 0;padding-left:16px}
+  li{margin:3px 0;font-size:12px}
+  .src{margin-top:8px;font-size:10px;color:var(--dim)}
+  .strip{display:flex;flex-wrap:wrap;gap:10px}
+  .kpi{flex:1 1 170px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 12px}
+  .kpi .k{font-size:10px;letter-spacing:.18em;color:var(--dim)}
+  .kpi .v{margin-top:4px;font-size:15px;color:var(--hi);word-break:break-word}
+  .kpi .v.small{font-size:11px;color:var(--txt)}
+  .bad{color:var(--bad)}.good{color:var(--good)}.warn{color:var(--warn)}
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  th{font-size:10px;letter-spacing:.18em;color:var(--dim);text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+  td{padding:7px 10px;border-bottom:1px solid #101823;font-size:12px;vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  .lane{font-weight:600}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+  .wrap{word-break:break-all}
+  footer{margin-top:40px;padding-top:12px;border-top:1px solid var(--line);font-size:11px;color:var(--dim)}
+  @media (max-width:720px){.cards{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>COMMAND DECK</h1>
+  <div class="sub">local_sovereign_agent · wave_20260916 · generated 2026-09-16T21:33:03Z · refresh: <code>.venv\Scripts\python.exe scripts\build_deck.py</code></div>
+</header>
+<nav id="nav"></nav>
+<main id="main"></main>
+<script id="deck-data" type="application/json">{
+ "meta": {
+  "generated": "2026-09-16T21:33:03Z",
+  "wave": "wave_20260916",
+  "builder": "scripts/build_deck.py",
+  "note": "regenerate with .venv/Scripts/python.exe scripts/build_deck.py"
+ },
+ "wave": {
+  "receipts_indexed": 60,
+  "requeued_summary": "6 hard (G2, G3, G1, X_MINE_FIGURES verdict, 0-byte W1 draft, misfiled usage json) + 4 soft (B13 defect, D20 gates, fossil headers, D23 fossil line)",
+  "requeue": [
+   {
+    "item": "`receipts/G2_STATIC_INFRA_AUDIT.md`",
+    "why": "STUB — plan written, zero findings appended",
+    "ask": "run the 6 checks (builders, broken refs, INDEX backlog, dead weight, :8765 smoke), fill Findings"
+   },
+   {
+    "item": "`receipts/G3_SHADER_AUDIT.md`",
+    "why": "STUB — sweep checklist unchecked, Findings empty",
+    "ask": "full shader inventory + dead uniforms + ranked fix table"
+   },
+   {
+    "item": "`receipts/G1_GAMES_AUDIT.md`",
+    "why": "PARTIAL — inventory/structure landed, per-game findings never appended",
+    "ask": "per-game findings pass (audit only; fixes are a later lane)"
+   },
+   {
+    "item": "`receipts/X_MINE_FIGURES_20260916.md`",
+    "why": "PARTIAL — closing \"most stealable mechanism\" verdict left \"(pending)\"",
+    "ask": "one-paragraph fill from already-gathered body"
+   },
+   {
+    "item": "`wave_20260916/drafts/W1_union_alpha_draft.py`",
+    "why": "ORPHAN — 0 bytes, lane died to upstream 429 (meta.json ok:false)",
+    "ask": "archive/delete; superseded by landed `mag/wow_world.py`"
+   },
+   {
+    "item": "`physical_computing/receipts/watch/inbox/physical_computing/receipts/HERMES_REDTEAM_USAGE_20260916.json`",
+    "why": "MISFILED — usage record written down a nested accidental path",
+    "ask": "relocate to `physical_computing/receipts/` root, delete empty `watch/` tree"
+   },
+   {
+    "item": "`receipts/B13_CODETAUR_KAN.md` defect",
+    "why": "operator's status ID points at wrong post (marble maze, not KAN)",
+    "ask": "operator re-supplies true ID (or confirms reply) → one-call fxtwitter verify"
+   },
+   {
+    "item": "`receipts/D20_BONES_ADAPTER.md`",
+    "why": "OPERATOR-BLOCKED (not lane failure)",
+    "ask": "rotate DISCORD_BOT_TOKEN + grant #game-c-overview permission; only then live boot"
+   },
+   {
+    "item": "Fossil headers: COLLECTION_ORIGINS / HERMES_REDTEAM / X_MINE_PHYSICAL",
+    "why": "bodies closed, header status stale",
+    "ask": "cosmetic one-line status fix next time each is touched"
+   },
+   {
+    "item": "D23 \"50/50 attempted, 49/50 answered\" line",
+    "why": "contradicts canonical receipt.json (39/50)",
+    "ask": "annotate with the 39/50 correction; do not re-quote 50/50"
+   }
+  ],
+  "path": "watch/inbox/wave_20260916/WAVE_STATE_20260916.md"
+ },
+ "context_pack": {
+  "tip": "847f32689ef3…",
+  "leaves": 8468,
+  "knot": "2026-09-16_2121_untagged_memlang-_d1f1e246.knot.json"
+ },
+ "lanes": [
+  {
+   "name": "android_surface",
+   "color": "#9aa7b5",
+   "state": "NO-RUNNER",
+   "age_days": null,
+   "last_run": "—",
+   "last_result": "—",
+   "trail_rows": 12,
+   "last_event": "SHIFT_RECEIPT-006: fire-13 shift: census OK (body up); walked the LAW LATTICE at 55/55 on glass (button label fixed - hardcoded count removed, summary line carr"
+  },
+  {
+   "name": "bard_ledger",
+   "color": "#c98bff",
+   "state": "LIVE",
+   "age_days": 0.06,
+   "last_run": "2026-09-16T20:00:29.694862+00:00",
+   "last_result": "row",
+   "trail_rows": 25,
+   "last_event": "CYCLE: ledger row appended (2 cards today)"
+  },
+  {
+   "name": "builder",
+   "color": "#8dff7a",
+   "state": "LIVE",
+   "age_days": 0.01,
+   "last_run": "2026-09-16T21:11:47.270195+00:00",
+   "last_result": "gated=0",
+   "trail_rows": 595,
+   "last_event": "CYCLE: drops gated=0; queue on surface"
+  },
+  {
+   "name": "day_work",
+   "color": "#fff2c8",
+   "state": "LIVE",
+   "age_days": 0.01,
+   "last_run": "2026-09-16T21:12:47.979829+00:00",
+   "last_result": "mirrored, stalled=6",
+   "trail_rows": 849,
+   "last_event": "CYCLE: mirrored 10 lanes; STALLED: handshake:autoclaw_seat, economist(15.2h), elder(9.2h), prose(15.7h), forge(9.2h), harvest(14.7h)"
+  },
+  {
+   "name": "economist",
+   "color": "#7adcc8",
+   "state": "LIVE",
+   "age_days": 0.65,
+   "last_run": "2026-09-16T06:00:32.308522+00:00",
+   "last_result": "hunger rc=0, sweep_flags=6",
+   "trail_rows": 26,
+   "last_event": "CYCLE: hunger rc=0; sweep=USAGE_SWEEP_20260906.md flags=6; ch/HUNGER_LEDGER.md\n{\"date\": \"2026-09-16\", \"new\": 1, \"intake\": 0, \"disp\": 1, \"gap\": 0, \"btouch\": 4, \""
+  },
+  {
+   "name": "elder",
+   "color": "#ffb347",
+   "state": "LIVE",
+   "age_days": 0.4,
+   "last_run": "2026-09-16T12:00:22.313727+00:00",
+   "last_result": "lens",
+   "trail_rows": 19,
+   "last_event": "CYCLE: lens on 1 cards"
+  },
+  {
+   "name": "forge",
+   "color": "#ff7a4d",
+   "state": "LIVE",
+   "age_days": 0.4,
+   "last_run": "2026-09-16T12:00:22.471451+00:00",
+   "last_result": "forged=0 left=0 err=0",
+   "trail_rows": 14,
+   "last_event": "CYCLE: forged=0 errors=0"
+  },
+  {
+   "name": "harvest",
+   "color": "#d9b96f",
+   "state": "LIVE",
+   "age_days": 0.63,
+   "last_run": "2026-09-16T06:30:23.559234+00:00",
+   "last_result": "fetched=300 new=300 hits=6",
+   "trail_rows": 14,
+   "last_event": "CYCLE: fetched=300 new=300 hits=6"
+  },
+  {
+   "name": "night",
+   "color": "#8b9dff",
+   "state": "LIVE",
+   "age_days": 0.94,
+   "last_run": "2026-09-15T23:01:19.452466+00:00",
+   "last_result": "monitor rc=0; march rc=1",
+   "trail_rows": 13,
+   "last_event": "CYCLE: night composite: monitor rc=0; march rc=1"
+  },
+  {
+   "name": "prose",
+   "color": "#ff9ec2",
+   "state": "LIVE",
+   "age_days": 0.67,
+   "last_run": "2026-09-16T05:33:01.044904+00:00",
+   "last_result": "census files=17853 stale=1898 fossil=0 ghost=3101 launchers=308",
+   "trail_rows": 12,
+   "last_event": "CYCLE: census files=17853 stale=1898 fossil=0 ghost=3101 launchers=308"
+  },
+  {
+   "name": "research",
+   "color": "#6fd6ff",
+   "state": "LIVE",
+   "age_days": 0.0,
+   "last_run": "2026-09-16T21:27:26.690718+00:00",
+   "last_result": "monitor rc=0, drops gated=0",
+   "trail_rows": 1179,
+   "last_event": "MONITOR: monitor_lane rc=0: w items across 0/7 terms (hn=0, arxiv=0, openalex=0, sources_down=arxiv, sources_boxed_skip=openalex,arxiv); spool watch/scout/MONIT"
+  }
+ ],
+ "ledgers": {
+  "links": {
+   "rows": 174,
+   "last5": [
+    {
+     "ts": "2026-09-16T19:57:24+00:00",
+     "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7972235"
+    },
+    {
+     "ts": "2026-09-16T19:57:27+00:00",
+     "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9673936"
+    },
+    {
+     "ts": "2026-09-16T19:57:29+00:00",
+     "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC10259323"
+    },
+    {
+     "ts": "2026-09-16T20:05:42+00:00",
+     "url": "https://www.seangoedecke.com/jev-means-structured-output-is-interesting-again"
+    },
+    {
+     "ts": "2026-09-16T20:05:49+00:00",
+     "url": "https://news.ycombinator.com/item?id=49717558"
+    }
+   ],
+   "path": "watch/inbox/LINKS.jsonl"
+  },
+  "grounding": {
+   "rows": 124,
+   "verify_line": "FAIL row 122: prev-hash mismatch (chain broken)",
+   "verify_ok": false,
+   "path": "watch/GROUNDING_WAVE.jsonl"
+  },
+  "index": {
+   "ok": false,
+   "files": 444,
+   "indexed": 140,
+   "unindexed": 389,
+   "errors": 98,
+   "warnings": 1,
+   "path": "watch/inbox/INDEX.json (mag.shared_surface validate)"
+  }
+ },
+ "receipts": [
+  {
+   "date": "2026-09-16 21:32",
+   "name": "RS_WORLDBUILD_SALON",
+   "title": "RS_WORLDBUILD_SALON — receipt (appended as I go)",
+   "status": "",
+   "path": "watch/inbox/wave_20260916/receipts/RS_WORLDBUILD_SALON.md"
+  },
+  {
+   "date": "2026-09-16 21:32",
+   "name": "G-E_FLUID_LOGIC_LIBRARY",
+   "title": "G-E: Fluid Logic Gate Library (receipt)",
+   "status": "",
+   "path": "watch/inbox/physical_computing/receipts/G-E_FLUID_LOGIC_LIBRARY.md"
+  },
+  {
+   "date": "2026-09-16 21:31",
+   "name": "G-I_PRINTABLE_FAB",
+   "title": "G-I PRINTABLE FAB — receipt (append-as-you-go)",
+   "status": "",
+   "path": "watch/inbox/physical_computing/receipts/G-I_PRINTABLE_FAB.md"
+  },
+  {
+   "date": "2026-09-16 21:31",
+   "name": "G-G_SLOW_READOUT",
+   "title": "G-G RECEIPT — Slow readout architecture for the myco-RAM layer (fading trace, mi",
+   "status": "",
+   "path": "watch/inbox/physical_computing/receipts/G-G_SLOW_READOUT.md"
+  },
+  {
+   "date": "2026-09-16 21:31",
+   "name": "G-B_SPECIES_DATA",
+   "title": "G-B_SPECIES_DATA — receipt (wave lane: physical_computing / GAP G-B)",
+   "status": "",
+   "path": "watch/inbox/physical_computing/receipts/G-B_SPECIES_DATA.md"
+  },
+  {
+   "date": "2026-09-16 21:30",
+   "name": "G-F_SPINOR_LATTICE",
+   "title": "G-F_SPINOR_LATTICE — receipt (wave lane: physical_computing / GAP G-F)",
+   "status": "",
+   "path": "watch/inbox/physical_computing/receipts/G-F_SPINOR_LATTICE.md"
+  },
+  {
+   "date": "2026-09-16 21:30",
+   "name": "N1_COMMAND_DECK",
+   "title": "N1 — COMMAND DECK (deck.html)",
+   "status": "",
+   "path": "watch/inbox/wave_20260916/receipts/N1_COMMAND_DECK.md"
+  },
+  {
+   "date": "2026-09-16 21:30",
+   "name": "G-J_INSTRUMENT_TIER",
+   "title": "G-J: Instrumentation tier — receipt (wave-lane)",
+   "status": "",
+   "path": "watch/inbox/physical_computing/receipts/G-J_INSTRUMENT_TIER.md"
+  }
+ ],
+ "programs": [
+  {
+   "id": "referee",
+   "title": "REFEREE CHAIN / BLIND EPISTEMICS",
+   "gate": "SEP-20",
+   "status": "A1 SEALED · A2 stone-1 FILED · B14 pre-registered, execution queued (forge/night)",
+   "detail": "DIRECTIVE — BONES AS THE REFEREE: NT-ACv2 gets a game by Sep-20 — end-to-end demo a stranger can watch from a phone; scope freezes: M0 only until demo ships.",
+   "facts": [
+    "A1: SEALED — blind external challenge set, 10 challenges, hash-committed answer key; C-08 encodes the salon_50 fossil test |",
+    "referee: mag/wow_bones_session.py + 12 tests, green 35/35 across the wow suite",
+    "D20 /bones adapter: code landed, OPERATOR-BLOCKED (token rotation + #game-c-overview 403)"
+   ],
+   "sources": [
+    "watch/inbox/HERMES_DIRECTIVE_BONES_REFEREE_20260916.md",
+    "watch/inbox/wave_20260916/receipts/A1_BLIND_CHALLENGE_SET.md",
+    "watch/inbox/wave_20260916/receipts/D20_BONES_ADAPTER.md"
+   ]
+  },
+  {
+   "id": "cube",
+   "title": "CUBE PROGRAM (instrumented mycelium cube)",
+   "gate": "GO-PENDING",
+   "status": "FILED 2026-09-16 — plan complete, proposal tier (two-eyes pending).",
+   "detail": "The ONE instrumented cube: echo-state characterization FIRST, then binary discrimination vs random-noise baseline (n=100, α=0.05). Stage 0 = the ear, electronics only, ~$31. Stage 1 = biology, only after a clean noise floor.",
+   "facts": [
+    "stage-0 assembly proposed Monday 2026-09-22 (fallback 09-29)",
+    "skeptic rider: artifact:signal ≈ 95:5 undefended; $45–60 with Faraday + Ag/AgCl DIY + calibration",
+    "dozen cubes collapse into a dozen clonable cards (C19: Adamatzky 8× differential PCB)"
+   ],
+   "sources": [
+    "watch/inbox/physical_computing/receipts/C17_CUBE_INSTRUMENT_PLAN.md",
+    "watch/inbox/physical_computing/CUBE1_SHOPPING_LIST.md"
+   ]
+  },
+  {
+   "id": "ractor",
+   "title": "RACTOR PLUGIN (open-source, standalone)",
+   "gate": "OPERATOR-PUBLISH",
+   "status": "LANDED — standalone repo at ../ractor-salon (exists on disk) · publish checklist state: OPERATOR-executed, not yet run",
+   "detail": "plugin.json + pyproject + src + tests + CI (3.9–3.12) + real stdio MCP server (U9). P2 demo salon: 10 answers, 25 metered calls, $0.",
+   "facts": [
+    "checklist step 1: Human scrub review",
+    "checklist step 2: Authenticate",
+    "checklist step 3: Create the public repo and push",
+    "checklist step 4: Real release",
+    "checklist step 5: Pin SHA for the catalog PR",
+    "checklist step 6: Catalog PR"
+   ],
+   "sources": [
+    "watch/inbox/wave_20260916/receipts/P1_RACTOR_PACKAGE.md",
+    "watch/inbox/wave_20260916/receipts/U9_UNION_MCP_SERVER.md"
+   ]
+  },
+  {
+   "id": "pack",
+   "title": "PHYSICAL COMPUTING PACK",
+   "gate": "v1.0",
+   "status": "Folds landed through §6.8 · falsifiers §4.1–§4.5 binding",
+   "detail": "Water, light, laser-etched silicon, mycelium. The sovereign physical layer: make, etch, or grow our own. Sampler claim: CONDITIONAL-REFUTED pending formal closure.",
+   "facts": [
+    "§4.1 salon-ESS: probe ρ=+0.167 p=0.70 (wrong-signed) → replicate ρ=+0.327 n=36 p=0.052 — graze, closure receipt owed",
+    "§4.5 DAD: no sim stone counts as substrate evidence until a physical artifact confirms/contradicts a prediction",
+    "C15 verdict: PARTIAL-SUPPORT, OPTIMISTIC-EDGE · Landauer 1.05e13 ceiling STRUCK (ours, first)",
+    "C19: dozen cubes → dozen clonable cards · Extropic Z1 140× replication seat OPEN ($0)"
+   ],
+   "sources": [
+    "watch/inbox/physical_computing/PHYSICAL_COMPUTING_PACK_20260916.md"
+   ]
+  },
+  {
+   "id": "world",
+   "title": "WORLD BUILD (M0–M5)",
+   "gate": "SCOPE-FREEZE→SEP-20",
+   "status": "M0 LANDED (W1 wow_world.py, atrium-ring) · M2 LANDED (W2 wow_player.py 17/17, byte-identical resume) · next M2.5+",
+   "detail": "Verifiable play: every session is a receipt and every receipt replays. The free week is the drafting sprint; the editor seat is forever.",
+   "facts": [
+    "M0: bones-world skeleton",
+    "M1: authoritative room server",
+    "M2: player files",
+    "M3: one zone, one enemy, one loot pack",
+    "M4: /play Discord surface",
+    "M5: fifty-wide playtest"
+   ],
+   "sources": [
+    "watch/inbox/WOW_CLONE_BETA_BLUEPRINT_20260916.md",
+    "watch/inbox/wave_20260916/receipts/W1_WORLD_SKELETON.md",
+    "watch/inbox/wave_20260916/receipts/W2_PLAYER_FILES.md"
+   ]
+  },
+  {
+   "id": "myco",
+   "title": "MYCO-MEMORY LADDER",
+   "gate": "STEPS 0–5",
+   "status": "DESIGN FILED · step 0 (the ear) = cube stage-0, awaiting build",
+   "detail": "Living memory hierarchy: registers (ms) → VRAM (reservoir fading memory, capacity 0.048–0.209, Telhan 2026) → disk (hyphal remodeling) → archive (sclerotia). Every step must be CONSUMED by the fleet.",
+   "facts": [
+    "step 0: build the ear",
+    "step 1: the read test",
+    "step 2: the first write",
+    "step 3: addressing",
+    "step 4: the filesystem",
+    "step 5: the mount"
+   ],
+   "sources": [
+    "watch/inbox/physical_computing/DESIGN_MYCO_MEMORY_20260916.md"
+   ]
+  }
+ ],
+ "git": [
+  "0f34a8f3e wave 20260916: bones referee end-to-end (/bones adapter on the session runner, tests), zai-lite rewire on coding endpoint w/ lite_guard pacing + autoglm endpoint fix, canonical link ledger (main.py links CLI + paste_pipeline annotate-never-gate + LINKS backfill), salon ESS replicate (sampler claim REFUTED by pre-registered replicate), triage memo (52 kills), epistemology engine + blind challenge set + memory doctrine bundle, estate LOD + relay spectator, physical pack v1.1 (Extropic Lane-1 CSV/ESS audit, C15-C19 receipts, etch design), astra_smoke_12 cohort responses + salon50 night tape, provider probe pass2, hermes plugin catalog audit, zenodo/DOI + arXiv leads backfill, lane trails/runner states + catalog growth — checkpoint",
+  "5305a99b1 checkpoint: physical computing pack v1 + cohort responses + salon/redteam receipts; journal transcriptions 0914-0916 + mycelium dream; dozen-cubes self-steal + slashreboot; mud relay + estate walk + vislab shots; tesuji INBOX trails; bones referee session + tests; console renders; lane trails/runner states; day ledgers + prose census + reply radar",
+  "132eef87f session close: night audit filed, grounding wave corrected, ractor salons, steals ledger, catalog 746K, estate design",
+  "32e2a8849 dream-rsi verified: arXiv 2609.14858 + project page filed — RSI convergence confirmed at 5 artifacts tonight",
+  "2b84b8cce mesh audit fixes: policy_engine fail-closed on malformed caps, SHELL_ALLOW +powershell, switchboard_v2 replay dedup + agent-source deny gate, NUL-device walk fix, catalog 746K files indexed; 14/14 switchboard tests pass"
+ ],
+ "games": [
+  {
+   "href": "games/toy.html",
+   "name": "TOY",
+   "desc": "the core-verb toy (U1, 12/12 lanes green)"
+  },
+  {
+   "href": "games/mud.html",
+   "name": "MUD",
+   "desc": "the persistent world / bones referee home"
+  },
+  {
+   "href": "games/maze_arena.html",
+   "name": "MAZE ARENA",
+   "desc": "arena combat"
+  },
+  {
+   "href": "games/swarm.html",
+   "name": "SWARM",
+   "desc": "swarm board (FX1 storage/audio fixes)"
+  },
+  {
+   "href": "games/arrakis.html",
+   "name": "ARRAKIS",
+   "desc": "desert surface"
+  },
+  {
+   "href": "games/frontier_souls.html",
+   "name": "FRONTIER SOULS",
+   "desc": "U6 souls + NPC voices"
+  },
+  {
+   "href": "games/arena_operator_field.html",
+   "name": "OPERATOR FIELD",
+   "desc": "arena operator view"
+  }
+ ],
+ "surfaces": [
+  {
+   "href": "estate_walk.html",
+   "name": "ESTATE WALK",
+   "desc": "the repo as a dark navigable space",
+   "exists": true
+  },
+  {
+   "href": "estate_walk.lod.html",
+   "name": "ESTATE LOD",
+   "desc": "zone-index spectator (D21)",
+   "exists": true
+  },
+  {
+   "href": "vislab/catalog.html",
+   "name": "VISLAB CATALOG",
+   "desc": "render catalog (build_vislab_catalog.py)",
+   "exists": true
+  },
+  {
+   "href": "vislab/play.html",
+   "name": "VISLAB PLAY",
+   "desc": "catalog playback",
+   "exists": true
+  },
+  {
+   "href": "pipeline.html",
+   "name": "PIPELINE",
+   "desc": "the pipeline surface",
+   "exists": true
+  },
+  {
+   "href": "decks.html",
+   "name": "DECKS",
+   "desc": "deck index",
+   "exists": true
+  }
+ ],
+ "next_stones": [
+  {
+   "kind": "GEN-2",
+   "item": "`receipts/G2_STATIC_INFRA_AUDIT.md`",
+   "ask": "run the 6 checks (builders, broken refs, INDEX backlog, dead weight, :8765 smoke), fill Findings"
+  },
+  {
+   "kind": "GEN-2",
+   "item": "`receipts/G3_SHADER_AUDIT.md`",
+   "ask": "full shader inventory + dead uniforms + ranked fix table"
+  },
+  {
+   "kind": "GEN-2",
+   "item": "`receipts/G1_GAMES_AUDIT.md`",
+   "ask": "per-game findings pass (audit only; fixes are a later lane)"
+  },
+  {
+   "kind": "GEN-2",
+   "item": "`receipts/X_MINE_FIGURES_20260916.md`",
+   "ask": "one-paragraph fill from already-gathered body"
+  },
+  {
+   "kind": "GEN-2",
+   "item": "`wave_20260916/drafts/W1_union_alpha_draft.py`",
+   "ask": "archive/delete; superseded by landed `mag/wow_world.py`"
+  },
+  {
+   "kind": "GEN-2",
+   "item": "`physical_computing/receipts/watch/inbox/physical_computing/receipts/HERMES_REDTEAM_USAGE_20260916.json`",
+   "ask": "relocate to `physical_computing/receipts/` root, delete empty `watch/` tree"
+  },
+  {
+   "kind": "OPERATOR-GATE",
+   "item": "`receipts/B13_CODETAUR_KAN.md` defect",
+   "ask": "operator re-supplies true ID (or confirms reply) → one-call fxtwitter verify"
+  },
+  {
+   "kind": "OPERATOR-GATE",
+   "item": "`receipts/D20_BONES_ADAPTER.md`",
+   "ask": "rotate DISCORD_BOT_TOKEN + grant #game-c-overview permission; only then live boot"
+  },
+  {
+   "kind": "GEN-2",
+   "item": "Fossil headers: COLLECTION_ORIGINS / HERMES_REDTEAM / X_MINE_PHYSICAL",
+   "ask": "cosmetic one-line status fix next time each is touched"
+  },
+  {
+   "kind": "GEN-2",
+   "item": "D23 \"50/50 attempted, 49/50 answered\" line",
+   "ask": "annotate with the 39/50 correction; do not re-quote 50/50"
+  },
+  {
+   "kind": "CLOSURE",
+   "item": "sampler falsifier closure receipt",
+   "ask": "file threshold provenance + variable definitions in ONE closure receipt before the word 'refuted' is earned (p=0.052 graze; U5 witness)"
+  },
+  {
+   "kind": "OPERATOR-GATE",
+   "item": "ractor publish checklist",
+   "ask": "repo create / push / release + catalog PR vs NousResearch/hermes-agent (operator account, operator call)"
+  },
+  {
+   "kind": "THIS-WEEK",
+   "item": "cube stage-0 order + assembly",
+   "ask": "order the $31 ear; assembly proposed 2026-09-22 (fallback 09-29)"
+  },
+  {
+   "kind": "THIS-WEEK",
+   "item": "union-alpha window",
+   "ask": "free window closes ~2026-09-23 — spend it (pin 'Disputed' referent in tri-state asks; call non-streaming ≥180s)"
+  },
+  {
+   "kind": "THIS-WEEK",
+   "item": "Extropic Z1 replication seat",
+   "ask": "point the fleet at the public simulator; measure ESS/compute vs digital baseline under DAD accounting ($0)"
+  },
+  {
+   "kind": "LATER",
+   "item": "CONCERT 002",
+   "ask": "schedule after the grown-boundary assay"
+  }
+ ]
+}</script>
+<script>
+"use strict";
+const D = JSON.parse(document.getElementById('deck-data').textContent);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const chip = (t, cls) => `<span class="chip ${cls}">${esc(t)}</span>`;
+
+function kpi(k, v, cls) {
+  return `<div class="kpi"><div class="k">${esc(k)}</div><div class="v ${cls || 'small'}">${v}</div></div>`;
+}
+
+function standingWave() {
+  const g = D.ledgers.grounding, ix = D.ledgers.index, w = D.wave, cp = D.context_pack;
+  const vCls = g.verify_ok ? 'good' : 'bad';
+  return `<section id="standing-wave"><h2>STANDING WAVE <span class="n">// era 003 · THE POUR</span></h2>
+  <div class="strip">
+    ${kpi('GROUNDING WAVE VERIFY', `<span class="${vCls}">${esc(g.verify_line)}</span>`)}
+    ${kpi('GROUNDING ROWS', g.rows)}
+    ${kpi('WAVE RECEIPTS INDEXED', w.receipts_indexed == null ? '?' : w.receipts_indexed)}
+    ${kpi('INDEX HEALTH (the F)', ix.ok === true ? '<span class="good">OK</span>' : ix.ok === false ? '<span class="bad">NOT OK</span>' : '<span class="warn">UNKNOWN</span>',
+         ix.ok ? 'good' : 'bad')}
+    ${kpi('INDEX ERRORS', ix.errors == null ? esc(ix.error || '?') : ix.errors, ix.errors ? 'bad' : '')}
+    ${kpi('GIT TIP', esc((D.git[0] || '?').split(' ')[0]))}
+    ${kpi('CONTEXT PACK', `tip ${esc(cp.tip)} · leaves ${cp.leaves == null ? '?' : cp.leaves}`)}
+  </div>
+  <div class="src">sources: ${g.path} · watch/inbox/wave_20260916/WAVE_STATE_20260916.md · watch/inbox/INDEX.json · memory/context_pack_latest.md · git log -5</div>
+  <ul style="margin-top:10px">${D.git.map(l => `<li class="wrap">${esc(l)}</li>`).join('')}</ul></section>`;
+}
+
+function programs() {
+  return `<section id="programs"><h2>PROGRAMS <span class="n">// six</span></h2><div class="grid cards">` +
+    D.programs.map(p => `<div class="card"><h3>${esc(p.title)}${chip(p.gate, 'gate')}</h3>
+      <div class="st">${esc(p.status)}</div><p>${esc(p.detail)}</p>
+      <ul>${p.facts.map(f => `<li>${esc(f)}</li>`).join('')}</ul>
+      <div class="src">sources: ${p.sources.map(s => esc(s)).join(' · ')}</div></div>`).join('') +
+    '</div></section>';
+}
+
+function lanes() {
+  const order = {LIVE: 0, STALE: 1, 'NO-RUNNER': 2, DORMANT: 3};
+  const rows = D.lanes.slice().sort((a, b) => (order[a.state] - order[b.state]) || a.name.localeCompare(b.name));
+  const live = rows.filter(l => l.state === 'LIVE').length;
+  return `<section id="lanes"><h2>LIVE LANES <span class="n">// ${live}/${rows.length} live</span></h2>
+  <table><tr><th>LANE</th><th>STATE</th><th>LAST RUN</th><th>RESULT</th><th>TRAIL</th><th>LAST EVENT</th></tr>` +
+    rows.map(l => `<tr><td class="lane"><span class="dot" style="background:${l.color}"></span>${esc(l.name)}</td>
+      <td>${chip(l.state, l.state === 'LIVE' ? 'ok' : l.state === 'STALE' ? 'gate' : 'bad')}</td>
+      <td>${esc(l.last_run) + (l.age_days == null ? '' : ` <span class="src">(+${l.age_days}d)</span>`)}</td>
+      <td class="wrap">${esc(l.last_result)}</td>
+      <td>${l.trail_rows} rows</td><td class="wrap">${esc(l.last_event)}</td></tr>`).join('') +
+    '</table><div class="src">sources: queue/lanes/*/runner_state.json + trail.jsonl · LIVE = ran within 24h, STALE ≤ 3d, DORMANT older</div></section>';
+}
+
+function receipts() {
+  return `<section id="receipts"><h2>RECEIPTS <span class="n">// latest ${D.receipts.length} by mtime</span></h2>
+  <table><tr><th>WHEN</th><th>RECEIPT</th><th>STATUS</th></tr>` +
+    D.receipts.map(r => `<tr><td>${esc(r.date)}</td><td><a class="wrap" href="../../${esc(r.path)}">${esc(r.name)}</a><div class="src wrap">${esc(r.title)}</div></td>
+      <td class="wrap">${esc(r.status) || '<span class="src">—</span>'}</td></tr>`).join('') +
+    '</table><div class="src">links resolve from file:// (repo-relative ../../watch/…); when served from /static the paths are still the canonical locations</div></section>';
+}
+
+function ledgers() {
+  const L = D.ledgers, l5 = L.links.last5.map(r => `<li class="wrap">${esc(r.ts || '')} <a href="${esc(r.url)}">${esc(r.url)}</a></li>`).join('');
+  return `<section id="ledgers"><h2>LEDGERS <span class="n">// counts + claim statuses</span></h2><div class="grid cards">
+    <div class="card"><h3>LINKS LEDGER</h3><p><span class="v" style="font-size:20px;color:var(--hi)">${L.links.rows}</span> rows</p>
+      <ul>${l5}</ul><div class="src">${esc(L.links.path)}</div></div>
+    <div class="card"><h3>GROUNDING WAVE</h3><p><span class="v" style="font-size:20px;color:var(--hi)">${L.grounding.rows}</span> rows · verify: <span class="${L.grounding.verify_ok ? 'good' : 'bad'}">${esc(L.grounding.verify_line)}</span></p>
+      <ul><li>chain broken at row 122 (prev-hash mismatch) — repair lane owed</li></ul><div class="src">${esc(L.grounding.path)}</div></div>
+    <div class="card"><h3>SHARED SURFACE INDEX</h3><ul>
+      <li>ok: <span class="${L.index.ok ? 'good' : 'bad'}">${L.index.ok == null ? 'unknown' : L.index.ok}</span></li>
+      <li>files ${L.index.files == null ? '?' : L.index.files} · indexed ${L.index.indexed == null ? '?' : L.index.indexed} · unindexed ${L.index.unindexed == null ? '?' : L.index.unindexed}</li>
+      <li>errors <span class="bad">${L.index.errors == null ? '?' : L.index.errors}</span> · warnings ${L.index.warnings == null ? '?' : L.index.warnings}</li>
+    </ul><div class="src">${esc(L.index.path)}</div></div>
+    <div class="card"><h3>SAMPLER CLAIM</h3><p>${chip('CONDITIONAL-REFUTED', 'gate')}</p>
+      <ul><li>probe: ρ +0.167, n=8, p=0.70 — wrong-signed</li>
+      <li>replicate: ρ +0.327, n=36, p=0.052 — past the +0.3 line, but a graze</li>
+      <li>U5 witness: refutation CONDITIONAL on formal closure receipt (threshold provenance + variable definitions filed together)</li>
+      <li>salon_50 = 39/50 answered, NOT 50/50 (fossil, 55 occurrences in the wild)</li></ul>
+      <div class="src">watch/inbox/physical_computing/PHYSICAL_COMPUTING_PACK_20260916.md §6 · WAVE_STATE §3</div></div>
+  </div></section>`;
+}
+
+function surfaces() {
+  return `<section id="surfaces"><h2>SURFACES <span class="n">// ${D.surfaces.length + D.games.length} linked · existence-checked at build</span></h2>
+  <div class="grid cards">` +
+    D.games.map(g => `<div class="card"><h3>${esc(g.name)}</h3><p>${esc(g.desc)}</p>
+      <div class="src"><a href="${esc(g.href)}">open ${esc(g.href)}</a>${g.exists ? '' : ' <span class="bad">MISSING</span>'}</div></div>`).join('') +
+    D.surfaces.map(s => `<div class="card"><h3>${esc(s.name)}</h3><p>${esc(s.desc)}</p>
+      <div class="src"><a href="${esc(s.href)}">open ${esc(s.href)}</a>${s.exists ? '' : ' <span class="bad">MISSING</span>'}</div></div>`).join('') +
+    '</div><div class="src">relative links work from file:// and from /static/deck.html</div></section>';
+}
+
+function nextStones() {
+  const cls = k => k === 'OPERATOR-GATE' ? 'bad' : k === 'GEN-2' ? 'gate' : k === 'CLOSURE' ? 'gate' : 'ok';
+  return `<section id="next-stones"><h2>NEXT STONES <span class="n">// gen-2 requeue + operator gates</span></h2>
+  <table><tr><th>KIND</th><th>ITEM</th><th>ASK</th></tr>` +
+    D.next_stones.map(s => `<tr><td>${chip(s.kind, cls(s.kind))}</td><td class="wrap">${esc(s.item)}</td><td class="wrap">${esc(s.ask)}</td></tr>`).join('') +
+    '</table><div class="src">sources: WAVE_STATE_20260916.md §4 + program receipts</div></section>';
+}
+
+const SECTIONS = [
+  ['standing-wave', 'STANDING WAVE', standingWave],
+  ['programs', 'PROGRAMS', programs],
+  ['lanes', 'LIVE LANES', lanes],
+  ['receipts', 'RECEIPTS', receipts],
+  ['ledgers', 'LEDGERS', ledgers],
+  ['surfaces', 'SURFACES', surfaces],
+  ['next-stones', 'NEXT STONES', nextStones],
+];
+document.getElementById('main').innerHTML = SECTIONS.map(s => s[2]()).join('');
+document.getElementById('nav').innerHTML = SECTIONS.map(s => `<a href="#${s[0]}">${s[1]}</a>`).join('');
+</script>
+</body>
+</html>

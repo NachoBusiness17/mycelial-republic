@@ -292,6 +292,18 @@ construction.
 with verified/flagged source tiers, ≈$55 phased BOM, three-stage pre-registered ladder
 with per-stage kill criteria, and trail integration under the A2 row law (VOID procedure
 explicitly extended to sensor rows). This receipt is the durable artifact; the plan is a
+
+## CONCERT 001 AMENDMENTS — folded into the plan bytes 2026-09-16 (R3 gap finding: prose revisions now carried by the plan itself)
+
+1. **Dead twin promoted to concurrent Stage-0 instrument.** Not a later control: a spare
+   ADS1115 channel runs the killed-substrate twin simultaneously from first power-up,
+   pre-registered — living capacity must beat the MATCHED twin, not a historical memory.
+2. **SHT31 temp/RH sensor promoted to Stage-1 required**, with a nuisance-regressor confound
+   check (LED heat → evaporation → drift can produce a passing-looking capacity curve —
+   the "wet cardboard" kill).
+3. **Rung 2 re-scoped (8/9 concert hands):** printed two-species lattice → GROWN
+   barrage-zone boundary with optically-tracked, adaptive electrode placement. Printed
+   boundaries are predicted to fail first; the zone line grows where the electrodes go.
 PROPOSAL until two eyes sign it and the operator funds stage 0.
 
 **Headline findings:**

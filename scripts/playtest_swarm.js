@@ -6,7 +6,7 @@ const path = require("path");
 const { execFileSync } = require("child_process");
 
 const REPO = path.resolve(__dirname, "..");
-const GAME = path.join(REPO, "dashboard", "static", "swarm.html");
+const GAME = path.join(REPO, "dashboard", "static", "games", "swarm.html");
 const PRELUDE = path.join(REPO, "memory", "runs", "mud_20260912", "smoke_prelude.js");
 
 const html = fs.readFileSync(GAME, "utf-8");

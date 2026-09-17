@@ -28,3 +28,13 @@ fifty-wide board tasks (FW-01..50) converted to self-contained research or build
 prompts, (3) the standing veins (WoW/modding/hosting research; doctrine stress tests;
 X-radar steals; parable drafts; corpus primary-doc hunts). Status: **QUEUED** (this order
 is the drive's constitution, not a queue item).
+
+### WANT lcg-bones-mine
+
+Mine the installed Lara Croft GO (Steam, "C:\Program Files (x86)\Steam\steamapps\common\Lara
+Croft GO"): decompile-research Assembly-CSharp.dll (Unity Mono, the puzzle logic) into a
+mechanics map crosswalked against RUINS_GO_ENGINE laws; extract level-grid data from
+resources.assets/sharedassets where parseable; every confirmed real mechanic becomes a
+build-lane brief or an engine-law amendment proposal. Digs for the research window:
+documented Unity asset/level extraction toolchains and their legality for local
+personal-use analysis. Status: **OPEN**.

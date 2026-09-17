@@ -200,6 +200,15 @@ def _call(model: str, keys: list[str], prompt: str | None, timeout: int = 600,
         try:
             with _OPENER.open(req, timeout=timeout) as r:
                 d = json.loads(r.read().decode("utf-8", "replace"))
+            if "choices" not in d:
+                # HTTP 200 with an error body (seen on stealth lanes): rotate like a 429
+                body_err = json.dumps(d.get("error") or d, ensure_ascii=False)[:200]
+                rec.update({"ok": False, "error": "200_error_body", "detail": body_err,
+                            "key_index": ki})
+                if ki < len(keys) - 1:
+                    continue
+                rec["latency_ms"] = int((time.time() - t0) * 1000)
+                return rec
             txt = (d["choices"][0]["message"].get("content") or "").strip()
             if not txt:
                 rec.update({"ok": False, "error": "empty_content",

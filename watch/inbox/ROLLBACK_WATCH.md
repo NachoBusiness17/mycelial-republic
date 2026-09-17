@@ -1,5 +1,7 @@
 # ROLLBACK_WATCH — temporary guard doc (until the mechanism is fixed at the source)
 
+> **RESOLVED 2026-09-16 ~23:5x (FX5):** the mechanism is fixed at the source. `sync_games()` in `scripts/build_vislab_catalog.py` is INVERTED (canonical `dashboard/static/games/` → derived `site/dist/games/`, plain copy) with a drift guard (newer+different dist copy = refused + warning naming both files). Demonstrated: deliberately-edited dist/toy.html refused; canonical untouched across all runs; mud 123,856 B sha c2d400c3 in catalog. The interim operational law in §3 is no longer needed. Receipt: `wave_20260916/receipts/FX5_SYNC_DIRECTION_FIX.md`. Treat `site/dist/**` as WRITE-ONLY-BY-BUILD still stands.
+
 Filed: 2026-09-16 ~23:3x · incident lane · companion receipt: `wave_20260916/receipts/INCIDENT_ROLLBACK_20260916.md`
 
 ## 1. Incident timeline (byte-evidenced)

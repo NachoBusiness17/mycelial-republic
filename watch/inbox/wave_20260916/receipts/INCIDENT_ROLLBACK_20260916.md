@@ -61,3 +61,57 @@ Assessment at lane start (marker census, 2026-09-16 ~23:1x):
 - [23:24] Rebuilt watch/inbox/WAVE_STATE_20260916.md (REBUILT-POST-INCIDENT) from F1_FOLD_STATE.md close counts + CV1/CV2 census + fresh enumeration (104 wave + 57 phys-comp receipts). F1's original 11-line memory block was lost; the rebuilt block is reconstructed to spec and marked as such.
 - [23:2x] Verification run #1 against the 23:22:51 mid-restore vintage: scripts/test_mud_replay.js → 29/35 lanes green, 6 RED (F1 non-vacuous, BD max law, ASC spawnBoss export, ASC no-double-bump, BN ghost chill — mid-restore edit seam; harness itself grew to 35 lanes with BN bones lanes). Honest intermediate numbers; the concurrent lane is iterating (game + harness edited again at 23:29:22, seconds after this lane's run). Final gate run(s) to follow when their loop settles.
 - [23:3x] Filed watch/inbox/ROLLBACK_WATCH.md (timeline + mechanism + 5 ranked guards + interim operational law).
+
+## FINAL — gate results (verbatim)
+
+Settled vintage: `dashboard/static/games/mud.html` 123,856 B / 2,620 lines @ 23:30:49 (concurrent restore lane's final; this lane verified, did not edit). dist lockstep: byte-identical (`cmp` clean, canonical→dist copies 23:36:56). mud sha16 `c2d400c32e8a6da4`, toy sha16 `881d2fca8e72f792`.
+
+`node scripts/test_mud_replay.js` — **41/41 lanes green × 3 consecutive runs** (R/F1/F2/G 1-11, BD 12-16, LOOT 17, ASC 18-24, FLT 25-28, BN 29-35, GP 36-41). First post-edit run was 40/41 (lane 40 RED: "the champion kept no grudge") — a transient racing the restore lane's 23:38:08 harness write; a standalone instrumented probe of the same duel law PASSED (champion filed `took` @ frame 121, state=dead, `champGhosts.crypt.grudges = [slain, took]`), and the three clean re-runs confirm. Intermediate honest numbers: the mid-restore 23:22:51 vintage measured 29/35 (six RED edit-seams: F1 non-vacuous, BD max law, ASC spawnBoss export, ASC no-double-bump, BN ghost chill).
+
+```
+PASS 40 GP: the ledger is capped (5, newest kept); a champion victory files "took" through the real kill path
+PASS 41 GP: replay law with lived ghosts — same seed + tape + ledger twice -> byte-identical trace + evlog
+
+41/41 lanes green
+mud: 2620 lines, seed 20260916, 1800 steps @ 60fps, tape A 14 events, runSeed 20260916
+```
+
+`node scripts/test_toy.js`:
+```
+PASS 13 FLT: default load (no seed) = the fleet seed of the reported UTC day
+PASS 14 FLT: two fresh same-day loads share the seed — the fleet ritual
+PASS 15 FLT: explicit seeds always win — start(4242) overrides the fleet seed
+
+15/15 lanes green
+toy: 243 lines, seed 20260916, tape A sha 678ddd9d2e189555…, verdict win, duration 1.717s
+```
+
+`node scripts/test_mud_fifty.js`:
+```
+PASS 63 L: kill-drops draw the same stream — same seed, same kills, same drop outcome
+
+63/63 lanes green
+```
+
+Syntax: `vm.Script` compile of the extracted game script — `mud.html syntax OK`, `toy.html syntax OK` (node --check equivalent; no bare `node --check` exists for html).
+
+## Repair summary (final)
+
+| Item | Disposition |
+|---|---|
+| FX4 mud replay port | Re-landed by the CONCURRENT restore lane (23:17–23:30); this lane verified in bytes + 41/41 gate |
+| W5 StS ascension consumer | Re-landed by the same lane (boot-load, victory gate, title/start UI, `startGame(seed, asc)` pin, persist/nextLoop, exports incl. spawnBoss); ASC lanes 18-24 green |
+| W1A mud fleet-seed | Landed: `FLEET_SEED` auto-seed L2496, title line, fleet exports; FLT lanes 25-28 green |
+| W1A toy patch | VERIFIED intact (W1A's own re-application held): 15/15, `1664525`+`fleetDate` present, sha16 `881d8fca`-family (881d2fca8e72f792) |
+| W2 determinism note | Honored in the landed bytes: tomb evlog carries deterministic class cause (`player.lastHitEnemy.type`), cosmetic grudge name confined to SAFE_STORE record + whisper (game L1885-1892) |
+| watch/inbox/WAVE_STATE_20260916.md | REBUILT-POST-INCIDENT by this lane (F1 close receipt + CV1/CV2 census + fresh enumeration; F1's exact 11-line memory block lost, reconstructed to spec and marked) |
+| dist rollback vector | DEFUSED: canonical→dist byte-copies for mud + toy (cmp clean); next catalog run is a no-op for these files |
+| Guard | `watch/inbox/ROLLBACK_WATCH.md` filed: timeline, named mechanism, 5 ranked guards, interim operational law |
+
+## Guard recommendation (short form — full detail in ROLLBACK_WATCH.md)
+
+Fix `scripts/build_vislab_catalog.py sync_games()` direction (refresh dist FROM canonical, or refuse dst-newer-than-src copies without `--force`); until code lands, the standing operational law is: after ANY canonical games edit, byte-copy canonical→dist BEFORE anyone runs the catalog builder. The builder is invoked by lanes under documented-but-wrong doctrine (FX2 calls dist→games "by-design") — the doctrine line in FX2_SURFACE_RECONCILE.md and G2_STATIC_INFRA_AUDIT.md needs the same one-line correction.
+
+## Status: CLOSED (with attribution)
+
+Damage assessed · mechanism NAMED (`build_vislab_catalog.py sync_games()` dist→games, `shutil.copy2` mtime-preserving; catalog.json 22:51:22.703 pins the 22:50:47 firing; 17:14:03 firing pinned to FX2's 21:13Z catalog run) · lost work re-landed (concurrent lane; this lane verified + defused the vector + rebuilt WAVE_STATE + filed the guard) · all gates green (41/41 ×3, 15/15, 63/63). No git commands used. No paid APIs. Probe file deleted; only inbox artifacts + this receipt written by this lane.

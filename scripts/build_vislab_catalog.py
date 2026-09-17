@@ -5,9 +5,11 @@ Walks the real filesystem each run and regenerates:
   dashboard/static/vislab/catalog.json   (the source of truth)
   dashboard/static/vislab/catalog.html   (self-contained viewer, data embedded, works offline)
 
-Also syncs deployed games under the dashboard so they can LAUNCH:
-  site/dist/games/*.html        -> dashboard/static/games/
-  site/dist/static/rounds_real.json -> dashboard/static/rounds_real.json (+ games/)
+Also syncs deployed games so every surface serves the same bytes (canonical -> derived):
+  dashboard/static/games/*.html     -> site/dist/games/
+  dashboard/static/rounds_real.json -> site/dist/static/rounds_real.json (+ games/)
+LAW: canonical flows to derived, never backward. A derived file NEWER than its
+canonical source (with different bytes) is drift: refused + reported, never clobbered.
 
 If dashboard/static/vislab/health.json exists (scripts/sweep_vislab_health.py),
 its verdicts are merged into every entry as a health chip.
@@ -78,20 +80,64 @@ def _sha8(p: Path) -> str:
     except OSError:
         return "?"
 
+def _same_bytes(a: Path, b: Path) -> bool:
+    try:
+        return a.stat().st_size == b.stat().st_size and a.read_bytes() == b.read_bytes()
+    except OSError:
+        return False
+
+def _copy_canonical_to_derived(src: Path, dst: Path) -> str:
+    """One-way copy canonical -> derived (site/dist is a build target, never a source).
+
+    Plain copy semantics: derived mtime updates to now (no mtime preservation).
+    Drift guard: if the derived copy is NEWER than its canonical source AND the
+    bytes differ, someone edited derived output directly — refuse to overwrite,
+    name both files, surface it. Identical-newer bytes = lockstep, harmless skip."""
+    if dst.exists() and dst.stat().st_mtime > src.stat().st_mtime:
+        if _same_bytes(dst, src):
+            return "lockstep"
+        print("WARNING: drift — derived file is NEWER than its canonical source; refusing to overwrite.")
+        print(f"  derived  (newer, edited directly?): {dst}")
+        print(f"  canonical (source of truth):         {src}")
+        print("  reconcile: canonical wins — re-land the work on canonical, then rerun this builder.")
+        return "refused"
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy(src, dst)
+    return "copied"
+
 def sync_games() -> list[str]:
-    """LAW of launchability: a game the dashboard can't serve can't launch."""
-    src = ROOT / "site/dist/games"
-    dst = ROOT / "dashboard/static/games"
-    dst.mkdir(parents=True, exist_ok=True)
-    copied = []
-    for f in sorted(src.glob("*.html")):
-        shutil.copy2(f, dst / f.name)
-        copied.append(f.name)
-    rr = ROOT / "site/dist/static/rounds_real.json"
+    """LAW of launchability: a game the dashboard can't serve can't launch.
+    LAW of direction: canonical (dashboard/static) flows to derived (site/dist),
+    never backward. (Inverted 2026-09-16 after the rollback incident:
+    sync_games used to copy dist -> static and twice overwrote landed work.)"""
+    canonical = ROOT / "dashboard/static/games"
+    dist = ROOT / "site/dist/games"
+    canonical.mkdir(parents=True, exist_ok=True)
+    dist.mkdir(parents=True, exist_ok=True)
+    copied, lockstep, refused = [], [], []
+    for f in sorted(canonical.glob("*.html")):
+        verdict = _copy_canonical_to_derived(f, dist / f.name)
+        if verdict == "copied":
+            copied.append(f.name)
+        elif verdict == "lockstep":
+            lockstep.append(f.name)
+        else:
+            refused.append(f.name)
+    rr = ROOT / "dashboard/static/rounds_real.json"
     if rr.is_file():
-        shutil.copy2(rr, ROOT / "dashboard/static/rounds_real.json")
-        shutil.copy2(rr, dst / "rounds_real.json")
-    return copied
+        _copy_canonical_to_derived(rr, ROOT / "site/dist/static/rounds_real.json")
+        games_rr = canonical / "rounds_real.json"
+        if games_rr.exists() and _same_bytes(games_rr, rr):
+            pass  # already lockstep — the builder never rewrites canonical bytes or mtimes
+        else:
+            _copy_canonical_to_derived(rr, games_rr)  # canonical-root wins within canonical zone
+    if copied:
+        print(f"sync_games: canonical -> dist refreshed {len(copied)}: {', '.join(copied)}")
+    if lockstep:
+        print(f"sync_games: lockstep (identical, untouched) {len(lockstep)}: {', '.join(lockstep)}")
+    if refused:
+        print(f"sync_games: REFUSED (drift) {len(refused)}: {', '.join(refused)}")
+    return [p.name for p in sorted(canonical.glob("*.html"))]
 
 def entry(path: Path, bucket: str, title: str, summary: str = "", game_type: str = "",
           status: str = "live", version: str = "", launch: str = "", cmd: str = "") -> dict:
@@ -138,7 +184,7 @@ def build() -> dict:
             continue
         p = ROOT / "dashboard/static/games" / name
         items.append(entry(p, "DEPLOYED GAMES", name[:-5].replace("_", " "),
-                           summary=STAR_SUMMARIES.get(name, "deployed game build (synced from site/dist/games)"),
+                           summary=STAR_SUMMARIES.get(name, "deployed game build (canonical; mirrored to site/dist/games)"),
                            game_type=GAME_TYPE_FOR_DEPLOYED.get(name, "game build"),
                            launch=f"/static/games/{name}"))
 

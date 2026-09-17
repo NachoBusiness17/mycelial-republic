@@ -88,3 +88,9 @@
 - [openalex] Student Co-Created Formative Assessment in a Cross-Disciplinary Data Literacy Module: A Microcurricula Approach at Scale
   https://doi.org/10.5281/zenodo.22771134
   Designing inclusive and engaging formative assessments at scale across heterogeneous programmes remains a persistent challenge in higher education (Andersson & Palm, 2017; King, 2022). This challenge is amplified as data literacy and analy…
+## monitor_lane run 2026-09-17T04:15:29Z — 1 new items across 1 terms
+
+### term: "GLM-5.3" (1 new)
+- [arxiv] Playing log(N)-Questions over Wikipedia Abstracts: Communication Efficiency Between Paired Frontier Models
+  http://arxiv.org/abs/2609.19113v1
+  We evaluate six frontier language models on the two-agent $\log(N)$-Questions game. A questioner sees $N$ Wikipedia lead paragraphs and must identify a secretly chosen target using exactly $\log_2 N$ yes/no questions. An answerer sees only…

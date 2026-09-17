@@ -547,6 +547,65 @@ lane('V: the vault pays — 120 souls + full heal + weapon row + sliver of time'
   assert(M.superOrbs.length > 0, 'no super orb paid out');
 });
 
+// ================= loot phase (fresh run — the N12 consumer: pickup -> inventory-add -> inventory-use) =================
+M.startGame();
+M.forceBell = false;
+
+lane('L: the loot table rolls through the seeded stream (same seed -> same rarity sequence)', () => {
+  const seq = (n) => { const out = []; for (let i = 0; i < n; i++) { M.makeLoot(100, 1200); out.push(M.evlog[M.evlog.length - 1].r); } return out; };
+  const a = seq(24);
+  M.startGame();   // reseed — the rarity sequence must be a function of the seed alone
+  const b = seq(24);
+  eq(JSON.stringify(a), JSON.stringify(b), 'rarity sequence is not a function of the seed');
+  assert(a.every(r => Number.isInteger(r) && r >= 0 && r <= 3), 'rarity outside the RARITY table');
+  M.lootDrops.length = 0;   // clear the roll probes (loot beams expire on their own 1.2s fuse)
+});
+lane('L: walk-over pickup equips a better weapon — stats move into the slot (add: equip branch)', () => {
+  P().weapons[0] = { name: 'Nerf Bat', dmg: 1, speed: 1.0, rarity: 0 };   // trash: ANY seeded roll wins the compare
+  P().weaponIdx = 0;
+  const before = P().weapons[0].dmg;
+  M.makeLoot(P().x + 8, P().y);   // inside pickup radius (r+18)
+  const drop = M.lootDrops[0];
+  assert(drop, 'makeLoot produced no drop');
+  const w = { name: drop.w.name, dmg: drop.w.dmg, rarity: drop.w.rarity };
+  pump(1);   // the walk-over pickup fires inside the live update loop
+  eq(M.lootDrops.length, 0, 'drop was not consumed by the walk-over');
+  eq(P().weapons[0].name, w.name, 'the drop never reached the inventory');
+  eq(P().weapons[0].dmg, w.dmg, 'equipped dmg did not move with the drop');
+  assert(P().weapons[0].dmg > before, 'auto-compare equipped something worse (compare law dead)');
+});
+lane('L: a drop under the active slot is STORED in the free one; trash under both is DISCARDED', () => {
+  P().weaponIdx = 0;
+  P().weapons[0] = { name: 'Kingsbreaker', dmg: 60, speed: 2.0, rarity: 3 };   // score 155: no roll beats it (max ~91)
+  P().weapons[1] = { name: 'Nerf Bat', dmg: 1, speed: 1.0, rarity: 0 };
+  M.makeLoot(P().x + 8, P().y); pump(1);
+  eq(M.lootDrops.length, 0, 'drop not consumed');
+  assert(P().weapons[1].name !== 'Nerf Bat', 'store branch never filled the free slot');
+  eq(P().weapons[0].name, 'Kingsbreaker', 'equip branch fired where it should store');
+  P().weapons[1] = { name: 'Kingsbreaker II', dmg: 60, speed: 2.0, rarity: 3 };
+  M.makeLoot(P().x + 8, P().y); pump(1);
+  eq(M.lootDrops.length, 0, 'drop not consumed');
+  eq(P().weapons[0].name, 'Kingsbreaker', 'discard branch clobbered slot 0');
+  eq(P().weapons[1].name, 'Kingsbreaker II', 'discard branch clobbered slot 1');
+});
+lane('L: the swap keys are the use-path — Digit2/Digit1 wield the slots', () => {
+  P().weaponIdx = 0;
+  M.keys['Digit2_p'] = true; pump(1);
+  eq(P().weaponIdx, 1, 'Digit2 never wielded slot 1');
+  M.keys['Digit1_p'] = true; pump(1);
+  eq(P().weaponIdx, 0, 'Digit1 never wielded slot 0');
+});
+lane('L: kill-drops draw the same stream — same seed, same kills, same drop outcome', () => {
+  function killDrops() {
+    M.startGame();
+    for (let k = 0; k < 24; k++) { const e = M.spawnEnemy('walker', 400, 1000, 'courtyard'); e.hp = 0; pump(2); }
+    return M.evlog.filter(ev => ev.e === 'loot').length;
+  }
+  const a = killDrops(), b = killDrops();
+  eq(a, b, 'same-seed kills rolled different drop tables');
+  console.log(`    ${a} drops over 24 same-seed kills, twice identical (35% gate through the seeded stream)`);
+});
+
 // ================= report =================
 const fails = results.filter(r => !r[2]);
 for (const [n, name, ok, err] of results) {

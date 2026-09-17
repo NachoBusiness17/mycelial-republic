@@ -55,6 +55,14 @@ SURFACES = [
 ]
 
 
+def fleet_seed(date_str: str) -> int:
+    """FNV-1a 32-bit over 'fleet-YYYY-MM-DD' — must match fleetSeedOf in the games (W1A)."""
+    h = 2166136261
+    for ch in "fleet-" + date_str:
+        h = ((h ^ ord(ch)) * 16777619) & 0xFFFFFFFF
+    return h or 1
+
+
 def read(p: Path) -> str:
     try:
         return p.read_text(encoding="utf-8", errors="replace")
@@ -383,6 +391,68 @@ def mine_programs():
     return progs
 
 
+# PROGRAMS.json — the machine-readable program-state ledger (N1's wished-for source).
+# First candidate wins; state/ is gitignored so the durable root is watch/inbox/.
+PROGRAM_JSON_CANDIDATES = [
+    ROOT / "watch" / "inbox" / "wave_20260916" / "PROGRAMS.json",
+    ROOT / "watch" / "inbox" / "PROGRAMS.json",
+    ROOT / "state" / "programs.json",
+]
+
+PROGRAM_TITLES = {
+    "referee-chain": "REFEREE CHAIN / BLIND EPISTEMICS",
+    "cube-program": "CUBE PROGRAM (instrumented mycelium cube)",
+    "ractor-salon": "RACTOR PLUGIN (open-source, standalone)",
+    "grounding-wave": "GROUNDING WAVE (evidence chain)",
+    "ractor-engine": "RACTOR ENGINE (diffusion witnesses)",
+    "blind-challenge-set": "BLIND CHALLENGE SET (BCS-20260916)",
+    "mud-replay-law": "MUD REPLAY LAW",
+}
+
+
+def load_programs():
+    """PROGRAMS.json when present (the deck becomes data-driven); prose-scrape fallback.
+
+    Ledger row schema (programs.v1): {program, status: green|amber|red,
+    gate: none|operator-click|funding|decision, evidence: [paths], updated, next_stone}.
+    The fold lane updates rows each wave; the deck renders them verbatim instead of
+    regex-scraping prose receipts (the N1 weak point: a heading-format change silently
+    degraded a scraped card to 'unreadable')."""
+    for cand in PROGRAM_JSON_CANDIDATES:
+        if not cand.exists():
+            continue
+        try:
+            doc = json.loads(read(cand))
+        except (json.JSONDecodeError, OSError):
+            continue
+        rows = doc.get("programs") if isinstance(doc, dict) else doc
+        if not isinstance(rows, list) or not rows:
+            continue
+        cards = []
+        for r in rows:
+            if not isinstance(r, dict) or not r.get("program"):
+                continue
+            pid = str(r["program"]).strip()
+            cards.append({
+                "id": pid,
+                "title": PROGRAM_TITLES.get(pid, pid.replace("-", " ").upper()),
+                "gate": str(r.get("gate", "none")),
+                "status": "NEXT STONE: " + str(r.get("next_stone", "")),
+                "detail": "",
+                "facts": [],
+                "sources": [str(s) for s in (r.get("evidence") or [])],
+                "health": str(r.get("status", "amber")).lower(),
+                "ledger_updated": str(r.get("updated", "")),
+            })
+        if cards:
+            try:
+                src = str(cand.relative_to(ROOT).as_posix())
+            except ValueError:
+                src = str(cand)
+            return cards, src
+    return mine_programs(), "prose-scrape fallback (no readable PROGRAMS.json found)"
+
+
 def mine_next_stones(wave):
     stones = []
     for r in wave.get("requeue", []):
@@ -502,12 +572,14 @@ function standingWave() {
 }
 
 function programs() {
-  return `<section id="programs"><h2>PROGRAMS <span class="n">// six</span></h2><div class="grid cards">` +
-    D.programs.map(p => `<div class="card"><h3>${esc(p.title)}${chip(p.gate, 'gate')}</h3>
-      <div class="st">${esc(p.status)}</div><p>${esc(p.detail)}</p>
-      <ul>${p.facts.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` +
+  const hc = h => h === 'green' ? 'ok' : h === 'red' ? 'bad' : 'gate';
+  return `<section id="programs"><h2>PROGRAMS <span class="n">// ${D.programs.length} · ${esc(D.programs_source || '')}</span></h2><div class="grid cards">` +
+    D.programs.map(p => `<div class="card"><h3>${esc(p.title)}${chip(p.gate, 'gate')}${p.health ? chip(p.health.toUpperCase(), hc(p.health)) : ''}</h3>
+      <div class="st">${esc(p.status)}</div>` +
+      (p.detail ? `<p>${esc(p.detail)}</p>` : '') +
+      `<ul>${(p.facts || []).map(f => `<li>${esc(f)}</li>`).join('')}</ul>` +
       (p.id === 'world' ? '<p id="mud-relay" class="src">relay: probing :8766/mud/state …</p>' : '') +
-      `<div class="src">sources: ${p.sources.map(s => esc(s)).join(' · ')}</div></div>`).join('') +
+      `<div class="src">${p.ledger_updated ? 'updated ' + esc(p.ledger_updated) + ' · ' : ''}sources: ${(p.sources || []).map(s => esc(s)).join(' · ')}</div></div>`).join('') +
     '</div></section>';
 }
 
@@ -636,12 +708,10 @@ def main():
         "lanes": mine_lanes(now),
         "ledgers": mine_ledgers(),
         "receipts": mine_receipts(),
-        "programs": mine_programs(),
-        "git": [],
-        "games": [],
-        "surfaces": [],
-        "next_stones": [],
     }
+    data["programs"], data["programs_source"] = load_programs()
+    data["git"] = []
+    data["games"] = []
     try:
         p = subprocess.run(["git", "log", "-5", "--oneline"], cwd=str(ROOT),
                            capture_output=True, text=True, timeout=30)
@@ -651,10 +721,21 @@ def main():
     data["games"] = [{"href": "games/" + h, "name": n, "desc": d} for h, n, d in GAMES]
     data["surfaces"] = [{"href": h, "name": n, "desc": d} for h, n, d in SURFACES]
     data["next_stones"] = mine_next_stones(wave)
+    # fleet seed law (W1A · THE WEAVE #58): today's shared game seed. mud / frontier_souls / toy
+    # auto-seed from "fleet-YYYY-MM-DD" (FNV-1a 32) — same day, same starting world on every rung.
+    fleet_date = now.strftime("%Y-%m-%d")
+    data["fleet"] = {
+        "date": fleet_date,
+        "seed": fleet_seed(fleet_date),
+        "games": ["games/mud.html", "games/frontier_souls.html", "games/toy.html"],
+        "law": "fleet-YYYY-MM-DD -> FNV-1a 32 -> LCG seed; explicit seeds always win",
+    }
 
     html = build_html(data)
     OUT.write_text(html, encoding="utf-8")
     print(f"deck written: {OUT} ({OUT.stat().st_size} bytes)")
+    print(f"fleet: {data['fleet']['date']} seed {data['fleet']['seed']}")
+    print(f"programs={len(data['programs'])} source={data['programs_source']}")
     print(f"lanes={len(data['lanes'])} receipts={len(data['receipts'])} "
           f"links_rows={data['ledgers'].get('links', {}).get('rows')} "
           f"verify={data['ledgers'].get('grounding', {}).get('verify_line', '')[:60]}")

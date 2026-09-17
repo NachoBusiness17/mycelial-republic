@@ -16,9 +16,15 @@ function lane(name, fn) { laneN++; try { fn(); results.push([laneN, name, true, 
 function assert(c, m) { if (!c) throw new Error(m || 'assert failed'); }
 function eq(a, b, m) { if (a !== b) throw new Error(`${m || 'eq'}: got ${JSON.stringify(a)} want ${JSON.stringify(b)}`); }
 
-const fn = new Function('window', 'document', 'localStorage', 'location', 'fetch', 'setInterval', 'requestAnimationFrame', 'performance', 'URLSearchParams', code);
-fn(shimWindow, shimDoc, shimStorage, { search: '' }, () => Promise.resolve({ json: () => Promise.resolve({ ok: true }) }), () => 0, () => 0, performance, URLSearchParams);
-const M = shimWindow.FS;
+// one fresh game instance per load — a page load, not a session carry-over (the fleet lanes load
+// fresh instances to prove same-day loads share the starting world)
+function loadFS() {
+  const w = { innerWidth: 960, innerHeight: 600, addEventListener: () => {}, AudioContext: undefined, webkitAudioContext: undefined };
+  const fn = new Function('window', 'document', 'localStorage', 'location', 'fetch', 'setInterval', 'requestAnimationFrame', 'performance', 'URLSearchParams', code);
+  fn(w, shimDoc, shimStorage, { search: '' }, () => Promise.resolve({ json: () => Promise.resolve({ ok: true }) }), () => 0, () => 0, performance, URLSearchParams);
+  return w.FS;
+}
+const M = loadFS();
 const P = () => M.player;
 const K = M.keys;
 function pump(n, dt) { M.pump(n, dt); }
@@ -460,6 +466,121 @@ lane('his presence withers: the timer bleeds faster in close', () => {
   for (let i = 0; i < 120; i++) { god(); pump(1); }
   const nearDrain = t1 - M.G.timer;
   assert(nearDrain > farDrain * 1.5, `aura barely withers (far ${farDrain.toFixed(1)} vs near ${nearDrain.toFixed(1)})`);
+});
+
+// ================= souls messages: the words of earlier walks (W3) =================
+M.startRun(0); god();
+lane('SOULS LEXICON: three bounded pools, and no path in for free text', () => {
+  const L = M.SOULS_LEX;
+  for (const k of M.SOULS_KEYS) {
+    assert(Array.isArray(L[k]) && L[k].length >= 8, `pool ${k} too small (${(L[k] || []).length})`);
+    for (const w of L[k]) assert(typeof w === 'string' && w.length > 0, `pool ${k} holds a non-word`);
+  }
+  assert(M.composeMessage([0, 0, 99]) === null, 'out-of-range index accepted');
+  assert(M.composeMessage([0, 0, -1]) === null, 'negative index accepted');
+  assert(M.composeMessage(['DEATH WAITS HERE', 0, 0]) === null, 'a word string was accepted — free text has a path in');
+  assert(M.composeMessage([0.5, 0, 0]) === null, 'non-integer index accepted');
+  assert(M.composeMessage([0, 0]) === null, 'wrong slot count accepted');
+  assert(M.composeMessage(null) === null, 'null slots accepted');
+});
+lane('SOULS COMPOSE: costs nothing, binds spot + facing, silent in its own run', () => {
+  M.souls.length = 0;
+  M.startRun(0); god();
+  tele(700, -300);
+  P().facing = 2.1;
+  const ess0 = P().essence;
+  const m = M.composeMessage([1, 2, 3]);
+  assert(m, 'compose refused a legal message');
+  eq(P().essence, ess0, 'compose was not free');
+  eq(m.x, 700); eq(m.y, -300); eq(m.facing, 2.1); eq(m.run, M.G.runs, 'run not bound');
+  M.seedSoulsigns();
+  assert(!M.soulsigns.some(s => s.m.id === m.id), 'your own words stood in your own run');
+});
+lane('SOULS LAW: composed in run A — it stands in run B at the recorded spot, facing the recorded way', () => {
+  M.souls.length = 0;
+  M.startRun(0); god();
+  tele(-450, 220);
+  P().facing = -1.2;
+  const m = M.composeMessage([0, 1, 2]);
+  assert(m, 'compose failed');
+  M.startRun(0); god();
+  const s = M.soulsigns.find(s => Math.hypot(s.x + 450, s.y - 220) < 2);
+  assert(s, 'no sign at the recorded spot');
+  eq(s.facing, -1.2, 'the sign lost the author facing');
+  eq(s.m.id, m.id, 'the wrong message stands at the spot');
+  eq(M.soulsText(s.m), M.SOULS_LEX.danger[0] + ' — ' + M.SOULS_LEX.verb[1] + ' — ' + M.SOULS_LEX.tail[2], 'rendering left the lexicon');
+});
+lane('SOULS LAW: same seed -> same sign order (fleet stream governs appearance)', () => {
+  M.souls.length = 0;
+  M.startRun(0); god();
+  const spots = [[300, 40, 0.2], [-520, 100, 1.1], [640, -260, -2.0], [80, 500, 0.7], [-300, -420, 2.9]];
+  for (const [x, y, f] of spots) { tele(x, y); P().facing = f; assert(M.composeMessage([1, 3, 5]), 'compose failed'); }
+  eq(M.souls.length, 5, 'ledger lost words');
+  M.seedRun(4242); M.startRun(0); god();
+  const ordA = M.soulsigns.map(s => s.m.id);
+  M.seedRun(4242); M.startRun(0); god();
+  const ordB = M.soulsigns.map(s => s.m.id);
+  eq(JSON.stringify(ordA), JSON.stringify(ordB), 'same seed, different sign order');
+  assert(ordA.length === 5, `expected all 5 signs, got ${ordA.length}`);
+  for (const s of M.soulsigns) assert(spots.some(([x, y]) => Math.hypot(s.x - x, s.y - y) < 2), 'a sign drifted off its recorded spot');
+});
+lane('SOULS READ: stand with a sign and it gives its words', () => {
+  M.souls.length = 0;
+  M.startRun(0); god();
+  tele(320, 140);
+  P().facing = 0.4;
+  assert(M.composeMessage([2, 3, 4]), 'compose failed');
+  M.startRun(0); god();
+  const s = M.soulsigns[0];
+  assert(s, 'no sign seeded');
+  eq(s.read, false, 'sign pre-read before contact');
+  const c0 = M.chron.length;
+  tele(s.x, s.y); pump(2);
+  eq(s.read, true, 'the sign was never read');
+  assert(M.chron.slice(c0).some(c => c.text.includes('words in the sand')), 'reading never entered the chronicle');
+  assert(M.chron.slice(c0).some(c => M.soulsText(s.m).split(' — ').every(w => c.text.includes(w))), 'the read text left the lexicon');
+});
+lane('SOULS LAW: every renderable message is inside the lexicon closure', () => {
+  const legal = new Set();
+  for (const d of M.SOULS_LEX.danger) for (const v of M.SOULS_LEX.verb) for (const t of M.SOULS_LEX.tail) legal.add([d, v, t].join(' — '));
+  eq(legal.size, M.SOULS_LEX.danger.length * M.SOULS_LEX.verb.length * M.SOULS_LEX.tail.length, 'closure math wrong');
+  for (const m of M.souls) assert(legal.has(M.soulsText(m)), 'a ledger message rendered outside the lexicon');
+  const m = M.composeMessage([M.SOULS_LEX.danger.length - 1, M.SOULS_LEX.verb.length - 1, M.SOULS_LEX.tail.length - 1]);
+  assert(m && legal.has(M.soulsText(m)), 'legal compose rendered outside the closure');
+});
+lane('SOULS LEDGER: bounded — old words blow away like sand', () => {
+  const D = M.SOULS_LEX.danger.length, V = M.SOULS_LEX.verb.length, T = M.SOULS_LEX.tail.length;
+  for (let i = 0; i < 70; i++) assert(M.composeMessage([i % D, i % V, i % T]), 'legal compose refused');
+  assert(M.souls.length <= 60, `ledger grew to ${M.souls.length}`);
+});
+
+// ================= FLEET SEED LAW (W1A): same UTC day -> same starting desert =================
+// THE WEAVE build order #58 (the fleet ritual): the starting world (canyon passes + decor scatter)
+// is seeded from the UTC day ("fleet-YYYY-MM-DD" -> FNV-1a 32 -> LCG seed) — same day, same desert,
+// everywhere. Explicit seeds always win. The harness re-derives the hash itself — bytes, not reports.
+function fleetSeedOfHarness(ds) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < ds.length; i++) { h ^= ds.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return (h >>> 0) || 1;
+}
+lane('FLT: auto run = fleet seed — same-day fresh loads share passes + decor (the shared world)', () => {
+  const A = loadFS(), B = loadFS();
+  A.startRun(0); B.startRun(0);
+  eq(A.fleetDate, B.fleetDate, 'UTC day differs across loads');
+  eq(A.runSeed, fleetSeedOfHarness('fleet-' + A.fleetDate), 'run seed is not fleet-derived');
+  eq(A.runSeed, B.runSeed, 'same-day runs do not share the seed');
+  eq(JSON.stringify(A.G.passes), JSON.stringify(B.G.passes), 'canyon passes differ across same-day runs');
+  eq(JSON.stringify(A.decor), JSON.stringify(B.decor), 'decor scatter differs across same-day runs');
+});
+lane('FLT: explicit seeds always win — seedRun(4242) rebuilds a different world, once', () => {
+  const fleet = loadFS(); fleet.startRun(0);
+  const over = loadFS(); over.seedRun(4242); over.startRun(0);
+  eq(over.runSeed, 4242, 'explicit seed lost');
+  assert(4242 !== fleetSeedOfHarness('fleet-' + over.fleetDate), 'control broken: 4242 equals today fleet seed');
+  assert(JSON.stringify(over.G.passes) !== JSON.stringify(fleet.G.passes) ||
+         JSON.stringify(over.decor) !== JSON.stringify(fleet.decor), 'override changed nothing — seed not wired into the world');
+  over.startRun(0);   // no fresh seedRun: the pending override is consumed, the fleet seed returns
+  eq(over.runSeed, fleetSeedOfHarness('fleet-' + over.fleetDate), 'override leaked past its run — pending seed not consumed');
 });
 
 const fails = results.filter(r => !r[2]);

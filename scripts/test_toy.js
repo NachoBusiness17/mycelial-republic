@@ -31,10 +31,16 @@ const shimDocument = { getElementById: () => fakeCanvas, createElement: () => ({
 const shimRaf = () => 0;
 
 let TOY = null;
-try {
+// one fresh game instance per load — a page load, not a session carry-over (fleet lanes load
+// fresh instances to prove same-day loads share the seed)
+function loadToy() {
+  const w = { innerWidth: 960, innerHeight: 600, addEventListener: () => {} };
   const fn = new Function('window', 'document', 'requestAnimationFrame', code);
-  fn(shimWindow, shimDocument, shimRaf);
-  TOY = shimWindow.TOY;
+  fn(w, shimDocument, shimRaf);
+  return w.TOY;
+}
+try {
+  TOY = loadToy();
 } catch (e) {
   console.error('COMPILE/RUN ERROR:', e.stack);
   process.exit(1);
@@ -179,6 +185,32 @@ lane('C: P-LEGAL sweep on TAPE_C (facetank tape, same seed) — still no hit wit
 lane('C: divergence is legal play — same seed, different tape, different log, both P-LEGAL', () => {
   assert(JSON.stringify(ra1.events) !== JSON.stringify(rc.events), 'same seed alone decided the run — tape not load-bearing');
   assert(ra1.sha256 !== rc.sha256, 'receipts identical across tapes');
+});
+
+// ================= FLEET SEED LAW (W1A): same UTC day -> same starting toy =================
+// THE WEAVE build order #58 (the fleet ritual): a fresh load with NO seed derives the run seed
+// from the UTC day ("fleet-YYYY-MM-DD" -> FNV-1a 32 -> LCG seed) — same day, same toy, everywhere.
+// Explicit seeds always win. The harness re-derives the hash itself — bytes, not reports.
+function fleetSeedOfHarness(ds) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < ds.length; i++) { h ^= ds.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  return (h >>> 0) || 1;
+}
+lane('FLT: default load (no seed) = the fleet seed of the reported UTC day', () => {
+  const T2 = loadToy();
+  eq(T2.seed0, fleetSeedOfHarness('fleet-' + T2.fleetDate), 'load seed is not fleet-derived');
+  eq(T2.fleetSeed, T2.seed0, 'exposed fleetSeed disagrees with the load seed');
+});
+lane('FLT: two fresh same-day loads share the seed — the fleet ritual', () => {
+  const A = loadToy(), B = loadToy();
+  eq(A.fleetDate, B.fleetDate, 'UTC day differs across loads');
+  eq(A.seed0, B.seed0, 'same-day loads do not share the seed');
+});
+lane('FLT: explicit seeds always win — start(4242) overrides the fleet seed', () => {
+  const T2 = loadToy();
+  T2.start(4242);
+  eq(T2.seed0, 4242, 'explicit seed lost');
+  assert(4242 !== fleetSeedOfHarness('fleet-' + T2.fleetDate), 'control broken: 4242 equals today fleet seed');
 });
 
 // ================= report =================

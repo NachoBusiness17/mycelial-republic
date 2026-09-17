@@ -63,11 +63,20 @@ function beep(freq, dur, type='square', vol=0.04) {
 }
 
 // ---- Utility ----
+// ---- fleet seed law (W1A · THE WEAVE build order #58): the daily shared seed. "fleet-YYYY-MM-DD"
+// (UTC) -> FNV-1a 32 -> LCG seed, identical arithmetic in mud / frontier_souls / toy / build_deck.
+// STAGED on this vintage: the FX4 replay LCG (seedRun/runSeed + startGame(forcedSeed) wiring) is
+// re-landing via the FX4/W5 restore; until then the fleet seed is derived, displayed, and exported
+// so the ritual line and cross-game identity are already live. Explicit seeds always win.
+const FLEET_DATE = new Date().toISOString().slice(0, 10);
+function fleetSeedOf(ds) { let h = 2166136261 >>> 0; for (let i = 0; i < ds.length; i++) { h ^= ds.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return (h >>> 0) || 1; }
+const FLEET_SEED = fleetSeedOf('fleet-' + FLEET_DATE);
 // RNG LAW (replay, FX4 — toy.html LCG constants, swarm.html FX1 house pattern): one seeded LCG
 // drives every gameplay-affecting draw. startGame(forcedSeed) seeds each run and records runSeed;
-// pass a number to replay a recorded run. Cosmetic-only draws (particles, camera shake, name
-// flavor, relay id) stay on Math.random so render jitter can never perturb the replay stream —
-// site-by-site classification lives in watch/inbox/wave_20260916/receipts/FX4_MUD_REPLAY_PORT.md.
+// pass a number to replay a recorded run. With no forced seed the day's fleet seed (W1A) starts
+// the world — same day, same starting monastery. Cosmetic-only draws (particles, camera shake,
+// name flavor, relay id) stay on Math.random/crnd so render jitter can never perturb the replay
+// stream — site classification lives in watch/inbox/wave_20260916/receipts/FX4_MUD_REPLAY_PORT.md.
 let lcg = 1, runSeed = 0, runN = 0;
 function seedRun(s) { runSeed = (s >>> 0) || 1; lcg = runSeed; }
 const rng = () => { lcg = (Math.imul(lcg, 1664525) + 1013904223) >>> 0; return lcg / 4294967296; };
@@ -93,6 +102,8 @@ const G = {
   spawnTimer: 0,
   super: 0,
 };
+// W5: boot-load the persisted ascension ladder so the title can show it before any run starts
+try { G.ng = Math.max(0, parseInt(localStorage.getItem('mud_asc') || '0', 10) || 0); } catch (e) {}
 
 // ---- World ----
 const WORLD_W = 1920, WORLD_H = 1200;
@@ -200,7 +211,7 @@ function dropChandelier(ch) {
   ch.dropped = true;
   poof(ch.x, ch.y, '#fc8', 24); G.shake = 9;
   for (const e of enemies) if (Math.hypot(e.x - ch.x, e.y - ch.y) < 85) { e.hp -= 70; e.stun = 0.9; e.flash = 0.2; e.aggro = true; }
-  if (Math.hypot(player.x - ch.x, player.y - ch.y) < 70) hurtPlayer(22);
+  if (Math.hypot(player.x - ch.x, player.y - ch.y) < 70) hurtPlayer(22, 'a falling chandelier');
   chronicle('a chandelier falls — the ceiling joins the fight', '#fc8');
   beep(70, 0.4, 'sawtooth', 0.07); beep(500, 0.15, 'square', 0.03);
 }
@@ -402,6 +413,7 @@ const player = {
   lifeOnKill: 0,
   bonusSpeed: 0,
   hitFlash: 0,
+  lastHit: null, lastHitEnemy: null,
 };
 function weapon() { return player.weapons[player.weaponIdx]; }
 function playerDmg() {
@@ -423,21 +435,20 @@ let fireZones = [];
 let deathClouds = [];
 // DF/RimWorld-steal: simulation-as-content — the chronicle writes itself from real events
 let chron = [];
-// Replay law (FX4): append-only gameplay event log, cleared on startGame. Same runSeed + same
-// inputs → byte-identical log (proven by scripts/test_mud_replay.js). Cosmetic randomness
-// (names, particles) is deliberately kept OUT of this log.
-const evlog = [];
-const evt = () => ({ t: +G.time.toFixed(3) });
 const NAME_A = ['Uzol', 'Vabok', 'Kel', 'Datan', 'Uvash', 'Zugl', 'Nish', 'Rith', 'Adil', 'Melbil'];
 const NAME_B = ['Cavernmurder', 'Gravewhisper', 'the Wall-Hugger', 'Emberfang', 'the Unseen', 'Doomlamp', 'the Patient', 'Bonewind', 'Kite-Bane', 'Slowdusk'];
 function genName() {
-  // cosmetic-allowed (FX4): names feed render labels + chronicle text only — no mechanic reads them
   return NAME_A[Math.floor(Math.random() * NAME_A.length)] + ' ' + NAME_B[Math.floor(Math.random() * NAME_B.length)];
 }
 function chronicle(text, color) {
   chron.push({ t: G.time || 0, text, color: color || '#9a8a6a' });
   if (chron.length > 40) chron.shift();
 }
+// Replay law (FX4): append-only gameplay event log, cleared on startGame. Same runSeed + same
+// inputs → byte-identical log (proven by scripts/test_mud_replay.js). Cosmetic randomness
+// (names, particles) is deliberately kept OUT of this log.
+const evlog = [];
+const evt = () => ({ t: +G.time.toFixed(3) });
 // Verkle-steal: the chain's memory — 0.5s snapshots, 6s deep, one rewind per death offered
 let rewindBuf = [];
 let rewindT = 0;
@@ -470,9 +481,163 @@ function loreUnlock(kind) {
   if (kind === 'wall' && !lore.wall) { lore.wall = true; loreSave(); addMsg('THE HORDE LEARNS: brawlers form a shield wall — they feel your blade less', '#8af'); beep(210, 0.3, 'square', 0.04); }
   if (kind === 'wait' && !lore.wait) { lore.wait = true; loreSave(); addMsg('THE HORDE LEARNS: they wait for your roll to land', '#f84'); beep(240, 0.3, 'square', 0.04); }
 }
+// ---- SAFE_STORE (privacy-mode law, swarm.html house pattern): localStorage throws in private
+// browsing / blocked-cookie modes and would kill the game at load. ONE guarded accessor; when
+// storage is unavailable it falls back to an in-memory object for the session. ----
+const SAFE_STORE = (() => {
+  const mem = {}; let ls = null;
+  // W4 repair: the injected `localStorage` param (what lore/mud_asc already read) and
+  // window.localStorage are the same object in a browser; harnesses inject the param form.
+  try { ls = window.localStorage || localStorage; ls.setItem('__mud_probe', '1'); ls.removeItem('__mud_probe'); } catch (e) { ls = null; }
+  return {
+    get(k, d) { try { const v = ls ? ls.getItem(k) : mem[k]; return (v === null || v === undefined) ? d : v; } catch (e) { return d; } },
+    set(k, v) { try { if (ls) ls.setItem(k, String(v)); else mem[k] = String(v); } catch (e) { mem[k] = String(v); } },
+    getJSON(k, d) { try { const v = this.get(k, null); if (v === null || v === undefined) return d; const p = JSON.parse(v); return (p === null || p === undefined) ? d : p; } catch (e) { return d; } },
+    setJSON(k, v) { this.set(k, JSON.stringify(v)); },
+  };
+})();
+// ---- BONES (NetHack-steal): dead runs become content that haunts later runs. When you die, a
+// bones record (seed, room, spot, cause, name line, hardest stat) is filed to the pool — machine
+// state, like lore: it survives respawn, reload, everything. A later run entering that room rolls
+// the SEEDED stream for a haunting (one bones-roll per room activation — never bare Math.random).
+// The ghost whispers its cause and burns stamina by its toughness (the dead run's hardest stat);
+// it CANNOT kill — the every-enemy-can-kill law stays for the living. The dead teach, they don't
+// execute. Pool is capped at BONES_CAP, FIFO. The courtyard is sanctified: bones are filed
+// everywhere, but ghosts do not rise there. ----
+const BONES_KEY = 'mud_bones', BONES_CAP = 10;
+let bones = SAFE_STORE.getJSON(BONES_KEY, []);
+if (!Array.isArray(bones)) bones = [];
+let ghosts = [];   // the risen this session — spawned only from the seeded bones-roll, cleared on startGame
+function bonesSave() { SAFE_STORE.setJSON(BONES_KEY, bones); }
+function bonesWrite(rec) {
+  bones.push(rec);
+  while (bones.length > BONES_CAP) bones.shift();   // FIFO — old bones rot out of the pool
+  bonesSave();
+  return rec;
+}
+function hardestStat() {
+  const cands = [['might', player.might | 0], ['vigor', player.vigor | 0], ['swiftness', player.swiftness | 0]];
+  cands.sort((a, b) => b[1] - a[1]);
+  if (cands[0][1] > 0) return { n: cands[0][0], v: cands[0][1] };
+  return { n: 'grit', v: Math.max(1, player.level) };
+}
+function ghostToughness(rec) { return 4 + 3 * (rec.statV || 1); }
+function spawnGhost(rec, rid) {
+  const R = ROOMS[rid] || { x: 0, y: 0, w: WORLD_W, h: WORLD_H };
+  const tn = ghostToughness(rec);
+  ghosts.push({
+    room: rid,
+    x: clamp(rec.x, R.x + 20, R.x + R.w - 20), y: clamp(rec.y, R.y + 20, R.y + R.h - 20),
+    r: 12, hp: tn, maxHp: tn, toughness: tn,
+    name: rec.name || 'a nameless lantern', cause: rec.cause || 'the dark itself',
+    statN: rec.stat || 'grit', statV: rec.statV || 1,
+    ph: (rec.seed || 1) % 7,   // deterministic phase from the dead run's seed — the haunting never touches Math.random
+    said: false, cd: 0, t: 0,
+  });
+}
+function ghostTick(dt) {
+  for (let i = ghosts.length - 1; i >= 0; i--) {
+    const g = ghosts[i];
+    g.t += dt; g.cd -= dt;
+    if (roomOf(player.x, player.y) !== g.room || g.t > 60) { ghosts.splice(i, 1); continue; }   // a ghost haunts its own room
+    // the dead drift — fully deterministic, the replay stream is never spent on a haunting
+    const d = Math.hypot(player.x - g.x, player.y - g.y);
+    if (d < 240 && d > 1) {
+      const sp = 30 + 2 * g.toughness;
+      g.x += (player.x - g.x) / d * sp * dt;
+      g.y += (player.y - g.y) / d * sp * dt;
+    } else {
+      g.x += Math.sin(G.time * 0.6 + g.ph) * 8 * dt;
+      g.y += Math.cos(G.time * 0.5 + g.ph) * 8 * dt;
+    }
+    // the touch: a whisper and a chill — stamina and snare only, NEVER hp (a ghost cannot kill)
+    if (d < g.r + player.r + 2 && g.cd <= 0) {
+      g.cd = 1.6;
+      if (!g.said) {
+        g.said = true;
+        evlog.push(Object.assign(evt(), { e: 'whisper', room: g.room }));
+        chronicle(g.name + ' whispers: "' + g.cause + ' took me" — their ' + g.statN + ' still holds', '#aaf');
+        addMsg(g.name + ': "' + g.cause + ' took me"', '#aaf');
+        beep(320, 0.4, 'sine', 0.03); beep(214, 0.5, 'sine', 0.02);
+      }
+      player.stamina = Math.max(0, player.stamina - (5 + g.toughness));
+      player.snared = Math.max(player.snared, 0.25 + 0.05 * g.toughness);
+      G.shake = Math.max(G.shake, 3);
+    }
+  }
+}
+
+// ---- GHOST PERSONALITIES (THE WEAVE #4, W4) — the four champions remember who killed them ----
+// Each ROOMS.*.champion carries a persistent personality ghost: a capped grudge ledger in the
+// SAFE_STORE ('mud_ghosts'), lore-class machine state — deliberately NOT reset by startGame, it
+// survives respawn, reload, everything. One record per recorded encounter (verdict slain|took,
+// killer name, style word, run seed, date). Seeded law (FX4): the ledger is memory, not
+// randomness — the rematch telegraph is a pure function of the record (class lexicon, no free
+// text, no stream draws), and the opening-stance shift adds one step per prior encounter on top
+// of the normal seeded draw. The replay stream is never fed from the ledger. ----
+const GRUDGE_KEY = 'mud_ghosts', GRUDGE_CAP = 5;
+const champGhosts = SAFE_STORE.getJSON(GRUDGE_KEY, {});
+for (const rid of Object.keys(ROOMS)) {
+  const def = ROOMS[rid].champion;
+  if (!def) continue;
+  if (!champGhosts[rid] || typeof champGhosts[rid] !== 'object') champGhosts[rid] = { n: 0, grudges: [] };
+  if (!Array.isArray(champGhosts[rid].grudges)) champGhosts[rid].grudges = [];
+  def.grudges = champGhosts[rid].grudges.slice(); def.encounters = champGhosts[rid].n;   // the memory hangs on the definition
+}
+function grudgeSave() { SAFE_STORE.setJSON(GRUDGE_KEY, champGhosts); }
+function grudgeReset() {
+  for (const rid of Object.keys(champGhosts)) { champGhosts[rid] = { n: 0, grudges: [] }; const def = ROOMS[rid] && ROOMS[rid].champion; if (def) { def.grudges = []; def.encounters = 0; } }
+  grudgeSave();
+}
+// what the horde has watched you do — the style word a grudge carries (pure read of lore counters)
+function killStyle() {
+  const h = [['kiting', lore.kite || 0], ['brawling', lore.brawler || 0], ['rolling', lore.rolls || 0], ['fire', lore.fires || 0], ['swarming', lore.swarm || 0]];
+  h.sort((a, b) => b[1] - a[1]);
+  return h[0][1] > 0 ? h[0][0] : 'first blood';
+}
+function recordGrudge(rid, verdict) {
+  const def = ROOMS[rid] && ROOMS[rid].champion;
+  if (!def) return null;
+  const g = champGhosts[rid] || (champGhosts[rid] = { n: 0, grudges: [] });
+  g.n++;
+  g.grudges.push({ v: verdict, by: ME.name, style: killStyle(), seed: runSeed, date: new Date().toISOString().slice(0, 10) });
+  while (g.grudges.length > GRUDGE_CAP) g.grudges.shift();   // capped — the newest grievances stay
+  def.grudges = g.grudges.slice(); def.encounters = g.n;
+  grudgeSave();
+  evlog.push(Object.assign(evt(), { e: 'grudge', room: rid, v: verdict }));
+  return g.grudges[g.grudges.length - 1];
+}
+// the telegraph: one line, from the champion's class lexicon — no free text. Slots fill only from
+// the grudge record ({K}iller, {S}tyle, {N} encounters); the line index is a pure function of the
+// record, so same seed + same history -> the same words.
+const GRUDGE_LEX = {
+  ranger: ['"I counted your {S} last time, {K}. Not this time."', '"You put me down once, {K}. The wind has turned."', '"{N} times the marshal has fallen — the volley remembers."', '"Marked. {K} walks into my range again."'],
+  cleric: ['"The light kept me, {K}. It will not keep you."', '"Your {S} profaned this floor, {K}. Be shriven."', '"I died at your hand once, {K}. The flame wrote it down."', '"{N} vigils end. This one, I finish."'],
+  rogue:  ['"You never saw me leave, {K}. Look again."', '"A back for a back, {K}. Yours is turned."', '"{N} knives I owe for your {S}, {K}. Paying now."', '"The dark keeps my ledger, {K}. Your name is in it."'],
+  bmage:  ['"Your {S} burned me once, {K}. I kept the ash."', '"The forge remembers, {K}. So do I."', '"{N} times unmade, {K}. The circle closes."', '"Stand still this time, {K}. The ground will not."'],
+};
+function grudgeHash(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h >>> 0; }
+function grudgeTelegraph(rid) {
+  const def = ROOMS[rid] && ROOMS[rid].champion, g = champGhosts[rid];
+  if (!def || !g || !g.grudges.length) return null;
+  const lex = GRUDGE_LEX[def.type] || [];
+  if (!lex.length) return null;
+  const rec = g.grudges[g.grudges.length - 1];
+  const i = grudgeHash(JSON.stringify(rec) + '|' + g.n) % lex.length;
+  return { line: lex[i].replace(/\{K\}/g, rec.by).replace(/\{S\}/g, rec.style).replace(/\{N\}/g, String(g.n)), i, n: g.n };
+}
+// opening stances — the champion's first move. The stance is drawn from the seeded stream at
+// spawn; on a rematch the draw shifts one step per prior encounter (the ghost adapts, inside the
+// seeded stream).
+const GRUDGE_OPEN = {
+  ranger: [{ n: 'open fire', f: e => { e.volleyCd = 0; } }, { n: 'stalk', f: e => { e.speed *= 1.25; e.volleyCd = 2.6; } }, { n: 'hunter', f: e => { e.volleyCd = 0.8; e.dmg = Math.round(e.dmg * 1.15); } }],
+  cleric: [{ n: 'bless', f: e => { e.healCd = 0; } }, { n: 'zeal', f: e => { e.healCd = 3; e.speed *= 1.2; e.dmg = Math.round(e.dmg * 1.25); } }, { n: 'ward', f: e => { e.hp = e.maxHp = Math.round(e.maxHp * 1.15); e.healCd = 1.5; } }],
+  rogue:  [{ n: 'ambush', f: e => { e.aggro = true; e.attackCd = 0; } }, { n: 'phantom', f: e => { e.speed *= 1.3; } }, { n: 'duel', f: e => { e.stealth = false; e.aggro = true; e.attackT = 2; e.dmg = Math.round(e.dmg * 1.2); } }],
+  bmage:  [{ n: 'open fire', f: e => { e.castCd = 0; } }, { n: 'ember wall', f: e => { e.castCd = 2; fireZones.push({ x: e.x, y: e.y, r: 64, tel: 1.2, life: 3, owner: e }); } }, { n: 'slow burn', f: e => { e.castCd = 5; e.speed *= 1.3; } }],
+};
 let lootBeams = [];
 // Exanima-steal II: keys, plates and the vault gate — puzzles in the dark
-const puzzle = { key: null, chest: null, plates: [{ x: 220, y: 340, on: false }, { x: 1720, y: 700, on: false }], gateOpen: false, chimeT: 0 };   // plate I: infirmary floor · plate II: forge floor — both walkable, the pocket is not (until the gate opens)
+const puzzle = { key: null, chest: null, plates: [{ x: 220, y: 340, on: false }, { x: 1720, y: 700, on: false }], gateOpen: false, chimeT: 0 };
 const PUZZLE_SPOTS = [[150, 620], [1760, 140], [640, 1120], [1700, 450], [240, 1060], [1120, 180]];
 function farSpot(notNear) {
   for (let tries = 0; tries < 40; tries++) {
@@ -487,7 +652,7 @@ function puzzleReset() {
   puzzle.gateOpen = false;
   puzzle.key = null; puzzle.chest = null; puzzle.chimeT = 0;
   for (const pl of puzzle.plates) pl.on = false;
-  puzzle.chest = { x: 1720, y: 1000 };   // the vault pays from inside the vault — behind the gate, in the south pocket
+  puzzle.chest = { x: 1720, y: 1000 };   // the vault pays from inside the vault — behind the gate, in the south pocket (N10)
   const s1 = farSpot([puzzle.chest.x, puzzle.chest.y]);   // gameplay: key placement — walk-to-it pays, chimes guide
   puzzle.key = { x: s1[0], y: s1[1] };
   rebuildVision();
@@ -635,8 +800,8 @@ function spawnEnemy(type, x, y, room, opts) {
     healCd: type === 'cleric' ? 2.5 : 0,
     castCd: type === 'bmage' ? 2.5 : 0,
     volleyCd: type === 'ranger' ? 1.2 : 0,
-    name: (type === 'k8' || type === 'rogue' || type === 'bmage' || type === 'ranger' || type === 'cleric') && Math.random() < 0.35 ? genName() : null,   // cosmetic gate: name only
-    room: room || null, homeX: x, homeY: y, homeSeed: rng() * 7,   // gameplay: drives idle wander heading
+    name: (type === 'k8' || type === 'rogue' || type === 'bmage' || type === 'ranger' || type === 'cleric') && Math.random() < 0.35 ? genName() : null,
+    room: room || null, homeX: x, homeY: y, homeSeed: rng() * 7,   // gameplay: drives idle wander heading → positions → combat
     aggro: false, aggroR: 260, hitsSurvived: 0, grudged: false,
   };
   if (opts) Object.assign(e, opts);
@@ -687,9 +852,24 @@ function spawnChampion(rid) {
   e.speed = Math.min(e.speed * 1.15, 200);
   e.r = Math.round(e.r * 1.3);
   e.isChampion = true;
+  e.ghostId = rid;   // W4: this body carries a personality — the fused warden never does
   e.name = ch.name;
+  // W4: prior encounters shift the opening one seeded step each; a lived grudge speaks — one
+  // lexicon line derived from the record, no free text, no stream draws.
+  const gh = champGhosts[rid];
+  const seen = gh ? gh.n : 0;
+  const openings = GRUDGE_OPEN[ch.type] || [];
+  const open = openings.length ? (rndi(0, openings.length - 1) + seen) % openings.length : 0;   // gameplay: seeded draw, ghost-shifted
+  if (openings.length) openings[open].f(e);
+  e.opening = openings.length ? open : -1;
+  evlog.push(Object.assign(evt(), { e: 'champion', room: rid, open: e.opening, gh: seen }));
   chronicle(ch.name + ' stirs', '#f84');
-  evlog.push(Object.assign(evt(), { e: 'champion', room: rid }));
+  const tg = grudgeTelegraph(rid);
+  if (tg) {
+    chronicle(ch.name + ' — ' + tg.line, '#e6a');
+    addMsg(ch.name + ' — ' + tg.line, '#f4a');
+    evlog.push(Object.assign(evt(), { e: 'telegraph', room: rid, i: tg.i, n: tg.n }));
+  }
   beep(160, 0.4, 'sawtooth', 0.05);
   return e;
 }
@@ -729,6 +909,16 @@ function roomTick(dt) {
       if (st.prepop) {
         for (const e2 of enemies) if (e2.room === rid) e2.aggro = true;
         chronicle('they heard the bell — formed up, waiting', '#f84');
+      }
+      // the BONES-ROLL: one seeded draw per entry — a haunting is never bare Math.random
+      if ((window.MUD && window.MUD.forceBones) || rng() < 0.5) {
+        const cands = bones.filter(b => b.room === rid && rid !== 'courtyard');   // the courtyard is sanctified
+        if (cands.length) {
+          const rec = cands[Math.floor(rng() * cands.length)];   // gameplay: which of the dead rise — seeded
+          spawnGhost(rec, rid);
+          evlog.push(Object.assign(evt(), { e: 'bones', room: rid, n: rec.name, c: rec.causeClass || rec.cause, tn: ghostToughness(rec) }));
+          chronicle('the air goes cold — ' + rec.name + ' walks this room again', '#aaf');
+        }
       }
     return;
   }
@@ -938,6 +1128,27 @@ function update(dt) {
         }
       }
     }
+    // the dead can be struck — a ghost at 0 hp rests (no jitter draw, no loot: the dead don't pay)
+    for (let i = ghosts.length - 1; i >= 0; i--) {
+      const g = ghosts[i];
+      const gd = Math.hypot(g.x - player.x, g.y - player.y);
+      if (gd < range + g.r) {
+        const gang = Math.atan2(g.y - player.y, g.x - player.x);
+        let gdiff = gang - player.facing;
+        while (gdiff > Math.PI) gdiff -= Math.PI * 2;
+        while (gdiff < -Math.PI) gdiff += Math.PI * 2;
+        if (Math.abs(gdiff) < arc / 2) {
+          g.hp -= playerDmg();
+          poof(g.x, g.y, '#aaf', 6);
+          if (g.hp <= 0) {
+            ghosts.splice(i, 1);
+            evlog.push(Object.assign(evt(), { e: 'grest', room: g.room }));
+            chronicle('the ghost of ' + g.name + ' rests — "' + g.cause + '" it last said', '#aaf');
+            beep(520, 0.3, 'sine', 0.03);
+          }
+        }
+      }
+    }
     // a swing near a chandelier cuts the rope — lure them under first
     for (const ch of CHANDS) {
       if (ch.dropped) continue;
@@ -1122,7 +1333,7 @@ function update(dt) {
               e.stun = 0.8;
               player._riposte = 1.0;
               chronicle((e.name || 'the walker') + ' stumbles — riposte window', '#8af');
-            } else hurtPlayer(e.dmg);
+            } else hurtPlayer(e.dmg, e.name || 'a ' + e.type, e);
           }
           e.windup = 0;
         }
@@ -1143,7 +1354,7 @@ function update(dt) {
         const lead = lore.kite >= 6 ? 0.35 : 0;
         const txp = player.x + (player._vx || 0) * lead, typ = player.y + (player._vy || 0) * lead;
         const pa = Math.atan2(typ - e.y, txp - e.x);
-        projectiles.push({x:e.x, y:e.y, vx:Math.cos(pa)*200, vy:Math.sin(pa)*200, r:6, dmg:e.dmg, life:3, color:'#8f4'});
+        projectiles.push({x:e.x, y:e.y, vx:Math.cos(pa)*200, vy:Math.sin(pa)*200, r:6, dmg:e.dmg, life:3, color:'#8f4', owner:e});
       }
     } else if (e.type === 'rogue') {
       // D&D rogue: stealth approach, backstab, vanish
@@ -1153,7 +1364,7 @@ function update(dt) {
         e.vx = nx * e.speed * 2.2; e.vy = ny * e.speed * 2.2;
         if (d < e.r + player.r + 4 && e.attackCd <= 0) {
           const back = watched < 0.25 ? 2 : 1;
-          hurtPlayer(e.dmg * back);
+          hurtPlayer(e.dmg * back, (e.name || 'a rogue') + (back === 2 ? '’s backstab' : ''), e);
           addDmgNum(player.x, player.y - player.r, Math.round(e.dmg * back), back === 2 ? '#f6f' : '#fc8');
           e.stealth = false; e.attackT = 2; e.attackCd = 1.1;
         }
@@ -1190,7 +1401,7 @@ function update(dt) {
       e.castCd -= dt;
       if (e.castCd <= 0 && d < 380) {
         e.castCd = 4;
-        fireZones.push({ x: player.x, y: player.y, r: 74, tel: 0.9, life: 2.2 });
+        fireZones.push({ x: player.x, y: player.y, r: 74, tel: 0.9, life: 2.2, owner: e });
         beep(300, 0.2, 'sawtooth', 0.03);
       }
     } else if (e.type === 'ranger') {
@@ -1203,7 +1414,7 @@ function update(dt) {
         e.volleyCd = 2.6; e.telegraph = 0.3;
         for (let k = -1; k <= 1; k++) {
           const va = Math.atan2(ny, nx) + k * 0.22;
-          projectiles.push({ x: e.x, y: e.y, vx: Math.cos(va) * 220, vy: Math.sin(va) * 220, r: 5, dmg: e.dmg, life: 3, color: '#dd8' });
+          projectiles.push({ x: e.x, y: e.y, vx: Math.cos(va) * 220, vy: Math.sin(va) * 220, r: 5, dmg: e.dmg, life: 3, color: '#dd8', owner: e });
         }
       }
     } else if (e.type === 'dodger' || e.type === 'k3') {
@@ -1218,7 +1429,7 @@ function update(dt) {
         e.vx = nx * e.speed; e.vy = ny * e.speed;
       }
       if (d < e.r + player.r + 4 && e.attackCd <= 0) {
-        hurtPlayer(e.dmg);
+        hurtPlayer(e.dmg, e.name || 'a ' + e.type, e);
         if (player.boonThorns) { e.hp -= 12; e.flash = 0.15; }
         e.attackCd = 0.7;
       }
@@ -1231,7 +1442,6 @@ function update(dt) {
       // phase two (swarm-steal): at half blood the dragon stops toying
       if (!e.phase2 && e.hp < e.maxHp * 0.5) {
         e.phase2 = true; e.speed *= 1.4;
-        evlog.push(Object.assign(evt(), { e: 'phase2' }));
         addMsg('THE DRAGON OPENS ITS EYE', '#f44');
         chronicle('the dragon opens its eye — it was toying with you', '#f44');
         beep(60, 0.7, 'sawtooth', 0.07); G.shake = 10;
@@ -1259,7 +1469,7 @@ function update(dt) {
         // chase
         e.vx = nx * e.speed; e.vy = ny * e.speed;
         if (d < e.r + player.r + 6 && e.attackCd <= 0) {
-          hurtPlayer(e.dmg);
+          hurtPlayer(e.dmg, 'the dragon', e);
           e.attackCd = 0.8;
         }
       } else {
@@ -1329,7 +1539,7 @@ function update(dt) {
       if (hitE) { projectiles.splice(i,1); continue; }
     }
     if (dist2(p, player) < (p.r + player.r)*(p.r + player.r)) {
-      if (player.iframes <= 0) hurtPlayer(p.dmg);
+      if (player.iframes <= 0) hurtPlayer(p.dmg, p.trap ? 'a dart plate' : 'a bolt from the dark', p.owner);
       projectiles.splice(i,1);
       continue;
     }
@@ -1417,6 +1627,8 @@ function update(dt) {
 
   // the monastery: room activation, spawns, clear, doors
   roomTick(dt);
+  // the dead of earlier runs: drift, whisper, chill — never kill
+  ghostTick(dt);
   // the flow field: rebuild the gradient toward the player every third of a second
   flowT -= dt;
   if (flowT <= 0) { flowT = 0.3; rebuildFlow(player.x, player.y); }
@@ -1428,7 +1640,7 @@ function update(dt) {
     m.life -= dt;
     const dm = Math.hypot(player.x - m.x, player.y - m.y);
     if (m.arm <= 0 && dm < 34) {
-      hurtPlayer(16);
+      hurtPlayer(16, 'a floor mine');
       G.shake = 8;
       poof(m.x, m.y, '#f44', 18);
       beep(70, 0.25, 'sawtooth', 0.07);
@@ -1456,12 +1668,12 @@ function update(dt) {
       f.tel -= dt;
       if (f.tel <= 0) {
         beep(240, 0.2, 'sawtooth', 0.04);
-        if (Math.hypot(player.x - f.x, player.y - f.y) < f.r) hurtPlayer(20);
+        if (Math.hypot(player.x - f.x, player.y - f.y) < f.r) hurtPlayer(20, 'a fire vent', f.owner);
       }
       continue;
     }
     f.life -= dt;
-    if (Math.hypot(player.x - f.x, player.y - f.y) < f.r) hurtPlayer(10 * dt);
+    if (Math.hypot(player.x - f.x, player.y - f.y) < f.r) hurtPlayer(10 * dt, 'a fire vent', f.owner);
     if (f.life <= 0) fireZones.splice(i,1);
   }
   // ares clouds
@@ -1476,7 +1688,7 @@ function update(dt) {
   for (const s of SPIKES) {
     s.phase = (s.phase || rng() * 3) + dt;   // gameplay: spike up/down rhythm (decides the bite)
     s.up = (s.phase % 3) > 1.9;
-    if (s.up && Math.hypot(player.x - s.x, player.y - s.y) < 26 && player.iframes <= 0) { hurtPlayer(12); player.iframes = 0.4; }
+    if (s.up && Math.hypot(player.x - s.x, player.y - s.y) < 26 && player.iframes <= 0) { hurtPlayer(12, 'a spike trap'); player.iframes = 0.4; }
     if (s.up) {
       for (const e of enemies) {
         if (e.hp <= 0 || e.runner) continue;
@@ -1494,7 +1706,7 @@ function update(dt) {
     if (!bt.armed) continue;
     if (player.iframes <= 0 && player.rollT <= 0 && Math.hypot(player.x - bt.x, player.y - bt.y) < 22) {
       bt.armed = false; bt.rearm = 7;
-      hurtPlayer(18); player.snared = 1.6;
+      hurtPlayer(18, 'a bear trap'); player.snared = 1.6;
       poof(bt.x, bt.y, '#c44', 8); beep(120, 0.2, 'square', 0.05);
       continue;
     }
@@ -1538,7 +1750,7 @@ function update(dt) {
     const ph = (G.time * 0.5 + vi * 1.33) % 4;
     v.hot = ph > 3.0; v.warn = ph > 2.4 && ph <= 3.0;
     if (v.hot) {
-      if (Math.hypot(player.x - v.x, player.y - v.y) < 46 && player.iframes <= 0) hurtPlayer(14);
+      if (Math.hypot(player.x - v.x, player.y - v.y) < 46 && player.iframes <= 0) hurtPlayer(14, 'a forge vent');
       for (const e of enemies) if (e.hp > 0 && Math.hypot(e.x - v.x, e.y - v.y) < 46) { e.hp -= 30 * dt; e.flash = 0.1; }
     }
   }
@@ -1588,14 +1800,14 @@ function update(dt) {
       if (player.hp < player.maxHp * 0.5 && (b.id === 'leech' || b.id === 'thorns')) w += 2;
       return w;
     };
-    // max law: a boon at max stacks is removed from the offered pool (stackables re-offer until capped)
-    const pool = BOONS.filter(b => (taken[b.id] || 0) < (b.max || 1));
+    // N9 max law: stackables (max>1) re-offer below max and leave the pool at max
+    const pool = BOONS.filter(b => ((player.boons || {})[b.id] || 0) < (b.max || 1));
     const picks = [];
     const bag = pool.slice();
     while (picks.length < 3 && bag.length) {
       let total = 0;
       for (const b of bag) total += weight(b);
-      let roll = rng() * total, idx = 0;   // gameplay: which boons the gods offer
+      let roll = rng() * total, idx = 0;   // gameplay: boon draft weighted roll
       for (let i = 0; i < bag.length; i++) { roll -= weight(bag[i]); if (roll <= 0) { idx = i; break; } }
       picks.push(bag.splice(idx, 1)[0]);
     }
@@ -1604,21 +1816,20 @@ function update(dt) {
     beep(550, 0.2, 'sine', 0.05);
     beep(770, 0.2, 'sine', 0.04);
   }
-  // boon draft pick — the draft OWNS the digit keys this frame: a pick must never
-  // fall through to the weapon swap below (branch, not just flag hygiene)
+  // boon draft pick
   let draftPick = false;
   if (G.boonDraft) {
     for (let i = 0; i < G.boonDraft.length; i++) {
       if (keys[['Digit1', 'Digit2', 'Digit3'][i] + '_p']) {
         const b = G.boonDraft[i];
         player.boons = player.boons || {};
-        player.boons[b.id] = (player.boons[b.id] || 0) + 1;   // gameplay: stack counts (max law reads these)
+        player.boons[b.id] = (player.boons[b.id] || 0) + 1;   // N9: counts, so stackables re-offer below max
         b.apply();
         addMsg(b.god + ': ' + b.name + ' — ' + b.desc, b.color);
         beep(880, 0.15, 'triangle', 0.04);
         G.boonDraft = null;
         keys['Digit1_p'] = keys['Digit2_p'] = keys['Digit3_p'] = false;
-        draftPick = true;
+        draftPick = true;   // N9: the input a boon consumed can never reach the weapon swap
         break;
       }
     }
@@ -1631,7 +1842,7 @@ function update(dt) {
     if (keys['KeyC_p']) { player.swiftness++; player.statPoints--; addMsg('+1 Swiftness', '#4af'); }
   }
 
-  // Weapon swap (dead on a pick frame — the draft consumed the input event)
+  // Weapon swap
   if (!draftPick && keys['Digit1_p'] && !G.boonDraft) { player.weaponIdx = 0; addMsg('Weapon 1: ' + player.weapons[0].name, RARITY[player.weapons[0].rarity].color); }
   if (!draftPick && keys['Digit2_p'] && !G.boonDraft) { player.weaponIdx = 1; addMsg('Weapon 2: ' + player.weapons[1].name, RARITY[player.weapons[1].rarity].color); }
 
@@ -1646,6 +1857,8 @@ function update(dt) {
   if (SIGILS.count >= 4 && G.naveEverActive && !enemies.some(e=>e.isBoss || e.type==='k8' || e.type==='k3') && !enemies.some(e=>e.room === 'nave' && e.hp > 0)) {
     G.state = 'victory';
     G.victoryTime = G.time;
+    ascendForNextRun();   // W5: winning alone raises the NEXT run's ladder
+    evlog.push(Object.assign(evt(), { e: 'victory' }));
     beep(660, 0.4, 'sine', 0.06);
     beep(880, 0.6, 'sine', 0.05);
   }
@@ -1655,8 +1868,10 @@ function update(dt) {
   mouse.justDown = false;
 }
 
-function hurtPlayer(dmg) {
+function hurtPlayer(dmg, src, srcEnemy) {
   if (player.iframes > 0) return;
+  if (src) player.lastHit = src;   // BONES law: the killing blow remembers what dealt it
+  player.lastHitEnemy = srcEnemy || null;   // W4: the ghost only answers to its own body, never to a bare word
   player.hp -= dmg;
   player.hitFlash = 0.2;
   player.iframes = 0.5;
@@ -1670,6 +1885,18 @@ function hurtPlayer(dmg) {
 function playerDie() {
   G.deaths++;
   evlog.push(Object.assign(evt(), { e: 'death' }));
+  // BONES: this death is filed — a later bearer in this room meets its ghost (machine state, like lore).
+  // FX4 purity: the evlog tomb receipt carries the DETERMINISTIC class cause; the killer's cosmetic
+  // name (Math.random-fed) lives only in the SAFE_STORE record and the whisper.
+  const hs = hardestStat();
+  const dRoom = G.curRoom || 'courtyard';
+  const dCause = player.lastHit || 'the dark itself';
+  const dCauseLog = player.lastHitEnemy ? ('a ' + player.lastHitEnemy.type) : dCause;
+  bonesWrite({ v: 1, seed: runSeed, room: dRoom, x: Math.round(player.x), y: Math.round(player.y), cause: dCause, causeClass: dCauseLog, name: ME.name, stat: hs.n, statV: hs.v });
+  evlog.push(Object.assign(evt(), { e: 'tomb', room: dRoom, c: dCauseLog }));
+  // W4: a champion that put the lantern down keeps that grudge too
+  const hb = player.lastHitEnemy;
+  if (hb && hb.isChampion && hb.ghostId) recordGrudge(hb.ghostId, 'took');
   player.hasLostSouls = true;
   player.soulsLost = player.souls;
   player.soulsLostX = player.x;
@@ -1718,6 +1945,9 @@ function killEnemy(e) {
   }
   // champions always pay out — the monastery's tithe
   if (e.isChampion) { makeLoot(e.x - 24, e.y); makeLoot(e.x + 24, e.y + 12); }
+  // W4: the ghost remembers its end — killer name, style, seed, date (SAFE_STORE, capped).
+  // Only the four room champions (ghostId); the fused warden is a body, not a personality.
+  if (e.isChampion && e.ghostId) recordGrudge(e.ghostId, 'slain');
   // life on kill
   if (player.lifeOnKill > 0) {
     player.hp = Math.min(player.maxHp, player.hp + player.lifeOnKill);
@@ -1755,10 +1985,7 @@ function killEnemy(e) {
   }
   // grief: nearby idle allies keen over the body — then come for you
   for (const o of enemies) {
-    if (o.hp > 0 && !o.aggro && !o.runner && o.mourn == null && Math.hypot(o.x - e.x, o.y - e.y) < 130 && rng() < 0.45) {   // gameplay: mourner rises angry
-      o.mourn = 2.2;
-      evlog.push(Object.assign(evt(), { e: 'mourn' }));
-    }
+    if (o.hp > 0 && !o.aggro && !o.runner && o.mourn == null && Math.hypot(o.x - e.x, o.y - e.y) < 130 && rng() < 0.45) { o.mourn = 2.2; evlog.push(Object.assign(evt(), { e: 'mourn' })); }   // gameplay: mourner rises angry
   }
   // rout: the champion died and the room's nerve broke
   if (e.isChampion && e.room) {
@@ -1804,10 +2031,13 @@ function draw() {
     ctx.fillStyle = '#666';
     ctx.fillText('WASD move · Mouse aim · LMB/Space attack · Shift roll', BASE_W/2, BASE_H/2 + 60);
     ctx.fillText('Z/X/C spend stats · 1/2 swap weapons · Bonfires heal & respawn', BASE_W/2, BASE_H/2 + 80);
+    ctx.font = '12px monospace';
+    ctx.fillStyle = '#6a7a6a';
+    ctx.fillText('fleet ' + FLEET_DATE + ' · seed ' + FLEET_SEED, BASE_W/2, BASE_H/2 + 104);
     return;
   }
 
-  const shakeX = G.shake > 0 ? crnd(-G.shake,G.shake) : 0;   // cosmetic: screen-space only
+  const shakeX = G.shake > 0 ? crnd(-G.shake,G.shake) : 0;   // cosmetic: screen-space only, off the stream
   const shakeY = G.shake > 0 ? crnd(-G.shake,G.shake) : 0;
   ctx.save();
   ctx.translate(-G.cam.x + shakeX, -G.cam.y + shakeY);
@@ -2103,6 +2333,17 @@ function draw() {
     ctx.beginPath(); ctx.arc(a.x, a.y, 9, 0, Math.PI * 2); ctx.fill();
     ctx.globalAlpha = 1;
   }
+  // bones ghosts — the dead of earlier runs, still walking their room (cannot kill; can be laid to rest)
+  for (const g of ghosts) {
+    ctx.globalAlpha = 0.28 + 0.1 * Math.sin(G.time * 2.2 + g.ph);
+    ctx.fillStyle = '#aac';
+    ctx.beginPath(); ctx.arc(g.x, g.y, g.r + Math.sin(G.time * 3 + g.ph) * 1.5, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 0.6;
+    ctx.fillStyle = '#99a';
+    ctx.font = '7px monospace'; ctx.textAlign = 'center';
+    ctx.fillText(g.name, g.x, g.y - g.r - 6);
+    ctx.globalAlpha = 1;
+  }
 
   // torch-light darkness (the Exanima steal): carve a visibility polygon out of the dark
   if (!darkCvs) { darkCvs = document.createElement('canvas'); darkCvs.width = BASE_W; darkCvs.height = BASE_H; }
@@ -2253,19 +2494,23 @@ function spawnCascade(x, y, kind, rid) {
   }
 }
 
-function startGame(forcedSeed) {
-  // RNG LAW: each run seeds the LCG (auto seed recorded in runSeed); pass forcedSeed to replay a recorded run
-  seedRun(forcedSeed!==undefined?((forcedSeed>>>0)||1):(((Date.now()^Math.imul(++runN,2654435761))>>>0)||1));
+function startGame(forcedSeed, forcedAsc) {
+  // RNG LAW: each run seeds the LCG (auto seed recorded in runSeed); pass forcedSeed to replay a
+  // recorded run. Explicit seeds always win; with none, the day's fleet seed (W1A) starts the world.
+  // ASCENSION LAW (W5): ascension is part of run identity — startGame(seed, asc) pins the ladder
+  // for replays; with no forcedAsc the persisted ladder (mud_asc) is the difficulty source.
+  ++runN;
+  seedRun(forcedSeed!==undefined?((forcedSeed>>>0)||1):FLEET_SEED);
   evlog.length = 0;
   // toy start() law (FX4): a new run resets the actors — same seed + same inputs → same run.
-  // (lore is deliberately NOT reset: the horde learns across runs, by design — it is machine state.)
+  // (lore and the bones pool are deliberately NOT reset: machine state — they learn/haunt across runs.)
   Object.assign(player, {
     x: 200, y: 1050, vx: 0, vy: 0, respawnX: 200, respawnY: 1080,
     hp: 100, maxHp: 100, stamina: 100, maxStamina: 100, staminaRegen: 25, speed: 200,
     facing: 0, attackT: 0, attackCd: 0, rollT: 0, rollCd: 0, rollDir: { x: 0, y: 0 },
     iframes: 0, snared: 0, xp: 0, xpNext: 20, level: 1, statPoints: 0,
     might: 0, vigor: 0, swiftness: 0, souls: 0, soulsLost: 0, soulsLostX: 0, soulsLostY: 0,
-    hasLostSouls: false, soulsDecayT: 0, weaponIdx: 0, lifeOnKill: 0, bonusSpeed: 0, hitFlash: 0,
+    hasLostSouls: false, soulsDecayT: 0, weaponIdx: 0, lifeOnKill: 0, bonusSpeed: 0, hitFlash: 0, lastHit: null, lastHitEnemy: null,
     _riposte: 0, _rwUsed: false,
     weapons: [
       { name: 'Rusty Sword', dmg: 12, speed: 1.0, rarity: 0 },
@@ -2277,12 +2522,13 @@ function startGame(forcedSeed) {
   G.deaths = 0; G.shake = 0; G.hitStop = 0; G.msgT = 0; G.msg = ''; G.msgColor = undefined;
   G.superBonus = 0; G.boonDraft = null;
   for (const s of SPIKES) { s.phase = 0; s.up = false; }   // spike rhythm re-derives from the run seed
-  try { G.ng = Math.max(0, parseInt(localStorage.getItem('mud_asc') || '0', 10) || 0); } catch (e) {}
+  if (forcedAsc !== undefined) G.ng = Math.max(0, forcedAsc | 0);   // replay pin: seed + ascension = run identity
+  else try { G.ng = Math.max(0, parseInt(localStorage.getItem('mud_asc') || '0', 10) || 0); } catch (e) {}
   spawnAllEnemies();
   puzzleReset();
-  evlog.push({ t: 0, e: 'run', seed: runSeed, key: puzzle.key ? [puzzle.key.x, puzzle.key.y] : null, chest: puzzle.chest ? [puzzle.chest.x, puzzle.chest.y] : null });   // replay receipt: seed + seeded placement
+  evlog.push({ t: 0, e: 'run', seed: runSeed, asc: G.ng, key: puzzle.key ? [puzzle.key.x, puzzle.key.y] : null, chest: puzzle.chest ? [puzzle.chest.x, puzzle.chest.y] : null });   // replay receipt: seed + ascension + seeded placement
   SIGILS.count = 0; G.naveEverActive = false; G.curRoom = 'courtyard';
-  allies.length = 0; trail.length = 0; corpses.length = 0;
+  allies.length = 0; trail.length = 0; corpses.length = 0; ghosts.length = 0;   // the dead rest between runs; the bones pool (machine state, like lore) persists
   for (const ch of CHANDS) ch.dropped = false;
   for (const bt of BEARTRAPS) { bt.armed = true; bt.rearm = 0; }
   G.shoutCd = 0; G.shoutTxt = null;
@@ -2301,9 +2547,11 @@ function respawn() {
   G.state = 'play';
   beep(160, 0.25, 'sine', 0.05);
 }
+function persistAsc() { try { localStorage.setItem('mud_asc', String(G.ng)); } catch (e) {} }
+function ascendForNextRun() { try { localStorage.setItem('mud_asc', String(G.ng + 1)); } catch (e) {} }   // W5: raises the NEXT run's ladder only — the in-session run stays where it is
 function nextLoop() {
   G.ng++;
-  try { localStorage.setItem('mud_asc', String(G.ng)); } catch (e) {}
+  persistAsc();
   spawnAllEnemies();
   puzzleReset();
   player.hp = player.maxHp;
@@ -2352,7 +2600,7 @@ function frame(now) {
 requestAnimationFrame(frame);
 
 // DFHack-style handle: let agents drive/test the game
-window.MUD = { get G() { return G; }, get player() { return player; }, get enemies() { return enemies; }, get superOrbs() { return superOrbs; }, get mines() { return mines; }, get lore() { return lore; }, get qt() { return qtRoot; }, get puzzle() { return puzzle; }, get boonDraft() { return G.boonDraft; }, get DOORS() { return DOORS; }, get SIGILS() { return SIGILS; }, get ROOM_STATE() { return ROOM_STATE; }, get walls() { return walls; }, get doorRects() { return doorRects; }, resolveWalls, get chron() { return chron; }, get mudOthers() { return mudOthers; }, get allies() { return allies; }, get corpses() { return corpses; }, get trail() { return trail; }, get SPIKES() { return SPIKES; }, get soulOrbs() { return soulOrbs; }, get projectiles() { return projectiles; }, get BEARTRAPS() { return BEARTRAPS; }, get DARTS() { return DARTS; }, get CHANDS() { return CHANDS; }, get VENTS() { return VENTS; }, get lootDrops() { return lootDrops; }, get fireZones() { return fireZones; }, get deathClouds() { return deathClouds; }, get evlog() { return evlog; }, get runSeed() { return runSeed; }, get lcg() { return lcg; }, seedRun, forceBell: false, forceGhost: false, puzzleReset, syncDoors, keys, startGame, addMsg, nextLoop, spawnEnemy, spawnCascade, loreUnlock, stepUpdate: update,
+window.MUD = { get G() { return G; }, get player() { return player; }, get enemies() { return enemies; }, get superOrbs() { return superOrbs; }, get mines() { return mines; }, get lore() { return lore; }, get qt() { return qtRoot; }, get puzzle() { return puzzle; }, get boonDraft() { return G.boonDraft; }, get DOORS() { return DOORS; }, get SIGILS() { return SIGILS; }, get ROOM_STATE() { return ROOM_STATE; }, get walls() { return walls; }, get doorRects() { return doorRects; }, resolveWalls, get chron() { return chron; }, get mudOthers() { return mudOthers; }, get allies() { return allies; }, get corpses() { return corpses; }, get trail() { return trail; }, get SPIKES() { return SPIKES; }, get soulOrbs() { return soulOrbs; }, get projectiles() { return projectiles; }, get BEARTRAPS() { return BEARTRAPS; }, get DARTS() { return DARTS; }, get CHANDS() { return CHANDS; }, get VENTS() { return VENTS; }, get lootDrops() { return lootDrops; }, get fireZones() { return fireZones; }, get deathClouds() { return deathClouds; }, get ghosts() { return ghosts; }, get bones() { return bones; }, get evlog() { return evlog; }, get runSeed() { return runSeed; }, get lcg() { return lcg; }, seedRun, forceBell: false, forceGhost: false, forceBones: false, bonesWrite, bonesSave, hurtPlayer, ascendForNextRun, persistAsc, makeLoot, spawnBoss, get champGhosts() { return champGhosts; }, get GRUDGE_CAP() { return GRUDGE_CAP; }, grudgeReset, recordGrudge, grudgeTelegraph, spawnChampion, fleetDate: FLEET_DATE, get fleetSeed() { return FLEET_SEED; }, fleetSeedOf, puzzleReset, syncDoors, keys, startGame, addMsg, nextLoop, spawnEnemy, spawnCascade, loreUnlock, stepUpdate: update,
   step: function (dt) { last = performance.now(); handleStateKeys(); update(dt || 0.016); draw(); },
   pump: function (n, dt) { for (let i = 0; i < (n || 1); i++) this.step(dt || 0.016); return this.enemies.length; } };
 

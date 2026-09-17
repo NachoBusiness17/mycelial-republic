@@ -18,6 +18,13 @@ window.TOY = (() => {
   // RNG law: seeded LCG, no Math.random anywhere (draw index counts every draw, first draw is 1)
   const rng = () => { lcg = (Math.imul(lcg, 1664525) + 1013904223) >>> 0; drawIndex++; return lcg / 4294967296; };
 
+  // ---- fleet seed law (W1A · THE WEAVE build order #58): start() with NO seed derives the run
+  // seed from the UTC day ("fleet-YYYY-MM-DD" -> FNV-1a 32 -> LCG seed) — same day, same toy,
+  // everywhere. Explicit seeds always win: start(4242) replays 4242 regardless of the calendar.
+  const FLEET_DATE = new Date().toISOString().slice(0, 10);
+  const fleetSeedOf = ds => { let h = 2166136261 >>> 0; for (let i = 0; i < ds.length; i++) { h ^= ds.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return (h >>> 0) || 1; };
+  const FLEET_SEED = fleetSeedOf('fleet-' + FLEET_DATE);
+
   // SHA256 (compact, sync — union-alpha's block, verified against node:crypto)
   const sha256 = (str) => {
     const H = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
@@ -57,7 +64,8 @@ window.TOY = (() => {
   const release = c => { keys[c] = false; log({ e: 'input', code: c, down: 0 }); };
 
   const start = seed => {
-    seed0 = seed >>> 0; lcg = seed0; drawIndex = 0; frames = 0;
+    seed0 = (seed === undefined || seed === null) ? FLEET_SEED : ((seed >>> 0) || 1);   // fleet law: no seed -> today's fleet seed; explicit always wins
+    lcg = seed0; drawIndex = 0; frames = 0;
     G.t = 0; G.state = 'play';
     events.length = 0; inputs.length = 0; tape.length = 0;
     for (const k in keys) delete keys[k];
@@ -206,6 +214,8 @@ window.TOY = (() => {
     ctx.fillStyle = '#2c2c2c'; ctx.fillRect(12, 12, 200, 8); ctx.fillRect(12, 24, 200, 8);
     ctx.fillStyle = '#7fd07f'; ctx.fillRect(12, 12, player.st*2, 8);
     ctx.fillStyle = '#d07f7f'; ctx.fillRect(12, 24, player.hp*2, 8); ctx.fillRect(12, 36, walker.hp, 8);
+    ctx.fillStyle = '#5a544a'; ctx.font = '10px monospace';
+    ctx.fillText('fleet ' + FLEET_DATE + ' · seed ' + seed0, 12, 60);   // the fleet ritual: today's shared world, visible
     if (G.state !== 'play') {
       ctx.fillStyle = '#e8e0d0'; ctx.font = '16px monospace';
       ctx.fillText(G.state === 'win' ? 'THE WALKER FALLS — refresh to run it again' : 'YOU FELL — refresh to run it again', 320, 288);
@@ -221,10 +231,11 @@ window.TOY = (() => {
   window.addEventListener('keydown', e => { if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault(); press(e.code); });
   window.addEventListener('keyup', e => release(e.code));
 
-  start(1);                    // fixed default seed — the browser never calls Math.random either
+  start();                     // no explicit seed -> today's fleet seed (W1A): same day, same starting toy
   requestAnimationFrame(loop);
   return { start, pump, DT, keys, tape, player, walker, enemies: [walker], G, events,
-           draws: () => drawIndex, receipt, canonical, sha256 };
+           draws: () => drawIndex, receipt, canonical, sha256,
+           get seed0() { return seed0; }, get fleetSeed() { return FLEET_SEED; }, fleetDate: FLEET_DATE, fleetSeedOf };
 })();
 </script>
 </body>

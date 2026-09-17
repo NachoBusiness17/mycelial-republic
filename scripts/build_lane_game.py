@@ -304,29 +304,39 @@ def main(argv=None) -> int:
         STATE.write_text(json.dumps(state, indent=2), encoding="utf-8")
         print(json.dumps({"ok": False, "error": "NO_KEY", "key_names": _LANES["keys"]}))
         return 0
-    # model chain (operator 2026-09-17: "we're using union" — ox in env is an old config).
-    # sticky working model first, then union-alpha, then glm-5.3-flash direct.
-    chain = [m for m in [state.get("model"),
-                         "stealth/union-alpha",
-                         "z-ai/glm-5.3-flash"] if m]
-    seen: set[str] = set()
+    # MODEL LAW (operator order 2026-09-17, after the cron silently downgraded the lane
+    # to glm: "why was the model switched to 5.3 again, its the fucking cron job -- fix
+    # it and make sure this doesnt happen again"):
+    #   PRIMARY is stealth/union-alpha, ALWAYS. A transient probe failure (429, hiccup,
+    #   200-error-body) is NOT a migration: retry the primary, and if it is truly down,
+    #   the fallback serves THIS RUN ONLY and is never persisted to state. The sticky
+    #   model can only ever be the primary. Downgrades must be loud (this receipt) not
+    #   silent (the old auto-stick behavior -- removed).
+    primary = "stealth/union-alpha"
+    fallback = "z-ai/glm-5.3-flash"
+    # SCHEDULE LAW (operator: glm-5.3-flash is FREE from 11:00 local daily on the Lite
+    # seat — he should never have to remind us): after 11:00 the Lite lane is a scheduled
+    # primary — the run alternates union + glm so both free windows burn together.
+    import datetime as _dt
+    if _dt.datetime.now().hour >= 11:
+        primary = "stealth/union-alpha" if state.get("runs", 0) % 2 == 0 else fallback
     model = None
-    for m in chain:
-        if m in seen:
-            continue
-        seen.add(m)
-        probe = _call(m, keys, "Reply with exactly: READY", timeout=90)
+    for _try in (1, 2):  # transient failures get a second probe before any fallback
+        probe = _call(primary, keys, "Reply with exactly: READY", timeout=90)
         if probe.get("ok"):
-            model = m
+            model = primary
             break
-        rec_detail = (probe.get("detail") or "")
-        if probe.get("error") == "HTTP 404" and ("glm-5.3-flash" in rec_detail or m in rec_detail):
-            continue  # dead stealth id with the migration pointer
-        model = m  # other errors: still try it for the real batch (row will record it)
-        break
+        time.sleep(5 * _try)
+    used_fallback = False
     if model is None:
-        model = chain[-1]
-    state["model"] = model
+        detail = probe.get("detail") or ""
+        if "404" in str(probe.get("error")) and primary in detail:
+            model = fallback  # window genuinely ended (not transient)
+            used_fallback = True
+        else:
+            model = primary  # unknown error: keep the primary, let the batch row record it
+    state["model"] = primary  # the ONLY value ever persisted
+    state["last_fallback_used"] = used_fallback
 
     todo = [(sid, brief) for sid, brief in BRIEFS
             if sid not in state["done"] and sid not in state["dead"]][: max(1, a.batch)]

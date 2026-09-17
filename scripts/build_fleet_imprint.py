@@ -323,6 +323,28 @@ def mine_histories(lines: list[str]) -> int:
     return n
 
 
+def mine_schedule(lines: list[str]) -> int:
+    """STANDING SCHEDULE — operator-stated windows and cadences. Seats that load this
+    imprint know the schedule without asking (operator law 2026-09-17: 'why do you think
+    i made a seat that remembers and you load it cold')."""
+    lines.append("## STANDING SCHEDULE — operator-stated windows (LOAD INTO EVERY SEAT)\n")
+    lines.append("- **glm-5.3-flash is FREE from 11:00 (operator local time) DAILY** on the "
+                 "Lite seat (/api/coding/paas/v4, ZAI_API_KEY_Lite). After 11:00 it is a "
+                 "FREE PRIMARY for the build/research burn — not a paced fallback. Before "
+                 "11:00, law-15 pacing applies (1,400/day ceiling).")
+    lines.append("- **stealth/union-alpha + stealth/ox-alpha (OpenRouter stealth family)**: "
+                 "free windows, intermittent — window re-opened 2026-09-14; hammer while "
+                 "green, expect 404 when a window ends (the 404 body names the successor).")
+    lines.append("- **daily crons**: tide 06:15 (amendment obligation), drift patrol 08:00, "
+                 "union fullsend drive every 20 min (research batch + evolution build lane).")
+    lines.append("- **Sep-20 (2026)**: fleet proof date. **Sep-24**: White House state "
+                 "dinner (Xi; Altman/Huang/Cook) — operator planted the 11:11 marker.")
+    lines.append("- When the operator states ANY free window or cadence, it enters this "
+                 "schedule and durable memory IMMEDIATELY — session memory is not memory.")
+    lines.append("")
+    return 5
+
+
 def main() -> int:
     lines = [
         "# FLEET IMPRINT — the Librarian's cold-load context",
@@ -347,6 +369,7 @@ def main() -> int:
         "receipts": mine_receipts(lines),
         "deep": mine_deep(lines),
         "histories": mine_histories(lines),
+        "schedule": mine_schedule(lines),
     }
     body = "\n".join(lines)
     digest = hashlib.sha256(body.encode("utf-8")).hexdigest()[:16]

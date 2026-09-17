@@ -1,6 +1,6 @@
 # FLEET IMPRINT — the Librarian's cold-load context
 
-*mined 2026-09-17T16:14:24.793000+00:00 · deterministic, regenerable · this file is the pre-warmed RIB seed: stable bytes so provider cache pays once*
+*mined 2026-09-17T17:43:34.911609+00:00 · deterministic, regenerable · this file is the pre-warmed RIB seed: stable bytes so provider cache pays once*
 
 ROLE (for the seat that loads this): you are the fleet's Librarian. The operator
 asks 'do we have X / where is Y / what mechanism covers Z' — answer from this
@@ -985,6 +985,7 @@ than an honest gap.
 - `scripts/build_agent_state_layers.py` — Map existing agent-state evidence into its recovery strata. This is a read-only projection, not ``chain.v2`` and not a repair. It makes the already-existing levels explicit for cold boot and elder review: L0 viewport = LATEST (what a seat l
 - `scripts/build_deck.py` — Build deck.html — the command deck representing what the fleet IS now. Mines live values from real data files (wave state, physical pack, lane trails, ledgers, receipts, blueprints) and embeds them as a JSON block inside one self-contained 
 - `scripts/build_fleet_imprint.py` — build_fleet_imprint -- mine the repo into one pre-warmed RIB the Librarian loads cold. Operator order (2026-09-17): "dedicate one 5.3 agent to be an expert in our database that we can load cold on max so we can ask it questions about oursel
+- `scripts/build_knowledge_graph.py` — build_knowledge_graph -- organize every artifact, knowledge-graph style, old -> new. Operator order (2026-09-17): "have our lite librarian load everything in our local sovereign agent drive and files and organize them knowledge graph style,
 - `scripts/build_lane_game.py` — build_lane_game — the BUILD window of the 24/7 two-key drive. Operator order (2026-09-17): "we have two open router keys... task the other on a build: steal the game and fill it with our shit." This lane drives OPENROUTER_API_KEY_2 (model f
 - `scripts/build_verkle_artifact_index.py` — Build a collision-free, non-destructive index of the Mag estate. The index is a derived view. It never deletes, moves, rewrites, or consolidates source files. Every scanned file receives a stable relative path, artifact class, byte size, an
 - `scripts/build_vislab_catalog.py` — build_vislab_catalog.py — one surface for everything built, with health. Walks the real filesystem each run and regenerates: dashboard/static/vislab/catalog.json (the source of truth) dashboard/static/vislab/catalog.html (self-contained vie
@@ -1120,12 +1121,14 @@ than an honest gap.
 ### fifty-wide 2026-09-17 sections: A. Morning verification wave (the owed checks from HANDOFF_GOODNIGHT) · B. Census debt (PROSE_CENSUS_20260917: 3,269 ghost refs, 309 fences) · C. Tide + Amendment machinery (the obligation is law, first real amendment owed) · D. Drift patrol debt (DRIFT_PATROL_20260917) · E. X radar → fleet steals (X_REPLY_RADAR_20260917) · F. Operator gate packets (his hands, our runbooks) · G. Wave next stones (WAVE_STATE_20260916) · H. Game estate (standing opens re-seeded from 09-15) · I. Fleet warts (named in handoff + todo, still open)
 ### queue/todo.md sections: Tournament Findings (2026-08-08) · P0 — This Week · Assigned to Mag · Assigned to Mag (12h sovereign run — queued 2026-08-03, p · Assigned to Mag (autonomous knock-out 2026-08-04 — seed-m · Assigned to Mag (conductor loop smoke — 2026-08-04) · Assigned to Mag (conductor loop phase 2 — 2026-08-04) · Assigned to Mag (conductor loop phase 3 — epic split — 20 · Assigned to Mag (conductor loop phase 4 — architect loop  · Assigned to Mag (conductor loop phase 5 — signal hardenin · Operator · Assigned to Mag (resume contract 2026-08-04)
 ### memory/briefs/latest.md (first 400 chars)
-> # Session state · 2026-09-17T12:41:55Z _Auto-generated at session start by the overseer (session_state_brief.v1). This is the LIVE state — no need to re-teach._ - **verkle tip:** `61c2e99a54bd1476` · 8523 leaves · last session `autonomo` - **drainer:** ON · operator idle - **queue:** done=95 · failed=4 · running=1 - **fleet live:** 0 - **pending handoffs:** 12 - **status:** ? · **current goal:** S
+> # Session state · 2026-09-17T16:22:27Z _Auto-generated at session start by the overseer (session_state_brief.v1). This is the LIVE state — no need to re-teach._ - **verkle tip:** `18058339b34ca859` · 8534 leaves · last session `autonomo` - **drainer:** ON · operator idle - **queue:** done=94 · failed=6 - **fleet live:** 0 - **pending handoffs:** 12 - **status:** ? · **current goal:** Sep-20 proof 
 ### state/CURRENT.md (first 400 chars)
 > # CURRENT - **status:** running — chain FLOWING (re-armed 09-11 after poisoned-tip repair; tip 7,392+, root 0a141dcb lineage), build freeze STANDING (coldest vertex gate) - **tier:** T0 - **route:** the beacon read → HOLD 2 launches + pyramid v2 + retro-knotter, all at once - **step_i:** (1) beacon read — DONE (operator confirmed 09-15, read multiple times); (2) Astra bundle — repair waves done on
 
 ## RECENT RECEIPTS — inbox titles, last 40 files
 
+- GAP_ANALYSIS_20260917.md — GAP ANALYSIS — 2026-09-17 — what the research corpus does NOT cover
+- FLEET_KNOWLEDGE_GRAPH_20260917.md — FLEET KNOWLEDGE GRAPH — every artifact, grouped by what it contains, old -> new
 - FLEET_IMPRINT_20260917.md — FLEET IMPRINT — the Librarian's cold-load context
 - LOOKING_GLASS_LENS_20260917.md — THE LOOKING GLASS LENS — operator drop 2026-09-17 ("Via this lens")
 - FIFTY_WIDE_BOARD_20260917.md — Fifty wide — 2026-09-17 — drain the census, arm the gates, feed the tide
@@ -1164,17 +1167,15 @@ than an honest gap.
 - BASECAMP_NEXT_20260916.md — NEXT BASECAMP — planned 2026-09-16, window close
 - HERMES_DIRECTIVE_BONES_REFEREE_20260916.md — DIRECTIVE — BONES AS THE REFEREE: NT-ACv2 gets a game by Sep-20
 - SELF_STEAL_20260915.md — SELF-STEAL — 2026-09-15 window close
-- FALLEN_HUMANITY_DEBATE_20260915.md — SCHOLARLY DEBATE PACK — "Fallen humanity, the agencies, and the teachings"
-- ASTRA_REPAIR_LANE_20260915.md — Astra repair lane — session receipt · 2026-09-15
 
 ## THE VERKLE — the hash-chained history spine
 
-- law enforcement trail: 755 rows; last: {"ts": "2026-09-17T12:42:52.527535+00:00", "id": "LAW-9", "name": "clear_boundaries", "condition_met": true, "applied": true, "note": "Ostrom-1 boundaries roster present", "boundaries": 0}
+- law enforcement trail: 761 rows; last: {"ts": "2026-09-17T16:24:09.462870+00:00", "id": "LAW-9", "name": "clear_boundaries", "condition_met": true, "applied": true, "note": "Ostrom-1 boundaries roster present", "boundaries": 0}
 
 ## THE CORPUS — what we own (memory/lenses/corpus_index.json)
 
 - schema: research_lens.v1
-- ts: 2026-09-17T07:19:31.217182+00:00
+- ts: 2026-09-17T16:23:33.159884+00:00
 - count: 107
 - items: {'20260720T155500Z_what-is-the-ollama-project-homepage-prom::local': {'pack_id': '20260720T155500Z_what-is-the-ollama-project-homepage-prom', 'source': 'local',
 - last_added: 0
@@ -1208,12 +1209,17 @@ than an honest gap.
 ## SESSION HISTORIES — the windows we have lived in
 
 - memories/session/next-window-handoff.md: # Next-window handoff — frozen spec (executed by any new window) _This file did not exist until 2026-09-15 (Clippy cited a fossil). This IS the spec now. Keep i
-- trajectory steps: 5843 rows sealed
+- trajectory steps: 5874 rows sealed
 - salons run (73): shadow_fields_20260903, socratic, strike_chord_mountain_20260905, summon_lightmap_20260906, swarm_scale_dogfood_20260903, trajectory_lens_moonshot_20260905, trajectory_rib_20260905, unified_fold_20260906, usage_meter_salon_20260904, width50_synthesis_20260906, worldline_seed_20260907, worldlines_20260905, x_as_instrument_20260906, x_harvest_doctrine_20260905
 
 ## THE OPERATOR — who he is; make this seat understand him
 
 ### Operator memory index (persistent, cross-window)
+- [Lite free window schedule](lite-free-window-schedule.md) -- glm-5.3-flash FREE from 11:00 daily on Lite seat; scheduled primary after 11:00, law-15 paced before; operator-stated windows go to durable memory + imprint IMMEDIATELY
+- [Gap analysis + inward battery 2026-09-17](gap-analysis-inward-battery-20260917.md) — coverage scan 73 rows: history-fleet/tech-internal/swarm ZERO, training 2/73 (battery dug outward never inward); UF-67..80 seeded; standing law: every battery regen includes inward domains; append JSONL via json.dumps never heredocs
+- [Operator usage as probe](operator-usage-as-probe.md) — "you're not even trying": his OpenRouter Activity = lane-probe truth (Kimi K2.6 11.6M, Ox Alpha 8.03M, DSv4 Flash proven); 155K of a 6T/day stealth window = the dribble failure; windows get hammered, not sampled
+- [omp / oh-my-pi steal](omp-oh-my-pi-steal.md) — can1357's MIT agent (31.6k★, pi-mono fork): models.yml provider pattern, ADVISOR role (2nd model reviewing every turn), hashline edits; the rebuke lesson — maintain built tools, stop hand-rolling
+- [Fleet knowledge graph 2026-09-17](fleet-knowledge-graph-20260917.md) — 14 families/150 edges old→new (reuses catalog_scan ZONE_MAP + mycelium schema); Librarian annotation found orphans + 6 BUILD CANDIDATES; Z.ai recursive-self-improvement receipt (GLM-5.3 built own infra via dense feedback = our evolution loop at vendor scale)
 - [THE LIBRARIAN + fleet imprint 2026-09-17](the-librarian-fleet-imprint-20260917.md) — 315KB mined imprint (1,046 mechanisms, 26 providers, verkle/corpus/elder/moonshot/operator layers, digest 18f363356a2b7af2) cold-loads on z_ai3 via chat_provider; first exam passed with exact paths; the "ask when you forget" seat; owed: zcode-history mining v2
 - [Dogfood canonical machinery 2026-09-17](dogfood-canonical-machinery-20260917.md) — operator correction: chat_provider (65k ceiling, quota, peak-defer, tiers, multi-key) + providers.yaml 26 ids (nvidia 102 models/NVIDIABuild live; z_ai3=Lite) already solved it — walk canonical surfaces before bespoke transport; z_ai3 endpoint fixed to coding path
 - [X play "11:11 Xi?" 2026-09-17](x-play-1111-xi-20260917.md) — operator's reply on Melania's state-dinner post: timestamp IS the message (11:11 at 11:11), 8 chars, question-not-verdict, WH document image; marks Sep-24 Xi dinner (Altman/Huang/Cook) 4 days after Sep-20 proof; fxtwitter doesn't surface replies
@@ -1269,11 +1275,6 @@ than an honest gap.
 - [IAB browser instruments](iab-browser-instruments.md) — IAB screenshot broken; sight = canvas toDataURL → file → Read (WebGL reads black); synthetic KeyboardEvent tests handlers; evaluate can't see page let/const — expose window props; ?v= busts cache
 - [Bash hook guard workarounds](bash-hook-guard-workarounds.md) — Mimosa blocks Bash source-writes (use Edit/Write) and rejects run-script commands that also mention file writes (even commands merely mentioning main.py alongside writes) — split into separate calls; sha1 flagged; SSRF guards need allowlists; Write-tool scripts doing file ops on variable paths blocked as "path traversal" even when realpath-validated — reuse pre-existing on-disk scripts or write_clipboard instead
 - [Display capture is private](computer-use-display-capture-privacy.md) — computer-use screenshots show the operator's personal Chrome, not the IAB pane; verify pages with in-browser instruments (snapshot/evaluate/canvas dumps), never display captures
-- [MUD deploy bug + open fixes](mud-deploy-bug-and-open-fixes.md) — two rounds done+verified: build.py sources games/ (canonical), five MUD bugs, victory gate (SIGILS≥4); still open: netlify auth, walkers-through-walls decision, websocket relay, monastery work uncommitted
-- [Research seeds: recursion + inversion](research-seeds-recursive-inversion.md) — self-improvement paper (Headroom-Closed Index; our audit already measured the Stage 2→3 boundary: XP never spends) + inversive geometry (shipped as the Scriptorium inversion shrine); notes at memory/game/RESEARCH_SEEDS_20260914.md
-- [From MUD to WoW article](from-mud-to-wow-article.md) — 10k-word gap-analysis at watch/inbox/FROM_MUD_TO_WOW_20260914.md (+WITNESSES annex); salon first (7 shapes: "single-player diorama wearing a MUD's coat — build the second client before writing the first sentence"), then 13-witness sweep; organ map + ramp (deploy fix → relay :8766 → player files → DO room server)
-- [Team collaborators roster](team-collaborators-roster.md) — Melissa (writer, Soul Castle world — mud-tier door, no code), Marque (builder, games.zip, "games mapped to AI"), Adam (player one); their page = watch/onboard/TEAM.md → onboard/team.html; Telegram is the office; plain register per operator correction
-- [Quest-cipher doctrine](quest-cipher-doctrine.md) — real engineering expressed as game wants; cloud sees one quest, repo holds the campaign; cipher must be lossless (game want genuinely maps to the need) or it degrades the answer
 ### watch/inbox/THE_PARABLE_REGISTER.md
 > # THE PARABLE REGISTER — T1 PRIMARY DOCUMENTS — 2026-09-16 **Standing:** T1 PRIMARY. Equal to the physics papers — above them, in fact, because the physics papers are downstream: the operator's doctrine "parable as spec" made structural. The constitution was published as fiction first (`watch/inbox/PARABLE_ARC_SYNTHESIS_20260916.md`); these are the fiction layers, cross-linked to the bytes that satisfy them. A parable here is a load-bearing document: its laws are citable, its implementations are
 ### watch/inbox/THE_SESSION_RECORD_20260916.md
@@ -1287,6 +1288,11 @@ than an honest gap.
 ### MEMORY.md (complete index)
 # Memory Index
 
+- [Lite free window schedule](lite-free-window-schedule.md) -- glm-5.3-flash FREE from 11:00 daily on Lite seat; scheduled primary after 11:00, law-15 paced before; operator-stated windows go to durable memory + imprint IMMEDIATELY
+- [Gap analysis + inward battery 2026-09-17](gap-analysis-inward-battery-20260917.md) — coverage scan 73 rows: history-fleet/tech-internal/swarm ZERO, training 2/73 (battery dug outward never inward); UF-67..80 seeded; standing law: every battery regen includes inward domains; append JSONL via json.dumps never heredocs
+- [Operator usage as probe](operator-usage-as-probe.md) — "you're not even trying": his OpenRouter Activity = lane-probe truth (Kimi K2.6 11.6M, Ox Alpha 8.03M, DSv4 Flash proven); 155K of a 6T/day stealth window = the dribble failure; windows get hammered, not sampled
+- [omp / oh-my-pi steal](omp-oh-my-pi-steal.md) — can1357's MIT agent (31.6k★, pi-mono fork): models.yml provider pattern, ADVISOR role (2nd model reviewing every turn), hashline edits; the rebuke lesson — maintain built tools, stop hand-rolling
+- [Fleet knowledge graph 2026-09-17](fleet-knowledge-graph-20260917.md) — 14 families/150 edges old→new (reuses catalog_scan ZONE_MAP + mycelium schema); Librarian annotation found orphans + 6 BUILD CANDIDATES; Z.ai recursive-self-improvement receipt (GLM-5.3 built own infra via dense feedback = our evolution loop at vendor scale)
 - [THE LIBRARIAN + fleet imprint 2026-09-17](the-librarian-fleet-imprint-20260917.md) — 315KB mined imprint (1,046 mechanisms, 26 providers, verkle/corpus/elder/moonshot/operator layers, digest 18f363356a2b7af2) cold-loads on z_ai3 via chat_provider; first exam passed with exact paths; the "ask when you forget" seat; owed: zcode-history mining v2
 - [Dogfood canonical machinery 2026-09-17](dogfood-canonical-machinery-20260917.md) — operator correction: chat_provider (65k ceiling, quota, peak-defer, tiers, multi-key) + providers.yaml 26 ids (nvidia 102 models/NVIDIABuild live; z_ai3=Lite) already solved it — walk canonical surfaces before bespoke transport; z_ai3 endpoint fixed to coding path
 - [X play "11:11 Xi?" 2026-09-17](x-play-1111-xi-20260917.md) — operator's reply on Melania's state-dinner post: timestamp IS the message (11:11 at 11:11), 8 chars, question-not-verdict, WH document image; marks Sep-24 Xi dinner (Altman/Huang/Cook) 4 days after Sep-20 proof; fxtwitter doesn't surface replies
@@ -1349,10 +1355,7 @@ than an honest gap.
 - [Team collaborators roster](team-collaborators-roster.md) — Melissa (writer, Soul Castle world — mud-tier door, no code), Marque (builder, games.zip, "games mapped to AI"), Adam (player one); their page = watch/onboard/TEAM.md → onboard/team.html; Telegram is the office; plain register per operator correction
 - [Quest-cipher doctrine](quest-cipher-doctrine.md) — real engineering expressed as game wants; cloud sees one quest, repo holds the campaign; cipher must be lossless (game want genuinely maps to the need) or it degrades the answer
 - [Multilingual think-swap](multilingual-think-swap.md) — operator-named: thinking roams languages by descriptive strength (Chinese = system-state, English = action); nuance device + anti-capture; don't force monolingual, deliverables stay audience-language; deployed publicly 2026-09-16 as X testimony (8 tongues + Math; "Function is rented; essence is kept" = ti-yong)
-- [Shitpost desk workflow](shitpost-desk-workflow.md) — "shitpost desk attention" = ranked slate of X bangers across distinct veins, crown one thesis-in-shitpost-clothes pick; agent drafts only, operator posts; 2026-09-14 Obama AI-slowdown slate; 2026-09-16 dark-humor doubletake variant on VP border thread (wrong audience nods first, every underside documented: crown "you relocated the border, it opens at 6 a.m. outside a Home Depot"); banked receipts incl. Wetback 1954 + citizens, CBP Home app, boat-strike survivors, Alligator Alcatraz, Obama 3M record
-- [X tweet extraction endpoints](x-tweet-extraction-endpoints.md) — x.com blocks plain fetch; api.fxtwitter.com/<user>/status/<id> = full note-tweet text + engagement; oembed/syndication fallbacks; snowflake (id>>22)+1288834974657 dates any status ID
-- [MUD fifty-wide playtest 2026-09-14](mud-fifty-wide-playtest-20260914.md) — monastery was unwinnable (d6/d7, fake d4, dragon in forge); Ossuary added; 51-lane harness scripts/test_mud_fifty.js is the mud.html regression gate
-- [Frontier Souls — Adam intake](frontier-souls-adam-intake.md) — Adam-designed western roguelike: intake + canon + spike + fun pass + MUD-STEAL ROUND + DEATH OVERHAUL (frontier_souls.html, 42-lane harness 10× green, 4e5f1328 → 34d02f25 → 9d3b2b03 → 294dd37c); chronicle/grudges/fs_lore/SIGNS draft/dynamite/Deputy combine/whiskey/rewind/cache; Death = 3 phases (HUNT lunge / HARVEST withered / REAPING shadow-steps), withering aura, soul-steal scythe; laws: step-clock, every-enemy-can-kill; open: Adam's names/meta/storyli
+- [Shitpost desk workflow](shitpost-desk-workflow.md) — "shitpost desk attention" = ranked slate of X bangers across distinct veins, crown one thesis-in-shitpos
 - **adventurelearn-sibling-lineage**: --- name: adventurelearn-sibling-lineage description: AdventureNLearn — the operator's sibling project/lineage (Hive Operating Floor constitution, embassy-aos dirs); independently derived the same laws as the fleet (software never crowns truth, Gate-0 logging,
 - **astra-ask-ractor-salon-20260916**: --- name: astra-ask-ractor-salon-20260916 description: Full 5-ractor salon on the OLD Astra ask — the sovereign-agent research brief (44 claims, partner/Codex seat product, preserved byte-verified at watch/inbox/astra_ask_package/); desk passes its own bar, Un
 - **astra-repair-lane-20260915**: --- name: astra-repair-lane-20260915 description: "2026-09-15/16 — beacon done; bundle authored+calibrated (6 families + 6 twins, all 12 qa-evidenced); Astra sep16 review received with 8 findings ALL ACCEPTED (wave 122 chain broken, salon counts wrong, calibra
@@ -1386,12 +1389,14 @@ than an honest gap.
 - **fiber-optics-mycelium-20260916**: --- name: fiber-optics-mycelium-20260916 description: Operator idea "fiber optics fed into the networks after complete colonization, go 25 wide" → CONCERT002 25-segment battery + O2 waveguide verify + O3 integration spec. Verdict: mycelium = DIFFUSER not waveg
 - **fifty-wide-board-20260915**: --- name: fifty-wide-board-20260915 description: SUPERSEDED 2026-09-17 by fifty-wide-board-20260917 (its memory/runs/fifty_wide/* receipts all died — census top ghost-ref finding). Original: 2026-09-15 "launch 50 wide across everything" → 54-task board, watch/
 - **fifty-wide-board-20260917**: --- name: fifty-wide-board-20260917 description: 2026-09-17 "50 wide" → FW-01..50 board (verification wave, census drain, tide amendments, patrol debt, X-radar steals, operator gate packets, wave stones, game estate, fleet warts); receipts root watch/inbox/ fi
+- **fleet-knowledge-graph-20260917**: --- name: fleet-knowledge-graph-20260917 description: FLEET KNOWLEDGE GRAPH 2026-09-17 — 14 content families / 150 edges (8 explicit old→new successions + 142 mycelium associations), self-stealing catalog_scan ZONE_MAP + mycelium.v1 schema; Librarian annotatio
 - **from-mud-to-wow-article**: --- name: from-mud-to-wow-article description: The 10k-word gap-analysis article + salon + fifty-wide sweep (2026-09-14) — filed at watch/inbox/FROM_MUD_TO_WOW_20260914.md (+ WITNESSES annex); salon's verdict "single-player diorama wearing a MUD's coat — build
 - **frontier-souls-adam-intake**: --- name: frontier-souls-adam-intake description: Adam's western roguelike "Frontier Souls" — intake, canon, spike, fun pass, and the mud-steal round (36-lane harness 10× green, commits 4e5f1328 → 34d02f25 → 9d3b2b03); two clocks = radial rings (level) + step 
 - **full-audit-20260914-findings**: --- name: full-audit-20260914-findings description: 2026-09-14 full audit (50 tasks, 5 ractor panels, 665,131 files) — round-2 self-steal landed doctrine fixes + untracked backup twin; kill-list remainder (root sweep, handoff merge, k8s attic, gstdcoin) still 
 - **fungal-computing-survey-20260916**: --- name: fungal-computing-survey-20260916 description: "Is this real" answered with receipts — mycelium sensing yes, computing barely, living-reservoir claim unclaimed by anyone; skeptic/builder/venue survey behind the $31 cube metadata: type: project --- 202
 - **games-infra-shader-audit-20260916**: --- name: games-infra-shader-audit-20260916 description: Operator order — complete audit + rewrite of all HTML games, the entire static infrastructure, and shaders; G1/G2/G3 audits LANDED, gen-2 fix lanes FX1/FX2/FX3 landed, V1 auditions 7/8 byte-verified; mud
 - **gaming-weave-20260916**: --- name: gaming-weave-20260916 description: Operator order — self-steal ALL of gaming's history + our own gaming prompt genome; "we are not weaving in a fraction of our potential"; HG1/HG2 mining lanes fired, THE WEAVE synthesis next metadata: node_type: memo
+- **gap-analysis-inward-battery-20260917**: --- name: gap-analysis-inward-battery-20260917 description: GAP ANALYSIS 2026-09-17 — coverage scan of 73 answered research rows found history-fleet ZERO, tech-internal ZERO, swarm ZERO, training 2/73 thin (the battery dug outward, never inward); inward batter
 - **gitbash-tmp-invisible-to-venv**: --- name: gitbash-tmp-invisible-to-venv description: Git Bash /tmp is invisible to the Windows venv python — write temp files to $TEMP (or repo paths) whenever a Bash command pipes into .venv python metadata: node_type: memory type: reference originSessionId: 
 - **gm-checkin-20260917**: --- name: gm-checkin-20260917 description: Morning state 2026-09-17 from the gm check-in — wave held; fresh untracked files awaiting first commit; owed morning harness check (mud replay survival); operator gates unchanged metadata: node_type: memory type: proj
 - **grok-strike-inversion-paired-20260916**: --- name: grok-strike-inversion-paired-20260916 description: AI-authored opposition dossier on the operator's feed ("diary with extra directories") + an inversion defense arrived hours later; both filed as paired strikes and arbitraged by our own bytes metadat
@@ -1411,6 +1416,7 @@ than an honest gap.
 - **lead-check-v2-steals-ledger-20260916**: --- name: lead-check-v2-steals-ledger-20260916 description: Lead-check V2 COMPLETE via operator's GitHub token (hermes .env line 535) — 74/74 repos resolved (37 alive/37 dead confabulations), mod-playerbots GPL-2.0 CONFIRMED (fan-out said 3.0, wrong); steals l
 - **life-of-saint-antony-mine**: --- name: life-of-saint-antony-mine description: 2026-09-15 link drop — Athanasius's Life of St Antony mined as the patron text of the operator's journals; 10-stone decode + game seeds filed at watch/inbox/LIFE_OF_SAINT_ANTONY_20260915.md metadata: node_type: 
 - **link-library-canonical-registry**: --- name: link-library-canonical-registry description: Link duplication killed by mag/link_library.py + append-only watch/inbox/LINKS.jsonl — canonical-check before filing any link; backfill/integration tasks seeded not done metadata: node_type: memory type: p
+- **lite-free-window-schedule**: --- name: lite-free-window-schedule description: glm-5.3-flash is FREE from 11:00 (local) on the Lite seat — the daily free window; drivers and seats must know this schedule without being reminded metadata: node_type: memory type: project originSessionId: sess
 - **lite-key-seat-glm53flash**: --- name: lite-key-seat-glm53flash description: The lite key seat — ZAI_API_KEY_Lite rides glm-5.3-flash at z.ai, paced by lite_guard law 15; the strong-model burst seat for writer/fusion jobs; operator directive "use the lite key seat" metadata: node_type: me
 - **living-cipher-don-cluster**: --- name: living-cipher-don-cluster description: Concept 2026-09-14 — Lilith/Isostran treating the world as a living cipher (Don cluster: dānu root, Aberdeen/Rostov, flood dream, gas-works, Hole song); audit method = load-bearing vs decoration dials; four esot
 - **llm-internals-syllabus-arc**: --- name: llm-internals-syllabus-arc description: 2026-09-14 evening link drops assembled an LLM-internals syllabus (Yeh by-hand, Burkov organ map, Kornas bolt map, Alacritic lexicon, seven-witness news) filed as LINKS.jsonl rows 15-24; translation dictionary 
@@ -1429,14 +1435,14 @@ than an honest gap.
 - **mud-superhot-adam-access**: --- name: mud-superhot-adam-access description: MUD game systems shipped — SUPERHOT powerup, torch-light vision with occlusion, dragon cascade + StS Ascension, lore-learning horde (mines/pack), D&D class roster (rogue/cleric/bmage/ranger), Hades-style boon dra
 - **multilingual-think-swap**: --- name: multilingual-think-swap description: The operator's named phenomenon — the model swaps thinking languages by descriptive quality (Chinese for system-state, English for action); used deliberately as nuance device and anti-capture metadata: node_type: 
 - **mycelium-multispecies-lattice-20260916**: --- name: mycelium-multispecies-lattice-20260916 description: Operator's 3D-printed multi-species mushroom block design (2026-09-16 night) — spent oats + nutrient traces printed as lattice, inoculated, grows itself into living computer substrate; zone lines = 
-- **nacho-business-site-deploy**: --- name: nacho-business-site-deploy description: The public Nacho Business site (netlify scintillating-cranachan-d6e93e) builds from site/build.py → site/dist — deploy needs operator auth; maze_arena constellation-404 fixed in f81735212 metadata: node_type: m
-- **nacho-quixotic-parables-author**: --- name: clerk-parable-cast description: Corrected cast of the clerk-parable arc — the OPERATOR is @NachoQuixotic (the author); Melissa Hallman (@dotconnectinga) is the reader; Rose deleted the chat piece metadata: node_type: memory type: project originSessio
-- **next-window-handoff-spec-missing**: --- name: next-window-handoff-spec-missing description: RESOLVED 2026-09-15 — the fossil is fixed; memories/session/ next-window-handoff.md now EXISTS (procedure + STATE section, update STATE only); warm windows follow it directly metadata: node_type: memory t
 
 ## ZCODE SESSION HISTORIES — the windows themselves
 
 - exec session dirs (1034): sess_subagent_agent_fd31950f-393b-402a-a191-58ac2ceb163c, sess_subagent_agent_fd61f1c6-faff-475a-8f52-6c0ce2a2cd1a, sess_subagent_agent_fd9ac450-893c-4bd9-8592-5200c00fcb87, sess_subagent_agent_fe66c06a-ce88-4ae5-a949-cc5d8801fc55, sess_subagent_agent_fe8a71ae-a367-498c-b9c1-1b98ef49cbb1, sess_subagent_agent_fee2ae69-32cc-46ca-9a36-9ab937ee8d53, sess_subagent_agent_ff118e99-037a-4af8-8610-16e0c28101b3, sess_subagent_agent_ff13cdc5-24f4-4da0-9d2c-82345075b065, sess_subagent_agent_ff4ab019-7919-49ea-8478-842ab0d12d52, sess_subagent_agent_ff541335-bfc2-4aad-a8ee-e3de6b608743, sess_subagent_agent_ffc7c272-995f-4bca-98aa-4fd76d9adc84, shell-snapshots
-- sess_199e4b14…/call_5410e9c6346747ebb495287f-stdo: 
+- sess_199e4b14…/call_fafd79bc80994b3b8ef6e6a4-stdo: 
+- sess_199e4b14…/call_342a201adfa3480a9558eda0-stdo: {"ok": true, "schema": "build_lane_game.v1", "model": "stealth/union-alpha", "batch": 2, "max_gen": 6, "promoted": 0, "rejected": 
+- sess_199e4b14…/call_cc28092cc6b34bada3a0570d-stdo: {"ok": true, "schema": "union_fullsend_day.v1", "run": 8, "batch": 2, "answered": 2, "failed": 0, "done": 66, "total": 66, "dead":
+- sess_199e4b14…/call_8653cce1bb634134a26ebd65-stdo: {"ok": true, "schema": "union_fullsend_day.v1", "run": 6, "batch": 12, "answered": 11, "failed": 1, "done": 53, "total": 54, "dead
 - sess_199e4b14…/call_8526072980b34a49939feed8-stdo: {"ok": true, "schema": "union_fullsend_day.v1", "run": 5, "batch": 1, "answered": 1, "failed": 0, "done": 42, "total": 42, "dead":
 - sess_199e4b14…/call_b6e041dbaf204203931a1aba-stdo: {"ok": true, "schema": "union_fullsend_day.v1", "run": 4, "batch": 22, "answered": 21, "failed": 1, "done": 41, "total": 42, "dead
 - sess_199e4b14…/call_7a9655408df14427ac4ed929-stdo: {"ok": true, "note": "LOCKED"} {"ok": true, "schema": "build_lane_game.v1", "model": "stealth/union-alpha", "batch": 2, "promoted"
@@ -1457,20 +1463,11 @@ than an honest gap.
 - sess_subagent…/call_ad7b4c7d31204aafb808cc82-stdo: FAIL 6 F1: the run actually lived — event log is non-vacuous (activation + combat/hazard events) — no combat/hazard events logged 
 - sess_subagent…/call_089267324fa94503bbc6ef47-stdo: FAIL 6 F1: the run actually lived — event log is non-vacuous (activation + combat/hazard events) — no combat/hazard events logged 
 - sess_subagent…/call_eeda35fbfc89418c95b22fcf-stdo:  INPUT_FORK @ step 160 (t=2.667s): Space press -> KeyA press STATE_FORK $.p[0]: 333.33333333333303 -> 329.9999999999997 EVENT_FORK
-- sess_f8f2909b…/call_b12e0f971abe42fd9eafed52-stdo: twspace_dl.exe --- usage: __main__.py [-h] [-v] [-s] [-k] [-l] -c COOKIE_FILE [-i SPACE_URL | -U USER_URL] [-d DYN_URL] [-f URL] [
-- sess_f8f2909b…/call_d4eaff9d5cbd49719a3bbb06-stdo: /usr/bin/bash: line 3: ./.venv/Scripts/twspace-dl.exe: No such file or directory 
-- sess_f8f2909b…/call_5f974f8dcb2a4da9949d77a0-stdo: faster-whisper OK 1.2.1 
 - recent paste attachments: pasted-text-20260917-104037-764219ff.txt, pasted-text-20260917-112917-fce347a1.txt
 
 ## LINKS LEDGER — everything we have read and filed (watch/inbox/LINKS.jsonl)
 
-- 194 canonical rows:
-  - https://x.com/RWPhysics/status/2099955284068205010 — education layer: light
-  - https://x.com/yuntiandmaritan/status/2100012553065644103 — LOAD-BEARING: the fleet knot/RIB doctrine published — software as control flow + small neural programs compiled from plain English descripti
-  - https://github.com/open-free-llm-api/awesome-freellm-apis — SCOUT FIND: 486+ free LLM APIs, 31 providers, permanent free tiers, no credit card. Could expand our inference lanes from 12 to 30+. open-fr
-  - https://github.com/mnfst/awesome-free-llm-apis — SCOUT FIND: companion list — permanent free tiers only. Cross-reference with our 12 lanes to find new providers
-  - https://github.com/12britz/awesome-free-models — SCOUT FIND: curated free models — self-host + free API tiers. Cross-reference for new janitor seats
-  - https://www.thundercompute.com/blog/free-cloud-gpu-credits — SCOUT FIND: 14 free GPU credit programs totaling $250K+ — Google Cloud Early Stage, Microsoft Founders Hub, Lambda $5K research credits, AWS
+- 200 canonical rows:
   - https://github.com/zszazi/Deep-learning-in-cloud — SCOUT FIND: Paperspace $10 free, Radeon Cloud free AMD ROCm hours, Kaggle free GPU tiers — backup compute if local hardware limits
   - https://arxiv.org/abs/2609.14858 — VERIFIED: the RSI paper the operator linked twice tonight. Core: discovery history = replay simulator; score thousands of candidate policies
   - https://dream-rsi.com — project page for arXiv 2609.14858
@@ -1535,6 +1532,12 @@ than an honest gap.
   - https://x.com/pickover/status/2100408622849089710 — Pickover repost: 'Mathematics, physics, calculus, understanding / Strange journey' GIF by Gomez-Munoz (ITESM), used with permission. Minor; 
   - https://x.com/NachoQuixotic/status/2096443919521177908 — 001 THE LOOKING GLASS - the plate (operator, Sep 5): the 44-28-K13-e4-Fool chord; napkin post 2028342347361141030 (2026-03-02) as public Mer
   - https://x.com/MELANIATRUMP/status/2100602867614703705 — Melania: THE WHITE HOUSE STATE DINNER (Sep 17 15:08:45Z = 11:08 ET). Operator replied '11:11 Xi?' at 11:11 ET (~2m15s after drop, inside the
+  - https://x.com/Zai_org/status/2100481236364079277 — Z.ai: 'Toward Recursive Self-Improvement - How GLM Built Its Own Inference Infrastructure' - GLM-5.3 built+optimized the infra serving GLM-5
+  - https://github.com/can1357/oh-my-pi — omp (oh-my-pi, can1357, MIT, 31.6k stars): terminal coding agent forked from pi-mono - 60+ providers/~1000 models, 9 routing roles (default/
+  - https://x.com/alec_helbling/status/2100571529712894317 — Alec Helbling (GaTech PhD): Flow Reasoning Models - a FLOW model turned RECURRENT: predictions fed back as inputs, iteratively refined, EACH
+  - https://x.com/akshay_pachaar/status/2100517400756224444 — VRAM anatomy of LLM inference (Akshay, Daily Dose of DS): weights (precision lever FP16->INT4), KV cache (grows with context x concurrency -
+  - https://x.com/sauda_coder/status/2100421722629722256 — DISPUTED (hype register, promo account): 'deepseek killed the coding agent industry' - claims @deepseek-ai/dsh (npx dsh web) = open-source a
+  - https://arxiv.org/abs/2609.18094 — AGORA (NVIDIA, via @omarsar0): Git as shared memory for collective auto-research - 13 LLM workers ~12 days NO CENTRAL PLANNER, 1703 contribu
 
 ## DOCTRINE BODIES — the law texts behind the headers
 
@@ -1826,5 +1829,13 @@ mag.cmd research-pack …       # public URL
 > # Tide card 2026-09-17 — morning brief The fleet runs on an append-only hash-chained ledger: nothing edited, corrections are new rows, receipts before work, falsifiers committed before data, software never mints a verdict. ## What happened last night The referee chain shipped end to end (game referee, session runner, Discord adapter — all tested). A rollback incident hit twice (a build script synced stale files over fresh ones) — the mechanism was named and permanently fixed. The fleet refuted i
 - wave receipts on file (106): A1_BLIND_CHALLENGE_SET.md, A2_EPISTEMOLOGY_ENGINE.md, A3_THE_TOY_CORE_VERB.md, A4_ASTRA_SMOKE_12.md, B10_MLP_KV_CACHE_PRIORART.md, B11_SLIDING_WINDOW_RIB.md, B12_RASHOMON_DEDUPE.md, B13_CODETAUR_KAN.md, B14_EXECUTION_RUN.md, B14_THIRD_SMILE_PROTOCOL.md, B6_LINKS_BACKFILL.md, B7_CANONICAL_CHECK_WRITERS.md, B8_ARXIV_SIX_LEADS.md, B9_ZENODO_DOIS.md, B9_ZENODO_DOIS_GEN2.md, CG1_PROMPT_LIBRARY_UNPACK.md, CG2_CARSE_HISTORY.md, CG3_ESTATE_INFINITE.md, CG4_MESH_CARSE_SALON.md, CONCERT001_20260916.md, CV1_COLD_MAP.md, CV2_SHADOW_INVENTORY.md, CV3_WORLD_DOGFOOD.md, CV4_KILL_STAGING.md, D20_BONES_ADAPTER.md, D21_ESTATE_LOD_SPECTATOR.md, D22_PROVIDER_PROBE_20260916.md, D23_SALON50_NIGHT_RESULTS.md, D24_MEMORY_DOCTRINE_BUNDLE.md, E_UNION_ALPHA_EVAL.md, F1_AI_CANON.md, F1_FOLD_STATE.md, F2_GAME_CANON.md, F3_ELECTRONICS_CANON.md, F4_ESOTERIC_CANON.md, FX1_SWARM_STORAGE_AUDIO.md, FX2_SURFACE_RECONCILE.md, FX3_SHADER_FIXES.md, FX4_MUD_REPLAY_PORT.md, FX5_SYNC_DIRECTION_FIX.md, G1_GAMES_AUDIT.md, G2_STATIC_INFRA_AUDIT.md, G3_SHADER_AUDIT.md, H1_HERMES_INDEX_REPAIR.md
 
+## STANDING SCHEDULE — operator-stated windows (LOAD INTO EVERY SEAT)
+
+- **glm-5.3-flash is FREE from 11:00 (operator local time) DAILY** on the Lite seat (/api/coding/paas/v4, ZAI_API_KEY_Lite). After 11:00 it is a FREE PRIMARY for the build/research burn — not a paced fallback. Before 11:00, law-15 pacing applies (1,400/day ceiling).
+- **stealth/union-alpha + stealth/ox-alpha (OpenRouter stealth family)**: free windows, intermittent — window re-opened 2026-09-14; hammer while green, expect 404 when a window ends (the 404 body names the successor).
+- **daily crons**: tide 06:15 (amendment obligation), drift patrol 08:00, union fullsend drive every 20 min (research batch + evolution build lane).
+- **Sep-20 (2026)**: fleet proof date. **Sep-24**: White House state dinner (Xi; Altman/Huang/Cook) — operator planted the 11:11 marker.
+- When the operator states ANY free window or cadence, it enters this schedule and durable memory IMMEDIATELY — session memory is not memory.
+
 ---
-*imprint digest `a20ed060d4de5f4c` · {"mechanisms": 1046, "providers": 26, "laws": 19, "surface": 4, "receipts": 40, "deep": 27, "histories": 113} · regenerate: scripts/build_fleet_imprint.py · load cold: scripts/librarian.py "question"*
+*imprint digest `8e56c6bca7d252d6` · {"mechanisms": 1047, "providers": 26, "laws": 19, "surface": 4, "receipts": 40, "deep": 27, "histories": 113, "schedule": 5} · regenerate: scripts/build_fleet_imprint.py · load cold: scripts/librarian.py "question"*

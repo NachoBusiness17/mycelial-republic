@@ -1,6 +1,6 @@
 # UNION FULLSEND — season 1 — 24/7 standing full-width drive
 
-*queue_digest `569f548531feb600` · done 12/42 · dead 0 · runs 2 · lanes: or-union-alpha 11ok/0fail, zai-lite 1ok/0fail · lite credits spent (guard ledger) 1831 · generated 2026-09-17T13:48:48.462559Z*
+*queue_digest `569f548531feb600` · done 20/42 · dead 0 · runs 3 · lanes: or-union-alpha 18ok/0fail, zai-lite 2ok/0fail · lite credits spent (guard ledger) 5110 · generated 2026-09-17T14:43:59.780211Z*
 
 > **These are LEADS and DRAFTS, not facts.** Model output from free windows (union-alpha stealth window + Lite glm-5.3-flash under law 15). A lead is promoted > only by a byte check; a parable is a draft until the operator says otherwise. > Failures are listed, never hidden.
 
@@ -14,29 +14,203 @@
 ## doctrine
 
 ### UF-14 — attack the Amendment Obligation
-*class doctrine · lane `any` ·  · attempt ? · ? ms · FAILED: not run*
+*class doctrine · lane `or-union-alpha` · stealth/union-alpha · attempt 1 · 48492 ms · ok*
 
-*(pending)*
+“Exactly one amendment” conflicts with the permitted no-amendment tide. Also, “a later reader would accept” supplies neither a designated reader nor an acceptance criterion.
+
+| Claim | Status |
+|---|---|
+| Hash-chained lineage proves an amendment improved anything | Unproven |
+| Cosmetic edits can satisfy the amendment quota | Supported |
+| Splitting one change into daily fragments can manufacture compliance | Supported |
+| Selecting irrelevant rules can manufacture defensible “stands” | Supported |
+| A friendly reader can prevent self-voiding by accepting trivial changes | Supported |
+| Three genuinely justified decisions to retain rules demonstrate ritual burden | Disputed |
+
+The present falsifier tests reader approval, not usefulness. It can punish stability while rewarding churn.
+
+### Proposed replacement amendment
+
+> **Each daily tide must append exactly one review disposition: AMEND or STAND. The review obligation persists; amendment manufacture is not required.**
+>
+> **Selection:** Examine the oldest unresolved rule implicated by a logged failure, near-miss, or explicit contradiction. If none exists, examine the next rule in a published rotation covering all fleet rules. Append selection evidence. Changing the rotation requires a separate, visible lineage entry and cannot change that tide’s selection.
+>
+> **AMEND:** Append the parent hash, exact delta, defect addressed, and a concrete distinguishing case: what action, permission, verification result, or materially relevant interpretation changes between parent and proposed version. State the observable result that would defeat the claimed benefit. Cosmetic changes remain permissible housekeeping but cannot constitute an AMEND disposition. Changes sharing one defect and distinguishing case count as one amendment, regardless of fragmentation.
+>
+> **STAND:** Append the examined rule, a concrete attempted counterexample, and why the existing rule handles it. Repeated reasoning must identify either new evidence or an untested case; otherwise mark the review **unsubstantiated**, not compliant.
+>
+> **Witness:** A reviewer designated before the tide checks these published conditions. Append the verdict and reasons; preserve disagreements and corrections as descendants. These are admissibility judgments, not scores. Neither proposal nor admission automatically enacts a rule change.
+
+**Falsifier of this replacement:** Trial it for 30 tides. It fails if independent replay of the ledger finds **two compliant dispositions** that evade selection, lack their required distinguishing case/counterexample, or count fragments separately—or if **three tides** require invented novelty despite documented exhaustion of distinct cases. Failure reopens this amendment; it does not erase history or automatically abolish daily review.
 
 ### UF-15 — FX5 counter-case
-*class doctrine · lane `any` ·  · attempt ? · ? ms · FAILED: not run*
+*class doctrine · lane `or-union-alpha` · stealth/union-alpha · attempt 1 · 69915 ms · ok*
 
-*(pending)*
+The false premise is that some artifact class inherently **must** flow backward. None does. Generation confers no authority. The legitimate exception is **explicit promotion of a derived candidate into authoritative state**, not reverse synchronization.
+
+| Claim | Status |
+|---|---|
+| Generated code or docs must overwrite their canonical inputs | Disputed |
+| Checked-in generated code/docs may be required repository artifacts without becoming canonical inputs | Supported |
+| A generated lockfile may become authoritative for subsequent dependency resolution after acceptance | Supported |
+| A checksum manifest may become an authoritative release record after acceptance; checksums alone establish neither correctness nor approval | Supported |
+| The direction inversion and drift guard prevent further rollbacks in this fleet | Unproven |
+| An append-only hash chain proves that recorded content was correct or authorized | Disputed |
+
+### Decision rule
+
+Backflow is required **only when an explicit authority policy requires accepting computed results as a new canonical decision or record**. Otherwise, derivation remains one-way.
+
+Permit that promotion only if:
+
+1. **Authority is scoped:** policy identifies the fields/artifacts eligible for promotion and the authorized approver or automated acceptance rule.
+2. **Provenance is bound:** the candidate identifies its canonical input revisions and generation context.
+3. **Freshness is checked atomically:** acceptance verifies the relevant inputs and destination still match the candidate’s declared baseline; changed state requires regeneration or explicit reconciliation.
+4. **The change is intentional:** the accepted diff is recorded as a canonical transition, including any deliberately authorized rollback—not disguised as “sync.”
+5. **History survives:** the ledger appends the transition, its authorization, and its predecessor; it does not rewrite earlier entries.
+
+**Falsifier for this rule:** a stale or unauthorized candidate can overwrite current canonical content while satisfying all five conditions. That would show the conditions or their authority scope are insufficient.
+
+The reported rollback case was an artifact’s existence being treated as overwrite authority. A drift guard helps, but does not itself establish authorization.
+
+### Amended FX5
+
+> Canonical authority flows to derived artifacts. Derived artifacts shall not overwrite canonical state merely because they were generated, checked in, or found different. A derived candidate may become canonical only through an explicitly authorized, provenance-bound, atomic promotion against a verified baseline, recorded as a new ledger transition. Where canonical acceptance policy requires that promotion, it must occur through that path—not reverse synchronization.
+
+**Falsifier for the amendment’s enforcement:** a build or sync operation changes canonical state without the required promotion record, or accepts a candidate against a mismatched baseline.
 
 ### UF-16 — receipts-before-work threshold
-*class doctrine · lane `any` ·  · attempt ? · ? ms · FAILED: not run*
+*class doctrine · lane `or-union-alpha` · stealth/union-alpha · attempt 1 · 71270 ms · ok*
 
-*(pending)*
+No universal crossover is established. Task duration measures overhead poorly and audit value worse: a ten-second action can create irreversible liability.
+
+| Claim | Status |
+|---|---|
+| Minutes, calls, or lanes alone establish when receipts cost more than they protect | Unproven |
+| The threshold below identifies an economic optimum | Unproven |
+| A bounded lightweight tier preserves “receipts before work” and “falsifiers before data” | Supported, if enforced as written |
+
+**Proposed amendment — provisional threshold**
+
+> A lightweight receipt MAY replace a full receipt only when **all** conditions hold:
+> - Work is bounded to **five elapsed minutes** after receipt commitment.
+> - At most **one external, read-only call** is permitted.
+> - Exactly **one declared lane** is touched.
+> - Work makes no persistent change except ledger records and isolated draft artifacts; it creates no external commitment and involves no restricted data, permission change, or irreversible action.
+>
+> Before work or data access, the actor MUST append a hash-chained receipt containing: task and actor identifiers, declared scope, applicable limits, intended output, and a task-specific falsifier with its evaluation rule.
+>
+> Before crossing any limit, the actor MUST stop and commit a full receipt. Discovering restricted scope likewise requires stopping; retrospective upgrade does not cure unauthorized work.
+>
+> Completion MUST append elapsed time, actual calls and lanes, output/evidence references, and the falsifier result. Neither receipt may be overwritten.
+
+**Falsifiers**
+
+| Proposal or rationale | What would prove it wrong |
+|---|---|
+| This tier supplies sufficient audit evidence | One eligible task produces a material error or scope breach that a full receipt would have exposed, but the lightweight record cannot reconstruct or attribute. |
+| Five minutes / one call / one lane is economically preferable | A matched trial shows receipt-cost savings are no greater than added investigation cost plus expected loss from reduced detection. Include completion and upgrade costs. |
+| These bounds are enforceable | One task crosses a bound before its upgrade is committed. That falsifies the enforcement claim, even without damage. |
+
+Measure both tiers on comparable tasks, with independently recorded outcomes. **Trial falsifier:** unequal task-risk distributions or missing outcomes invalidate the comparison.
+
+Until those measurements exist, call this a **testable eligibility boundary**, not the point where overhead exceeds audit value.
 
 ### UF-17 — tide three questions, outsider answers
-*class doctrine · lane `any` ·  · attempt ? · ? ms · FAILED: not run*
+*class doctrine · lane `or-union-alpha` · stealth/union-alpha · attempt 1 · 86880 ms · ok*
 
-*(pending)*
+“Never amended,” “a stranger would adopt,” and “the fleet did not send” are not established by this record. You supplied descriptions, not independently replayable evidence.
+
+### 1. What is it believing without having tested?
+
+| Claim | Status |
+|---|---|
+| Five green harnesses establish competence beyond those harnesses. | **Unproven.** Passing can validate implementations while leaving the underlying assumptions untouched. |
+| A hash-chained ledger makes the fleet’s account true or complete. | **Unproven.** Hashes establish linkage; without independently retained checkpoints, they do not establish a unique history. They never establish truthful inputs. |
+| Hash-committing the blind-set key establishes a fair blind evaluation. | **Unproven.** It does not alone establish absence of leakage, representative selection, or frozen scoring. |
+| A tested referee chain is an operational referee. | **Unproven.** The two clicks remain a discretionary boundary. Who withholds them, under what conditions, with what recorded consequence? |
+| The favorite theory was conditionally refuted. | **Supported**, as reported. Whether rho +0.327 warrants that verdict independently remains **Unproven** without the registered criterion and analysis. |
+
+The central untested belief: **that internal procedural discipline survives external replay and inconvenient operator decisions.**
+
+### 2. Which rule has never once been amended?
+
+| Claim | Status |
+|---|---|
+| Any particular rule has never been amended. | **Unproven.** No complete rule history was supplied. |
+| Append-only means rules cannot change. | **Disputed.** A later entry can supersede a rule without deleting its predecessor. |
+| Operator authorization is an enduring constitutional rule. | **Unproven.** It is the visible current gate, not a demonstrated historical invariant. |
+
+Evidence that would settle this: genesis rules, every subsequent rule change, and the interpretation governing supersession. One valid amendment falsifies “never.”
+
+### 3. What should travel first—and what is missing?
+
+| Claim | Status |
+|---|---|
+| A stranger would adopt a particular component first. | **Unproven.** Adoption requires observing strangers, not imagining them. |
+| The first export should be a **standalone falsification receipt**: frozen claim, kill criterion, inputs, executable scorer, result, and ledger verification. | **Unproven proposal.** Falsifier: an unaffiliated operator cannot reproduce the verdict without fleet assistance. |
+
+What this account **did not supply**: that runnable receipt, including the evidence behind the favorite theory’s defeat. Whether the fleet sent it elsewhere is unknown.
+
+Ship the reproducible loss before the institutional story.
 
 ### UF-19 — board half-life law
-*class doctrine · lane `any` ·  · attempt ? · ? ms · FAILED: not run*
+*class doctrine · lane `or-union-alpha` · stealth/union-alpha · attempt 1 · 136204 ms · ok*
 
-*(pending)*
+The gate does not determine a half-life. Receipt coverage is not necessarily completion, and a deadline threshold is not a decay law.
+
+| Claim | Status |
+|---|---|
+| More than 10 receiptless tasks at day 2 triggers re-seeding or tombstoning of the remainder | Supported |
+| Passing that gate means at least 80% are complete | Unproven: depends on what receipts certify |
+| One operator, seven lanes, and free model lanes determine throughput | Unproven |
+| These facts identify a uniquely right half-life | Unproven |
+
+### First principles
+
+For the original seeded cohort of \(N\) tasks, define
+\[
+F_N(t)=\frac{\text{tasks completed by }t}{N}.
+\]
+The completion half-life is the time when \(F_N(t)=1/2\). Tombstoning is **not** completion; re-seeding must not erase the original denominator.
+
+Determining \(F_N\) requires service times, operator attention, dependencies, and concurrency effectiveness—not merely lane counts.
+
+### Conditional exponential law
+
+**Assume** receipts certify completion and every unfinished task has constant completion hazard \(\lambda\):
+\[
+F_N(t)=1-e^{-\lambda t},\qquad h=\frac{\ln2}{\lambda}.
+\]
+
+Calibrating to the gate’s **boundary**, not an observed outcome:
+\[
+F_{50}(2)=0.8
+\Rightarrow \lambda=\frac{\ln5}{2},
+\qquad h=\frac{2\ln2}{\ln5}\approx0.861\text{ days}.
+\]
+
+Under this model, passing the gate requires \(h\le0.861\) days. **Falsifier:** repeated cohort measurements showing nonconstant log-unfinished slopes, beyond sampling variation.
+
+### Why board-size predictions remain conditional
+
+An equally boundary-compatible, fixed-throughput model is
+\[
+F_N(t)=\min(20t/N,1),\qquad h_N=N/40.
+\]
+**Falsifier:** measured completion increments systematically incompatible with 20 tasks/day while work remains available.
+
+| Board size | Constant-hazard model: half-life; done at day 2 | Fixed-throughput model: half-life; done at day 2 |
+|---|---|---|
+| 20 | 0.861 days; 80% (16 expected) | 0.5 days; 100% (20) |
+| 50 | 0.861 days; 80% (40 expected) | 1.25 days; 80% (40) |
+| 100 | 0.861 days; 80% (80 expected) | 2.5 days; 40% (40) |
+
+### Tombstone criterion
+
+At seed time \(+2\) days, count valid receiptless tasks \(M\). If \(M>10\), the stated rule requires re-seeding **or** tombstoning the remainder. It does not specify which disposition to choose. **Compliance falsifier:** a triggered cohort left without either disposition.
+
+Neither a proportional threshold for other board sizes nor a unique completion law follows from the 50-task rule.
 
 ### UF-23 — WEAVE next-5 rubric
 *class doctrine · lane `union` ·  · attempt ? · ? ms · FAILED: not run*
@@ -168,9 +342,28 @@
 ## physics
 
 ### UF-18 — past-bit box failure modes
-*class physics · lane `any` ·  · attempt ? · ? ms · FAILED: not run*
+*class physics · lane `or-union-alpha` · stealth/union-alpha · attempt 1 · 102903 ms · ok*
 
-*(pending)*
+The key law is **conditional**, not unconditional: biased or deterministic past bits are harmless only if future targets are independent, fair bits **conditional on the committed record and all information used to select runs**.
+
+| Claim | Status |
+|---|---|
+| Fixed past bits versus independent fair future bits gives \(K\sim\mathrm{Binomial}(1024,1/2)\) | Supported |
+| \(K\ge563\) has one-sided \(p<0.001\) under that null | Supported |
+| The box’s actual targets satisfy that null | Unproven |
+| A hash alone proves commitment preceded target generation | Disputed |
+
+Costs below are incremental estimates using existing phones/computers. “Falsifier” means an observation defeating the stated safeguard.
+
+| Failure | How it fakes a pass | Cheapest hardening / falsifier | Cost |
+|---|---|---|---|
+| Custodian collusion | Custodian backdates receipt or substitutes a favorable record after seeing targets. | Send the complete, canonically encoded record to two separately controlled witnesses before target generation; publicly anchor its digest. **Falsifier:** inconsistent copies, missing independent receipt, or shared control. | $0–10 |
+| Hash-does-not-prove-timing | A valid digest is published after targets exist; local timestamps or ledger history are rewritten. | Obtain an independently timestamped, externally retained digest receipt before the recorded target-generation session. **Falsifier:** receipt postdates generation or exists only locally. | $0 |
+| Coin bias | Biased targets preferentially match biased past bits; all-one past bits exploit a heads bias. | Preregister paired-toss extraction: HT→0, TH→1; discard HH/TT. This removes fixed bias **only for independent, identically distributed tosses**. **Falsifier:** within-pair bias differences or dependence. | $0; extra tosses |
+| Coin dependence/manipulation | Correlation inflates tail probabilities; an informed tosser steers outcomes. | Blind tossers to past bits; preregister toss, landing, invalid-toss and recording rules; retain continuous video. **Falsifier:** information leakage, selective retosses, or detected serial dependence. Tests cannot certify independence. | $0; labor |
+| Sensor drift | **Alone, it cannot.** Post-target shifts, exclusions or threshold changes can manufacture alignment. | Commit final bits, indices and preprocessing rules—not merely raw readings. **Falsifier:** any scored bit or alignment differs. | $0 |
+| Analysis peeking | Optional stopping or trying multiple scoring rules increases false-pass probability. | Fix length, score and rejection rule; run one locked script. **Falsifier:** unregistered stopping or alternate analyses counted as confirmatory. | $0 |
+| Run-level selection | Many attempts are made; only winners enter the ledger or report. | Publicly register every run before acquisition; log aborts; allocate a total error budget across attempts. **Falsifier:** missing run IDs, unlogged attempts or budget overruns. | $0; administration |
 
 ## scout
 
@@ -372,14 +565,59 @@ Source: [radek-sprta/awesome-game-remakes](https://github.com/radek-sprta/awesom
 ## x-play
 
 ### UF-13 — self-threading reply for the pamphlet
-*class x-play · lane `any` ·  · attempt ? · ? ms · FAILED: not run*
+*class x-play · lane `or-union-alpha` · stealth/union-alpha · attempt 1 · 45930 ms · ok*
 
-*(pending)*
+The supplied observations do not establish that speed or brevity causes a top-reply slot.
+
+| Claim | Status |
+|---|---|
+| +0–2s self-replies reliably win | Unproven |
+| Under-80-character text matches image-only performance | Unproven |
+
+### Candidates
+Each is one line, under 80 characters.
+
+1. `19 rows. Follow the moves to the names the count leaves out.`
+2. `Every farm bought the scale. Check what disappeared from the lists.`
+3. `The lists get shorter. The keeper still calls each sheep by name.`
+4. `Read the kifu. Compare the count with the names.`
+5. `The scale has buyers. The keeper has names. Audit the 19 rows.`
+
+| Verdict | Status |
+|---|---|
+| These lines frame a parable, not verified events | Poetry |
+| **Winner: 1**, for combining the artifact, decoding action, and missing-name hook | Unproven |
+
+**Falsifier for all five:** Across comparable pinned drops with matched timing and exposure, another reply pattern consistently earns more likes at the same measurement window.
+
+**Winner’s specific falsifier:** An image-only reply showing one legible kifu fragment beside its decoded missing-name line consistently beats candidate 1. That would favor a visible receipt over an invitation to inspect.
 
 ### UF-20 — x-radar missed patterns
-*class x-play · lane `lite` ·  · attempt ? · ? ms · FAILED: not run*
+*class x-play · lane `zai-lite` · glm-5.3-flash · attempt 1 · 86006 ms · ok*
 
-*(pending)*
+**Presupposition flag first:** one day, 8 threads, top-replies-by-likes = survivorship sample. Likes are downstream of visibility (position, follower pings), not merit. Every "pattern" is a prior awaiting execution, none is a finding.
+
+| # | Claim | Status |
+|---|---|---|
+| 1 | Self-replies land +0-2s, farm crown | Supported mechanically; "farming" is unproven — first position + follower ping is structure, not skill |
+| 2 | Product→one-liner/15m; safety→excerpt/45-90m | Unproven (n=8, one day) |
+| 3 | Winners <80 chars | Unproven — survivorship; brevity is a platform-wide base rate |
+| 4 | Usage-limit asks = invariant hijack | Unproven; also negative-EV for a parable brand (reputational cost unmodeled by likes) |
+| 5 | Self-threading = like monopoly | Disputed as stated — monopolizes reply crowns on *own posts* only |
+
+**Three missed patterns**
+- **M1 Branch position:** likes cluster on replies-to-hot-replies, not root replies. Your radar sampled roots only.
+- **M2 Reciprocal velocity:** small-account winners get their first 5–10 likes from own mutuals in minutes. Speed is graph-owned, not content-owned. (Organic reciprocity is the free version of buying.)
+- **M3 Serial presence:** the same handle appearing across threads compounds; one-shot timing models miss cumulative recognition.
+
+**Calendar** — P = own post, R = reply lane. Max two patterns/day.
+
+| Day | Lane | Patterns | Falsifier |
+|---|---|---|---|
+| 1 | P-pamphlet | 1 + 3: instant self-reply, <80-char coda | Own reply not top reply by likes at +2h → kill 1 |
+| 2 | R-product | 2 + M1: one-liner ask ≤15m, hot-branch attached | 0 asks acknowledged in 15m across 3 targets → kill 2a |
+| 3 | P-receipt-thread | M2 + 5: post, then self-thread a receipt | Self-thread not top-2 replies at +3h → kill 5 |
+| 4 | R-safety |
 
 ### UF-41 — Astra persona leak to fleet probes
 *class x-play · lane `lite` ·  · attempt ? · ? ms · FAILED: not run*

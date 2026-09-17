@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RUINS GO</title>
+<style>
+  :root { --sand:#c9b18a; --dark:#161210; --ink:#e8ddc8; --accent:#d9a441; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--dark); color:var(--ink); font-family:Georgia,serif; }
+  #wrap { max-width:720px; margin:0 auto; padding:12px; }
+  h1 { font-size:22px; letter-spacing:4px; margin:8px 0 2px; color:var(--accent); font-weight:normal; }
+  #sub { font-size:12px; opacity:.7; margin-bottom:8px; }
+  #hud { display:flex; gap:16px; font-size:13px; margin-bottom:6px; flex-wrap:wrap; }
+  #hud b { color:var(--accent); font-weight:normal; }
+  canvas { background:#0d0b09; border:1px solid #3a3228; width:100%; image-rendering:auto; display:block; }
+  #pad { display:grid; grid-template-columns:repeat(3,56px); grid-template-rows:repeat(2,44px); gap:6px; justify-content:center; margin-top:10px; }
+  #pad button { font-size:18px; background:#241d16; color:var(--ink); border:1px solid #4a3f30; cursor:pointer; }
+  #pad button:hover { background:#35291d; }
+  #pad .blank { visibility:hidden; }
+  #lvrow { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  #lvrow button { width:34px; height:30px; background:#1c1712; color:var(--ink); border:1px solid #4a3f30; cursor:pointer; font-size:12px; }
+  #lvrow button.on { background:var(--accent); color:#1a140c; border-color:var(--accent); }
+  #lvrow button:disabled { opacity:.35; cursor:default; }
+  #msg { min-height:52px; margin-top:10px; font-size:14px; line-height:1.5; }
+  #msg .ins { color:var(--accent); font-style:italic; }
+  #msg .law { opacity:.75; font-size:12px; }
+  #foot { margin-top:10px; font-size:11px; opacity:.55; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <h1>RUINS GO</h1>
+  <div id="sub">a grid-turn tomb · the world only moves when you move · arrows / WASD · R restarts</div>
+  <div id="hud">
+    <span>level <b id="hLv">1</b> <span id="hName"></span></span>
+    <span>chapter <b id="hCh">I</b></span>
+    <span>moves <b id="hMv">0</b></span>
+    <span>deaths <b id="hDd">0</b></span>
+    <span>sealed bits <b id="hGem">0</b></span>
+  </div>
+  <canvas id="cv" width="640" height="480"></canvas>
+  <div id="pad">
+    <button class="blank"></button><button data-d="U">&#9650;</button><button class="blank"></button>
+    <button data-d="L">&#9664;</button><button data-d="D">&#9660;</button><button data-d="R">&#9654;</button>
+  </div>
+  <div id="lvrow"></div>
+  <div id="msg"></div>
+  <div id="foot">RUINS GO · made-with-AI beacon: yes · the ledger constrains future accounts of the past, not the past itself</div>
+</div>
+
+<!-- canonical engine: ruins_go_engine.js (one copy; harness requires the same file) -->
+<script src="ruins_go_engine.js?v=1"></script>
+
+<script id="ui">
+"use strict";
+(function () {
+  const G = window.RUINS_GO;
+  const cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+  let levels = G.levels.slice();
+  let cur = 0, st = null, deathsTotal = 0, gemsTotal = 0;
+
+  // optional pack: validated levels produced by the build lane (fail-safe to core)
+  fetch("ruins_go_pack.json?v=" + G.version).then(r => r.ok ? r.json() : null).then(pack => {
+    if (Array.isArray(pack) && pack.length) { levels = levels.concat(pack); buildLevelRow(); }
+  }).catch(() => {});
+
+  const CH = ["I","II","III","IV","V"];
+
+  function proj(x, y, h) {
+    return [ (x - y) * 40 + 320, (x + y) * 20 - h * 26 + 90 ];
+  }
+  function diamond(cx, cy, rw, rh, fill, stroke) {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - rh); ctx.lineTo(cx + rw, cy); ctx.lineTo(cx, cy + rh); ctx.lineTo(cx - rw, cy);
+    ctx.closePath(); if (fill) { ctx.fillStyle = fill; ctx.fill(); } if (stroke) { ctx.strokeStyle = stroke; ctx.stroke(); }
+  }
+  function draw() {
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    if (!st) return;
+    for (let y = 0; y < st.h; y++) for (let x = 0; x < st.w; x++) {
+      const t = st.terrain[y][x];
+      if (t === " ") continue;
+      const hgt = G.walkHeight(t) ?? 0;
+      const [sx, sy] = proj(x, y, hgt);
+      let top = "#8a7a5c", left = "#5c503c", right = "#4a3f2e", line = "#2c251b";
+      if (t === "#") { top = "#3a322a"; }
+      else if (t === "1") { top = "#a08c66"; }
+      else if (t === "2") { top = "#b59d74"; }
+      else if (t === "b") { const on = G.bridgesOn(st); top = on ? "#7a5a34" : "#33291c"; left = on ? "#5c421f" : "#241c12"; }
+      else if (t === "p") top = "#a5623c";
+      else if (t === "k") top = "#c79b3f";
+      else if (t === "x") top = "#9b8a6a";
+      else if (t === "s") top = "#7d7468";
+      else if (t === "E") top = "#4e6b4a";
+      ctx.fillStyle = right; ctx.beginPath();
+      ctx.moveTo(sx, sy); ctx.lineTo(sx + 40, sy + 20); ctx.lineTo(sx + 40, sy + 20 + hgt * 26 + 8); ctx.lineTo(sx, sy + hgt * 26 + 8); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = left; ctx.beginPath();
+      ctx.moveTo(sx, sy); ctx.lineTo(sx - 40, sy + 20); ctx.lineTo(sx - 40, sy + 20 + hgt * 26 + 8); ctx.lineTo(sx, sy + hgt * 26 + 8); ctx.closePath(); ctx.fill();
+      diamond(sx, sy, 40, 20, top, line);
+      if (t === "k") diamond(sx, sy, 10, 5, "#e8c56a", null);
+      if (t === "p") diamond(sx, sy, 14, 7, null, "#d98a54");
+      if (t === "E") { ctx.fillStyle = "#9fd08c"; ctx.font = "12px Georgia"; ctx.textAlign = "center"; ctx.fillText("out", sx, sy + 4); }
+      if (t === "s") { const armed = st.tick % 2 === 1; ctx.fillStyle = armed ? "#e06a4a" : "#8d857a"; ctx.fillRect(sx - 2, sy - 8, 2, 8); ctx.fillRect(sx + 1, sy - 6, 2, 6); }
+      if (t === "x") { ctx.strokeStyle = "#5c503c"; ctx.beginPath(); ctx.moveTo(sx - 20, sy); ctx.lineTo(sx + 20, sy); ctx.stroke(); }
+    }
+    for (const g of st.gems) if (!g.got) { const [sx, sy] = proj(g.x, g.y, G.walkHeight(G.cellT(st, g.x, g.y)) ?? 0); diamond(sx, sy - 14, 6, 9, "#59c2c9", "#2e6d72"); }
+    for (const b of st.blocks) { const [sx, sy] = proj(b.x, b.y, G.walkHeight(G.cellT(st, b.x, b.y)) ?? 0); ctx.fillStyle = "#57432c"; ctx.fillRect(sx - 14, sy - 22, 28, 14); diamond(sx, sy - 22, 14, 7, "#7d6244", "#3a2c1c"); diamond(sx, sy, 16, 8, "#6b543a", "#3a2c1c"); }
+    for (const s of st.snakes) { const [sx, sy] = proj(s.x, s.y, G.walkHeight(G.cellT(st, s.x, s.y)) ?? 0); ctx.fillStyle = "#4e7d46"; ctx.beginPath(); ctx.arc(sx, sy - 10, 9, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = "#b7d465"; ctx.beginPath(); ctx.arc(sx, sy - 16, 3.5, 0, Math.PI * 2); ctx.fill(); }
+    for (const l of st.lizards) { const [sx, sy] = proj(l.x, l.y, G.walkHeight(G.cellT(st, l.x, l.y)) ?? 0); ctx.fillStyle = "#a44a3f"; ctx.beginPath(); ctx.ellipse(sx, sy - 8, 12, 5, 0, 0, Math.PI * 2); ctx.fill(); }
+    if (st.twin) { const [sx, sy] = proj(st.twin.x, st.twin.y, G.walkHeight(G.cellT(st, st.twin.x, st.twin.y)) ?? 0); ctx.fillStyle = "#8d8d97"; ctx.beginPath(); ctx.arc(sx, sy - 22, 6, 0, Math.PI * 2); ctx.fill(); ctx.fillRect(sx - 4, sy - 17, 8, 12); }
+    { const [sx, sy] = proj(st.player.x, st.player.y, G.walkHeight(G.cellT(st, st.player.x, st.player.y)) ?? 0);
+      ctx.fillStyle = st.dead ? "#7d3f35" : "#e8ddc8"; ctx.beginPath(); ctx.arc(sx, sy - 26, 6.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillRect(sx - 4.5, sy - 20, 9, 14);
+      ctx.fillStyle = "rgba(233,196,120,0.08)"; ctx.beginPath(); ctx.arc(sx, sy - 14, 46, 0, Math.PI * 2); ctx.fill(); }
+  }
+
+  const $ = id => document.getElementById(id);
+  function hud() {
+    $("hLv").textContent = cur + 1; $("hName").textContent = st ? "· " + st.name : "";
+    $("hCh").textContent = ["I","II","III","IV","V"][Math.min(4, (st ? st.chapter : 1) - 1)];
+    $("hMv").textContent = st ? st.moves : 0; $("hDd").textContent = deathsTotal;
+    $("hGem").textContent = gemsTotal;
+  }
+  function msg(html) { $("msg").innerHTML = html; }
+  let progress = 0;
+  try { progress = parseInt(localStorage.getItem("ruins_go_progress") || "0", 10) || 0; } catch (e) {}
+  function start(i) {
+    cur = Math.max(0, Math.min(i, levels.length - 1));
+    st = G.loadLevel(levels[cur]);
+    hud(); draw();
+    msg('<div class="law">' + (st.hint || "") + "</div>");
+    if (cur > progress) { progress = cur; try { localStorage.setItem("ruins_go_progress", String(progress)); } catch (e) {} }
+    buildLevelRow();
+  }
+  function restart() {
+    deathsTotal += st.deaths;
+    const gems = st.gems.filter(x => x.got).length;
+    st = G.loadLevel(levels[cur]);
+    gemsTotal = Math.max(gemsTotal - gems, 0);   // gems not kept through a restart of the same room
+    draw(); hud();
+  }
+  function doStep(dir) {
+    if (!st) return;
+    if (st.dead) { restart(); return; }
+    if (st.won) { start(cur + 1); return; }
+    G.step(st, dir);
+    draw(); hud();
+    if (st.dead) msg('<div class="law">taken by ' + (st.deadWhy || "the tomb") + " · press any key to try the room again</div>");
+    else if (st.won) msg('<div class="ins">"' + (st.ins || "the room gives up its silence.") + '"</div><div class="law">press any key to descend further</div>');
+  }
+  document.addEventListener("keydown", e => {
+    const k = e.key.toLowerCase();
+    const map = { arrowup:"U", w:"U", arrowdown:"D", s:"D", arrowleft:"L", a:"L", arrowright:"R", d:"R" };
+    if (k === "r") { restart(); e.preventDefault(); return; }
+    if (st && (st.dead || st.won) && !map[k]) { st.dead ? restart() : start(cur + 1); e.preventDefault(); return; }
+    if (map[k]) { doStep(map[k]); e.preventDefault(); }
+  });
+  document.querySelectorAll("#pad button[data-d]").forEach(b => b.addEventListener("click", () => doStep(b.dataset.d)));
+  function buildLevelRow() {
+    const row = $("lvrow"); row.innerHTML = "";
+    const unlocked = Math.max(1, progress + 1);
+    levels.forEach((l, i) => {
+      const b = document.createElement("button");
+      b.textContent = i + 1; b.disabled = i >= unlocked; if (i === cur) b.className = "on";
+      b.title = l.name + " · " + (l.hint || "");
+      b.addEventListener("click", () => start(i)); row.appendChild(b);
+    });
+  }
+  start(0);
+})();
+</script>
+</body>
+</html>

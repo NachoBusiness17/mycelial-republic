@@ -11,7 +11,7 @@ no paid APIs, robots-respecting). Receipt:
 | manifest entries | 35 |
 | fetched | 34 (15 pdf, 19 txt) |
 | blocked this run | 1 |
-| total size | 56.98 MB |
+| total size | 56.96 MB |
 
 ## Fetched documents
 
@@ -38,11 +38,11 @@ no paid APIs, robots-respecting). Receipt:
 | `s4_t42_retraction_note.txt` | txt | 2 | S4-T4.2 | 397bcd4e08ca |
 | `s4_t43_thomas_cooper_2022_mycelium_bridges.txt` | txt | 62 | S4-T4.3 | d6773f632d87 |
 | `s4_t44_blatt_2023_challenge.txt` | txt | 12 | S4-T4.4 | 3e081a17fde1 |
-| `s4_t27_adamatzky_2024_fungal_skin_robots_preprint.txt` | txt | 2 | S4-T2.7 | 2704a345271a |
+| `s4_t27_adamatzky_2024_fungal_skin_robots_preprint.txt` | txt | 6 | S4-T2.7 | aba305a4b80e |
 | `s4_appx_dale_2018_rc_characterization.pdf` | pdf | 3997 | S4-appendix | 16ed547eeb0f |
 | `o2_carrillo_acuna_2023_apl_diffuser.pdf` | pdf | 3885 | O2/CONCERT002 | 13f949f04510 |
 | `o3_mishra_2024_science_robotics.pdf` | pdf | 11692 | O3/C19 | 799efeb237fb |
-| `o3_neurospora_wcc_blue_light.txt` | txt | 49 | O3 | 27cd3f204007 |
+| `o3_neurospora_wcc_blue_light.txt` | txt | 26 | O3 | 18181a516652 |
 | `b11_sliding_window_sinks_2608.28444.pdf` | pdf | 387 | B10/B11 | bca6aba3b47a |
 | `goat_entropic_ot_attention_2601.15380.pdf` | pdf | 5929 | LINKS_ORE3 | 0800b53962c9 |
 | `b10_jelassi_2024_repeat_after_me.pdf` | pdf | 1026 | B10 | 1e2fdb93eca1 |

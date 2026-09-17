@@ -123,8 +123,8 @@ function fold(events) {
 
   const meta = {
     schema: ROOT_MARKER,
-    root: INBOX_DIR,
-    host_root: 'watch/inbox',
+    root: '/board/inbox',
+    host_root: '/board/inbox',
     purpose:
       'Single shared landing zone. INDEX.json is now DERIVED from the append-only event log ' +
       'index_events.jsonl (Ethereum fold pattern, EXP-002A). Writers APPEND events; they ' +
@@ -143,7 +143,7 @@ function writeIndex(meta, items) {
   const header = readIndexHeader() || {};
   const out = {
     schema: meta.schema,
-    root: meta.root,
+    root: '/board/inbox',
     host_root: meta.host_root,
     purpose: meta.purpose,
     read_first: meta.read_first,

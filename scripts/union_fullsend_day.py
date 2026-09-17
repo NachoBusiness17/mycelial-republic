@@ -112,6 +112,17 @@ def _wide_lanes(env: dict[str, str]) -> list[dict[str, str]]:
                                       ("nemotron", "nvidia/nemotron-3.5-lightning:free")]):
         for ki, k in enumerate(_OR_KEYS):
             add(f"or-{mid}-k{ki+1}", "https://openrouter.ai/api/v1", model, k)
+    # STEALTH WINDOW + operator-proven models (his OpenRouter Activity 2026-09-17:
+    # kimi-k2.6 11.6M tok, ox-alpha 8.03M, deepseek-v4-flash 3.19M all serving on his keys;
+    # stealth page confirms Union+Ox live, window re-opened 2026-09-14 — hammer it)
+    for n, (mid, model) in enumerate([("ox-alpha", "stealth/ox-alpha"),
+                                      ("kimi-k26", "moonshotai/kimi-k2.6"),
+                                      ("dsv4flash", "deepseek/deepseek-v4-flash-0731"),
+                                      ("gemini-37", "google/gemini-3.7-flash"),
+                                      ("dots3-note", "dots3/dots3-note-preview"),
+                                      ("north-mini", "north/north-mini-code")]):
+        for ki, k in enumerate(_OR_KEYS):
+            add(f"or-{mid}-k{ki+1}", "https://openrouter.ai/api/v1", model, k)
     add("cohere-free", "https://api.cohere.ai/compatibility/v1", "command-a-03-2025", "COHERE_API_KEY_FREE")
     for suf, k in [("", "GEMINI_API_KEY"), ("g", "GOOGLE_API_KEY")]:
         add(f"gemini-flash{suf}", "https://generativelanguage.googleapis.com/v1beta/openai",

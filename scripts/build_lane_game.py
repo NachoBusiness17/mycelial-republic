@@ -273,9 +273,15 @@ def _load_state() -> dict:
     else:
         st = {"done": [], "dead": {}, "runs": 0, "promoted": 0, "rejected": 0}
     # transport failures (dead model id, reasoning-budget empties, 200-with-error bodies)
-    # are not brief-merit deaths: prune them so the brief gets its real two attempts.
-    st["dead"] = {sid: why for sid, why in (st.get("dead") or {}).items()
-                  if not any(t in str(why) for t in ("empty_content", "HTTP", "SSRF", "KeyError"))}
+    # are not brief-merit deaths: prune them so the brief gets its real two attempts,
+    # and reset the attempt counter the transport death burned.
+    transport = ("empty_content", "HTTP", "SSRF", "KeyError")
+    dead = st.get("dead") or {}
+    st["dead"] = {sid: why for sid, why in dead.items()
+                  if not any(t in str(why) for t in transport)}
+    for sid in dead:
+        if sid not in st["dead"]:
+            st.setdefault("attempts", {})[sid] = 0
     return st
 
 

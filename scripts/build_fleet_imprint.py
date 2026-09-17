@@ -248,6 +248,81 @@ def mine_deep(lines: list[str]) -> int:
     return n
 
 
+def mine_histories(lines: list[str]) -> int:
+    """v2: the anti-forgetting layer — actual histories, not just indexes.
+    zcode session logs, the full operator memory bank, LINKS ledger, tide cards,
+    wave receipts, doctrine bodies."""
+    n = 0
+    lines.append("## OPERATOR MEMORY BANK — every topic memory, full index + key bodies\n")
+    mem = Path("C:/Users/foste/.zcode/cli/memories/projects/local_sovereign_agent-16821bdbdc2a3cf7/memory")
+    if mem.is_dir():
+        idx = mem / "MEMORY.md"
+        if idx.is_file():
+            lines.append("### MEMORY.md (complete index)\n"
+                         + idx.read_text(encoding="utf-8", errors="replace")[:20000])
+            n += 1
+        for p in sorted(mem.glob("*.md"))[:80]:
+            if p.name == "MEMORY.md":
+                continue
+            lines.append(f"- **{p.stem}**: {_head(p, 260)}")
+            n += 1
+    lines.append("")
+
+    lines.append("## ZCODE SESSION HISTORIES — the windows themselves\n")
+    exec_dir = Path("C:/Users/foste/.zcode/cli/exec")
+    if exec_dir.is_dir():
+        sess = sorted({d.name for d in exec_dir.iterdir() if d.is_dir()})
+        lines.append(f"- exec session dirs ({len(sess)}): {', '.join(sess[-12:])}")
+        n += 1
+        logs = sorted(exec_dir.glob("sess_*/call_*-stdout.log"),
+                      key=lambda p: p.stat().st_mtime, reverse=True)[:24]
+        for p in logs:
+            lines.append(f"- {p.parent.name[:13]}…/{p.name[:34]}: {_head(p, 130)}")
+            n += 1
+    pa = Path("C:/Users/foste/.zcode/tmp/paste-attachments/2026-09-17")
+    if pa.is_dir():
+        names = [p.name for p in sorted(pa.glob("*"))[:10]]
+        lines.append(f"- recent paste attachments: {', '.join(names)}")
+        n += 1
+    lines.append("")
+
+    lines.append("## LINKS LEDGER — everything we have read and filed (watch/inbox/LINKS.jsonl)\n")
+    lk = ROOT / "watch" / "inbox" / "LINKS.jsonl"
+    if lk.is_file():
+        rows = [l for l in lk.read_text(encoding="utf-8", errors="replace").splitlines() if l.strip()]
+        lines.append(f"- {len(rows)} canonical rows:")
+        for l in rows[-70:]:
+            try:
+                r = json.loads(l)
+                lines.append(f"  - {r.get('canonical', '?')[:90]} — {(r.get('note') or '')[:140]}")
+            except Exception:
+                continue
+        n += 1
+    lines.append("")
+
+    lines.append("## DOCTRINE BODIES — the law texts behind the headers\n")
+    for rel, cap in [("docs/DNA.md", 6000), ("CONSTITUTION.md", 2500),
+                     ("mag/lite_guard.py", 900), ("AGENTS.md", 5500)]:
+        p = ROOT / rel
+        if p.is_file():
+            lines.append(f"### {rel}\n```\n{p.read_text(encoding='utf-8', errors='replace')[:cap]}\n```")
+            n += 1
+    lines.append("")
+
+    lines.append("## TIDE CARDS + WAVE RECEIPTS — what the daily and wave cycles produced\n")
+    tc = ROOT / "memory" / "corpus" / "tide_cards"
+    for p in sorted(tc.glob("*.md"))[-5:]:
+        lines.append(f"### tide {p.name}\n> {_head(p, 500)}")
+        n += 1
+    wr = ROOT / "watch" / "inbox" / "wave_20260916" / "receipts"
+    if wr.is_dir():
+        names = [p.name for p in sorted(wr.glob("*.md"))]
+        lines.append(f"- wave receipts on file ({len(names)}): {', '.join(names[:44])}")
+        n += 1
+    lines.append("")
+    return n
+
+
 def main() -> int:
     lines = [
         "# FLEET IMPRINT — the Librarian's cold-load context",
@@ -258,7 +333,10 @@ def main() -> int:
         "ROLE (for the seat that loads this): you are the fleet's Librarian. The operator",
         "asks 'do we have X / where is Y / what mechanism covers Z' — answer from this",
         "imprint with exact paths and provider ids. If it is not in the imprint, say so and",
-        "name the closest mechanism. Never invent paths.",
+        "name the closest mechanism. Never invent paths. CITATION LAW: cite only filenames",
+        "that appear verbatim in this imprint; if you are not certain of an exact filename,",
+        "give the directory and describe the content instead. A wrong citation is worse",
+        "than an honest gap.",
         "",
     ]
     counts = {
@@ -268,6 +346,7 @@ def main() -> int:
         "surface": mine_surface(lines),
         "receipts": mine_receipts(lines),
         "deep": mine_deep(lines),
+        "histories": mine_histories(lines),
     }
     body = "\n".join(lines)
     digest = hashlib.sha256(body.encode("utf-8")).hexdigest()[:16]

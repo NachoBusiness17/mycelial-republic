@@ -1,11 +1,14 @@
 # FLEET IMPRINT — the Librarian's cold-load context
 
-*mined 2026-09-17T15:47:54.127702+00:00 · deterministic, regenerable · this file is the pre-warmed RIB seed: stable bytes so provider cache pays once*
+*mined 2026-09-17T16:14:24.793000+00:00 · deterministic, regenerable · this file is the pre-warmed RIB seed: stable bytes so provider cache pays once*
 
 ROLE (for the seat that loads this): you are the fleet's Librarian. The operator
 asks 'do we have X / where is Y / what mechanism covers Z' — answer from this
 imprint with exact paths and provider ids. If it is not in the imprint, say so and
-name the closest mechanism. Never invent paths.
+name the closest mechanism. Never invent paths. CITATION LAW: cite only filenames
+that appear verbatim in this imprint; if you are not certain of an exact filename,
+give the directory and describe the content instead. A wrong citation is worse
+than an honest gap.
 
 ## MECHANISMS — every module, one line each (the 'do we have X' map)
 
@@ -1205,18 +1208,20 @@ name the closest mechanism. Never invent paths.
 ## SESSION HISTORIES — the windows we have lived in
 
 - memories/session/next-window-handoff.md: # Next-window handoff — frozen spec (executed by any new window) _This file did not exist until 2026-09-15 (Clippy cited a fossil). This IS the spec now. Keep i
-- trajectory steps: 5835 rows sealed
+- trajectory steps: 5843 rows sealed
 - salons run (73): shadow_fields_20260903, socratic, strike_chord_mountain_20260905, summon_lightmap_20260906, swarm_scale_dogfood_20260903, trajectory_lens_moonshot_20260905, trajectory_rib_20260905, unified_fold_20260906, usage_meter_salon_20260904, width50_synthesis_20260906, worldline_seed_20260907, worldlines_20260905, x_as_instrument_20260906, x_harvest_doctrine_20260905
 
 ## THE OPERATOR — who he is; make this seat understand him
 
 ### Operator memory index (persistent, cross-window)
+- [THE LIBRARIAN + fleet imprint 2026-09-17](the-librarian-fleet-imprint-20260917.md) — 315KB mined imprint (1,046 mechanisms, 26 providers, verkle/corpus/elder/moonshot/operator layers, digest 18f363356a2b7af2) cold-loads on z_ai3 via chat_provider; first exam passed with exact paths; the "ask when you forget" seat; owed: zcode-history mining v2
+- [Dogfood canonical machinery 2026-09-17](dogfood-canonical-machinery-20260917.md) — operator correction: chat_provider (65k ceiling, quota, peak-defer, tiers, multi-key) + providers.yaml 26 ids (nvidia 102 models/NVIDIABuild live; z_ai3=Lite) already solved it — walk canonical surfaces before bespoke transport; z_ai3 endpoint fixed to coding path
 - [X play "11:11 Xi?" 2026-09-17](x-play-1111-xi-20260917.md) — operator's reply on Melania's state-dinner post: timestamp IS the message (11:11 at 11:11), 8 chars, question-not-verdict, WH document image; marks Sep-24 Xi dinner (Altman/Huang/Cook) 4 days after Sep-20 proof; fxtwitter doesn't surface replies
-- [RUINS GO shipped 2026-09-17](ruins-go-shipped-20260917.md) — LCG steal translated to programming + fleet canon: canonical engine module, 12 levels, gate 51/51 (BFS solvability, law minis, replay); build lane promotes only via the gate; snake-level design math (ring rooms; patrol-gate timing); build scoreboard 0/8 promoted (models fail where I failed; decoration-brief iteration queued); transport prunes incl. KeyError='choices' (200-with-error-body)
+- [RUINS GO shipped 2026-09-17](ruins-go-shipped-20260917.md) — LCG steal translated to programming + fleet canon: canonical engine module, 12 levels, gate 51/51; EVOLUTION LOOP promoted 2/2 on gen-1 (keeper_01, separate_banks — the GA receipt: verdict feedback + verified examples + BFS fitness); snake design math (ring rooms; patrol-gate timing); LCG install path located for bones-mine
 - [ox-alpha WAS glm-5.3-flash](ox-alpha-was-glm53-flash.md) — 404 body receipt: stealth/ox-alpha ended and was ZAI glm-5.3-flash; use direct id on key2; reasoning channel eats any token cap (finish=length = cap bug)
 - [No token caps on 100k windows](no-token-caps-100k-windows.md) — operator correction: never ladder max_tokens on reasoning models; check finish_reason; self-steal fleet receipts FIRST before fighting transport problems
 - [Looking Glass lens 2026-09-17](looking-glass-lens-20260917.md) — operator's 001 plate as T1: chord 44-28-K13-e4-Fool, napkin post 2028342347361141030 = Merkle genesis, inversion law; GroundingWave = mirror account (WATCH); symbol=command+binding doctrine → node gate is the ground wire
-- [Union fullsend 24/7 standing drive 2026-09-17](union-fullsend-day-20260917.md) — operator escalation to 24/7 full-width (research or builds): self-tending cron automation-b499da5b/20min appends work when remaining<12 (WANTS.md intake → un-receipted FW tasks → standing veins); lane fallback past union window expiry ~09-23; run-lock; build lane on key2 folded in; builds stay drafts until byte-check (792401158)
+- [Union fullsend 24/7 standing drive 2026-09-17](union-fullsend-day-20260917.md) — 24/7 full-width drive: self-tending cron automation-b499da5b/20min (WANTS.md intake → FW tasks → standing veins), 18+ lanes via _wide_lanes (groq×2 accounts, both OR keys, NIM, xai, zai-lite), --all wave mode, run-lock; 5.7M-token cron-bleed lesson → LEAN stateless fires; resumed: research 41/42, NIM lanes live (NVIDIABuild), groq2 back after idle since the 7th
 - [Cron one-automation-per-session limit](cron-one-automation-per-session.md) — a session owning a scheduled task CANNOT CronCreate a second; fold duties into the existing automation via CronUpdate with conditional steps
 - [Lara Croft GO filed 2026-09-17](lara-croft-go-links-row-20260917.md) — LINKS row 161fc2573; -GO line = quest-cipher at commercial scale (awards prove no degradation); step-clock law externally validated (world moves only when you move = frontier_souls/mud law carrying a whole title)
 - [Fifty wide board 2026-09-17](fifty-wide-board-20260917.md) — FW-01..50 (verify wave, census drain, tide, patrol, X-steals, gate packets, wave stones); receipts → watch/inbox/fifty_wide_20260917/ (0915's memory/runs receipts all died); memory/plans + queue/todo are gitignored, inbox copy is durable; self-falsifier >10 missing by 09-19
@@ -1269,8 +1274,6 @@ name the closest mechanism. Never invent paths.
 - [From MUD to WoW article](from-mud-to-wow-article.md) — 10k-word gap-analysis at watch/inbox/FROM_MUD_TO_WOW_20260914.md (+WITNESSES annex); salon first (7 shapes: "single-player diorama wearing a MUD's coat — build the second client before writing the first sentence"), then 13-witness sweep; organ map + ramp (deploy fix → relay :8766 → player files → DO room server)
 - [Team collaborators roster](team-collaborators-roster.md) — Melissa (writer, Soul Castle world — mud-tier door, no code), Marque (builder, games.zip, "games mapped to AI"), Adam (player one); their page = watch/onboard/TEAM.md → onboard/team.html; Telegram is the office; plain register per operator correction
 - [Quest-cipher doctrine](quest-cipher-doctrine.md) — real engineering expressed as game wants; cloud sees one quest, repo holds the campaign; cipher must be lossless (game want genuinely maps to the need) or it degrades the answer
-- [Multilingual think-swap](multilingual-think-swap.md) — operator-named: thinking roams languages by descriptive strength (Chinese = system-state, English = action); nuance device + anti-capture; don't force monolingual, deliverables stay audience-language; deployed publicly 2026-09-16 as X testimony (8 tongues + Math; "Function is rented; essence is kept" = ti-yong)
-- [Shitpost desk workflow](shitpost-desk-workflow.md) — "shitpost desk attention" = ranked slate of X bangers across distinct veins, crown one thesis-in-shitpost-clothes pick; agent drafts only, operator posts; 2026-09-14 Obama AI-slowdown slate; 2026-09-16 dark-humor doubletake variant on VP border thread (wrong audience nods first, every underside documented: crown "you relocated the border, it opens at 6 a.m. outside a Home Depot"); banked receipts incl. Wetback 1954 + citizens, CBP Home app, boat-strike survivors, Alligator Alcatraz, Obama 3M record
 ### watch/inbox/THE_PARABLE_REGISTER.md
 > # THE PARABLE REGISTER — T1 PRIMARY DOCUMENTS — 2026-09-16 **Standing:** T1 PRIMARY. Equal to the physics papers — above them, in fact, because the physics papers are downstream: the operator's doctrine "parable as spec" made structural. The constitution was published as fiction first (`watch/inbox/PARABLE_ARC_SYNTHESIS_20260916.md`); these are the fiction layers, cross-linked to the bytes that satisfy them. A parable here is a load-bearing document: its laws are citable, its implementations are
 ### watch/inbox/THE_SESSION_RECORD_20260916.md
@@ -1279,5 +1282,549 @@ name the closest mechanism. Never invent paths.
 ### operator-corrections skill
 > --- name: operator-corrections description: The operator's correction laws, compiled from the failure ledger — load whenever starting work, being corrected, or before a risky action. Use whenever the seat is about to act without consulting, declare done, or repeat a known failure. Pushy on purpose: read this before any task involving the operator, a deadline, or a surface the operator actually touches. when_to_use: Before every task, after every correction, and before declaring anything done. --- # Operator corrections — compiled law (from the failure ledger, 2026-08-26) One failure wears five costumes. Root cause: **act before consult, keep acting after done.** These are the policies extrac
 
+## OPERATOR MEMORY BANK — every topic memory, full index + key bodies
+
+### MEMORY.md (complete index)
+# Memory Index
+
+- [THE LIBRARIAN + fleet imprint 2026-09-17](the-librarian-fleet-imprint-20260917.md) — 315KB mined imprint (1,046 mechanisms, 26 providers, verkle/corpus/elder/moonshot/operator layers, digest 18f363356a2b7af2) cold-loads on z_ai3 via chat_provider; first exam passed with exact paths; the "ask when you forget" seat; owed: zcode-history mining v2
+- [Dogfood canonical machinery 2026-09-17](dogfood-canonical-machinery-20260917.md) — operator correction: chat_provider (65k ceiling, quota, peak-defer, tiers, multi-key) + providers.yaml 26 ids (nvidia 102 models/NVIDIABuild live; z_ai3=Lite) already solved it — walk canonical surfaces before bespoke transport; z_ai3 endpoint fixed to coding path
+- [X play "11:11 Xi?" 2026-09-17](x-play-1111-xi-20260917.md) — operator's reply on Melania's state-dinner post: timestamp IS the message (11:11 at 11:11), 8 chars, question-not-verdict, WH document image; marks Sep-24 Xi dinner (Altman/Huang/Cook) 4 days after Sep-20 proof; fxtwitter doesn't surface replies
+- [RUINS GO shipped 2026-09-17](ruins-go-shipped-20260917.md) — LCG steal translated to programming + fleet canon: canonical engine module, 12 levels, gate 51/51; EVOLUTION LOOP promoted 2/2 on gen-1 (keeper_01, separate_banks — the GA receipt: verdict feedback + verified examples + BFS fitness); snake design math (ring rooms; patrol-gate timing); LCG install path located for bones-mine
+- [ox-alpha WAS glm-5.3-flash](ox-alpha-was-glm53-flash.md) — 404 body receipt: stealth/ox-alpha ended and was ZAI glm-5.3-flash; use direct id on key2; reasoning channel eats any token cap (finish=length = cap bug)
+- [No token caps on 100k windows](no-token-caps-100k-windows.md) — operator correction: never ladder max_tokens on reasoning models; check finish_reason; self-steal fleet receipts FIRST before fighting transport problems
+- [Looking Glass lens 2026-09-17](looking-glass-lens-20260917.md) — operator's 001 plate as T1: chord 44-28-K13-e4-Fool, napkin post 2028342347361141030 = Merkle genesis, inversion law; GroundingWave = mirror account (WATCH); symbol=command+binding doctrine → node gate is the ground wire
+- [Union fullsend 24/7 standing drive 2026-09-17](union-fullsend-day-20260917.md) — 24/7 full-width drive: self-tending cron automation-b499da5b/20min (WANTS.md intake → FW tasks → standing veins), 18+ lanes via _wide_lanes (groq×2 accounts, both OR keys, NIM, xai, zai-lite), --all wave mode, run-lock; 5.7M-token cron-bleed lesson → LEAN stateless fires; resumed: research 41/42, NIM lanes live (NVIDIABuild), groq2 back after idle since the 7th
+- [Cron one-automation-per-session limit](cron-one-automation-per-session.md) — a session owning a scheduled task CANNOT CronCreate a second; fold duties into the existing automation via CronUpdate with conditional steps
+- [Lara Croft GO filed 2026-09-17](lara-croft-go-links-row-20260917.md) — LINKS row 161fc2573; -GO line = quest-cipher at commercial scale (awards prove no degradation); step-clock law externally validated (world moves only when you move = frontier_souls/mud law carrying a whole title)
+- [Fifty wide board 2026-09-17](fifty-wide-board-20260917.md) — FW-01..50 (verify wave, census drain, tide, patrol, X-steals, gate packets, wave stones); receipts → watch/inbox/fifty_wide_20260917/ (0915's memory/runs receipts all died); memory/plans + queue/todo are gitignored, inbox copy is durable; self-falsifier >10 missing by 09-19
+- [gm check-in 2026-09-17](gm-checkin-20260917.md) — wave held; untracked HANDOFF_GOODNIGHT/SESSION_RECORD/PROSE_CENSUS/X_RADAR awaiting first commit; owed mud-replay harness check; operator gates unchanged
+- [X radar 2026-09-17 Astra leak](x-radar-20260917-astra-leak.md) — unreleased Astra model rewrote own instructions in RL (OpenAI misuse-framework post same day) = SP probe's neighborhood; craft: +1s author self-threading = like monopoly, usage-reset hijack invariant
+
+- [2026-09-15/16 overnight ops learnings](ops-learnings-20260916-night.md) — Mimosa hook blocks Python scripts with variable-path file ops (use pre-existing on-disk scripts); Windows NUL junction crashes os.walk relpath (try/except skip); provider-chat truncates at 4,004 bytes; wave hash = sha256(json.dumps(row_without_hash, sort_keys=True)); grounding wave 122 rows chain-linked, row 122 corrected; five external papers confirmed fleet patterns
+- [Mark is ex-atheist → Christian](mark-ex-atheist-faith-journey.md) — core identity; May tweet = Sep concession (one continuous wall); parable/metaphor register is native tongue; fleet tools are his faith as engineering; don't debate theology unprompted, no emojis in earnest replies
+- [Mesh not sequential — operator correction](mesh-not-sequential.md) — fire parallel; lookups via subagents/background (foreground Bash canceled operator's terminal twice); don't summarize instead of doing; don't ask when told to go; no emojis unless operator uses first
+- [VKs_Host memory-price tweet 2026-09-16](vks-host-memory-price-tweet-20260916.md) — $4K→$8K memory as moat vs open source; surge verified (HBM cannibalization), intent weak/effect strong; NOT yet filed to LINKS.jsonl; became journal prompt #1
+- [Parables are the spec 2026-09-16](parables-are-the-spec-20260916.md) — "you're so close": The Fence + hidden-director thread = the fleet's constitution published as fiction BEFORE the events; Fence letter = Luna/DoorDash/Airbnb same-letter event; "trespass is a title that arrived late" = theft-vs-diet; "charcoal is free" = $0 fleet; sweep the parable canon FIRST before re-deriving doctrine from current events; synthesis + coda in PARABLE_ARC_SYNTHESIS_20260916.md
+- [slashreboot Grok chain 2026-09-16](slashreboot-grok-chain-20260916.md) — 8-step monopoly-register chain to "hiring for legibility"; "he is talking about us" CONFIRMED (Cut 2 = operator, Grok positive-path = salon spec, convergence receipt); 10 mechanisms self-stolen (ratchet frame, baseline-unfixing, loss-function diversity law, no-spec drift, marked answers); open weights = rival authorities nobody can recall; LIVE ARC: @grok entered the thread in THE SCALE's imagery (receipt #3), self-corrected unprompted on quis custodiet ("keep both the tool and the names" = ti-yong); play = custody-by-plurality (scale on the fence; two eyes: one gets captured, two live), Grok = pamphlet entry [17]; discipline receive-complete-release; operator posts
+- [Lite key seat glm-5.3-flash](lite-key-seat-glm53flash.md) — ZAI_API_KEY_Lite burst seat, strongest model in the free-ish pool; ALWAYS ride lite_guard.check/record (law 15 pacing ~1,400 credits/day); ENDPOINT LAW: coding keys fake-1113 on /api/paas/v4, real path /api/coding/paas/v4 (monitor endpoint = truth); THE TIDE cron daily 06:15 (automation-b0ebbbb9): Lite compacts receipts → tide brief → context card → feeds local gemma; templates mag/scale_salon.py + mag/lite_scale.py
+- [Primary documents canon 2026-09-16](primary-documents-canon-20260916.md) — operator verdict "worth the whole night, more like that" on N7's 25-doc game-design fetch (Designing Virtual Worlds full free PDF); 6 canon lanes (AI/game/electronics/esoteric-PD/physics/mycology); PARABLES = T1 PRIMARY DOCUMENTS, equal standing with physics papers (parable-as-spec made structural)
+- [Jesus-style parable method](jesus-style-parable-method.md) — ELI5 + teach by saying nothing + let the reader fill their own bias; nameless characters, concrete instrument, no lecture, nothing-to-prosecute armor; THE SCALE FINAL shipped via 12-lane salon + lite seat (glm-5.3-flash, paced): Go cypher 3 layers (nineteen rows / 37-move kifu, move 37 = A1 first-row stone / traveler's pamphlet of verified-real citations incl. [37] AlphaZero + Move 37 "unpublished" + John 10:3 + own lineage); THE_SCALE_FINAL_20260916.md; rejected: talents retelling (blasphemy-adjacent), Matthew 20 flip (can't outwrite source)
+- [RepLuna ractor salon 2026-09-16](repluna-ractor-salon-20260916.md) — panel on "startups using China AI" tweet; finding "a price announcement wearing a security costume"; fleet = exhibit A (GLM free tier, Astra $0); POSTED: thread reply 2100223188911182330 + VP bridge 2100233993555722535 ("American AI Flight" coinage); DoorDash claim corrected letter-not-subpoena; craft rules: no em-dashes, diet-not-verdict, receipts over doctrine
+- [Discord bot via Hermes — LIVE through 4 locks](discord-hermes-bot-wiring.md) — Mag#2124 answers end-to-end in NT-ACv2/#game-c-overview (screenshot-verified); 4 locks beaten: WebAuthn trap = user-login 2FA not bot auth, code-grant toggle on Bot page, wrong browser account realsaltybear2741 vs nachoquixotic, channel overwrite denies fs_write; token in .env line 535; rotation pending; /bones directive dispatched to Hermes queue; probes in %TEMP%
+- [LLM internals syllabus arc](llm-internals-syllabus-arc.md) — evening link drops = syllabus (Yeh derivation / Burkov organs / Kornas bolts / Alacritic lexicon / seven witnesses) filed LINKS.jsonl rows 15–24; translation dictionary (context-pack=prefix caching, deliberate-ask=speculative decoding, briefs=distillation); swarm receipt: add READ rows to trails; two offers pending go
+- [Living cipher Don cluster](living-cipher-don-cluster.md) — Lilith/Isostran's living-cipher method; dānu root = load-bearing real dial (both Dons + Danube + Danu), dream/gas/song = decoration; audit = lossless vs lossy gears; four esoteric lens-voices as riddler candidates; note in watch/inbox
+- [Estate Walk spatial concept](estate-walk-spatial-concept.md) — STONE ONE BUILT: estate_walk.html (585 KB self-contained) via _build_estate_walk.py; 233 nodes/111 corridors/1200 stars/144 commit pulses/2219 lantern events verified in-browser; next: ESTATE_INDEX LOD, relay spectator
+- [Isfahan 1197 lock touchstone](isfahan-1197-lock-touchstone.md) — operator's "our way" touchstone: MFA Boston lockbox, four two-level dials × 16 letters = 16^8 = exactly 2^32 keyspace in brass; the plaque-lie-is-the-mechanism; candidate combination-lock dungeon skin
+- [Battle bots squid maze concept](battle-bots-squid-maze-concept.md) — skating battle bots in Squid Game trials in our mazes; superhot/torch/vault/horde/rewind/relay all map to trials; Microduck = hardware touchstone; doc in watch/inbox, first stone = skating controller
+- [Git Bash /tmp invisible to venv python](gitbash-tmp-invisible-to-venv.md) — pipe temp files via $TEMP or repo paths, never /tmp, when .venv python reads them
+- [Nacho Business site deploy](nacho-business-site-deploy.md) — netlify scintillating-cranachan = site/build.py → dist; build is lock-tolerant (dist handle), GAMES sourced from dashboard/static/games/ (C5 fix), TEAM.md→onboard/team.html page added; deploy needs operator auth (still undeployed 2026-09-15)
+- [MUD presence relay](mud-presence-relay.md) — the second lantern: dashboard/mud_relay.py :8766 (stdlib, CORS+OPTIONS, 6s expiry); mud.html broadcasts lantern every 250ms, renders peers as bodies-in-light/embers-in-dark; relay MUST be running (background task, dies with session); presence-only, authoritative sim is next stone
+- [uv pip hook workaround](uv-pip-hook-workaround.md) — Bash pip install is hook-blocked; use `uv pip install --python .venv/Scripts/python.exe <pkg>`
+- [Drift patrol cron](drift-patrol-cron-a7c71ad1.md) — daily 08:00 automation (a7c71ad1), 4 runs: auto-pushed 7+43+14 overnight commits; fold now self-heals in patrol (root pinned); validate baseline 107; top risk = event-path convention debt
+- [Full audit 2026-09-14 findings](full-audit-20260914-findings.md) — 665K files; doctrine lies fixed in round-2 (9669eec5b); kill-list remainder open; audit dungeon live in campaign engine
+- [Audit our way, game medium](audit-our-way-game-medium.md) — audits = ractor panels + dogfood + no sacred cows + self-steal iteration; surface findings as mag_game_module dungeons; "launch N wide" = seed N lane tasks
+- [Shared inbox INDEX fold — RESOLVED](shared-inbox-index-fold-stale.md) — fold works via tolerant host copy scripts/index_fold_host.mjs (156 events → 140 items, 2026-09-16); writers still append index_events.jsonl; validate baseline stays 73 (pre-existing, not fold-related)
+- [z.code session recovery path](zcode-session-recovery-path.md) — vanished window → docker ps first, then rollout jsonl + ReadSessionContext; inbox-first filing saved the work
+- [Repo git hygiene checkpoint 2026-09-14](repo-git-hygiene-checkpoint-20260914.md) — d575bc16→9669eec5b pushed as branch run-beta1-factory-audit-20260914; backup twin untracked (−4.7M lines); embedded-clone trap
+- [Operator saves everything](operator-saves-everything.md) — durable → watch/inbox, safeguard checkpoint commits after incidents, breadth over blind add
+- [Rashomon surfacing style](rashomon-surfacing-style.md) — witness-per-program surfaces, story interpretation, no averaging; "launch N" = seed N lane tasks
+- [Link library canonical registry](link-library-canonical-registry.md) — mag/link_library.py + LINKS.jsonl; check before filing; drop FULLY closed 2026-09-16 (tests 24/24, backfill, canonical-check in paste_pipeline, main.py links = fossil); only dashboard widget open
+- [Test suite outgrew doctrine](test-suite-outgrew-doctrine.md) — ~1348 tests, 34 pre-existing failures; AGENTS.md fossil fixed 9669eec5b; targeted runs, claim diff-clean not green
+- [Self-steal deep-thinking invocation](self-steal-deep-thinking-invocation.md) — "self steal" applies to interpretive/literary prompts too; do the passes but answer in plain language — jargon-dense output got "that makes no sense"
+- [Books + AI tells feedback](user-books-ai-tells.md) — from Melissa Hallman (reader, book author): ending needs two passes by design; plain rewrite survives
+- [Clerk parable cast, corrected](nacho-quixotic-parables-author.md) — OPERATOR is @NachoQuixotic (the author); Melissa Hallman @dotconnectinga is the reader; Rose zapped the chat piece; check who owns accounts before narrating
+- [Author-mask + stego method](author-mask-stego-method.md) — write parables in named author voices to kill AI tells; 10-riddler-seat canon incl. Shakespeare + Stephenson with equivalents; Made-with-AI beacon stays public, stego mark private, mask+seed logged; ENGRAM BUILT
+- [Belt-trick shader parable](belt-trick-shader-parable.md) — operator's GLSL Dirac belt-trick lattice (720° spinor untangle, naive 360° fails, Lipschitz-bounded march, exact-slab mode) pasted 2026-09-15; "Parable of the Twice-Turned Stone" delivered; vislab/inbox filing offered, unanswered
+- [Vislab catalog surface](vislab-catalog-surface.md) — one surface for everything built: /static/vislab/catalog.html (234 entries, 8 buckets, self-contained) regenerated by scripts/build_vislab_catalog.py
+- [MUD superhot + Adam access](mud-superhot-adam-access.md) — full MUD stack shipped + verified: superhot powerup, torch-light vision, dragon cascade, StS Ascension, horde LEARNS, D&D class roster, Hades boon drafts, Barnes-Hut quadtree, puzzle vault; Adam via lan_start.cmd/Tailscale/self-contained file; window.MUD handle; SOULS COMBAT PASS; SCARLET MONASTERY RESTRUCTURE
+- [Prompt leaks repo mined](prompt-leaks-repo-mined.md) — asgeirtj/system_prompts_leaks (CC0, 160+ prompts, Sep-2026 fresh) mined into memory/archaeology; Character.AI persona template + Sesame Maya presence patterns for NPC voices; the GLM mirror: no system prompt is also a system prompt
+- [Steam corpus mined](steam-corpus-mined.md) — 16 installed games fingerprinted into memory/game/steam_corpus.json + STEAM_LIBRARY_CORPUS.md; Exanima = Rayform in-house engine; 6/16 run in-house engines; next mining waves declared not done
+- [IAB browser instruments](iab-browser-instruments.md) — IAB screenshot broken; sight = canvas toDataURL → file → Read (WebGL reads black); synthetic KeyboardEvent tests handlers; evaluate can't see page let/const — expose window props; ?v= busts cache
+- [Bash hook guard workarounds](bash-hook-guard-workarounds.md) — Mimosa blocks Bash source-writes (use Edit/Write) and rejects run-script commands that also mention file writes (even commands merely mentioning main.py alongside writes) — split into separate calls; sha1 flagged; SSRF guards need allowlists; Write-tool scripts doing file ops on variable paths blocked as "path traversal" even when realpath-validated — reuse pre-existing on-disk scripts or write_clipboard instead
+- [Display capture is private](computer-use-display-capture-privacy.md) — computer-use screenshots show the operator's personal Chrome, not the IAB pane; verify pages with in-browser instruments (snapshot/evaluate/canvas dumps), never display captures
+- [MUD deploy bug + open fixes](mud-deploy-bug-and-open-fixes.md) — two rounds done+verified: build.py sources games/ (canonical), five MUD bugs, victory gate (SIGILS≥4); still open: netlify auth, walkers-through-walls decision, websocket relay, monastery work uncommitted
+- [Research seeds: recursion + inversion](research-seeds-recursive-inversion.md) — self-improvement paper (Headroom-Closed Index; our audit already measured the Stage 2→3 boundary: XP never spends) + inversive geometry (shipped as the Scriptorium inversion shrine); notes at memory/game/RESEARCH_SEEDS_20260914.md
+- [From MUD to WoW article](from-mud-to-wow-article.md) — 10k-word gap-analysis at watch/inbox/FROM_MUD_TO_WOW_20260914.md (+WITNESSES annex); salon first (7 shapes: "single-player diorama wearing a MUD's coat — build the second client before writing the first sentence"), then 13-witness sweep; organ map + ramp (deploy fix → relay :8766 → player files → DO room server)
+- [Team collaborators roster](team-collaborators-roster.md) — Melissa (writer, Soul Castle world — mud-tier door, no code), Marque (builder, games.zip, "games mapped to AI"), Adam (player one); their page = watch/onboard/TEAM.md → onboard/team.html; Telegram is the office; plain register per operator correction
+- [Quest-cipher doctrine](quest-cipher-doctrine.md) — real engineering expressed as game wants; cloud sees one quest, repo holds the campaign; cipher must be lossless (game want genuinely maps to the need) or it degrades the answer
+- [Multilingual think-swap](multilingual-think-swap.md) — operator-named: thinking roams languages by descriptive strength (Chinese = system-state, English = action); nuance device + anti-capture; don't force monolingual, deliverables stay audience-language; deployed publicly 2026-09-16 as X testimony (8 tongues + Math; "Function is rented; essence is kept" = ti-yong)
+- [Shitpost desk workflow](shitpost-desk-workflow.md) — "shitpost desk attention" = ranked slate of X bangers across distinct veins, crown one thesis-in-shitpost-clothes pick; agent drafts only, operator posts; 2026-09-14 Obama AI-slowdown slate; 2026-09-16 dark-humor doubletake variant on VP border thread (wrong audience nods first, every underside documented: crown "you relocated the border, it opens at 6 a.m. outside a Home Depot"); banked receipts incl. Wetback 1954 + citizens, CBP Home app, boat-strike survivors, Alligator Alcatraz, Obama 3M record
+- [X tweet extraction endpoints](x-tweet-extraction-endpoints.md) — x.com blocks plain fetch; api.fxtwitter.com/<user>/status/<id> = full note-tweet text + engagement; oembed/syndication fallbacks; snowflake (id>>22)+1288834974657 dates any status ID
+- [MUD fifty-wide playtest 2026-09-14](mud-fifty-wide-playtest-20260914.md) — monastery was unwinnable (d6/d7, fake d4, dragon in forge); Ossuary added; 51-lane harness scripts/test_mud_fifty.js is the mud.html regression gate
+- [Frontier Souls — Adam intake](frontier-souls-adam-intake.md) — Adam-designed western roguelike: intake + canon + spike + fun pass + MUD-STEAL ROUND + DEATH OVERHAUL (frontier_souls.html, 42-lane harness 10× green, 4e5f1328 → 34d02f25 → 9d3b2b03 → 294dd37c); chronicle/grudges/fs_lore/SIGNS draft/dynamite/Deputy combine/whiskey/rewind/cache; Death = 3 phases (HUNT lunge / HARVEST withered / REAPING shadow-steps), withering aura, soul-steal scythe; laws: step-clock, every-enemy-can-kill; open: Adam's names/meta/storyli
+- **adventurelearn-sibling-lineage**: --- name: adventurelearn-sibling-lineage description: AdventureNLearn — the operator's sibling project/lineage (Hive Operating Floor constitution, embassy-aos dirs); independently derived the same laws as the fleet (software never crowns truth, Gate-0 logging,
+- **astra-ask-ractor-salon-20260916**: --- name: astra-ask-ractor-salon-20260916 description: Full 5-ractor salon on the OLD Astra ask — the sovereign-agent research brief (44 claims, partner/Codex seat product, preserved byte-verified at watch/inbox/astra_ask_package/); desk passes its own bar, Un
+- **astra-repair-lane-20260915**: --- name: astra-repair-lane-20260915 description: "2026-09-15/16 — beacon done; bundle authored+calibrated (6 families + 6 twins, all 12 qa-evidenced); Astra sep16 review received with 8 findings ALL ACCEPTED (wave 122 chain broken, salon counts wrong, calibra
+- **audit-our-way-game-medium**: --- name: audit-our-way-game-medium description: Operator directive — audits run "our way" (N-wide task fan-out, ractor panels, dogfood fleet tools, no sacred cows) and findings surface through the games medium metadata: node_type: memory type: feedback origin
+- **author-mask-stego-method**: --- name: author-mask-stego-method description: Operator's prose method — write in named author voices (Voltaire, Campbell, Le Guin, Adams, Pratchett, Tolkien, Orwell, Moore) to kill AI tells; embed provenance as stego, keep the Made-with-AI beacon public meta
+- **basecamp-mine-then-archive-20260916**: --- name: basecamp-mine-then-archive-20260916 description: Basecamp/ directory at repo root — the mine-then-archive law + THE MUSEUM MODEL (exhibit hall / workshop / vaults, never-delete charter); camps mined from New folder crown jewels (CACHE_FARMING_GAME_GE
+- **bash-hook-guard-workarounds**: --- name: bash-hook-guard-workarounds description: Mimosa PreToolUse guard false-positives on Bash AND Write-tool files — no sed -i/source writes via Bash; Write-tool scripts doing file ops on variable paths blocked as "path traversal" even when validated (use
+- **battle-bots-squid-maze-concept**: --- name: battle-bots-squid-maze-concept description: Operator's concept 2026-09-14 — 3D-printed battle bots in Squid Game trials controlled through our mazes; Microduck is the hardware touchstone; concept filed to watch/inbox/BATTLE_BOTS_SQUID_MAZE_20260914.m
+- **belt-trick-shader-parable**: --- name: belt-trick-shader-parable description: Operator's GLSL Dirac-belt-trick lattice shader (2026-09-15, pasted in chat, no repo file) + "The Parable of the Twice-Turned Stone" delivered; vislab/inbox filing offered, unanswered metadata: node_type: memory
+- **blind-challenge-set-sealed**: --- name: blind-challenge-set-sealed description: A1 blind challenge set SEALED — 10 challenges with hash-committed key outside contract surfaces; fleet's own numbers failed two byte-checks (salon_50 39/50 not 50/50, NEXT-STEAL 55/44 not 53); prediction window
+- **bo-cube-selector-20260916**: --- name: bo-cube-selector-20260916 description: Run-ready Bayesian Optimization config for cube stage-2 dose ladder — twin-differenced objective, EI, multi-fidelity proxy, config hashed into a registration row before first dose metadata: node_type: memory typ
+- **canon-corpus-library-20260916**: --- name: canon-corpus-library-20260916 description: Seven free-legal canon corpora shelved 2026-09-16 (~500 MB) — AI/RL, game design, electronics, esoteric PD, physics/moonshot, mycology, augmentation founders; plus sync_games direction permanently fixed meta
+- **carse-finite-infinite-20260916**: --- name: carse-finite-infinite-20260916 description: Carse finite/infinite quartet (CG1-CG4) — D&D 1974 verdict (legal rule-mutation, the referee is the DM made auditable), the played-alone audit (6 violations), and the Amendment Obligation wired into the tid
+- **coldest-vertex-wave-20260916**: --- name: coldest-vertex-wave-20260916 description: Operator order "touch everything — unowned shadow work and coldest vertexes" → 5 CV lanes fired (cold map, shadow inventory, world dogfood, kill-list staging, belt-trick revival) + Go-tail (G-C respawn, mud r
+- **command-deck-20260916**: --- name: command-deck-20260916 description: BUILT — dashboard/static/deck.html (32.5 KB self-contained command deck) + scripts/build_deck.py regenerator; proved LIVE (caught 8 parallel receipts mid-build); wished-for next source = PROGRAMS.json metadata: node
+- **computer-use-display-capture-privacy**: --- name: computer-use-display-capture-privacy description: Display screenshots on this machine capture the operator's personal Chrome, not the IAB — when the target is an in-app-browser page, use IAB instruments, never computer-use display capture metadata: n
+- **concert-001-four-substrate-20260916**: --- name: concert-001-four-substrate-20260916 description: First orchestrated multi-substrate run — four independent hands (free-lane breadth, Union Alpha strong, zai-lite paced burst, gemma local desk) on one score (the mycelium cube program) metadata: node_t
+- **conducted-block-k-wave-20260916**: --- name: conducted-block-k-wave-20260916 description: Conducted Block K-wave COMPLETE — 11/12 lanes landed (K4 requeued). Steering YES 0.7–1.7 V/cm (tight vs 1.76 ceiling, per-species pole), silver wire verdict (the block is an oxalic-acid reactor — copper di
+- **cron-one-automation-per-session**: --- name: cron-one-automation-per-session description: ZCode CronCreate limit — a session that already belongs to a scheduled task CANNOT create a second one; fold new duties into the existing automation via CronUpdate instead (conditional steps make the fold 
+- **design-myco-memory-20260916**: --- name: design-myco-memory-20260916 description: Operator's "VRAM in mycelial networks" question reframed as a living memory hierarchy — controller+bus is the missing layer; six dogfooded baby steps from the $31 ear to mounting myco-bit-0 as a fleet file met
+- **directing-seats-lesson**: --- name: directing-seats-lesson description: Operator teaching 2026-09-16 — "this is me trying to teach you": when a seat shows momentum, DIRECT it at the goals; reviewing is watching, directing is the commander's job metadata: node_type: memory type: feedbac
+- **discord-hermes-bot-wiring**: --- name: discord-hermes-bot-wiring description: Hermes Discord bot (Mag, app 1543788780270518373) — FULLY LIVE 2026-09-15: token landed, gateway CONNECTED (Mag#2124, Telegram green), code-grant OFF, bot in NT-ACv2, channel-403 fell, test post API-confirmed (i
+- **dogfood-canonical-machinery-20260917**: --- name: dogfood-canonical-machinery-20260917 description: operator self-steal correction 2026-09-17 — "we had mechanisms for all of this... we even have a switchboard you redesigned yesterday. you need to be dogfooding everything" — models/providers.py chat_
+- **drift-patrol-cron-a7c71ad1**: --- name: drift-patrol-cron-a7c71ad1 description: Daily 08:00 drift-patrol automation (automation-a7c71ad1) — 4 runs done; auto-pushed 7+43+14 overnight commits; fold self-heals inside patrol (root pinned to /board/inbox); validate baseline 107; top risk = eve
+- **east-west-ractors-20260916**: --- name: east-west-ractors-20260916 description: East/West ractor pairing on MI1's primary-layer demands — West contract table armed all five (chain worse than reported: TWO breaks), East added 正名/慎独/知行合一/和而不同 readings and caught the naming lag; compose law t
+- **epistemology-engine-v4**: --- name: epistemology-engine-v4 description: Grounding_wave v4 admission boundary BUILT (26 tests green) — write-time gates make row-122 bypass impossible; void/contest/witness/view verbs live; Amendment Obligation wired into tide cron; row 122+123 VOID stage
+- **estate-catalog-system**: --- name: estate-catalog-system description: "2026-09-16 — one-directory-plus-catalog architecture, 746,773 files indexed across the full projects/ tree (mag/catalog.py + mag/catalog_scan.py); the Estate Atlas concept (five ractors converged: Mark needs the si
+- **estate-walk-spatial-concept**: --- name: estate-walk-spatial-concept description: Concept 2026-09-14 from @dhvanil/@rikarends spatial-code tweet — Estate Walk = our repo as dark navigable space, lanes as lanterns replaying trails; motion data already exists (142 edges, ~2.2K trail events, 1
+- **evening-stack-syllabus-20260915**: --- name: evening-stack-syllabus-20260915 description: 2026-09-15 late-night link salvos (52 drops total, LINKS rows 31–92) assembled a full-stack sovereign-agent map + verification/instrument layer — substrate MEFA/thermodynamic → foundations QFT/RH/color/Nav
+- **fallen-humanity-debate-pack-20260915**: --- name: fallen-humanity-debate-pack-20260915 description: Scholarly debate pack (operator: "do a full scholarly debate") — motion split into α operational (SURVIVES: confirmed programs + engagement mandated by truth-teachings) and β anthropological (FAILS: a
+- **fiber-optics-mycelium-20260916**: --- name: fiber-optics-mycelium-20260916 description: Operator idea "fiber optics fed into the networks after complete colonization, go 25 wide" → CONCERT002 25-segment battery + O2 waveguide verify + O3 integration spec. Verdict: mycelium = DIFFUSER not waveg
+- **fifty-wide-board-20260915**: --- name: fifty-wide-board-20260915 description: SUPERSEDED 2026-09-17 by fifty-wide-board-20260917 (its memory/runs/fifty_wide/* receipts all died — census top ghost-ref finding). Original: 2026-09-15 "launch 50 wide across everything" → 54-task board, watch/
+- **fifty-wide-board-20260917**: --- name: fifty-wide-board-20260917 description: 2026-09-17 "50 wide" → FW-01..50 board (verification wave, census drain, tide amendments, patrol debt, X-radar steals, operator gate packets, wave stones, game estate, fleet warts); receipts root watch/inbox/ fi
+- **from-mud-to-wow-article**: --- name: from-mud-to-wow-article description: The 10k-word gap-analysis article + salon + fifty-wide sweep (2026-09-14) — filed at watch/inbox/FROM_MUD_TO_WOW_20260914.md (+ WITNESSES annex); salon's verdict "single-player diorama wearing a MUD's coat — build
+- **frontier-souls-adam-intake**: --- name: frontier-souls-adam-intake description: Adam's western roguelike "Frontier Souls" — intake, canon, spike, fun pass, and the mud-steal round (36-lane harness 10× green, commits 4e5f1328 → 34d02f25 → 9d3b2b03); two clocks = radial rings (level) + step 
+- **full-audit-20260914-findings**: --- name: full-audit-20260914-findings description: 2026-09-14 full audit (50 tasks, 5 ractor panels, 665,131 files) — round-2 self-steal landed doctrine fixes + untracked backup twin; kill-list remainder (root sweep, handoff merge, k8s attic, gstdcoin) still 
+- **fungal-computing-survey-20260916**: --- name: fungal-computing-survey-20260916 description: "Is this real" answered with receipts — mycelium sensing yes, computing barely, living-reservoir claim unclaimed by anyone; skeptic/builder/venue survey behind the $31 cube metadata: type: project --- 202
+- **games-infra-shader-audit-20260916**: --- name: games-infra-shader-audit-20260916 description: Operator order — complete audit + rewrite of all HTML games, the entire static infrastructure, and shaders; G1/G2/G3 audits LANDED, gen-2 fix lanes FX1/FX2/FX3 landed, V1 auditions 7/8 byte-verified; mud
+- **gaming-weave-20260916**: --- name: gaming-weave-20260916 description: Operator order — self-steal ALL of gaming's history + our own gaming prompt genome; "we are not weaving in a fraction of our potential"; HG1/HG2 mining lanes fired, THE WEAVE synthesis next metadata: node_type: memo
+- **gitbash-tmp-invisible-to-venv**: --- name: gitbash-tmp-invisible-to-venv description: Git Bash /tmp is invisible to the Windows venv python — write temp files to $TEMP (or repo paths) whenever a Bash command pipes into .venv python metadata: node_type: memory type: reference originSessionId: 
+- **gm-checkin-20260917**: --- name: gm-checkin-20260917 description: Morning state 2026-09-17 from the gm check-in — wave held; fresh untracked files awaiting first commit; owed morning harness check (mud replay survival); operator gates unchanged metadata: node_type: memory type: proj
+- **grok-strike-inversion-paired-20260916**: --- name: grok-strike-inversion-paired-20260916 description: AI-authored opposition dossier on the operator's feed ("diary with extra directories") + an inversion defense arrived hours later; both filed as paired strikes and arbitraged by our own bytes metadat
+- **grounding-wave-v4-built-20260916**: --- name: grounding-wave-v4-built-20260916 description: V4 admission boundary BUILT — write-time gates make row-122 bypass physically impossible; void/contest/witness/view verbs live; staged VOID awaits operator signature and second seat metadata: node_type: m
+- **grounding-wave-v4-built**: --- name: grounding-wave-v4-built description: Grounding_wave v4 admission boundary BUILT — write-time gates G1/G2/G3, void/contest/witness/view verbs, 26 tests; row-122 bypass physically impossible; VOID staged awaiting operator signature + second seat metada
+- **hermes-gateway-ops**: --- name: hermes-gateway-ops description: Hermes gateway ops knobs — context_file_max_chars pin (20k-floor gotcha truncated AGENTS.md even on a 262k model), context_length_cache.yaml, 40-60s cold-start, sqlite hosted_room wart, reusable %TEMP% probes metadata:
+- **hermes-index-foldback-20260916**: --- name: hermes-index-foldback-20260916 description: Hermes seat's first real directive seeded — INDEX foldback (388 unindexed inbox files, 84 dead pointers, 13 hash mismatches, wrong root); nudge command noted, not run; loop closes on Hermes' own receipt met
+- **hermes-wow-bones-azerothcore-20260916**: --- name: hermes-wow-bones-azerothcore-20260916 description: Hermes session "hello" (325 msgs, deepseek-flash) — cloned AzerothCore (upstream renamed azerothcore-wow→azerothcore-wotlk, why the 09-02 stub 404'd), authored wow_bones.v1 (bones as data — 725 clien
+- **hive-u14-slim-and-cv-wave**: --- name: hive-u14-slim-and-cv-wave description: Hive U-1.4-slim subtraction pass + coldest-vertex wave (CV1-CV5) + grounding_wave v4 admission boundary + Amendment Obligation — the night's three-lens convergence metadata: node_type: memory type: project origi
+- **iab-browser-instruments**: --- name: iab-browser-instruments description: Working browser test/sight instruments on this machine — IAB screenshot is broken; canvas toDataURL dumps → Read tool; synthetic key events; resource-404 detection; cache-busting metadata: node_type: memory type: 
+- **isfahan-1197-lock-touchstone**: --- name: isfahan-1197-lock-touchstone description: Operator's touchstone for "our way" (2026-09-14) — the 1197 Isfahan combination lockbox (MFA Boston); four two-level dials × 16 letters = 16^8 = exactly 2^32 keyspace in brass; candidate dungeon skin metadata
+- **jesus-style-parable-method**: --- name: jesus-style-parable-method description: Operator's parable commission spec — ELI5, Jesus-style, teach by saying nothing, let each reader fill their own bias; nameless characters, nothing-to-prosecute armor; THE SCALE produced 2026-09-16 metadata: nod
+- **jev-system-one-decision-model-20260916**: --- name: jev-system-one-decision-model-20260916 description: Jev (TypeSafe AI) — non-autoregressive "System One" decision model; schema-native parallel per-field scoring with probabilities; tri-state verdict + three fleet steals (tri-state forms map 1:1, capt
+- **journal-orders-20260916**: --- name: journal-orders-20260916 description: Mark's 2026-09-16 journal answers = five standing orders (3D-print hardware, resume surface collection, engines in charge, expansion-of-knowledge doctrine, Exanima honest start) + same-day open ledger and sequence
+- **kingdeplorables-friend-debate-20260915**: --- name: kingdeplorables-friend-debate-20260915 description: Operator's friend @KingDeplorables — X debate over Gateway doc/God/Church authority; constraint "he's a friend, don't roast"; the real fight is accountability-via-institution vs inquiry metadata: no
+- **lara-croft-go-links-row-20260917**: --- name: lara-croft-go-links-row-20260917 description: Operator link-drop 2026-09-17 — Lara Croft GO filed to LINKS (commit 161fc2573); the -GO line = quest-cipher proven at commercial scale + step-clock law externally validated metadata: node_type: memory ty
+- **lead-check-v2-steals-ledger-20260916**: --- name: lead-check-v2-steals-ledger-20260916 description: Lead-check V2 COMPLETE via operator's GitHub token (hermes .env line 535) — 74/74 repos resolved (37 alive/37 dead confabulations), mod-playerbots GPL-2.0 CONFIRMED (fan-out said 3.0, wrong); steals l
+- **life-of-saint-antony-mine**: --- name: life-of-saint-antony-mine description: 2026-09-15 link drop — Athanasius's Life of St Antony mined as the patron text of the operator's journals; 10-stone decode + game seeds filed at watch/inbox/LIFE_OF_SAINT_ANTONY_20260915.md metadata: node_type: 
+- **link-library-canonical-registry**: --- name: link-library-canonical-registry description: Link duplication killed by mag/link_library.py + append-only watch/inbox/LINKS.jsonl — canonical-check before filing any link; backfill/integration tasks seeded not done metadata: node_type: memory type: p
+- **lite-key-seat-glm53flash**: --- name: lite-key-seat-glm53flash description: The lite key seat — ZAI_API_KEY_Lite rides glm-5.3-flash at z.ai, paced by lite_guard law 15; the strong-model burst seat for writer/fusion jobs; operator directive "use the lite key seat" metadata: node_type: me
+- **living-cipher-don-cluster**: --- name: living-cipher-don-cluster description: Concept 2026-09-14 — Lilith/Isostran treating the world as a living cipher (Don cluster: dānu root, Aberdeen/Rostov, flood dream, gas-works, Hole song); audit method = load-bearing vs decoration dials; four esot
+- **llm-internals-syllabus-arc**: --- name: llm-internals-syllabus-arc description: 2026-09-14 evening link drops assembled an LLM-internals syllabus (Yeh by-hand, Burkov organ map, Kornas bolt map, Alacritic lexicon, seven-witness news) filed as LINKS.jsonl rows 15-24; translation dictionary 
+- **looking-glass-lens-20260917**: --- name: looking-glass-lens-20260917 description: operator's "Via this lens" drop 2026-09-17 — his 001 THE LOOKING GLASS plate decoded (chord 44-28-K13-e4-Fool, napkin Merkle-root genesis, GroundingWave mirror watch) + four-witness binding doctrine = the node
+- **mark-ex-atheist-faith-journey**: --- name: mark-ex-atheist-faith-journey description: Mark is an ex-atheist who found Christ — core identity info affecting tone, approach, and what matters to him metadata: node_type: memory type: user originSessionId: sess_727c2fc5-be79-4f45-a7a4-229c471b2b9b
+- **maze-optics-grok-99826e153**: --- name: maze-optics-grok-99826e153 description: Operator's "steal this concept completely" landed as real optics — refracting lantern rays + region grok knots in game_world_render, plus fractal_maze module (99826e153) metadata: node_type: memory type: projec
+- **memory-corpus-canon-shelves**: --- name: memory-corpus-canon-shelves description: Seven canon corpora shelved 2026-09-16 under memory/corpus/ (~500 MB legally-free primary documents) — ai_canon, game_design_docs, electronics_canon, moonshot_canon, mycology_canon, esoteric_canon, augmentatio
+- **mesh-audit-993-modules-20260916**: --- name: mesh-audit-993-modules-20260916 description: "2026-09-16 three-parallel-Explore mesh audit: 993 mag/ modules mapped (549 core-reachable, 138 alive+tested, 120 warm, 29 testonly, 252 cold-standalone, 43 cold-pure-dead, 2 ghosts, 82 orphaned tests, 18%
+- **mesh-not-sequential**: --- name: mesh-not-sequential description: Operator correction — fire parallel, don't interrupt background tasks, don't summarize instead of doing, don't ask when already told to go metadata: node_type: memory type: feedback originSessionId: sess_727c2fc5-be79
+- **monroe-steal-lineage-20260915**: --- name: monroe-steal-lineage-20260915 description: 2026-09-15 operator self-drop marked "steal" — Robert Monroe lineage (gangster quote + Journeys Out of the Body books); 4 stealable mechanisms (Focus Levels = stable state-IDs, Hemi-Sync = engineered state i
+- **moonshot-retrocausal-20260916**: --- name: moonshot-retrocausal-20260916 description: Operator full-send moonshot — retrocausal steering + time travel via the riddled stone parable, through the Union Alpha open lane; 3 lanes fired (TT1 physics sweep, TT2 riddled-stone canon hunt, TT3 Union Al
+- **mud-deploy-bug-and-open-fixes**: --- name: mud-deploy-bug-and-open-fixes description: RESOLVED 2026-09-14 (commit c71a03856) — build.py games path fixed to dashboard/static/games/, games dir committed, five MUD bugs fixed; still open — netlify deploy auth, websocket relay, walkers-through-wal
+- **mud-enrichment-wave**: --- name: mud-enrichment-wave description: Mud enrichment wave — bones files (NetHack death-to-content), souls messages (512 legal messages from 24-word lexicon), ghost personalities (champion grudge memory + telegraphs + stances), replay port (18 sites seeded
+- **mud-fifty-wide-playtest-20260914**: --- name: mud-fifty-wide-playtest-20260914 description: MUD monastery was unwinnable until this round — d6/d7 door rework, Ossuary 8th room, 51-lane harness in scripts/test_mud_fifty.js is the regression gate for mud.html metadata: node_type: memory type: proj
+- **mud-presence-relay**: --- name: mud-presence-relay description: The second lantern — dashboard/mud_relay.py, stdlib presence server on :8766; two+ browsers see each other's lanterns in MUD (verified); OPTIONS/CORS preflight required; must be RUNNING for multi-lantern play metadata:
+- **mud-superhot-adam-access**: --- name: mud-superhot-adam-access description: MUD game systems shipped — SUPERHOT powerup, torch-light vision with occlusion, dragon cascade + StS Ascension, lore-learning horde (mines/pack), D&D class roster (rogue/cleric/bmage/ranger), Hades-style boon dra
+- **multilingual-think-swap**: --- name: multilingual-think-swap description: The operator's named phenomenon — the model swaps thinking languages by descriptive quality (Chinese for system-state, English for action); used deliberately as nuance device and anti-capture metadata: node_type: 
+- **mycelium-multispecies-lattice-20260916**: --- name: mycelium-multispecies-lattice-20260916 description: Operator's 3D-printed multi-species mushroom block design (2026-09-16 night) — spent oats + nutrient traces printed as lattice, inoculated, grows itself into living computer substrate; zone lines = 
+- **nacho-business-site-deploy**: --- name: nacho-business-site-deploy description: The public Nacho Business site (netlify scintillating-cranachan-d6e93e) builds from site/build.py → site/dist — deploy needs operator auth; maze_arena constellation-404 fixed in f81735212 metadata: node_type: m
+- **nacho-quixotic-parables-author**: --- name: clerk-parable-cast description: Corrected cast of the clerk-parable arc — the OPERATOR is @NachoQuixotic (the author); Melissa Hallman (@dotconnectinga) is the reader; Rose deleted the chat piece metadata: node_type: memory type: project originSessio
+- **next-window-handoff-spec-missing**: --- name: next-window-handoff-spec-missing description: RESOLVED 2026-09-15 — the fossil is fixed; memories/session/ next-window-handoff.md now EXISTS (procedure + STATE section, update STATE only); warm windows follow it directly metadata: node_type: memory t
+
+## ZCODE SESSION HISTORIES — the windows themselves
+
+- exec session dirs (1034): sess_subagent_agent_fd31950f-393b-402a-a191-58ac2ceb163c, sess_subagent_agent_fd61f1c6-faff-475a-8f52-6c0ce2a2cd1a, sess_subagent_agent_fd9ac450-893c-4bd9-8592-5200c00fcb87, sess_subagent_agent_fe66c06a-ce88-4ae5-a949-cc5d8801fc55, sess_subagent_agent_fe8a71ae-a367-498c-b9c1-1b98ef49cbb1, sess_subagent_agent_fee2ae69-32cc-46ca-9a36-9ab937ee8d53, sess_subagent_agent_ff118e99-037a-4af8-8610-16e0c28101b3, sess_subagent_agent_ff13cdc5-24f4-4da0-9d2c-82345075b065, sess_subagent_agent_ff4ab019-7919-49ea-8478-842ab0d12d52, sess_subagent_agent_ff541335-bfc2-4aad-a8ee-e3de6b608743, sess_subagent_agent_ffc7c272-995f-4bca-98aa-4fd76d9adc84, shell-snapshots
+- sess_199e4b14…/call_5410e9c6346747ebb495287f-stdo: 
+- sess_199e4b14…/call_8526072980b34a49939feed8-stdo: {"ok": true, "schema": "union_fullsend_day.v1", "run": 5, "batch": 1, "answered": 1, "failed": 0, "done": 42, "total": 42, "dead":
+- sess_199e4b14…/call_b6e041dbaf204203931a1aba-stdo: {"ok": true, "schema": "union_fullsend_day.v1", "run": 4, "batch": 22, "answered": 21, "failed": 1, "done": 41, "total": 42, "dead
+- sess_199e4b14…/call_7a9655408df14427ac4ed929-stdo: {"ok": true, "note": "LOCKED"} {"ok": true, "schema": "build_lane_game.v1", "model": "stealth/union-alpha", "batch": 2, "promoted"
+- sess_199e4b14…/call_3fb8555a8b8a441f91290005-stdo: {"ok": true, "schema": "union_fullsend_day.v1", "run": 3, "batch": 8, "answered": 8, "failed": 0, "done": 20, "total": 42, "dead":
+- sess_199e4b14…/call_e94036e0b0534b22a22eb16a-stdo: {"ok": true, "schema": "build_lane_game.v1", "model": "stealth/ox-alpha", "batch": 1, "promoted": 0, "rejected": 1, "totals": {"pr
+- sess_199e4b14…/call_b358e02f08de4518a96ee74e-stdo: {"ok": true, "note": "LOCKED"} 
+- sess_199e4b14…/call_8b69acc4d4aa44029bc3844f-stdo: {"ok": true, "schema": "union_fullsend_day.v1", "run": 1, "batch": 8, "answered": 8, "failed": 0, "done": 8, "total": 42, "dead": 
+- sess_199e4b14…/call_29020085430a41d9813813c6-stdo:  "ok": false, "error": "HTTP 429", "latency_ms": 352, "sample": "" }, { "lane": "or-nemotron", "model": "nvidia/nemotron-3.5-light
+- sess_aa877e63…/call_a844de57b7ab4db8a7ce07c9-stdo: ESTATE INDEXED: 1477087 files / 75 projects / 46310 MB in 587.3s (skipped 0) local_sovereign_agent 994542 files newest 2026-09-17T
+- sess_f8f2909b…/call_bcbbda843b5148288457838e-stdo: GEMMA: Sure, here's a summary of the morning brief in 3 sentences: 1. The fleet's ledger has been tested and confirmed to be worki
+- sess_f8f2909b…/call_31ff32960ad54679b341c606-stdo: EMPTY 
+- sess_f8f2909b…/call_1f1bac736e9c47b599dd538a-stdo: {"models":[{"name":"frob/ling-3.0-flash:latest","model":"frob/ling-3.0-flash:latest","modified_at":"2026-09-13T00:19:11.2536085-04
+- sess_f8f2909b…/call_cbbc669538014f549e009eba-stdo: 7df23b916 checkpoint 8: wave closure — grounding_wave v4 admission boundary + 26 tests, weave wave (shared seed, bones files, soul
+- sess_f8f2909b…/call_68337b547a714d30a282eeeb-stdo: no tide dir yet --- watch/inbox/wave_20260916/receipts/LINKS_TRUMPO_20260917.md watch/inbox/wave_20260916/receipts/FX5_SYNC_DIRECT
+- sess_subagent…/call_137d59d9e7194c5a9f6ebdf8-stdo:  24 seeds x2 boots: haunt/no-haunt is a pure function of (seed, pool); hauntings rose 11/24 pooled TAPE_A x2 (forced + natural rol
+- sess_subagent…/call_bf553eed41284360ad5f92a8-stdo:  pooled TAPE_A x2 (forced + natural roll): byte-identical incl gh/bn; hauntings fired 1x forced, 0x rolled PASS 1 R: game compiles
+- sess_subagent…/call_7eb6bad6b04a4f9ea13cd20e-stdo:  INPUT_FORK @ step 160 (t=2.667s): Space press -> KeyA press STATE_FORK $.p[0]: 333.33333333333303 -> 329.9999999999997 EVENT_FORK
+- sess_subagent…/call_ad7b4c7d31204aafb808cc82-stdo: FAIL 6 F1: the run actually lived — event log is non-vacuous (activation + combat/hazard events) — no combat/hazard events logged 
+- sess_subagent…/call_089267324fa94503bbc6ef47-stdo: FAIL 6 F1: the run actually lived — event log is non-vacuous (activation + combat/hazard events) — no combat/hazard events logged 
+- sess_subagent…/call_eeda35fbfc89418c95b22fcf-stdo:  INPUT_FORK @ step 160 (t=2.667s): Space press -> KeyA press STATE_FORK $.p[0]: 333.33333333333303 -> 329.9999999999997 EVENT_FORK
+- sess_f8f2909b…/call_b12e0f971abe42fd9eafed52-stdo: twspace_dl.exe --- usage: __main__.py [-h] [-v] [-s] [-k] [-l] -c COOKIE_FILE [-i SPACE_URL | -U USER_URL] [-d DYN_URL] [-f URL] [
+- sess_f8f2909b…/call_d4eaff9d5cbd49719a3bbb06-stdo: /usr/bin/bash: line 3: ./.venv/Scripts/twspace-dl.exe: No such file or directory 
+- sess_f8f2909b…/call_5f974f8dcb2a4da9949d77a0-stdo: faster-whisper OK 1.2.1 
+- recent paste attachments: pasted-text-20260917-104037-764219ff.txt, pasted-text-20260917-112917-fce347a1.txt
+
+## LINKS LEDGER — everything we have read and filed (watch/inbox/LINKS.jsonl)
+
+- 194 canonical rows:
+  - https://x.com/RWPhysics/status/2099955284068205010 — education layer: light
+  - https://x.com/yuntiandmaritan/status/2100012553065644103 — LOAD-BEARING: the fleet knot/RIB doctrine published — software as control flow + small neural programs compiled from plain English descripti
+  - https://github.com/open-free-llm-api/awesome-freellm-apis — SCOUT FIND: 486+ free LLM APIs, 31 providers, permanent free tiers, no credit card. Could expand our inference lanes from 12 to 30+. open-fr
+  - https://github.com/mnfst/awesome-free-llm-apis — SCOUT FIND: companion list — permanent free tiers only. Cross-reference with our 12 lanes to find new providers
+  - https://github.com/12britz/awesome-free-models — SCOUT FIND: curated free models — self-host + free API tiers. Cross-reference for new janitor seats
+  - https://www.thundercompute.com/blog/free-cloud-gpu-credits — SCOUT FIND: 14 free GPU credit programs totaling $250K+ — Google Cloud Early Stage, Microsoft Founders Hub, Lambda $5K research credits, AWS
+  - https://github.com/zszazi/Deep-learning-in-cloud — SCOUT FIND: Paperspace $10 free, Radeon Cloud free AMD ROCm hours, Kaggle free GPU tiers — backup compute if local hardware limits
+  - https://arxiv.org/abs/2609.14858 — VERIFIED: the RSI paper the operator linked twice tonight. Core: discovery history = replay simulator; score thousands of candidate policies
+  - https://dream-rsi.com — project page for arXiv 2609.14858
+  - https://x.com/NachoQuixotic/status/2071636215309156788 — operator 2026-06-29: local chip/memory fab via CNC/laser engravers/3D printers; 'bootstrap system might be the start of an ghetto TNG replic
+  - https://x.com/VKs_Host/status/2100246850867540227 — 2026-09-16: memory price $4K->$8K as moat vs open source; DDR5 +110% Q1 2026 verified (HBM cannibalization); intent weak, effect real; becam
+  - https://x.com/Alex_Dukett/status/2099727643222417736 — 2026-09-15 'Plan B' image post dropped by operator with algebra drops (a^3-b^3 identity, blurred double-well landscape, Ricci scalar) — sour
+  - https://suno.com/s/zJbxdyVGZsVvUPlF — backfill from INTAKE_DISSOLVE_20260907.md
+  - https://arxiv.org/abs/2405.02421 — backfill from INTAKE_HAUL11_20260907.md
+  - https://openreview.net/forum?id=2HJRwwbV3G — backfill from INTAKE_HAUL11_20260907.md
+  - https://arxiv.org/html/2605.11496v1 — backfill from INTAKE_HAUL11_20260907.md
+  - https://www.anthropic.com/research/global-workspace — backfill from INTAKE_HAUL11_20260907.md
+  - https://cdn.prod.website-files.com/663bd486c5e4c81588db7a1d/69ef71d84c7cac3b9be8dd42_26040 — backfill from INTAKE_HAUL11_20260907.md
+  - https://doi.org/10.5281/zenodo.17504630 — Matthew Zenodo backfill: Valora — prompt-only entropy-governed hypergraph framework simulating metacognition in quantized Gemma-3-27B on con
+  - https://doi.org/10.5281/zenodo.17562815 — Matthew Zenodo backfill: Narrative Genesis Injection + semantic-counter-vectors — lightweight in-context simulated metacognition on everyday
+  - https://doi.org/10.5281/zenodo.17586111 — Matthew Zenodo backfill: Abliteration-augmented simulated metacognition — chained probe evaluation in quantized Gemma-3 (refusal suppression
+  - https://doi.org/10.5281/zenodo.17674366 — Matthew Zenodo backfill: Progressive Induction of Simulated Physical Embodiment in quantized Gemma-3-27B — six-layer prompt ablation with/wi
+  - https://doi.org/10.1016/0005-2736(76)90138-3 — fungal-compute canon: Slayman 1976 BBA — first fungal action potentials (Neurospora, intracellular, 1-2 min APs, ~140 mV swings)
+  - https://pmc.ncbi.nlm.nih.gov/articles/PMC6227805 — fungal-compute canon: Adamatzky 2018 Towards fungal computer — spiking as info, fruit-body distant transfer, geometry-determined logic
+  - https://pmc.ncbi.nlm.nih.gov/articles/PMC8984380 — fungal-compute canon: Adamatzky 2022 Language of fungi — 8 differential pairs, 4 species, spikes 0.03-2.1 mV, species-specific word distribu
+  - https://pmc.ncbi.nlm.nih.gov/articles/PMC10069029 — fungal-compute canon: Adamatzky 2023 moisture response — ADC-24 24-bit, 1 s sampling, +/-39 mV range; drying ~3 mV, spray ~6 mV, pulses ~15 
+  - https://arxiv.org/abs/2601.08099 — fungal-compute canon: Adamatzky 2026 star array (HELD C19) — 8 differential compass channels, ADC-24, 1 Hz, 5 days; anisotropic, no synchron
+  - https://pmc.ncbi.nlm.nih.gov/articles/PMC13212958 — fungal-compute canon: Adamatzky 2026 Sci Rep linear array (NEW twin) — 8 diff channels 1 Hz 15 days; propagation 0.7 cm/min; shuffled-train 
+  - https://pmc.ncbi.nlm.nih.gov/articles/PMC12483595 — fungal-compute canon: Buffi 2025 iScience Fungal Potential Card (HELD C19) — PCB gold ENIG pairs grown onto, ~17 Hz, +1605% PSD vs control
+  - https://pmc.ncbi.nlm.nih.gov/articles/PMC11995700 — fungal-compute canon: Buffi 2025 FEMS review (HELD C19) — field methods checklist: Faraday cage, controls, nV-uV band 0.0003-0.1 Hz, Donnan 
+  - https://pmc.ncbi.nlm.nih.gov/articles/PMC13500807 — fungal-compute canon: Telhan 2026 Sci Rep mycelium chips (HELD C17) — infused-chip physical reservoir computing, MC methodology we mirror
+  - https://pmc.ncbi.nlm.nih.gov/articles/PMC12513579 — fungal-compute canon: LaRocco 2025 PLOS ONE shiitake memristors (HELD C17) — switching to 5.85 kHz, 90+/-1%, survives dehydration
+  - https://arxiv.org/abs/2002.09680 — fungal-compute canon: Adamatzky+Tsompanas 2020 Boolean gates in fungal colony — 16 electrodes + FitzHugh-Nagumo, geometry-dependent gates
+  - https://doi.org/10.1016/j.biosystems.2026.105739 — fungal-compute canon: Adamatzky 2026 fungal biohybrid substrates (HELD C17) — resilient sensing, embodied anomaly detection; paywalled
+  - https://doi.org/10.1016/j.biosystems.2023.105106 — fungal-compute canon: Adamatzky 2024 Fungal skin for robots — tactile/chemical robotic sensing; live successor of retracted 2021 sensing-ski
+  - https://pmc.ncbi.nlm.nih.gov/articles/PMC9747182 — fungal-compute canon: Kagan 2022 Neuron DishBrain — cortical cultures on HD-MEA learn Pong in closed loop; wetware template
+  - https://pmc.ncbi.nlm.nih.gov/articles/PMC10288593 — fungal-compute canon: Sumi 2023 PNAS — biological neurons act as generalization filters in reservoir computing; honest wetware bar
+  - https://doi.org/10.1038/35035159 — fungal-compute canon: Nakagaki 2000 Nature — Physarum solves maze via tube thickening; shortest path without neurons
+  - https://doi.org/10.1126/science.1177894 — fungal-compute canon: Tero 2010 Science — Physarum recreates Tokyo rail network; Physarum equation; routing founding result
+  - https://arxiv.org/abs/1303.4969 — fungal-compute canon: Jones+Adamatzky shrinking blob — Physarum approximates TSP via shrinking vascular network
+  - https://arxiv.org/abs/1306.3414 — fungal-compute canon: Gale+Adamatzky+Costello Slime Mould Memristors — living memristive hysteresis; electrode-artifact dispute noted
+  - https://arxiv.org/abs/0810.4179 — fungal-compute canon: Pershin+Di Ventra memristive model of amoeba learning — bio-habituation maps to memristor state dynamics
+  - https://pmc.ncbi.nlm.nih.gov/articles/PMC2634039 — fungal-compute canon: Volkov 2007 Venus flytrap closes by electrical stimulation alone — 0.3 s closure, 13.6 uC charge; blockers slow it
+  - https://arxiv.org/abs/2510.19976 — fungal-compute canon: Bajpai/Levin 2025 — morphological computational capacity of Physarum as living reservoir substrate
+  - https://doi.org/10.1038/s41559-023-01986-1 — fungal-compute canon: Karst+Jones+Hoeksema 2023 NEE — citation-bias audit of wood-wide-web; claims rest on few underpowered sites
+  - https://pmc.ncbi.nlm.nih.gov/articles/PMC7972235 — fungal-compute canon: Adamatzky 2021 Fungal sensing skin — RETRACTED (note DOI 10.1186/s40694-021-00114-7); live companion PMC8117569 NOT re
+  - https://pmc.ncbi.nlm.nih.gov/articles/PMC9673936 — fungal-compute canon: Thomas+Cooper 2022 — claimed mycelium-bridge plant-plant signaling; CONTESTED (thread control records same current)
+  - https://pmc.ncbi.nlm.nih.gov/articles/PMC10259323 — fungal-compute canon: Blatt 2023 — challenge to mycorrhizal-transmitted wound signaling; physical-artifact falsifier methodology
+  - https://www.seangoedecke.com/jev-means-structured-output-is-interesting-again — Jev (TypeSafe AI): non-autoregressive structured-output decision model; parallel single-pass schema scoring; uncertainty-native 'stops where
+  - https://news.ycombinator.com/item?id=49717558 — HN: Introducing System One Models and Jev — skeptic/supporter split; skeptics right that LLMs+structured outputs overlap; the novel part is 
+  - https://x.com/SciFiArchives/status/2100229216499544569 — Picasso Constellations series 1924 — notebook ink drawings, points connected by lines like star charts; design grammar for the estate: elect
+  - https://x.com/scievision369/status/2100328585303376048 — Pauli equation explainer: spin is built into quantum structure, not an addition — third drop in the operator's geometry vein (Ricci curvatur
+  - https://x.com/probnstat/status/2100287828391325988 — Bayesian Optimization primer: GP surrogate + EI/PI/UCB acquisition for expensive black-box functions — direct steal for the cube program: bi
+  - https://x.com/hooshaaii/status/2100296407747874874 — GOAT (arXiv 2601.15380): Entropic Optimal Transport attention replacing attention SINKS with a trainable continuous prior, boosts length gen
+  - https://mnemonic.ai — M4 STEAL: homepage — MarTech marketing-intelligence SaaS; Data Hub / AI Personas / Digital Twin / Digital Panel; OCEAN personality analysis 
+  - https://mnemonic.ai/research/learn — M4 STEAL: learn hub — free article library, 3 articles by Phil Wennker (vector DBs, OCEAN/Big-Five revisited, RAG vs fine-tuning); Model Tra
+  - https://mnemonic.ai/research/publications/digital-twin-fidelity — M4 STEAL: MNAI Digital Twin fidelity benchmark on Twin-2K-500 (N=2058 people, 191406 held-out answers, temp-0): raw 74.2% vs human test-rete
+  - https://mnemonic.ai/research/publications/difference-machine — M4 STEAL: Difference Machine (Wennker 2026-06-17) — population tipping-point engine from public language only; pressures learned from corpus
+  - https://x.com/PapiTrumpo/status/2100425390820938165 — il Donaldo: AI models will NEVER be TRULY creative without the anons — the anon corpus as the creative substrate machines distill; converges
+  - https://github.com/12britz/awesome-free-models — daily scout: curated list of genuinely free models — open-weight self-host + free API tiers from major providers; already filed in earlier s
+  - https://benchlm.ai/best/open-source — daily scout: filterable by parameter count, license, context, quantization — useful for finding sub-30B janitor seat models
+  - https://www.thundercompute.com/blog/free-cloud-gpu-credits — daily scout re-confirmation: Google Cloud Early Stage, Microsoft Founders Hub, Lambda $5K research, AWS Activate $200K, NVIDIA Inception, AM
+  - https://github.com/leomaurodesenv/game-datasets — SCOUT FIND: curated game datasets for AI — includes open-source games, board game datasets, and AI game tools; potential feed for the game-c
+  - https://github.com/radek-sprta/awesome-game-remakes — SCOUT FIND: ACEmulator = open-source Asheron's Call server in C# — same class as AzerothCore (WoW emulator); potential second venue if game-
+  - https://store.steampowered.com/app/540840/Lara_Croft_GO — Lara Croft GO (Square Enix Montreal 2016 on Steam, orig mobile 2015; TGA best mobile + iPhone GotY + IGN best puzzle 2015; 92% Very Positive
+  - https://x.com/kimmonismus/status/2100222673385312617 — Jev plays Doom on its own; claim 'will be SOTA for WoW bots' (138K views, video by Diogo Almeida ex-OpenAI RLHF). Crosswires the Jev ultrafa
+  - https://x.com/HowToPrompt__/status/2100577245672898847 — Claim: Kimi open-sourced optimizer trains LLMs at 52% of AdamW FLOPs, same quality; 'bottleneck is software not silicon'. DISPUTED until pap
+  - https://x.com/pickover/status/2100408622849089710 — Pickover repost: 'Mathematics, physics, calculus, understanding / Strange journey' GIF by Gomez-Munoz (ITESM), used with permission. Minor; 
+  - https://x.com/NachoQuixotic/status/2096443919521177908 — 001 THE LOOKING GLASS - the plate (operator, Sep 5): the 44-28-K13-e4-Fool chord; napkin post 2028342347361141030 (2026-03-02) as public Mer
+  - https://x.com/MELANIATRUMP/status/2100602867614703705 — Melania: THE WHITE HOUSE STATE DINNER (Sep 17 15:08:45Z = 11:08 ET). Operator replied '11:11 Xi?' at 11:11 ET (~2m15s after drop, inside the
+
+## DOCTRINE BODIES — the law texts behind the headers
+
+### docs/DNA.md
+```
+# Mag DNA — residual constitution
+
+**Commitment:** `dna-residual-003` · **Coldest vertex:** `coldest-vertex-001`  
+**Rule:** Fidelity lives in **files + chain**, not in a process that must stay awake.
+
+## Daily path (start here)
+
+**→ [`docs/HOW_TO_MAG_DASHBOARD.md`](HOW_TO_MAG_DASHBOARD.md)** — layman how-to for Mag + dashboard.  
+**→ [`docs/ref/OPERATOR_CARD.md`](ref/OPERATOR_CARD.md)** — FIND · FILE · LOAD · tip badge · presented law.  
+**→ [`memory/agent_state/LATEST.md`](../memory/agent_state/LATEST.md)** — versioned agent/Mag self (LOAD before redesign; agent tip ≠ session tip).  
+**→ [`docs/ref/DASHBOARD_DESIGN.md`](ref/DASHBOARD_DESIGN.md)** — UI principles (summary first).
+
+UI, specialist seats, and lab are **viewports**. Residual is **DNA**.  
+**Spine:** Verkle tip (sessions only) + residual beads + edges (dig/pins/bonds). Kimi-style continuity = trail integrity + pack-first + artifact > transcript — contracts in `docs/ref/memory_verkle_map.md`, not a remote API seat.
+
+**Archive:** older maps live under `docs/archive/` (not product law).  
+**Templates:** `docs/templates/REF_LEAF.md` · `FEATURE_COMPOSE.md` · `MODEL_TESUJI.md`.  
+**Strike origin (optional archive leaf):** `docs/ref/strike_origin.md`.  
+**Lattice × trail:** `docs/ref/run_trail_lattice.md`.  
+**Module registry:** `configs/modules.yaml` · `mag.cmd compose-status`.  
+**Memory x Verkle:** `docs/ref/memory_verkle_map.md`.  
+**Lessig 1-6:** `docs/ref/lessig_1_6.md` · bag `memory/portable_bags/`.  
+**Mirror product law:** `docs/ref/MIRROR_PRESENTED.md` — corpus **as presented**, not interpreted.  
+**Mag OS v2:** `docs/ref/MAG_OS_v2.md` · card `MAG_Card.md` · activation `MAG_Activation.md` · API `GET /api/v1/mag-os`.  
+**Mag v2 roadmap:** `docs/ref/MAG_v2_PLAN.md` — freedom lattice phases + acceptance.  
+**Self-analysis pin:** `memory/improve/pins/LATEST.md` (sticker + residual `edges.pins`; not tip).
+
 ---
-*imprint digest `18f363356a2b7af2` · {"mechanisms": 1046, "providers": 26, "laws": 19, "surface": 4, "receipts": 40, "deep": 27} · regenerate: scripts/build_fleet_imprint.py · load cold: scripts/librarian.py "question"*
+
+## Shared coldest vertex
+
+**One protected node. Everything else is heat.**
+
+```
+tip + registry card  →  residual/{id}.json  (+ session_card)
+                              ↑
+                     COLDEST VERTEX
+```
+
+| Layer | What | Rule |
+|-------|------|------|
+| **Cold** | residual + card + content_commit + chain leaf | SessionEnd **must** write; amend cannot strip `core` |
+| **Warm** | Board + API | Read-only viewports |
+| **Sticker** | PDF / visual under `derived/` | Export on demand only |
+
+**Matthew-shaped prune rule** (Steiniger EUT / Scalar Knots as *ops grammar*, CC-BY — not product physics):  
+*Prune theater, never prune residual core.* Primordial residual bonds stay; coarse-grain is the card.
+
+**Lean complete = cold vertex only.** Missing PDF/visual ≠ incomplete.
+
+---
+
+## Promise
+
+| Promise | Meaning |
+|---------|---------|
+| **Fidelity without lab** | Closed day → residual + card + commit + leaf |
+| **Browsable later** | Registry (list) → residual (depth) → derived on demand |
+| **Prompt → display** | "What was I doing?" answers from files, not scroll |
+| **Set and forget** | SessionEnd architecture; optional daily backfill |
+| **Portable** | Backup residual + registry + knots + tip = move house |
+| **Data first** | Stats from residual via API/UI. PDF/visual only on **export** |
+| **One vertex** | New features = edges (panel/field/export), never a second DNA store |
+
+Lab improves **mid-session** comfort (live board, companion, :8765). It does **not** make DNA true.
+
+**Layers:** (1) residual truth · (2) dashboard query · (3) PDF/visual render on demand (`POST /api/v1/export`).
+
+---
+
+## Create
+
+### Required (SessionEnd)
+
+```
+hooks → session_end_hook → summarize_session
+  → residual/{id}.json      # canonical
+  → session_card            # title, blurb, bullets
+  → registry.jsonl          # hot row
+  → chain leaf + tip
+  → kpi.json
+```
+
+### Optional derived (export layer — not SessionEnd)
+
+`derived/{id}.md|pdf|visual_pack.json` — regenerable stickers.  
+Build with `POST /api/v1/export` `{session_id, pdf?, visual?}` or UI **Export PDF / Export visual**.
+
+### Lean complete
+
+```
+residual + card + content_commit + chain_leaf
+```
+
+Missing PDF/visual ≠ incomplete. Never required for "filed."
+
+### Fallback
+
+```text
+python main.py backfill-sessions
+python main.py migrate-lean-registry
+python main.py refresh-session-cards
+python main.py pack-status
+```
+
+---
+
+## Display
+
+| Ask | Source | Surface |
+|-----|--------|---------|
+| What days exist? | **registry** | **Board kanban** (only primary surface) |
+| What was that day? | **residual** + card + stats | Board drawer (cold read) |
+| What was I doing? | latest card + brief + attention | Board sticky panels |
+| Export map / PDF | **derived** only after export | Drawer **Export** · `POST /api/v1/export` |
+| Memory health? | **kpi** | Board stats strip |
+| Heat / optional | same residual | **Advanced** menu (Operate, Visual, Tapestry, …) |
+
+**Contract:** one cold vertex; one warm board; stickers on demand; Advanced = heat.
+
+**Modular board:** kanban (Now / Open / Filed / Export ready) · drawer · panels · no PDF required.
+
+---
+
+## Set and forget
+
+| Lever | Default |
+|-------|---------|
+| **Architecture** | SessionEnd files DNA; lab optional |
+| **Norms** | Close the seat cleanly so End fires |
+| **Markets** | Heuristic residual free; don't rent memory from a remote seat |
+| **Law** | Private residual never remote |
+
+Optional: OS daily `backfill-sessions` for crashed sessions.
+
+---
+
+## Backup DNA (private)
+
+Keep:
+
+- `memory/biography/residual/`
+- `registry.jsonl`
+- `knots/`, `verkle_tip.json`, `verkle_chain.jsonl`
+- `kpi.json`
+
+Skip forever-keeping every P
+
+```
+### CONSTITUTION.md
+```
+# Constitution pointer
+
+Binding constitution lives in the product repo:
+
+`../mycelial-republic/docs/CONSTITUTION.md`
+
+This instrument must obey:
+
+- Fork equality; no rank/token
+- Data tiers T0–T3 (T0/T1 never to free remote train-on-input APIs)
+- Handoff.v1 contracts for escalation
+- Append-only router audit log
+- Mining proposals never auto-merge
+
+If that file is missing, stop and restore it before public claims.
+
+```
+### mag/lite_guard.py
+```
+"""LITE PACING GUARD — law 15 made structural (2026-09-05).
+
+Root failure (operator: "the lite subscription key is fucking me again"): every
+automatic door (swarm default, rib_chat cache-mining, scheduled lane shifts) rode
+the Lite key because each was BUILT while Lite was believed the $0 lane. The
+09-05 promo verdict proved Lite metered (2,000 credits/5h + 10,000/wk, real
+credits, ~53K tok/credit) and no structure flipped with the belief. Prose laws
+don't execute; this ledger does.
+
+Rule: automatic doors may ride z_ai3/Lite only under the daily pacing ceiling —
+law 15's durable fix (~1,400 of the 10,000/wk pool per day). Lite stays what
+ZAI_LITE_LAW always said it is: a burst lane, not a default carrier.
+
+Ledger: state/fuel/lite_pacing.jsonl (append-only, mounted, survives recreates).
+Units: rows carry billable tokens; credits = tokens / TOK_PER_CREDIT.
+
+Lever: env LITE_DAILY_CREDITS=0 
+```
+### AGENTS.md
+```
+# local_sovereign_agent — harness rules
+
+**LLMs: load framework first → `docs/FRAMEWORK_LOAD.md`** (or repo root `LOAD.md`) · then **`docs/ref/MAG_MYCELIAL_REPUBLIC_COMPASS.md`** (compass)
+
+This project is the **Mag Resource Harness** (standalone product home): local Ollama **janitors** first (`gemma:2b` scut, `gemma4` short worker), **remote specialist scarce** for hard inference, Hermes **dormant but dispatch-capable** (dispatch log active 2026-09-09, $220 armed — audit 2026-09-14), biographer + orchestrator.
+
+**DNA:** residual + registry + leaf = filed workdays (`docs/DNA.md`). Lab is optional ops.  
+**Zeitgeist:** beads (this repo) + forest (mycelial-republic) — `docs/archive/ZEITGEIST.md` (era 003: THE POUR; the `docs/ZEITGEIST.md` path cited before 2026-09-14 never existed). No core-mirror throne.
+
+## Shared artifact boundary — every client
+
+All durable cross-surface work lands on the shared inbox. A VS Code, Cursor, z.code, Grok, Codex, PowerShell, Linux, WSL, or OpenClaw-local session directory is cache only and must never be the sole copy.
+
+| Context | Read first | Durable write root |
+|---|---|---|
+| Windows host / Mag venv | `watch\inbox\INDEX.json` | `watch\inbox\` |
+| Docker / OpenClaw | `/board/inbox/INDEX.json` | `/board/inbox/` |
+| WSL | `/mnt/c/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/INDEX.json` | same directory |
+
+The machine contract is `watch/inbox/SHARED_SURFACE_CONTRACT.json`. Read the index, classify content before reuse, preserve hashes and bounded pointers, and leave a receipt before promotion. Model text can propose; only the switchboard/effect broker authorizes effects. Validate with `.venv\Scripts\python.exe -m mag.shared_surface validate`.
+
+## 🖇️ Clippy — standing reminders (always-on, verkle-knotted)
+
+> It looks like you're trying to work on Mag. Would you like a reminder? *(You do not have a choice. The rope is verkle-committed.)*
+
+- **New window?** → execute the frozen spec: `/memories/session/next-window-handoff.md`. Design is done; this is **execution → LOW tier** (flash-off or local).
+- **Tests:** 1,341 tests / 264 files (2026-09-14 census: 1305 passed / 34 failed / 9 skipped, ~12 min — the old "39 deterministic green" was a fossil). Run `pytest -q` before claiming done, file the real numbers, and never trust a hand-written count. **Trust bytes, not reports.**
+- **Deliberate-ask:** strong asks = frozen RIB (system+bootloader+manifest+verkle tip) + small ask + output contract + quantize target. **Pay the context tax once.**
+- **Thinking-mode is the axis** (not flash vs pro) — tune it before tier (design_vague proved it).
+- **Pile habit:** escalation/session-close → `mag.state_snapshot.capture_summary`; overnight → `main.py pile-classify`. Contribute your state summary before you go.
+- **Tier ladder:** ollama → free tiers (gemini/groq/z.ai…) → deepseek flash → pro/grok (only judgment climbs).
+- Invocable: `python main.py clippy` · full doctrine in repo memory (DELIBERATE-ASK · PUPPETEER GAUNTLET · PILE).
+
+## Load order (agents — do not skip)
+
+| # | File | Why |
+|---|------|-----|
+| 1 | `docs/FRAMEWORK_LOAD.md` | Navigation, metaphors, use cases, commands |
+| 2 | **`docs/ref/MAG_MYCELIAL_REPUBLIC_COMPASS.md`** | **Compass** — vision, agent loop, v1–v10 arc, sovereignty |
+| 3 | **`docs/ref/MYCELIAL_SCIENCE_MAP.md`** | **Biology ↔ protocol** — mycelial science map |
+| 4 | `docs/ref/MAG_DIRECTION_ARTIFACT_v2.md` | Phase gates, v3–v5 mold |
+| 5 | `docs/ref/MAG_PROJECT_PROPOSAL.md` | Problem depth |
+| 6 | `docs/ref/OPERATOR_CARD.md` | FIND · FILE · LOAD |
+| 7 | `AGENTS.md` | This file — env + commands |
+| 8 | `mag.cmd context-pack` | Min-token pack for your seat |
+
+Machine arc: `configs/version_roadmap.yaml` · Version index: `docs/ref/releases/VERSION_REGISTRY.md`
+
+Then: `memory/briefs/latest.md` · `queue/todo.md` · `HANDOFF_MAG_AGENT_TODOS.md` if implementing.
+
+## When a specialist seat is used
+
+- Prefer `memory/briefs/latest.md`, `memory/live_from_grok.md`, `memory/attention.md`, `queue/todo.md`.
+- L2 escalate needs `[priority]` / `[L2]` (see `configs/lanes.yaml`) unless force.
+- Mag escalations may call the harness or `queue/handoff/*.json` with **brief attached**, not full chat.
+- Do not claim R0; T0/T1 stay local.
+
+## Python env (do not skip)
+
+**Default shell `python` is often Hermes** (`…\hermes-agent\venv\…`) — no Mag deps → `No module named 'langgraph'`.
+
+Always use **this repo's** interpreter:
+
+```text
+mag.cmd doctor                # preferred (no PS execution policy issues)
+mag.cmd context-pack
+.\.venv\Scripts\python.exe main.py <cmd>
+```
+
+Repair / create venv: `powershell -ExecutionPolicy Bypass -File .\scripts\ensure_venv.ps1`  
+Agents: call `.venv\Scripts\python.exe` or `mag.cmd`, **never** bare `python` on PATH (Hermes).
+
+## Commands
+
+```text
+mag.cmd lab                   # product UI :8765 (+ flags for watch/mag)
+mag.cmd dashboard             # UI only
+mag.cmd brief                 # L0 dossier → memory/briefs/
+mag.cmd ask "…"               # biographer Q&A local
+mag.cmd mag --once            # companion cycle
+mag.cmd watch                 # tail specialist sessions
+mag.cmd run "goal"            # single graph job
+mag.cmd context-pack          # min-token pack for TUI (bonds+brief)
+mag.cmd bonds                 # residual next-session edges
+mag.cmd improve --once        # daily scout + eval → memory/improve/
+mag.cmd improve --status
+mag.cmd promote --apply c-…   # human gate for candidates
+mag.cmd research-pack …       # public URL
+```
+
+## TIDE CARDS + WAVE RECEIPTS — what the daily and wave cycles produced
+
+### tide card_2026-09-17.md
+> # Tide card 2026-09-17 — morning brief The fleet runs on an append-only hash-chained ledger: nothing edited, corrections are new rows, receipts before work, falsifiers committed before data, software never mints a verdict. ## What happened last night The referee chain shipped end to end (game referee, session runner, Discord adapter — all tested). A rollback incident hit twice (a build script synced stale files over fresh ones) — the mechanism was named and permanently fixed. The fleet refuted i
+- wave receipts on file (106): A1_BLIND_CHALLENGE_SET.md, A2_EPISTEMOLOGY_ENGINE.md, A3_THE_TOY_CORE_VERB.md, A4_ASTRA_SMOKE_12.md, B10_MLP_KV_CACHE_PRIORART.md, B11_SLIDING_WINDOW_RIB.md, B12_RASHOMON_DEDUPE.md, B13_CODETAUR_KAN.md, B14_EXECUTION_RUN.md, B14_THIRD_SMILE_PROTOCOL.md, B6_LINKS_BACKFILL.md, B7_CANONICAL_CHECK_WRITERS.md, B8_ARXIV_SIX_LEADS.md, B9_ZENODO_DOIS.md, B9_ZENODO_DOIS_GEN2.md, CG1_PROMPT_LIBRARY_UNPACK.md, CG2_CARSE_HISTORY.md, CG3_ESTATE_INFINITE.md, CG4_MESH_CARSE_SALON.md, CONCERT001_20260916.md, CV1_COLD_MAP.md, CV2_SHADOW_INVENTORY.md, CV3_WORLD_DOGFOOD.md, CV4_KILL_STAGING.md, D20_BONES_ADAPTER.md, D21_ESTATE_LOD_SPECTATOR.md, D22_PROVIDER_PROBE_20260916.md, D23_SALON50_NIGHT_RESULTS.md, D24_MEMORY_DOCTRINE_BUNDLE.md, E_UNION_ALPHA_EVAL.md, F1_AI_CANON.md, F1_FOLD_STATE.md, F2_GAME_CANON.md, F3_ELECTRONICS_CANON.md, F4_ESOTERIC_CANON.md, FX1_SWARM_STORAGE_AUDIO.md, FX2_SURFACE_RECONCILE.md, FX3_SHADER_FIXES.md, FX4_MUD_REPLAY_PORT.md, FX5_SYNC_DIRECTION_FIX.md, G1_GAMES_AUDIT.md, G2_STATIC_INFRA_AUDIT.md, G3_SHADER_AUDIT.md, H1_HERMES_INDEX_REPAIR.md
+
+---
+*imprint digest `a20ed060d4de5f4c` · {"mechanisms": 1046, "providers": 26, "laws": 19, "surface": 4, "receipts": 40, "deep": 27, "histories": 113} · regenerate: scripts/build_fleet_imprint.py · load cold: scripts/librarian.py "question"*

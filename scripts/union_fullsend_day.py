@@ -440,7 +440,11 @@ def main(argv: list[str] | None = None) -> int:
                 fh.write(json.dumps(r, ensure_ascii=False) + "\n")
         return r
 
-    workers = min(12, len(batch))
+    # U8 MEASURED (watch/inbox/physical_computing/receipts/U8_UNION_TECH_INTEL.md):
+    # union-alpha holds 24-concurrent with zero 429s (limit is provider-side latency, not
+    # rejection); 256K context, 128K max output, no implicit cache. Self-steal law: use
+    # the desk's numbers, do not re-derive them timidly.
+    workers = min(16, len(batch))
     with ThreadPoolExecutor(max_workers=max(1, workers)) as ex:
         list(ex.map(job, list(enumerate(batch))))
 

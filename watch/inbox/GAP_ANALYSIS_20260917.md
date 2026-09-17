@@ -41,3 +41,25 @@ The fleet's own artifacts are research-grade and unexamined by the lanes.
 
 Every battery regeneration MUST include the inward domains (game/history/training/memory/
 tech) — the fleet studies itself at the same rate it studies the frontier.
+
+## SELF-STEAL ADDENDUM (2026-09-17, post-scan)
+
+The operator said "self steal" and the scan itself needed one: the "swarm ZERO" finding was
+true of the research TAPE and false of the FLEET. We already owned:
+
+- **U8_UNION_TECH_INTEL.md** (ox desk, 09-16): union-alpha measured — 256K context, 128K
+  max output, vision-capable, free window (no published end), NO rate-limit headers, 24
+  concurrent with zero 429s (limit = latency), key free_tier:false so :free gates don't
+  bind, implicit caching FALSE, extra keys don't help (global capacity). WIRED NOW:
+  driver concurrency 12 → 16 per U8. Remaining wiring: push imprint-sized contexts
+  through union (256K!) — the Librarian could cold-load there too.
+- **SWARM_LENS_PROTOCOL.md**: the 6-gate cycle (ledger-first, source hierarchy,
+  arbitration gate, attack pass, calibration words, publication gate) — the verification
+  layer the inward battery was reinventing. Adopted as the drive's annotation gate:
+  Librarian/graph annotations get the attack pass before promotion.
+- **SWARM corpus** (8+ files in watch/: doctrine, lens, ledger, quest generator, scale
+  plan, DFHack snapshot): the swarm game has a research program; the battery questions
+  now cite it instead of asking fresh.
+
+Law: before any battery fires, grep the estate for the domain — the fleet's own shelves
+are the first lane. (Already standing in GAP_ANALYSIS; this is its first enforcement.)

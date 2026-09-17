@@ -160,6 +160,63 @@ const CORE_LEVELS = [
 const INSCRIPTIONS = {};
 CORE_LEVELS.forEach(l => { INSCRIPTIONS[l.id] = l.ins; });
 
+// --- D&D LAYER v1 (deterministic; seeded rolls so the replay law holds) -----------
+// Self-steal provenance: traits ported from mud.html's boon system (thorns/chain/
+// berserk/arc/vision); tales carry the tiny-story register; tables grow with the pack.
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+const MONSTER_TABLE = [
+  { n: "Crypt Snake", hp: 2, trait: "thorns" },
+  { n: "Barbed Sentry", hp: 1, trait: "berserk" },
+  { n: "Ashen Lizard", hp: 1, trait: "arc" },
+  { n: "Vault Husk", hp: 3, trait: "vision" },
+  { n: "Grim Ferryman", hp: 2, trait: "chain" },
+  { n: "Queen's Whelp", hp: 3, trait: "berserk" },
+  { n: "Tomb Murmur", hp: 1, trait: "vision" },
+  { n: "Venom Acolyte", hp: 2, trait: "arc" },
+];
+const TRAIT_TEXT = {
+  thorns: "touching it costs you your next step",
+  berserk: "it moves with an extra hunger",
+  arc: "it bends its path at the corners",
+  vision: "it remembers where you have been",
+  chain: "it drags the room's rhythm",
+};
+const TALES = [
+  "The keeper wrote your name on the door before you arrived.",
+  "Somewhere below, a scale is weighing what you leave behind.",
+  "The lantern you carry was returned once already.",
+  "Every wall here remembers a different thief.",
+  "The venom queen counts her rooms like coins.",
+  "Two banks of the river never learned the other's name.",
+  "A stranger read the ledger aloud and the walls listened.",
+  "The charcoal is free. Nothing else is.",
+];
+function rollStatBlock(defId, seed) {
+  const rng = mulberry32(hash32(defId + ":" + (seed || 0)));
+  const m = MONSTER_TABLE[Math.floor(rng() * MONSTER_TABLE.length)];
+  return {
+    monster: m.n, hp: m.hp + Math.floor(rng() * 2), trait: m.trait,
+    traitText: TRAIT_TEXT[m.trait],
+    note: "rolled for " + defId + " seed " + (seed || 0),
+  };
+}
+function rollTale(defId, seed) {
+  const rng = mulberry32(hash32("tale:" + defId + ":" + (seed || 0)));
+  return TALES[Math.floor(rng() * TALES.length)];
+}
+function hash32(s) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+
 function clone(o) { return JSON.parse(JSON.stringify(o)); }
 
 function loadLevel(def) {
@@ -333,6 +390,7 @@ function hash(st) {
 const RUINS_GO = {
   version: RUINS_GO_VERSION, levels: CORE_LEVELS, loadLevel, step, hash, clone,
   bridgesOn, cellT, walkHeight, standable, entityAt, INSCRIPTIONS, DIRS,
+  rollStatBlock, rollTale, mulberry32, MONSTER_TABLE, TRAIT_TEXT, TALES,
 };
 if (typeof window !== "undefined") window.RUINS_GO = RUINS_GO;
 if (typeof module !== "undefined" && module.exports) module.exports = RUINS_GO;

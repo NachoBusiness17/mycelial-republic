@@ -45,6 +45,7 @@
     <button data-d="L">&#9664;</button><button data-d="D">&#9660;</button><button data-d="R">&#9654;</button>
   </div>
   <div id="lvrow"></div>
+  <div id="classrow" style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap"></div>
   <div id="msg"></div>
   <div id="foot">RUINS GO · made-with-AI beacon: yes · the ledger constrains future accounts of the past, not the past itself</div>
 </div>
@@ -66,6 +67,48 @@
   }).catch(() => {});
 
   const CH = ["I","II","III","IV","V"];
+
+  // --- D&D CLASSES (deterministic player-side modifiers; replay law holds) ---
+  const CLASSES = {
+    squire: {name:"Squire", desc:"the pure path"},
+    rogue:  {name:"Rogue",  desc:"sees the first move of a solving path"},
+    monk:   {name:"Monk",   desc:"sealed bits survive death"},
+    bard:   {name:"Bard",   desc:"hears the tick (spear parity visible)"}
+  };
+  let cls = "squire", rogueHint = null, monkGems = [];
+  function buildClassRow() {
+    const row = document.getElementById("classrow");
+    row.innerHTML = "";
+    Object.keys(CLASSES).forEach(k => {
+      const b = document.createElement("button");
+      b.textContent = CLASSES[k].name; b.title = CLASSES[k].desc;
+      b.style.cssText = "padding:4px 10px;cursor:pointer;font-size:12px;background:" +
+        (k === cls ? "var(--accent);color:#1a140c" : "#1c1712;color:var(--ink)") +
+        ";border:1px solid #4a3f30";
+      b.addEventListener("click", () => { cls = k; monkGems = []; start(cur); });
+      row.appendChild(b);
+    });
+  }
+  function firstMoveHint(def) {
+    const seen = new Set([G.hash(G.loadLevel(def))]);
+    const q = [{st: G.loadLevel(def), path: []}];
+    while (q.length) {
+      const s = q.shift();
+      if (s.st.won) return s.path[0] || null;
+      if (s.st.dead || s.path.length > 60) continue;
+      for (const d of ["U","D","L","R"]) {
+        const ns = G.clone(s.st);
+        if (!G.step(ns, d).moved) continue;
+        const h = G.hash(ns);
+        if (seen.has(h)) continue;
+        seen.add(h);
+        const np = s.path.concat(d);
+        if (ns.won) return np[0];
+        q.push({st: ns, path: np});
+      }
+    }
+    return null;
+  }
 
   function proj(x, y, h) {
     return [ (x - y) * 40 + 320, (x + y) * 20 - h * 26 + 90 ];
@@ -112,7 +155,9 @@
     { const [sx, sy] = proj(st.player.x, st.player.y, G.walkHeight(G.cellT(st, st.player.x, st.player.y)) ?? 0);
       ctx.fillStyle = st.dead ? "#7d3f35" : "#e8ddc8"; ctx.beginPath(); ctx.arc(sx, sy - 26, 6.5, 0, Math.PI * 2); ctx.fill();
       ctx.fillRect(sx - 4.5, sy - 20, 9, 14);
-      ctx.fillStyle = "rgba(233,196,120,0.08)"; ctx.beginPath(); ctx.arc(sx, sy - 14, 46, 0, Math.PI * 2); ctx.fill(); }
+      ctx.fillStyle = "rgba(233,196,120,0.08)"; ctx.beginPath(); ctx.arc(sx, sy - 14, 46, 0, Math.PI * 2); ctx.fill();
+      if (cls === "bard") { ctx.fillStyle = st.tick % 2 === 1 ? "#e06a4a" : "#9fd08c"; ctx.font = "11px Georgia"; ctx.textAlign = "center"; ctx.fillText((st.tick % 2 === 1 ? "odd " : "even ") + st.tick, sx, sy + 22); }
+      if (cls === "rogue" && rogueHint && !st.dead && !st.won) { const d = {U:[0,-1],D:[0,1],L:[-1,0],R:[1,0]}[rogueHint]; const [hx, hy] = proj(st.player.x + d[0], st.player.y + d[1], 0); ctx.strokeStyle = "rgba(217,164,65,0.85)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(hx, hy, 8, 0, Math.PI * 2); ctx.stroke(); } }
   }
 
   const $ = id => document.getElementById(id);
@@ -128,16 +173,29 @@
   function start(i) {
     cur = Math.max(0, Math.min(i, levels.length - 1));
     st = G.loadLevel(levels[cur]);
+    const sb = G.rollStatBlock(st.id, 20260917);
+    const tale = G.rollTale(st.id, 20260917);
     hud(); draw();
-    msg('<div class="law">' + (st.hint || "") + "</div>");
+    const monsters = st.snakes.length + st.lizards.length;
+    const sbLine = monsters
+      ? '<div class="law">stat block — ' + sb.monster + " · hp " + sb.hp + " · trait: <i>" +
+        sb.trait + "</i> (" + sb.traitText + ")</div>"
+      : "";
+    msg('<div class="ins">"' + tale + '"</div>' + sbLine +
+        '<div class="law">' + (st.hint || "") + "</div>");
     if (cur > progress) { progress = cur; try { localStorage.setItem("ruins_go_progress", String(progress)); } catch (e) {} }
     buildLevelRow();
   }
   function restart() {
     deathsTotal += st.deaths;
     const gems = st.gems.filter(x => x.got).length;
+    if (cls === "monk") monkGems = st.gems.filter(x => x.got).map(x => [x.x, x.y]);
     st = G.loadLevel(levels[cur]);
-    gemsTotal = Math.max(gemsTotal - gems, 0);   // gems not kept through a restart of the same room
+    if (cls === "monk") st.gems.forEach(g => {
+      if (monkGems.some(m => m[0] === g.x && m[1] === g.y)) g.got = true;
+    });
+    gemsTotal = cls === "monk" ? gemsTotal : Math.max(gemsTotal - gems, 0);
+    if (cls === "rogue") rogueHint = firstMoveHint(levels[cur]);
     draw(); hud();
   }
   function doStep(dir) {
@@ -145,6 +203,7 @@
     if (st.dead) { restart(); return; }
     if (st.won) { start(cur + 1); return; }
     G.step(st, dir);
+    rogueHint = cls === "rogue" ? firstMoveHint(levels[cur]) : null;
     draw(); hud();
     if (st.dead) msg('<div class="law">taken by ' + (st.deadWhy || "the tomb") + " · press any key to try the room again</div>");
     else if (st.won) msg('<div class="ins">"' + (st.ins || "the room gives up its silence.") + '"</div><div class="law">press any key to descend further</div>');
@@ -168,6 +227,7 @@
     });
   }
   start(0);
+  buildClassRow();
 })();
 </script>
 </body>

@@ -73,29 +73,92 @@ SYSTEMS = {
     ),
 }
 
-# --- SSRF guard: the only hosts this driver may ever contact -------------------------
-_LANE_HOSTS = {urllib.parse.urlsplit(l["base"]).hostname.lower() for l in rf.LANES}
+# --- SSRF guard: hosts derive from the live lane set itself (no literals to drift) ----
+_OR_KEYS = ["OPENROUTER_API_KEY", "OPENROUTER_API_KEY_2"]
 
-# 24/7 resilience: attempt-2 rotation over lanes verified live 2026-09-17. The union-alpha
-# free window ends ~2026-09-23; when it dies, retries carry items on the other free lanes
-# instead of killing them (a dead window is a lane-swap, not a queue death).
-_RETRY_ORDER = ["or-union-alpha", "zai-lite", "or-ling3", "or-nemotron",
-                "groq-oss", "cerebras-oss"]
+_KNOWN_BASES = [
+    "https://api.groq.com/openai/v1", "https://api.cerebras.ai/v1",
+    "https://api.mistral.ai/v1", "https://api.z.ai/api/coding/paas/v4",
+    "https://openrouter.ai/api/v1", "https://api.cohere.ai/compatibility/v1",
+    "https://generativelanguage.googleapis.com/v1beta/openai",
+    "https://api.together.xyz/v1", "https://api.deepseek.com", "https://api.x.ai/v1",
+    "https://integrate.api.nvidia.com/v1",
+]
 
 
-def _route(item: dict[str, Any], attempt: int, done_count: int, env: dict[str, str]) -> str:
+def _wide_lanes(env: dict[str, str]) -> list[dict[str, str]]:
+    """Every lane a present key buys us. Free tiers first (the $0 doctrine), then the
+    operator-authorized next-to-free seats (deepseek overflow, grok judgment seats).
+    Operator 2026-09-17: 'we are underutilizing our lanes by orders of magnitude. lets go'"""
+    L: list[dict[str, str]] = []
+
+    def add(lid: str, base: str, model: str, key: str) -> None:
+        if env.get(key):
+            L.append({"id": lid, "base": base, "model": model, "key": key, "style": "openai"})
+
+    for suf, k in [("", "GROQ_API_KEY"), ("2", "GROQ_API_KEY_2")]:
+        add(f"groq-qwen{suf}", "https://api.groq.com/openai/v1", "qwen/qwen3.8-27b", k)
+        add(f"groq-oss{suf}", "https://api.groq.com/openai/v1", "openai/gpt-oss-120b", k)
+        add(f"groq-oss20{suf}", "https://api.groq.com/openai/v1", "openai/gpt-oss-20b", k)
+    add("cerebras-oss", "https://api.cerebras.ai/v1", "gpt-oss-120b", "CEREBRAS_API_KEY")
+    add("cerebras-qwen", "https://api.cerebras.ai/v1", "qwen-3.8-27b", "CEREBRAS_API_KEY")
+    for suf, k in [("", "Mistral_API_KEY"), ("2", "Mistral_API_KEY_2")]:
+        add(f"mistral-min8{suf}", "https://api.mistral.ai/v1", "ministral-8b-latest", k)
+    add("zai-lite", "https://api.z.ai/api/coding/paas/v4", "glm-5.3-flash", "ZAI_API_KEY_Lite")
+    # OpenRouter free models across BOTH keys (free-tier ceiling is 20 req/min per key;
+    # two keys double it; stable SYSTEM prefixes ride provider sticky-cache)
+    for n, (mid, model) in enumerate([("union-alpha", "stealth/union-alpha"),
+                                      ("ling3", "inclusionai/ling-3.0-flash-sante:free"),
+                                      ("nemotron", "nvidia/nemotron-3.5-lightning:free")]):
+        for ki, k in enumerate(_OR_KEYS):
+            add(f"or-{mid}-k{ki+1}", "https://openrouter.ai/api/v1", model, k)
+    add("cohere-free", "https://api.cohere.ai/compatibility/v1", "command-a-03-2025", "COHERE_API_KEY_FREE")
+    for suf, k in [("", "GEMINI_API_KEY"), ("g", "GOOGLE_API_KEY")]:
+        add(f"gemini-flash{suf}", "https://generativelanguage.googleapis.com/v1beta/openai",
+            "gemini-2.0-flash", k)
+    add("together-llama", "https://api.together.xyz/v1",
+        "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free", "TOGETHER_API_KEY")
+    add("deepseek-chat", "https://api.deepseek.com", "deepseek-chat", "DEEPSEEK_API_KEY")
+    # NVIDIA NIM (NVIDIABuild key): free credits hosting the big hitters
+    for _nid, _nmodel in [("qwen72b", "qwen/qwen2.5-72b-instruct"),
+                          ("dsr1", "deepseek-ai/deepseek-r1"),
+                          ("llama33", "meta/llama-3.3-70b-instruct")]:
+        add(f"nim-{_nid}", "https://integrate.api.nvidia.com/v1", _nmodel, "NVIDIABuild")
+    # grok judgment seats: GROK_* names are empty in env; the seats ride XAI_API_KEY
+    for suf, k in [("", "XAI_API_KEY"), ("2", "GROK_API_KEY"), ("3", "GROK_API_KEY_2")]:
+        add(f"grok-seat{suf}", "https://api.x.ai/v1",
+            env.get("XAI_MODEL") or "grok-4-fast-reasoning", k)
+    return L
+
+
+_LANE_HOSTS = {urllib.parse.urlsplit(b).hostname.lower() for b in _KNOWN_BASES}
+
+# attempt-2 rotation prefers proven carriers (union window ends ~2026-09-23; a dead
+# window is a lane-swap, not a queue death)
+_RETRY_ORDER = ["or-union-alpha-k2", "zai-lite", "or-union-alpha-k1", "or-ling3-k2",
+                "or-nemotron-k1", "groq-oss", "cerebras-oss", "gemini-flash"]
+
+
+def _route(item: dict[str, Any], attempt: int, idx: int, live: list[dict[str, str]]) -> str:
+    """Attempt 1 honors the hint; attempt 2+ rotates to a proven carrier.
+    live is the probed/present lane list from _wide_lanes."""
+    live_ids = [l["id"] for l in live]
     hint = item.get("lane_hint", "any")
     if hint == "union":
-        primary = "or-union-alpha"
+        primary = "or-union-alpha-k2" if "or-union-alpha-k2" in live_ids else "or-union-alpha-k1"
     elif hint == "lite":
-        primary = "zai-lite"
+        primary = "zai-lite" if "zai-lite" in live_ids else live_ids[idx % len(live_ids)]
     else:
-        primary = "or-union-alpha" if done_count % 2 == 0 else "zai-lite"
-    if attempt <= 1:
+        # round-robin the non-OpenRouter free lanes first (they carry no 20/min ceiling)
+        preferred = [i for i in live_ids if not i.startswith("or-")] or live_ids
+        primary = preferred[idx % len(preferred)]
+    if attempt <= 1 or not live_ids:
         return primary
     for lane_id in _RETRY_ORDER:
-        if lane_id != primary and env.get(
-                {l["id"]: l["key"] for l in rf.LANES}.get(lane_id, "")):
+        if lane_id != primary and lane_id in live_ids:
+            return lane_id
+    for lane_id in live_ids:
+        if lane_id != primary:
             return lane_id
     return primary
 
@@ -173,8 +236,12 @@ def _record_flight(lane_id: str, model: str, subsystem: str, ms: float, ok: bool
 
 
 def call(lane: dict[str, str], system: str, prompt: str, key: str, subsystem: str,
-         timeout: int = 240, max_tokens: int = 3000, attempt: int = 1) -> dict[str, Any]:
-    """One call, one receipt. Never raises. Lite pacing is structural (law 15)."""
+         timeout: int = 240, attempt: int = 1) -> dict[str, Any]:
+    """One call, one receipt. Never raises. Lite pacing is structural (law 15).
+    NO max_tokens (operator correction 2026-09-17 x2): budget-starving reasoning models
+    caused every empty_content; fleet receipts show uncapped calls stop naturally
+    (union-alpha avg 1760 out at finish=stop) while old caps pinned qwen/ministral at
+    exactly 900. The 100k+ windows ARE the budget."""
     t0 = time.time()
     rec: dict[str, Any] = {"lane": lane["id"], "model": lane["model"], "ts": _now(),
                            "attempt": attempt, "subsystem": subsystem}
@@ -195,7 +262,7 @@ def call(lane: dict[str, str], system: str, prompt: str, key: str, subsystem: st
             rec.update({"ok": False, "error": "LITE_PACED", "detail": g.get("deny", "")})
             rec["latency_ms"] = 0
             return rec
-    body = {"model": lane["model"], "temperature": 0.2, "max_tokens": max_tokens,
+    body = {"model": lane["model"], "temperature": 0.2,
             "messages": [{"role": "system", "content": system},
                          {"role": "user", "content": prompt}]}
     req = urllib.request.Request(
@@ -311,13 +378,19 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="union-fullsend-day")
     ap.add_argument("--batch", type=int, default=8)
     ap.add_argument("--timeout", type=int, default=240)
+    ap.add_argument("--all", action="store_true",
+                    help="wave mode: fire every remaining item across every live lane")
     a = ap.parse_args(argv)
 
     OUT.mkdir(parents=True, exist_ok=True)
     rows = load_queue()
     state = load_state()
     env = rf._env()
-    lane_by_id = {l["id"]: l for l in rf.LANES}
+    live = _wide_lanes(env)
+    lane_by_id = {l["id"]: l for l in live}
+    if not live:
+        print(json.dumps({"ok": False, "error": "no lanes with keys"}))
+        return 0
     done = set(state["done"])
     attempts = state.get("attempts", {})
 
@@ -334,11 +407,12 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     LOCK.write_text(_now(), encoding="utf-8")
 
-    batch = todo[: max(1, a.batch)]
+    batch = todo if a.all else todo[: max(1, a.batch)]
     results: list[dict[str, Any]] = []
 
-    def job(item: dict[str, Any]) -> dict[str, Any]:
-        lane_id = _route(item, attempts.get(item["id"], 0) + 1, len(done), env)
+    def job(idx_item: tuple[int, dict[str, Any]]) -> dict[str, Any]:
+        idx, item = idx_item
+        lane_id = _route(item, attempts.get(item["id"], 0) + 1, idx, live)
         lane = lane_by_id[lane_id]
         key = env.get(lane["key"], "")
         if not key:
@@ -355,8 +429,9 @@ def main(argv: list[str] | None = None) -> int:
                 fh.write(json.dumps(r, ensure_ascii=False) + "\n")
         return r
 
-    with ThreadPoolExecutor(max_workers=min(8, len(batch))) as ex:
-        list(ex.map(job, batch))
+    workers = min(12, len(batch))
+    with ThreadPoolExecutor(max_workers=max(1, workers)) as ex:
+        list(ex.map(job, list(enumerate(batch))))
 
     for r in results:
         attempts[r["id"]] = attempts.get(r["id"], 0) + 1

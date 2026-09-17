@@ -48,36 +48,61 @@ RECEIPTS = OUT / "receipts"  # promoted/rejected candidates move here
 
 SCHEMA = "build_lane_game.v1"
 ENV_FILES = [ROOT / ".env", Path.home() / "AppData" / "Local" / "hermes" / ".env"]
-ALLOWED_HOSTS = {"openrouter.ai"}
+ALLOWED_HOSTS = {"openrouter.ai", "api.z.ai"}
 
 _LANES = {"base": "https://openrouter.ai/api/v1",
           "keys": ["OPENROUTER_API_KEY_2", "OPENROUTER_API_KEY"],  # rotate on 429/401/402
           "models": ["stealth/union-alpha", "z-ai/glm-5.3-flash"]}
+
+# --lane lite: the SAME evolution loop on the z.ai Lite seat (glm-5.3-flash),
+# its own state dir + locks (runs in parallel with the union window), law-15 paced.
+_LANES_LITE = {"base": "https://api.z.ai/api/coding/paas/v4",
+               "keys": ["ZAI_API_KEY_Lite"],
+               "models": ["glm-5.3-flash"]}
 # operator 2026-09-17: "i know what ox is, thats an old config. we're using union."
 # (env OPENROUTER_MODEL=stealth/ox-alpha is stale; ox's own 404 revealed it was
 #  glm-5.3-flash — kept only as the last-resort fallback.)
 
 SYSTEM = (
     "You are a level designer for RUINS GO, a grid-turn tomb puzzle. The world only moves "
-    "when the player moves. You output ONE level as JSON in a fenced ```json block and "
-    "nothing else after it. Schema: {\"id\": \"P##\", \"name\": \"two words\", \"chapter\": 1-4, "
-    "\"ins\": \"one-line inscription, plain, no em-dashes\", \"hint\": \"one line, teaches "
-    "without solving\", \"rows\": [7 strings of exactly 7 chars from: ' ' void, '.' floor, "
-    "'1' height1, '2' height2, '#' pillar, 'b' bridge, 'p' plate, 'k' crank, 'x' collapse "
-    "ledge, 's' spear, 'E' exit], \"player\": [x,y], \"blocks\": [[x,y]], \"snakes\": [[x,y]], "
-    "\"lizards\": [[ax,ay,bx,by]], \"twin\": [x,y], \"gems\": [[x,y]]} — omit empty lists. "
-    "LAWS: snakes step toward the player once per player step and never enter E or cranks; "
-    "lizards patrol their line and kill on contact; stepping onto a crank latches ALL "
-    "bridges on; a plate holds bridges while player/block/twin stands on it; 'x' collapses "
-    "to void when left; spears kill on odd move-counts; height changes of exactly 1 only; "
-    "the player's start cell MUST have at least two legal first moves. "
-    "MANDATORY SELF-CHECK in your reasoning BEFORE the json block: walk your "
-    "claimed_solution [\"U\",\"L\",...] move by move on the grid you built; verify every "
-    "step is a legal move (terrain, height diff <= 1, no deadly occupant at arrival, "
-    "bridge state correct at that moment); if ANY step fails, fix the level and re-walk "
-    "it. Include \"claimed_solution\" as a top key (the validator ignores it). Keep the "
-    "level solvable in under 25 moves. Every cell you place must matter."
+    "when the player moves. You evolve levels against a mechanical validator: it replays "
+    "your level under the engine's exact laws and proves (or fails to prove) that some "
+    "sequence of legal moves reaches the exit. You will see its verdicts. Iterate until "
+    "it passes. Novel, surprising, fair designs are the goal; the gate is the fitness "
+    "function, not a formality."
 )
+
+# The stable fat prefix — identical bytes every call and every generation, so the
+# provider prompt-cache pays for it once (self-stolen from the TT3 pattern: context
+# pack + growing turns; z.ai receipts show cached=9247 on exactly this shape).
+CONTEXT = """ENGINE LAWS (exact, enforced by the validator):
+L1 step-clock: the world ticks only when the player displaces; a blocked bump is not a move.
+L2 ledges: step up or down exactly ONE height ('.'=0,'1'=1,'2'=2). Two is forbidden.
+L3 pushes: blocks move same-height or slide down one; never up; never through anything; never onto cranks or exits.
+L4 bridges: stepping onto a crank 'k' LATCHES all bridges on; a plate 'p' holds them while any of player/block/twin stands on it; a retracted 'b' is void to everyone.
+L5 collapse: an 'x' cell becomes void the moment the player leaves it. No way back.
+L6 spears: 's' kills if the player ENDS a move on it at an ODD move-count; even counts are safe.
+L7 snakes: after each player move, each snake steps ONE cell toward the player (same height only, never onto cranks/exits, blocked by blocks/void). Contact kills both ways. They cannot be killed, only denied.
+L8 lizards: patrol the straight line between (ax,ay) and (bx,by), one cell per player move, reverse at the ends or when blocked. Contact kills.
+L9 twin: if present, mirrors the player's direction after each player move; denied (void/height/occupied), it waits. It can hold plates. It cannot be harmed.
+L10 exit 'E' wins on arrival; gems are optional.
+
+TERRAIN: ' ' void · '.' floor · '1','2' heights · '#' pillar(_blocks) · 'b' bridge · 'p' plate · 'k' crank · 'x' collapse · 's' spear · 'E' exit. Grid is 7x7. Exactly one E. Player start MUST have at least two legal first moves.
+
+VERIFIED EXAMPLES (these passed the gate; design in this family):
+EXAMPLE 1 "the weight" (block holds a plate to hold a bridge), solvable in 8 moves:
+rows: ["       ","       "," ...   "," ..pb.E."," ...  . ","       ","       "], player [0,3], blocks [[1,3]], gems [[5,4]]. Push the block right onto the plate, cross the latched bridge to E.
+EXAMPLE 2 "the snake" (ring room; the snake's refusal to enter E parks it as a guard), solvable in 4 moves:
+rows: ["       "," ..... "," . . . "," . E . "," ..... ","       ","       "], player [1,1], snakes [[5,4]], gems [[5,1]]. Walk the top lane right, then down through the center to E while the snake chases and parks against the E it will not enter.
+EXAMPLE 3 "the other self" (twin mirrors and parks on a plate), solvable in 6 moves:
+rows: ["       ","  ...# ","  ...p ","  ...  "," ...b. ","     E ","       "], player [2,2], twin [4,2], gems [[4,1]]. Step right twice so the twin lands on the plate and is denied further moves; descend, cross the bridge it holds, reach E.
+
+VALIDATOR FAILURE GLOSSARY:
+- "exhausted @N" = the solver explored every reachable state and NO move sequence reaches E. Causes: player sealed in, a required cell guarded at the wrong parity, a bridge never on when needed, a collapse path that must be revisited. Check: does your claimed_solution actually walk? Does the enemy timing leave a live path at EVERY step?
+- "cap @N" = state space too large. Remove an enemy or shrink the arena.
+- "schema: ..." = fix the named field. Rows must each be exactly 7 chars; all coordinates inside the grid; entity cells must be walkable terrain.
+
+OUTPUT CONTRACT: one fenced ```json block, nothing after it. Keys: id, name, chapter, ins (one plain line, no em-dashes), hint (teaches without solving), rows (7x7), player [x,y], and only the entity lists you use: blocks [[x,y]], snakes [[x,y]], lizards [[ax,ay,bx,by]], twin [x,y], gems [[x,y]]. Include claimed_solution (list of "U"/"D"/"L"/"R") — walk it yourself on your grid, move by move, BEFORE emitting; fix whatever breaks. Under 25 moves. Every cell must matter."""
 
 BRIEFS = [
     ("P-collapse-crank", "chapter 1 'the ledger'. Mechanic: collapse ledges ('x') leading to a crank that latches a bridge to the exit. One gem behind a collapsing dead-end that is safe only if visited in the right order. Inscription theme: receipts before work."),
@@ -133,10 +158,13 @@ def _validate_base(base: str) -> None:
             raise ValueError(f"{host} resolves to non-public {ip}; refusing")
 
 
-def _call(model: str, keys: list[str], prompt: str, timeout: int = 240) -> dict:
-    """Rotate keys on 429/401/402/404 (operator: multiple OpenRouter keys, use them).
-    A key-rotation miss reports the last body verbatim — the ox-alpha 404 that named
-    glm-5.3-flash arrived through exactly this path."""
+def _call(model: str, keys: list[str], prompt: str | None, timeout: int = 600,
+          messages: list[dict] | None = None, lite: bool = False) -> dict:
+    """Rotate keys on 429/401/402 (operator: multiple OpenRouter keys, use them).
+    Accepts either a one-shot prompt or a full multi-turn `messages` list (the
+    evolution loop grows the conversation; generation N sees its own failures).
+    No max_tokens, generous timeout: the operator's law — never kill the model
+    before nuance can be obtained."""
     t0 = time.time()
     rec: dict = {"lane": "build-union", "model": model, "ts": _now()}
     try:
@@ -144,13 +172,24 @@ def _call(model: str, keys: list[str], prompt: str, timeout: int = 240) -> dict:
     except ValueError as e:
         rec.update({"ok": False, "error": "SSRF_GUARD", "detail": str(e)[:200]})
         return rec
-    # no max_tokens cap: these are 100k+ context windows and the reasoning channel
-    # spends freely before content (fleet receipt: rationing caused every empty_content;
-    # the solved problem is to let the model run to its own stop).
+    if messages is None:
+        messages = [{"role": "system", "content": SYSTEM},
+                    {"role": "user", "content": prompt or ""}]
+    else:
+        messages = [{"role": "system", "content": SYSTEM}] + messages
+    if lite:
+        # law 15 structural: the Lite seat is paced before a token leaves
+        try:
+            from mag import lite_guard
+            g = lite_guard.check("build_lane_lite")
+            if not g.get("ok"):
+                rec.update({"ok": False, "error": "LITE_PACED", "detail": g.get("deny", "")})
+                rec["latency_ms"] = 0
+                return rec
+        except Exception:
+            pass
     for ki, key in enumerate(keys):
-        body = {"model": model, "temperature": 0.4,
-                "messages": [{"role": "system", "content": SYSTEM},
-                             {"role": "user", "content": prompt}]}
+        body = {"model": model, "temperature": 0.4, "messages": messages}
         req = urllib.request.Request(
             _LANES["base"].rstrip("/") + "/chat/completions",
             data=json.dumps(body).encode("utf-8"),
@@ -292,53 +331,81 @@ def main(argv=None) -> int:
         return 0
 
     LOCK.write_text(_now(), encoding="utf-8")
+    MAX_GEN = 6
     results = []
     try:
         for sid, brief in todo:
-            prompt = (f"Design one RUINS GO level. Brief: {brief} "
-                      f"Constraints: 7x7 grid, solvable, under 25 moves, exactly one exit. "
-                      f"Output only the ```json block.")
-            rec = _call(model, keys, prompt)
-            rec.update({"brief": sid})
-            defn = _extract_level(rec.get("answer") or "") if rec.get("ok") else None
-            verdict, vline = None, None
-            if defn:
-                sok, why = _schema_ok(defn)
-                if sok:
-                    cand = GAMES / f"ruins_go_pack_cand_{sid}.json"
-                    cand.write_text(json.dumps([defn], indent=1), encoding="utf-8")
-                    verdict, vline = _validate_via_gate(cand.name)
-                    if verdict:
-                        pack = json.loads(PACK.read_text(encoding="utf-8")) if PACK.is_file() else []
-                        if not any(l.get("id") == defn.get("id") for l in pack):
-                            pack.append({k: v for k, v in defn.items()
-                                         if k != "claimed_solution"})
-                            PACK.write_text(json.dumps(pack, indent=1), encoding="utf-8")
-                        dest = RECEIPTS / f"promoted_{sid}.json"
+            # the stable fat prefix (cache-paid once) + this brief's angle
+            msgs = [{"role": "user", "content":
+                     CONTEXT + "\n\nTHIS LEVEL'S BRIEF: " + brief +
+                     "\n\nDesign it. Walk your claimed_solution move by move first. "
+                     "Output the full ```json block."}]
+            promoted = False
+            gens = 0
+            last_gate = "none"
+            for gen in range(1, MAX_GEN + 1):
+                rec = _call(model, keys, None, messages=msgs)
+                rec.update({"brief": sid, "gen": gen})
+                gens = gen
+                defn = _extract_level(rec.get("answer") or "") if rec.get("ok") else None
+                verdict = False
+                vline = "no json block" if rec.get("ok") else (rec.get("error") or "call failed")
+                if defn:
+                    sok, why = _schema_ok(defn)
+                    if sok:
+                        cand = GAMES / f"ruins_go_pack_cand_{sid}.json"
+                        cand.write_text(json.dumps([defn], indent=1), encoding="utf-8")
+                        verdict, vline = _validate_via_gate(cand.name)
+                        if verdict:
+                            pack = json.loads(PACK.read_text(encoding="utf-8")) if PACK.is_file() else []
+                            if not any(l.get("id") == defn.get("id") for l in pack):
+                                pack.append({k: v for k, v in defn.items()
+                                             if k != "claimed_solution"})
+                                PACK.write_text(json.dumps(pack, indent=1), encoding="utf-8")
+                            shutil.move(str(cand), str(RECEIPTS / f"promoted_{sid}_g{gen}.json"))
+                            state["promoted"] = state.get("promoted", 0) + 1
+                        else:
+                            shutil.move(str(cand), str(RECEIPTS / f"gen_{sid}_g{gen}.json"))
                     else:
-                        dest = RECEIPTS / f"rejected_{sid}.json"
-                    shutil.move(str(cand), str(dest))
-                    state["promoted" if verdict else "rejected"] = \
-                        state.get("promoted" if verdict else "rejected", 0) + 1
-                else:
-                    verdict, vline = False, f"schema: {why}"
-                    (RECEIPTS / f"rejected_{sid}.json").write_text(
-                        json.dumps(defn, indent=1), encoding="utf-8")
-                    state["rejected"] = state.get("rejected", 0) + 1
-            else:
-                verdict, vline = False, "no json block" if rec.get("ok") else rec.get("error")
-                state["rejected"] = state.get("rejected", 0) + 1
-            rec.update({"verdict": "PASS" if verdict else "FAIL", "gate": vline})
-            with PROPOSALS.open("a", encoding="utf-8") as fh:
-                fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
-            if verdict:
+                        vline = f"schema: {why}"
+                        (RECEIPTS / f"gen_{sid}_g{gen}.json").write_text(
+                            json.dumps(defn, indent=1), encoding="utf-8")
+                last_gate = (vline or "")[:160]
+                rec.update({"verdict": "PASS" if verdict else "FAIL", "gate": last_gate})
+                with PROPOSALS.open("a", encoding="utf-8") as fh:
+                    fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
+                if verdict:
+                    promoted = True
+                    break
+                # FEED THE VERDICT BACK — the gate is the fitness function; the model
+                # gets its own output plus the failure and iterates. Never kill the
+                # search before nuance can be obtained (operator law, 2026-09-17).
+                msgs.append({"role": "assistant", "content": rec.get("answer") or "(no output)"})
+                msgs.append({"role": "user", "content":
+                             "The validator REJECTED generation " + str(gen) +
+                             ". Verdict: " + str(vline) +
+                             ". Diagnose the failure yourself using the glossary, "
+                             "re-walk your claimed_solution move by move ON YOUR GRID, "
+                             "fix what breaks (keep your theme and inscription), and "
+                             "output the full corrected ```json block."})
+                # two consecutive transport deaths end this RUN (network, not merit)
+                if not rec.get("ok") and gen >= 2:
+                    prev = json.loads(PROPOSALS.read_text(encoding="utf-8",
+                                                          errors="replace").strip().splitlines()[-2])
+                    if not prev.get("ok"):
+                        break
+            state["generations"] = state.get("generations", 0) + gens
+            if promoted:
                 state["done"].append(sid)
             else:
+                state["rejected"] = state.get("rejected", 0) + 1
                 state.setdefault("attempts", {})
                 state["attempts"][sid] = state["attempts"].get(sid, 0) + 1
                 if state["attempts"][sid] >= 2:
-                    state["dead"][sid] = vline[:120] if vline else "failed twice"
-            results.append({"brief": sid, "verdict": rec["verdict"], "gate": (vline or "")[:120]})
+                    state["dead"][sid] = f"no pass in {gens} gens x2 runs: {last_gate[:100]}"
+            results.append({"brief": sid, "gens": gens,
+                            "verdict": "PASS" if promoted else "FAIL",
+                            "gate": last_gate[:120]})
     finally:
         state["runs"] = state.get("runs", 0) + 1
         state["updated"] = _now()
@@ -346,11 +413,12 @@ def main(argv=None) -> int:
         LOCK.unlink(missing_ok=True)
 
     print(json.dumps({"ok": True, "schema": SCHEMA, "model": model,
-                      "batch": len(results),
+                      "batch": len(results), "max_gen": MAX_GEN,
                       "promoted": sum(1 for r in results if r["verdict"] == "PASS"),
                       "rejected": sum(1 for r in results if r["verdict"] == "FAIL"),
                       "totals": {"promoted": state.get("promoted", 0),
-                                 "rejected": state.get("rejected", 0)},
+                                 "rejected": state.get("rejected", 0),
+                                 "generations": state.get("generations", 0)},
                       "results": results}))
     return 0
 

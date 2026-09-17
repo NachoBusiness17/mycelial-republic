@@ -63,7 +63,16 @@ function beep(freq, dur, type='square', vol=0.04) {
 }
 
 // ---- Utility ----
-const rnd = (a,b)=>a+Math.random()*(b-a);
+// RNG LAW (replay, FX4 — toy.html LCG constants, swarm.html FX1 house pattern): one seeded LCG
+// drives every gameplay-affecting draw. startGame(forcedSeed) seeds each run and records runSeed;
+// pass a number to replay a recorded run. Cosmetic-only draws (particles, camera shake, name
+// flavor, relay id) stay on Math.random so render jitter can never perturb the replay stream —
+// site-by-site classification lives in watch/inbox/wave_20260916/receipts/FX4_MUD_REPLAY_PORT.md.
+let lcg = 1, runSeed = 0, runN = 0;
+function seedRun(s) { runSeed = (s >>> 0) || 1; lcg = runSeed; }
+const rng = () => { lcg = (Math.imul(lcg, 1664525) + 1013904223) >>> 0; return lcg / 4294967296; };
+const rnd = (a,b)=>a+rng()*(b-a);           // seeded — advances the replay stream
+const crnd = (a,b)=>a+Math.random()*(b-a);  // cosmetic — render-only noise, never touches the stream
 const rndi = (a,b)=>Math.floor(rnd(a,b+1));
 const clamp = (v,a,b)=>v<a?a:v>b?b:v;
 const dist2 = (a,b)=>{const dx=a.x-b.x,dy=a.y-b.y;return dx*dx+dy*dy;};
@@ -111,8 +120,8 @@ const walls = [
   // forge / nave divider (y400-440), door d7 at x1420-1510
   {x:1300,y:400,w:120,h:40},
   {x:1510,y:400,w:310,h:40},
-  // south of the forge — sealed drafts, nothing down there
-  {x:1300,y:800,w:620,h:40},
+  // south of the forge — THE VAULT GATE: plates I (infirmary) + II (forge) grind it open; the pocket pays
+  {x:1300,y:800,w:620,h:40,gate:true},
   // east flank between the great hall and the forge column
   {x:1820,y:400,w:100,h:400},
   // flank fillers — the void outside the rooms is not a road
@@ -414,9 +423,15 @@ let fireZones = [];
 let deathClouds = [];
 // DF/RimWorld-steal: simulation-as-content — the chronicle writes itself from real events
 let chron = [];
+// Replay law (FX4): append-only gameplay event log, cleared on startGame. Same runSeed + same
+// inputs → byte-identical log (proven by scripts/test_mud_replay.js). Cosmetic randomness
+// (names, particles) is deliberately kept OUT of this log.
+const evlog = [];
+const evt = () => ({ t: +G.time.toFixed(3) });
 const NAME_A = ['Uzol', 'Vabok', 'Kel', 'Datan', 'Uvash', 'Zugl', 'Nish', 'Rith', 'Adil', 'Melbil'];
 const NAME_B = ['Cavernmurder', 'Gravewhisper', 'the Wall-Hugger', 'Emberfang', 'the Unseen', 'Doomlamp', 'the Patient', 'Bonewind', 'Kite-Bane', 'Slowdusk'];
 function genName() {
+  // cosmetic-allowed (FX4): names feed render labels + chronicle text only — no mechanic reads them
   return NAME_A[Math.floor(Math.random() * NAME_A.length)] + ' ' + NAME_B[Math.floor(Math.random() * NAME_B.length)];
 }
 function chronicle(text, color) {
@@ -435,11 +450,11 @@ let mudOthers = [];
 const BOONS = [
   { id: 'chain', god: 'ZEUS', name: 'Static Discharge', desc: 'hits arc lightning to a nearby foe', color: '#8af', apply: () => { player.boonChain = true; } },
   { id: 'wave', god: 'POSEIDON', name: 'Sea Storm', desc: 'hits knock enemies back', color: '#4af', apply: () => { player.boonWave = true; } },
-  { id: 'torch', god: 'APOLLO', name: 'Second Flame', desc: 'your torch burns wider', color: '#fc8', apply: () => { player.boonVision = (player.boonVision || 1) + 0.18; } },
+  { id: 'torch', god: 'APOLLO', name: 'Second Flame', desc: 'your torch burns wider', color: '#fc8', max: 3, apply: () => { player.boonVision = (player.boonVision || 1) + 0.18; } },
   { id: 'crit', god: 'ARTEMIS', name: "Hunter's Mark", desc: '20% chance to strike for double', color: '#4f4', apply: () => { player.boonCrit = true; } },
   { id: 'cloud', god: 'ARES', name: 'Killing Mist', desc: 'slain enemies leave a deadly cloud', color: '#f66', apply: () => { player.boonCloud = true; } },
-  { id: 'hermes', god: 'HERMES', name: 'Greatest of Heights', desc: 'move faster', color: '#8ff', apply: () => { player.bonusSpeed += 30; } },
-  { id: 'time', god: 'CHRONOS', name: 'Stolen Second', desc: 'SUPERHOT windows last longer', color: '#f8f', apply: () => { G.superBonus = (G.superBonus || 0) + 2; } },
+  { id: 'hermes', god: 'HERMES', name: 'Greatest of Heights', desc: 'move faster', color: '#8ff', max: 3, apply: () => { player.bonusSpeed += 30; } },
+  { id: 'time', god: 'CHRONOS', name: 'Stolen Second', desc: 'SUPERHOT windows last longer', color: '#f8f', max: 3, apply: () => { G.superBonus = (G.superBonus || 0) + 2; } },
   { id: 'leech', god: 'NYX', name: 'Red Tithe', desc: 'kills restore life', color: '#a44', apply: () => { player.boonLeech = true; } },
   { id: 'thorns', god: 'MOROS', name: 'Iron Hide', desc: 'touching foes wounds them', color: '#99a', apply: () => { player.boonThorns = true; } },
   { id: 'berserk', god: 'KRATOS', name: 'Last Stand', desc: 'more damage when near death', color: '#f84', apply: () => { player.boonBerserk = true; } },
@@ -457,11 +472,11 @@ function loreUnlock(kind) {
 }
 let lootBeams = [];
 // Exanima-steal II: keys, plates and the vault gate — puzzles in the dark
-const puzzle = { key: null, chest: null, plates: [{ x: 220, y: 340, on: false }, { x: 1720, y: 1000, on: false }], gateOpen: false, chimeT: 0 };
+const puzzle = { key: null, chest: null, plates: [{ x: 220, y: 340, on: false }, { x: 1720, y: 700, on: false }], gateOpen: false, chimeT: 0 };   // plate I: infirmary floor · plate II: forge floor — both walkable, the pocket is not (until the gate opens)
 const PUZZLE_SPOTS = [[150, 620], [1760, 140], [640, 1120], [1700, 450], [240, 1060], [1120, 180]];
 function farSpot(notNear) {
   for (let tries = 0; tries < 40; tries++) {
-    const s = PUZZLE_SPOTS[Math.floor(Math.random() * PUZZLE_SPOTS.length)];
+    const s = PUZZLE_SPOTS[Math.floor(rng() * PUZZLE_SPOTS.length)];   // gameplay: walk-to-it pays
     if (!notNear || Math.hypot(s[0] - notNear[0], s[1] - notNear[1]) > 500) return s;
   }
   return PUZZLE_SPOTS[0];
@@ -472,10 +487,9 @@ function puzzleReset() {
   puzzle.gateOpen = false;
   puzzle.key = null; puzzle.chest = null; puzzle.chimeT = 0;
   for (const pl of puzzle.plates) pl.on = false;
-  const s1 = PUZZLE_SPOTS[Math.floor(Math.random() * PUZZLE_SPOTS.length)];
-  const s2 = farSpot(s1);
+  puzzle.chest = { x: 1720, y: 1000 };   // the vault pays from inside the vault — behind the gate, in the south pocket
+  const s1 = farSpot([puzzle.chest.x, puzzle.chest.y]);   // gameplay: key placement — walk-to-it pays, chimes guide
   puzzle.key = { x: s1[0], y: s1[1] };
-  puzzle.chest = { x: s2[0], y: s2[1] };
   rebuildVision();
 }
 function puzzleTick(dt) {
@@ -537,12 +551,13 @@ const AFFIXES = [
 ];
 
 function makeLoot(x,y) {
-  const roll = Math.random();
+  const roll = rng();   // gameplay: weapon rarity + stats
   let rarity = 0;
   if (roll < 0.55) rarity = 0;
   else if (roll < 0.85) rarity = 1;
   else if (roll < 0.97) rarity = 2;
   else rarity = 3;
+  evlog.push(Object.assign(evt(), { e: 'loot', r: rarity }));
   const baseNames = ['Sword','Axe','Mace','Blade','Falchion'];
   const prefix = ['','Fine ','Sharp ','Ancient ','Cursed '][Math.min(4, rarity + rndi(0,1))];
   const w = {
@@ -620,8 +635,8 @@ function spawnEnemy(type, x, y, room, opts) {
     healCd: type === 'cleric' ? 2.5 : 0,
     castCd: type === 'bmage' ? 2.5 : 0,
     volleyCd: type === 'ranger' ? 1.2 : 0,
-    name: (type === 'k8' || type === 'rogue' || type === 'bmage' || type === 'ranger' || type === 'cleric') && Math.random() < 0.35 ? genName() : null,
-    room: room || null, homeX: x, homeY: y, homeSeed: Math.random() * 7,
+    name: (type === 'k8' || type === 'rogue' || type === 'bmage' || type === 'ranger' || type === 'cleric') && Math.random() < 0.35 ? genName() : null,   // cosmetic gate: name only
+    room: room || null, homeX: x, homeY: y, homeSeed: rng() * 7,   // gameplay: drives idle wander heading
     aggro: false, aggroR: 260, hitsSurvived: 0, grudged: false,
   };
   if (opts) Object.assign(e, opts);
@@ -674,6 +689,7 @@ function spawnChampion(rid) {
   e.isChampion = true;
   e.name = ch.name;
   chronicle(ch.name + ' stirs', '#f84');
+  evlog.push(Object.assign(evt(), { e: 'champion', room: rid }));
   beep(160, 0.4, 'sawtooth', 0.05);
   return e;
 }
@@ -689,18 +705,20 @@ function roomTick(dt) {
   if (st.cleared) return;   // a cleared room pays once — not every frame you loiter
     if (!st.activated) {
       st.activated = true; st.spawned = 0; st.t = 0.6;
+      evlog.push(Object.assign(evt(), { e: 'room', room: rid }));
       if (rid === 'nave') G.naveEverActive = true;
       for (const d of Object.values(DOORS)) if (d.after === rid) d.locked = true;
       syncDoors();
       chronicle('— ' + R.name + ' —', '#e8b45a');
       if (R.dragon) spawnBoss();
       // the bell-ringer: the fortress talks — kill him before he warns the next room
-      if (!R.drip && !R.dragon && R.champion && ((window.MUD && window.MUD.forceBell) || Math.random() < 0.45) && NEXT_AFTER[rid]) {
+      if (!R.drip && !R.dragon && R.champion && ((window.MUD && window.MUD.forceBell) || rng() < 0.45) && NEXT_AFTER[rid]) {   // gameplay: ringer spawns
         const sp = R.spots[rndi(0, R.spots.length - 1)];
         const rn = spawnRoomEnemy(rid, 'dodger', sp[0], sp[1]);
         rn.runner = true; rn.aggro = false; rn.hp = rn.maxHp = 26; rn.color = '#dd9'; rn.r = 10;
         rn.name = 'the Bell-Ringer'; rn.speed = 185; rn.xp = 12; rn.souls = 25;
         chronicle('a bell-ringer breaks for the door — stop him', '#fc8');
+        evlog.push(Object.assign(evt(), { e: 'bell', room: rid }));
       }
       if (!R.drip && R.queue.length) {
       for (let i = 0; i < R.queue.length; i++) {
@@ -730,11 +748,13 @@ function roomTick(dt) {
   }
   if (st.spawned >= R.queue.length && alive === 0) {
     st.cleared = true;
+    evlog.push(Object.assign(evt(), { e: 'clear', room: rid }));
     for (const d of Object.values(DOORS)) if (d.after === rid) d.locked = false;
     syncDoors();
     chronicle(R.name + ' is cleared', '#7ee2a8');
     if (R.champion && SIGILS.count < 4) {
       SIGILS.count++;
+      evlog.push(Object.assign(evt(), { e: 'sigil', n: SIGILS.count }));
       chronicle('a sigil — ' + (4 - SIGILS.count) + ' remain', '#fc8');
     }
     player.souls += 60;
@@ -755,9 +775,9 @@ function spawnAllEnemies() {
 // ---- Particles ----
 function poof(x,y,color,n=12) {
   for (let i=0;i<n;i++) {
-    const a = Math.random()*Math.PI*2;
-    const s = rnd(30,120);
-    particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rnd(0.3,0.7),max:0.7,color,r:rnd(2,5)});
+    const a = Math.random()*Math.PI*2;   // cosmetic: particles render and die, never read back
+    const s = crnd(30,120);
+    particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:crnd(0.3,0.7),max:0.7,color,r:crnd(2,5)});
   }
 }
 function addDmgNum(x,y,val,color='#fff') {
@@ -881,7 +901,7 @@ function update(dt) {
         if (Math.abs(diff) < arc/2) {
           let dmg = playerDmg() * rnd(0.9,1.1);
           if (player._riposte > 0) { dmg *= 2; player._riposte = 0; addMsg('RIPOSTE', '#8af'); }
-          if (player.boonCrit && Math.random() < 0.2) { dmg *= 2; }
+          if (player.boonCrit && rng() < 0.2) { dmg *= 2; }   // gameplay: crit
           if (e.packBoost) dmg *= 0.75;   // the shield wall: packed formations feel your blade less
           e.hp -= dmg;
           e.flash = 0.15;
@@ -890,16 +910,17 @@ function update(dt) {
           if (e.hp > 0) {
             e.hitsSurvived = (e.hitsSurvived || 0) + 1;
             e.rout = 0;   // struck mid-flight, the router finds its nerve
-            if (!e.grudged && e.type !== 'k3' && (e.hitsSurvived >= 2 || Math.random() < 0.25)) {
+            if (!e.grudged && e.type !== 'k3' && (e.hitsSurvived >= 2 || rng() < 0.25)) {   // gameplay: grudge speed buff
               e.grudged = true;
               if (!e.name) e.name = genName();
               e.speed *= 1.15;
               chronicle(e.name + ' holds a grudge', '#f66');
+              evlog.push(Object.assign(evt(), { e: 'grudge' }));
               beep(200, 0.15, 'square', 0.03);
             }
           }
           if (player.boonWave) { e.vx += (e.x - player.x) / Math.max(d,1) * 260; e.vy += (e.y - player.y) / Math.max(d,1) * 260; }
-          if (player.boonChain && Math.random() < 0.3) {
+          if (player.boonChain && rng() < 0.3) {   // gameplay: chain lightning
             let t2 = null, d2 = 160;
             for (const o of enemies) {
               if (o === e) continue;
@@ -1108,8 +1129,9 @@ function update(dt) {
       }
       if (player.boonThorns) { e.hp -= 12 * dt; }
     } else if (e.type === 'spitter') {
-      if (lore.traps && Math.random() < Math.min(0.36 * dt, 0.05) && mines.length < 6 && d < 420) {
+      if (lore.traps && rng() < Math.min(0.36 * dt, 0.05) && mines.length < 6 && d < 420) {   // gameplay: mine lay
         mines.push({ x: e.x, y: e.y, arm: 0.8, life: 14 });
+        evlog.push(Object.assign(evt(), { e: 'mine' }));
       }
       if (d < 200) { e.vx = -nx * e.speed; e.vy = -ny * e.speed; }
       else if (d > 320) { e.vx = nx * e.speed; e.vy = ny * e.speed; }
@@ -1188,7 +1210,7 @@ function update(dt) {
       // fast, dodges when player attacks — and if the horde learned to wait, they read the roll
       const rollRead = lore.wait && player.rollT > 0;
       if (player.attackT > 0 && d < 100 && e.dodgeCd <= 0) {
-        const perp = Math.random() < 0.5 ? 1 : -1;
+        const perp = rng() < 0.5 ? 1 : -1;   // gameplay: dodge direction
         e.vx = -ny * perp * e.speed * 2.5 * (rollRead ? 1.35 : 1);
         e.vy = nx * perp * e.speed * 2.5 * (rollRead ? 1.35 : 1);
         e.dodgeCd = 0.8;
@@ -1209,6 +1231,7 @@ function update(dt) {
       // phase two (swarm-steal): at half blood the dragon stops toying
       if (!e.phase2 && e.hp < e.maxHp * 0.5) {
         e.phase2 = true; e.speed *= 1.4;
+        evlog.push(Object.assign(evt(), { e: 'phase2' }));
         addMsg('THE DRAGON OPENS ITS EYE', '#f44');
         chronicle('the dragon opens its eye — it was toying with you', '#f44');
         beep(60, 0.7, 'sawtooth', 0.07); G.shake = 10;
@@ -1219,7 +1242,7 @@ function update(dt) {
           e._sumT = 6;
           if (enemies.filter(o => o.type === 'k8').length < 10) {
             for (let k = 0; k < 3; k++) {
-              const a2 = Math.random() * Math.PI * 2;
+              const a2 = rng() * Math.PI * 2;   // gameplay: whelp spawn heading
               const w2 = spawnEnemy('k8', clamp(e.x + Math.cos(a2) * 80, 20, WORLD_W - 20), clamp(e.y + Math.sin(a2) * 80, 20, WORLD_H - 20), 'nave');
               w2.aggro = true;
             }
@@ -1451,7 +1474,7 @@ function update(dt) {
 
   // monastery spike traps: the floor breathes, and it bites — whoever walks badly
   for (const s of SPIKES) {
-    s.phase = (s.phase || Math.random() * 3) + dt;
+    s.phase = (s.phase || rng() * 3) + dt;   // gameplay: spike up/down rhythm (decides the bite)
     s.up = (s.phase % 3) > 1.9;
     if (s.up && Math.hypot(player.x - s.x, player.y - s.y) < 26 && player.iframes <= 0) { hurtPlayer(12); player.iframes = 0.4; }
     if (s.up) {
@@ -1565,33 +1588,37 @@ function update(dt) {
       if (player.hp < player.maxHp * 0.5 && (b.id === 'leech' || b.id === 'thorns')) w += 2;
       return w;
     };
-    const pool = BOONS.filter(b => !(player.boons || {})[b.id]);
+    // max law: a boon at max stacks is removed from the offered pool (stackables re-offer until capped)
+    const pool = BOONS.filter(b => (taken[b.id] || 0) < (b.max || 1));
     const picks = [];
     const bag = pool.slice();
     while (picks.length < 3 && bag.length) {
       let total = 0;
       for (const b of bag) total += weight(b);
-      let roll = Math.random() * total, idx = 0;
+      let roll = rng() * total, idx = 0;   // gameplay: which boons the gods offer
       for (let i = 0; i < bag.length; i++) { roll -= weight(bag[i]); if (roll <= 0) { idx = i; break; } }
       picks.push(bag.splice(idx, 1)[0]);
     }
-    if (picks.length) { G.boonDraft = picks; addMsg('A GOD OFFERS A BOON — press 1 / 2 / 3', '#8af'); }
+    if (picks.length) { G.boonDraft = picks; evlog.push(Object.assign(evt(), { e: 'boons', ids: picks.map(b => b.id) })); addMsg('A GOD OFFERS A BOON — press 1 / 2 / 3', '#8af'); }
     else addMsg('LEVEL UP! Press Z/X/C to spend stat point', '#ff4');
     beep(550, 0.2, 'sine', 0.05);
     beep(770, 0.2, 'sine', 0.04);
   }
-  // boon draft pick
+  // boon draft pick — the draft OWNS the digit keys this frame: a pick must never
+  // fall through to the weapon swap below (branch, not just flag hygiene)
+  let draftPick = false;
   if (G.boonDraft) {
     for (let i = 0; i < G.boonDraft.length; i++) {
       if (keys[['Digit1', 'Digit2', 'Digit3'][i] + '_p']) {
         const b = G.boonDraft[i];
         player.boons = player.boons || {};
-        player.boons[b.id] = true;
+        player.boons[b.id] = (player.boons[b.id] || 0) + 1;   // gameplay: stack counts (max law reads these)
         b.apply();
         addMsg(b.god + ': ' + b.name + ' — ' + b.desc, b.color);
         beep(880, 0.15, 'triangle', 0.04);
         G.boonDraft = null;
         keys['Digit1_p'] = keys['Digit2_p'] = keys['Digit3_p'] = false;
+        draftPick = true;
         break;
       }
     }
@@ -1604,9 +1631,9 @@ function update(dt) {
     if (keys['KeyC_p']) { player.swiftness++; player.statPoints--; addMsg('+1 Swiftness', '#4af'); }
   }
 
-  // Weapon swap
-  if (keys['Digit1_p'] && !G.boonDraft) { player.weaponIdx = 0; addMsg('Weapon 1: ' + player.weapons[0].name, RARITY[player.weapons[0].rarity].color); }
-  if (keys['Digit2_p'] && !G.boonDraft) { player.weaponIdx = 1; addMsg('Weapon 2: ' + player.weapons[1].name, RARITY[player.weapons[1].rarity].color); }
+  // Weapon swap (dead on a pick frame — the draft consumed the input event)
+  if (!draftPick && keys['Digit1_p'] && !G.boonDraft) { player.weaponIdx = 0; addMsg('Weapon 1: ' + player.weapons[0].name, RARITY[player.weapons[0].rarity].color); }
+  if (!draftPick && keys['Digit2_p'] && !G.boonDraft) { player.weaponIdx = 1; addMsg('Weapon 2: ' + player.weapons[1].name, RARITY[player.weapons[1].rarity].color); }
 
   // Camera
   const targetCamX = clamp(player.x - BASE_W/2, 0, WORLD_W - BASE_W);
@@ -1634,6 +1661,7 @@ function hurtPlayer(dmg) {
   player.hitFlash = 0.2;
   player.iframes = 0.5;
   G.shake = 8;
+  evlog.push(Object.assign(evt(), { e: 'hurt', d: Math.round(dmg * 1000) / 1000, hp: Math.round(player.hp * 1000) / 1000 }));
   addDmgNum(player.x, player.y - player.r, dmg, '#f44');
   beep(150, 0.15, 'sawtooth', 0.05);
   if (player.hp <= 0) playerDie();
@@ -1641,6 +1669,7 @@ function hurtPlayer(dmg) {
 
 function playerDie() {
   G.deaths++;
+  evlog.push(Object.assign(evt(), { e: 'death' }));
   player.hasLostSouls = true;
   player.soulsLost = player.souls;
   player.soulsLostX = player.x;
@@ -1682,7 +1711,7 @@ function killEnemy(e) {
   }
   // loot
   if (!e.isBoss) {
-    if (Math.random() < 0.35) makeLoot(e.x, e.y);
+    if (rng() < 0.35) makeLoot(e.x, e.y);   // gameplay: drop table
   } else {
     makeLoot(e.x, e.y);
     makeLoot(e.x+30, e.y);
@@ -1719,13 +1748,17 @@ function killEnemy(e) {
   if (player.boonLeech) player.hp = Math.min(player.maxHp, player.hp + 6);
   if (player.boonCloud) deathClouds.push({ x: e.x, y: e.y, r: 44, life: 3 });
   // ghost ally (swarm-steal): a riposte kill is an honorable kill — sometimes the fallen rise grateful
-  if (player._riposte > 0 && allies.length < 3 && e.type !== 'boss' && !e.runner && ((window.MUD && window.MUD.forceGhost) || Math.random() < 0.4)) {
-    allies.push({ x: e.x, y: e.y, t: 9, ph: Math.random() * 6 });
+  if (player._riposte > 0 && allies.length < 3 && e.type !== 'boss' && !e.runner && ((window.MUD && window.MUD.forceGhost) || rng() < 0.4)) {   // gameplay: ally DPS
+    allies.push({ x: e.x, y: e.y, t: 9, ph: Math.random() * 6 });   // ph is render-alpha only — cosmetic
+    evlog.push(Object.assign(evt(), { e: 'ghost' }));
     chronicle((e.name || 'the fallen') + ' rises grateful — for a moment', '#8af');
   }
   // grief: nearby idle allies keen over the body — then come for you
   for (const o of enemies) {
-    if (o.hp > 0 && !o.aggro && !o.runner && o.mourn == null && Math.hypot(o.x - e.x, o.y - e.y) < 130 && Math.random() < 0.45) o.mourn = 2.2;
+    if (o.hp > 0 && !o.aggro && !o.runner && o.mourn == null && Math.hypot(o.x - e.x, o.y - e.y) < 130 && rng() < 0.45) {   // gameplay: mourner rises angry
+      o.mourn = 2.2;
+      evlog.push(Object.assign(evt(), { e: 'mourn' }));
+    }
   }
   // rout: the champion died and the room's nerve broke
   if (e.isChampion && e.room) {
@@ -1749,7 +1782,8 @@ function killEnemy(e) {
   if (e.type === 'boss') spawnCascade(e.x, e.y, 'k8');
   chronicle((e.name || 'a ' + e.type) + ' falls — ' + (e.souls || 0) + ' souls scatter', '#9a8a6a');
   if (e.type === 'k8') spawnCascade(e.x, e.y, 'k3');
-  if (e.type !== 'k3' && Math.random() < 0.09 && superOrbs.length < 2) superOrbs.push({ x: e.x, y: e.y, vx: 0, vy: 0, t: 0 });
+  if (e.type !== 'k3' && rng() < 0.09 && superOrbs.length < 2) { superOrbs.push({ x: e.x, y: e.y, vx: 0, vy: 0, t: 0 }); evlog.push(Object.assign(evt(), { e: 'superorb' })); }   // gameplay: SUPERHOT window
+  evlog.push(Object.assign(evt(), { e: 'kill', k: e.type }));
   beep(300, 0.1, 'square', 0.03);
 }
 
@@ -1773,8 +1807,8 @@ function draw() {
     return;
   }
 
-  const shakeX = G.shake > 0 ? rnd(-G.shake,G.shake) : 0;
-  const shakeY = G.shake > 0 ? rnd(-G.shake,G.shake) : 0;
+  const shakeX = G.shake > 0 ? crnd(-G.shake,G.shake) : 0;   // cosmetic: screen-space only
+  const shakeY = G.shake > 0 ? crnd(-G.shake,G.shake) : 0;
   ctx.save();
   ctx.translate(-G.cam.x + shakeX, -G.cam.y + shakeY);
 
@@ -2199,6 +2233,7 @@ function spawnCascade(x, y, kind, rid) {
   const a = Math.min(G.ng, 20);
   if (kind === 'k8') {
     const n = 8 + a;
+    evlog.push(Object.assign(evt(), { e: 'cascade', k: kind, n }));
     for (let i = 0; i < n; i++) {
       const ang = (i / n) * Math.PI * 2;
       spawnEnemy('k8', clamp(x + Math.cos(ang) * 60, 20, WORLD_W - 20), clamp(y + Math.sin(ang) * 60, 20, WORLD_H - 20));
@@ -2208,8 +2243,9 @@ function spawnCascade(x, y, kind, rid) {
     beep(90, 0.5, 'sawtooth', 0.06);
   } else if (kind === 'k3') {
     const n = 16 + 2 * a;
+    evlog.push(Object.assign(evt(), { e: 'cascade', k: kind, n }));
     for (let i = 0; i < n; i++) {
-      const ang = (i / n) * Math.PI * 2 + Math.random() * 0.3;
+      const ang = (i / n) * Math.PI * 2 + rng() * 0.3;   // gameplay: spark scatter heading
       spawnEnemy('k3', clamp(x + Math.cos(ang) * 30, 20, WORLD_W - 20), clamp(y + Math.sin(ang) * 30, 20, WORLD_H - 20));
     }
     addMsg('K8 FALLS — ' + n + ' K3 SPARKS', '#d66');
@@ -2217,10 +2253,34 @@ function spawnCascade(x, y, kind, rid) {
   }
 }
 
-function startGame() {
+function startGame(forcedSeed) {
+  // RNG LAW: each run seeds the LCG (auto seed recorded in runSeed); pass forcedSeed to replay a recorded run
+  seedRun(forcedSeed!==undefined?((forcedSeed>>>0)||1):(((Date.now()^Math.imul(++runN,2654435761))>>>0)||1));
+  evlog.length = 0;
+  // toy start() law (FX4): a new run resets the actors — same seed + same inputs → same run.
+  // (lore is deliberately NOT reset: the horde learns across runs, by design — it is machine state.)
+  Object.assign(player, {
+    x: 200, y: 1050, vx: 0, vy: 0, respawnX: 200, respawnY: 1080,
+    hp: 100, maxHp: 100, stamina: 100, maxStamina: 100, staminaRegen: 25, speed: 200,
+    facing: 0, attackT: 0, attackCd: 0, rollT: 0, rollCd: 0, rollDir: { x: 0, y: 0 },
+    iframes: 0, snared: 0, xp: 0, xpNext: 20, level: 1, statPoints: 0,
+    might: 0, vigor: 0, swiftness: 0, souls: 0, soulsLost: 0, soulsLostX: 0, soulsLostY: 0,
+    hasLostSouls: false, soulsDecayT: 0, weaponIdx: 0, lifeOnKill: 0, bonusSpeed: 0, hitFlash: 0,
+    _riposte: 0, _rwUsed: false,
+    weapons: [
+      { name: 'Rusty Sword', dmg: 12, speed: 1.0, rarity: 0 },
+      { name: 'Short Blade', dmg: 8, speed: 1.3, rarity: 0 },
+    ],
+    boons: null,
+  });
+  for (const k of Object.keys(player)) if (k.startsWith('boon')) delete player[k];
+  G.deaths = 0; G.shake = 0; G.hitStop = 0; G.msgT = 0; G.msg = ''; G.msgColor = undefined;
+  G.superBonus = 0; G.boonDraft = null;
+  for (const s of SPIKES) { s.phase = 0; s.up = false; }   // spike rhythm re-derives from the run seed
   try { G.ng = Math.max(0, parseInt(localStorage.getItem('mud_asc') || '0', 10) || 0); } catch (e) {}
   spawnAllEnemies();
   puzzleReset();
+  evlog.push({ t: 0, e: 'run', seed: runSeed, key: puzzle.key ? [puzzle.key.x, puzzle.key.y] : null, chest: puzzle.chest ? [puzzle.chest.x, puzzle.chest.y] : null });   // replay receipt: seed + seeded placement
   SIGILS.count = 0; G.naveEverActive = false; G.curRoom = 'courtyard';
   allies.length = 0; trail.length = 0; corpses.length = 0;
   for (const ch of CHANDS) ch.dropped = false;
@@ -2292,7 +2352,7 @@ function frame(now) {
 requestAnimationFrame(frame);
 
 // DFHack-style handle: let agents drive/test the game
-window.MUD = { get G() { return G; }, get player() { return player; }, get enemies() { return enemies; }, get superOrbs() { return superOrbs; }, get mines() { return mines; }, get lore() { return lore; }, get qt() { return qtRoot; }, get puzzle() { return puzzle; }, get boonDraft() { return G.boonDraft; }, get DOORS() { return DOORS; }, get SIGILS() { return SIGILS; }, get ROOM_STATE() { return ROOM_STATE; }, get walls() { return walls; }, get doorRects() { return doorRects; }, resolveWalls, get chron() { return chron; }, get mudOthers() { return mudOthers; }, get allies() { return allies; }, get corpses() { return corpses; }, get trail() { return trail; }, get SPIKES() { return SPIKES; }, get soulOrbs() { return soulOrbs; }, get projectiles() { return projectiles; }, get BEARTRAPS() { return BEARTRAPS; }, get DARTS() { return DARTS; }, get CHANDS() { return CHANDS; }, get VENTS() { return VENTS; }, forceBell: false, forceGhost: false, puzzleReset, syncDoors, keys, startGame, addMsg, nextLoop, spawnEnemy, spawnCascade, loreUnlock, stepUpdate: update,
+window.MUD = { get G() { return G; }, get player() { return player; }, get enemies() { return enemies; }, get superOrbs() { return superOrbs; }, get mines() { return mines; }, get lore() { return lore; }, get qt() { return qtRoot; }, get puzzle() { return puzzle; }, get boonDraft() { return G.boonDraft; }, get DOORS() { return DOORS; }, get SIGILS() { return SIGILS; }, get ROOM_STATE() { return ROOM_STATE; }, get walls() { return walls; }, get doorRects() { return doorRects; }, resolveWalls, get chron() { return chron; }, get mudOthers() { return mudOthers; }, get allies() { return allies; }, get corpses() { return corpses; }, get trail() { return trail; }, get SPIKES() { return SPIKES; }, get soulOrbs() { return soulOrbs; }, get projectiles() { return projectiles; }, get BEARTRAPS() { return BEARTRAPS; }, get DARTS() { return DARTS; }, get CHANDS() { return CHANDS; }, get VENTS() { return VENTS; }, get lootDrops() { return lootDrops; }, get fireZones() { return fireZones; }, get deathClouds() { return deathClouds; }, get evlog() { return evlog; }, get runSeed() { return runSeed; }, get lcg() { return lcg; }, seedRun, forceBell: false, forceGhost: false, puzzleReset, syncDoors, keys, startGame, addMsg, nextLoop, spawnEnemy, spawnCascade, loreUnlock, stepUpdate: update,
   step: function (dt) { last = performance.now(); handleStateKeys(); update(dt || 0.016); draw(); },
   pump: function (n, dt) { for (let i = 0; i < (n || 1); i++) this.step(dt || 0.016); return this.enemies.length; } };
 

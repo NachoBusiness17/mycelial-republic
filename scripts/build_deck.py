@@ -216,6 +216,49 @@ def mine_context_pack():
             "knot": knot.group(1) if knot else "?"}
 
 
+def mine_world():
+    """CV3: the bones-world's walked sessions (wow_session.v1) + travelers (wow_player.v1).
+
+    A "walk" counts only when a character is attached: the session's seed must name a
+    real player ledger. Test residue (bare referee seeds) is counted but never shown
+    as the first walk."""
+    out = {"sessions": 0, "complete": 0, "first_walk": None, "players": [],
+           "path": "memory/runs/wow_world/receipts"}
+    pdir = ROOT / "memory" / "runs" / "wow_player"
+    names = set()
+    for p in sorted(pdir.glob("ply-*.json")) if pdir.exists() else []:
+        try:
+            d = json.loads(read(p))
+        except json.JSONDecodeError:
+            continue
+        if isinstance(d, dict) and d.get("schema") == "wow_player.v1":
+            t = d.get("traits") or {}
+            names.add(d.get("name"))
+            out["players"].append({"name": d.get("name"), "player_id": d.get("player_id"),
+                                   "room": t.get("room"), "ledger_rows": len(d.get("ledger") or []),
+                                   "inventory": len(t.get("inventory") or [])})
+    rdir = ROOT / "memory" / "runs" / "wow_world" / "receipts"
+    recs = []
+    for p in sorted(rdir.glob("*.json")) if rdir.exists() else []:
+        try:
+            r = json.loads(read(p))
+        except json.JSONDecodeError:
+            continue
+        if isinstance(r, dict) and r.get("schema") == "wow_session.v1":
+            recs.append(r)
+    out["sessions"] = len(recs)
+    done = [r for r in recs if r.get("verdict") == "COMPLETE"]
+    out["complete"] = len(done)
+    walked = [r for r in done if r.get("seed") in names]
+    if walked:
+        r = walked[0]
+        out["first_walk"] = {"session_id": r.get("session_id"), "seed": r.get("seed"),
+                             "world": r.get("world"), "route": r.get("route"),
+                             "verdict": r.get("verdict"), "moves": len(r.get("moves") or []),
+                             "sha256_12": (r.get("sha256") or "")[:12]}
+    return out
+
+
 def mine_programs():
     progs = []
     pc = ROOT / "watch" / "inbox" / "physical_computing"
@@ -300,13 +343,25 @@ def mine_programs():
     # 5. World build M0–M5
     bp = read(ROOT / "watch" / "inbox" / "WOW_CLONE_BETA_BLUEPRINT_20260916.md")
     miles = re.findall(r"^- \*\*(M\d) — (.+?)\.\*\*", bp, re.M)
+    wfacts = [f"{mid}: {mtxt}" for mid, mtxt in miles] or ["blueprint milestones unreadable"]
+    w = mine_world()
+    if w["first_walk"]:
+        fw = w["first_walk"]
+        wfacts.append("FIRST WALK: " + " -> ".join(fw["route"]) +
+                      f" · seed {fw['seed']} · {fw['moves']} moves · verdict {fw['verdict']}"
+                      f" · {fw['session_id']} · receipt sha256:{fw['sha256_12']}")
+    for p in w["players"]:
+        wfacts.append(f"traveler {p['name']} ({p['player_id']}) at {p['room']}"
+                      f" · ledger {p['ledger_rows']} rows · inventory {p['inventory']}")
+    if not w["players"]:
+        wfacts.append("no traveler has carried world/room yet (the world is unwalked)")
     progs.append({
         "id": "world", "title": "WORLD BUILD (M0–M5)",
         "gate": "SCOPE-FREEZE→SEP-20",
         "status": "M0 LANDED (W1 wow_world.py, atrium-ring) · M2 LANDED (W2 wow_player.py 17/17, byte-identical resume) · next M2.5+",
         "detail": "Verifiable play: every session is a receipt and every receipt replays. "
                   "The free week is the drafting sprint; the editor seat is forever.",
-        "facts": [f"{mid}: {mtxt}" for mid, mtxt in miles] or ["blueprint milestones unreadable"],
+        "facts": wfacts,
         "sources": ["watch/inbox/WOW_CLONE_BETA_BLUEPRINT_20260916.md",
                     "watch/inbox/wave_20260916/receipts/W1_WORLD_SKELETON.md",
                     "watch/inbox/wave_20260916/receipts/W2_PLAYER_FILES.md"],
@@ -450,9 +505,39 @@ function programs() {
   return `<section id="programs"><h2>PROGRAMS <span class="n">// six</span></h2><div class="grid cards">` +
     D.programs.map(p => `<div class="card"><h3>${esc(p.title)}${chip(p.gate, 'gate')}</h3>
       <div class="st">${esc(p.status)}</div><p>${esc(p.detail)}</p>
-      <ul>${p.facts.map(f => `<li>${esc(f)}</li>`).join('')}</ul>
-      <div class="src">sources: ${p.sources.map(s => esc(s)).join(' · ')}</div></div>`).join('') +
+      <ul>${p.facts.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` +
+      (p.id === 'world' ? '<p id="mud-relay" class="src">relay: probing :8766/mud/state …</p>' : '') +
+      `<div class="src">sources: ${p.sources.map(s => esc(s)).join(' · ')}</div></div>`).join('') +
     '</div></section>';
+}
+
+/* N11 live relay lens: WORLD card probes GET /mud/state at page load.
+   Fire-and-forget — never blocks render; any failure (refused, timeout,
+   ok:false from a squatter service) degrades to an OFFLINE line. */
+async function mudRelay() {
+  const el = document.getElementById('mud-relay');
+  if (!el) return;
+  const url = 'http://127.0.0.1:8766/mud/state';
+  try {
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), 1500);
+    const r = await fetch(url, { signal: ctl.signal });
+    clearTimeout(t);
+    if (!r.ok) throw new Error('http ' + r.status);
+    const s = await r.json();
+    if (!s || s.ok !== true) throw new Error('not the mud relay (ok:false)');
+    const ps = s.players || [];
+    const n = ps.length;
+    const age = n ? Math.min.apply(null, ps.map(p => (typeof p.age === 'number' ? p.age : 0))) : null;
+    el.innerHTML = 'relay <span class="good">LIVE</span> · players ' + n +
+      (n ? ' · last lantern ' + age.toFixed(1) + 's old' : ' · room dark (0 lanterns)') +
+      ' · seen_total ' + (s.seen_total == null ? '?' : s.seen_total) +
+      ' · <a href="' + url + '" target="_blank">/mud/state</a>';
+  } catch (e) {
+    const msg = (e && e.name === 'AbortError') ? 'timeout 1.5s' : String((e && e.message) ? e.message : e);
+    el.innerHTML = 'relay <span class="bad">OFFLINE</span> (' + esc(msg) + ')' +
+      ' · start: <code>.venv/Scripts/python.exe dashboard/mud_relay.py</code>';
+  }
 }
 
 function lanes() {
@@ -527,6 +612,7 @@ const SECTIONS = [
 ];
 document.getElementById('main').innerHTML = SECTIONS.map(s => s[2]()).join('');
 document.getElementById('nav').innerHTML = SECTIONS.map(s => `<a href="#${s[0]}">${s[1]}</a>`).join('');
+mudRelay();
 </script>
 </body>
 </html>"""
@@ -546,6 +632,7 @@ def main():
         },
         "wave": wave,
         "context_pack": mine_context_pack(),
+        "world": mine_world(),
         "lanes": mine_lanes(now),
         "ledgers": mine_ledgers(),
         "receipts": mine_receipts(),

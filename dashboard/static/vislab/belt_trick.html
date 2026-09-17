@@ -1,0 +1,765 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>THE BELT TRICK DOMAIN LATTICE — 720° true close · Lipschitz-bounded march</title>
+<style>
+  :root{
+    --bg:#06040a; --panel:rgba(10,7,16,.92); --line:#241a33; --txt:#c9b8dd;
+    --dim:#8a76a3; --acc:#ff2d95; --acc2:#00f0ff; --danger:#ff3d5a; --gold:#ffc857;
+    --resid:#c89bff;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);overflow:hidden;
+    font:13px/1.45 ui-monospace,Consolas,"Cascadia Mono",monospace;color:var(--txt)}
+  #gl{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:grab}
+  #gl.drag{cursor:grabbing}
+  #err{position:fixed;left:8px;bottom:8px;right:410px;color:var(--danger);
+    white-space:pre-wrap;z-index:50;pointer-events:none;text-shadow:0 1px 2px #000}
+  /* ---- HUD strip: the Lipschitz bound, DISPLAYED on screen at all times ---- */
+  #hud{position:fixed;left:10px;top:10px;z-index:10;pointer-events:none;
+    background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--acc2);
+    padding:8px 12px;font-size:12px;letter-spacing:.02em}
+  #hud .law{color:var(--acc2);font-weight:700}
+  #hud .v{color:var(--gold)}
+  #hud .bad{color:var(--danger);font-weight:700}
+  #hud .ok{color:#7ee2a8;font-weight:700}
+  /* ---- plaque (the Isfahan law: the plaque tells the truth) ---- */
+  #plaque{position:fixed;right:0;top:0;bottom:0;width:400px;background:var(--panel);
+    border-left:1px solid var(--line);overflow-y:auto;padding:14px 16px 40px;z-index:20}
+  #plaque h1{font-size:14px;letter-spacing:.14em;color:var(--acc);margin:0 0 2px}
+  #plaque h2{font-size:11px;letter-spacing:.12em;color:var(--acc2);margin:18px 0 6px;
+    border-bottom:1px solid var(--line);padding-bottom:3px}
+  #plaque .sub{color:var(--dim);font-size:11px;margin-bottom:10px}
+  .row{display:flex;gap:6px;margin:6px 0}
+  button{flex:1;background:#150c20;color:var(--txt);border:1px solid var(--line);
+    font:inherit;padding:6px 4px;cursor:pointer;letter-spacing:.04em}
+  button:hover{border-color:var(--acc)}
+  button.on{border-color:var(--acc2);color:var(--acc2)}
+  label.chk{display:block;margin:6px 0;color:var(--dim);cursor:pointer}
+  label.chk input{margin-right:6px}
+  table{width:100%;border-collapse:collapse;font-size:11px;margin-top:4px}
+  th{color:var(--dim);text-align:left;font-weight:400;border-bottom:1px solid var(--line);padding:2px 4px}
+  td{border-bottom:1px solid rgba(36,26,51,.5);padding:3px 4px;vertical-align:top}
+  td.c-name{color:var(--txt);white-space:nowrap}
+  td.c-val{color:var(--gold);word-break:break-all}
+  .tag{display:inline-block;font-size:9px;padding:0 4px;border:1px solid;letter-spacing:.06em;margin-right:2px}
+  .tag.src{color:var(--acc2);border-color:var(--acc2)}
+  .tag.doc{color:var(--gold);border-color:var(--gold)}
+  .tag.recon{color:var(--danger);border-color:var(--danger)}
+  .tag.port{color:var(--resid);border-color:var(--resid)}
+  .quote{border-left:2px solid var(--line);padding:2px 8px;margin:6px 0;color:var(--dim);font-size:11px}
+  .quote b{color:var(--txt);font-weight:400}
+  .kv{display:flex;justify-content:space-between;font-size:12px;margin:2px 0}
+  .kv .k{color:var(--dim)}
+  .stamp{margin:10px 0;padding:8px 10px;border:1px solid var(--line);font-size:12px;min-height:38px}
+  .stamp.fail{border-color:var(--danger);color:var(--danger)}
+  .stamp.true{border-color:#7ee2a8;color:#7ee2a8}
+  .stamp.idle{color:var(--dim)}
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div id="hud"></div>
+<div id="err"></div>
+
+<aside id="plaque">
+  <h1>THE BELT TRICK DOMAIN LATTICE</h1>
+  <div class="sub">revived from the operator's own math · sovereign-mirror-scaffold worktree
+    <b>platform/scenes/belt_domain.js</b> + prose doctrine · 360° false close vs 720° true close ·
+    the plaque tells the truth (Isfahan law)</div>
+
+  <h2>DEMO</h2>
+  <div class="row">
+    <button id="b360">RUN 360° NAIVE</button>
+    <button id="b720">RUN 720° TRUE</button>
+    <button id="breset">RESET</button>
+  </div>
+  <label class="chk"><input type="checkbox" id="cwobble" checked> wipeout wobble (unbounded surface motion)</label>
+  <label class="chk"><input type="checkbox" id="cmarch" checked> Lipschitz-bounded march probes</label>
+  <div id="stamp" class="stamp idle">idle — the cube is still. Run a close to test the holonomy.</div>
+  <div id="live"></div>
+
+  <h2>THE LIPSCHITZ BOUND — DISPLAYED, ALWAYS</h2>
+  <div class="quote">elder.md, RECEIPT 2026-09-06: <b>"sparse-grid distance field, Lipschitz-bound dirty
+    radius … SDF marching with Lipschitz continuity gives provable invalidation radii for free."</b></div>
+  <div id="marchlive"></div>
+  <div class="quote">Safe step law (sphere tracing): if f is L-Lipschitz, stepping
+    <b>s = f(p)/L</b> can never cross the surface. A surface moving at bounded speed v steals
+    clearance: the conservative step is <b>s = f(p)/L − v·Δt</b>, and a change at x invalidates a
+    <b>dirty radius r = (d(x) − v·Δt)/L</b> around it — the invalidation radius falls out of the
+    bound for free. The naive marcher below samples once and trusts the cache: that is the wipeout.</div>
+
+  <h2>CONSTANT TABLE — provenance per row</h2>
+  <table>
+    <tr><th>constant</th><th>value</th><th>source</th></tr>
+    <tr><td class="c-name">domain tiles</td><td class="c-val">3×3, box (0.9, 0.05, 0.9), spacing 1.05, y −1.2, checker 0x0f1a17 / 0x122820</td><td><span class="tag src">SRC</span>belt_domain.js</td></tr>
+    <tr><td class="c-name">spinning cube</td><td class="c-val">0.9³ @ (0, 0.6, 0) · accent 0xff2d95 · opacity 0.85 · rotation.y=θ, rotation.x=0.35θ</td><td><span class="tag src">SRC</span>belt_domain.js</td></tr>
+    <tr><td class="c-name">frame ring</td><td class="c-val">radius 2.8 · anchor y 0.6 · node r 0.1 · accent2 0x00f0ff · posts 0x2a4a3a</td><td><span class="tag src">SRC</span>belt_domain.js</td></tr>
+    <tr><td class="c-name">ribbons</td><td class="c-val">tube radius 0.03 (flat strip half-width 0.03) · Catmull-Rom a→mid→cube · 32 segments</td><td><span class="tag src">SRC</span>+<span class="tag port">PORT</span>belt_domain.js</td></tr>
+    <tr><td class="c-name">transport colors</td><td class="c-val">transport&lt;0 → danger 0xff3d5a · else gold 0xffc857 · transport ±1</td><td><span class="tag src">SRC</span>+<span class="tag recon">RECON</span>belt_domain.js (±1 from readings.js law)</td></tr>
+    <tr><td class="c-name">holonomy badge</td><td class="c-val">r 0.25 @ y 2.4 · odd → 0xff3d5a · even → 0xff2d95</td><td><span class="tag src">SRC</span>belt_domain.js</td></tr>
+    <tr><td class="c-name">ribbon kink</td><td class="c-val">odd: sin(θ)·0.55 · even: sin(θ/2)·0.12</td><td><span class="tag src">SRC</span>belt_domain.js</td></tr>
+    <tr><td class="c-name">odd emissive pulse</td><td class="c-val">0.35 + 0.25·|sin θ|</td><td><span class="tag src">SRC</span>belt_domain.js</td></tr>
+    <tr><td class="c-name">spin speed</td><td class="c-val">0.45 + (odd? 0.55 : 0.2) + liveTwist·0.9 → 0.65 / 1.00 rad/s</td><td><span class="tag src">SRC</span>+<span class="tag recon">RECON</span>belt_domain.js (liveTwist=0: pack unavailable)</td></tr>
+    <tr><td class="c-name">camera hint</td><td class="c-val">(0, 4, 9) · grid 10 units</td><td><span class="tag src">SRC</span>belt_domain.js</td></tr>
+    <tr><td class="c-name">palette</td><td class="c-val">bg 0x06040a · accent 0xff2d95 · accent2 0x00f0ff · danger 0xff3d5a · gold 0xffc857 · residual 0xc89bff · muted 0x4a2460</td><td><span class="tag src">SRC</span>engine.js</td></tr>
+    <tr><td class="c-name">TRUE CLOSE</td><td class="c-val">720° = 4π (even holonomy) — "only 4π is true identity"</td><td><span class="tag doc">DOC</span>idea_catalog.py · eli5.js · readings.js</td></tr>
+    <tr><td class="c-name">FALSE CLOSE</td><td class="c-val">360° = 2π (odd holonomy) — "looks closed on the base but leaves belts twisted"</td><td><span class="tag doc">DOC</span>idea_catalog.py · readings.js</td></tr>
+    <tr><td class="c-name">belt-trick law</td><td class="c-val">"turn 360° and the belt is still messed up. Turn another 360° (720° total) and it can lie flat."</td><td><span class="tag doc">DOC</span>eli5.js</td></tr>
+    <tr><td class="c-name">Lipschitz constant L</td><td class="c-val">L = 1.0 (exact rigid-box SDF)</td><td><span class="tag recon">RECON</span>elder.md prose law — NO source carries a numeric L (G3 verdict); 1.0 is the standard exact-SDF value</td></tr>
+    <tr><td class="c-name">surface speed bound v</td><td class="c-val">v ≤ 0.55 × ω_max = 0.55 × 1.00 = 0.55 u/s (wobble amplitude × max spin speed)</td><td><span class="tag src">SRC</span>-derived, belt_domain.js kink × speed</td></tr>
+    <tr><td class="c-name">anchor count / frames</td><td class="c-val">n = 4 (source floor max(frames,4)); frames f0–f3; transports +1,−1,+1,−1</td><td><span class="tag recon">RECON</span>pack.holonomy not in sources</td></tr>
+    <tr><td class="c-name">rendering</td><td class="c-val">raw WebGL2, no three.js; TubeGeometry → flat twist strip; idle spin paused (demo gate)</td><td><span class="tag port">PORT</span>notes</td></tr>
+  </table>
+
+  <h2>PROSE DOCTRINE (verbatim)</h2>
+  <div class="quote">idea_catalog.py: <b>"Dirac belt trick with domain repetition; 720° true close; Spin
+    cover made visible." … "2π looks closed on the base but leaves belts twisted; only 4π (even
+    holonomy) is true identity. Domain tiles = period-2 repetition of the cell."</b></div>
+  <div class="quote">eli5.js: <b>"Odd = fake close (2π). Even = true close (4π / belt trick)."</b></div>
+  <div class="quote">readings.js: <b>"Frame-cycle transport ±1; holonomy H = product. Odd = 2π false
+    close; even = 4π true close."</b></div>
+  <div class="sub" style="margin-top:14px">CV5 wave-lane receipt:
+    watch/inbox/physical_computing/receipts/CV5_BELT_TRICK_REVIVAL.md</div>
+</aside>
+
+<script>
+"use strict";
+/* =========================================================================
+   THE BELT TRICK DOMAIN LATTICE — CV5 revival
+   Ported from sovereign-mirror-scaffold platform/scenes/belt_domain.js
+   (+ engine.js palette) into raw WebGL2. Constants are load-bearing.
+   New here (mission-required, not in source): the 360°-fail vs 720°-untangle
+   demo state machine and the Lipschitz-bounded SDF march (elder.md doctrine).
+   ========================================================================= */
+window.onerror = function (msg, src, line) {
+  var e = document.getElementById("err");
+  e.textContent = "ERROR: " + msg + " @" + (src || "?") + ":" + line;
+  return false;
+};
+
+/* ---------- constants (load-bearing; provenance in the plaque table) ----- */
+var PAL = {                       /* engine.js PALETTE */
+  bg: [0x06/255, 0x04/255, 0x0a/255],
+  accent:  [0xff/255, 0x2d/255, 0x95/255],
+  accent2: [0x00/255, 0xf0/255, 0xff/255],
+  danger:  [0xff/255, 0x3d/255, 0x5a/255],
+  gold:    [0xff/255, 0xc8/255, 0x57/255],
+  resid:   [0xc8/255, 0x9b/255, 0xff/255],
+  muted:   [0x4a/255, 0x24/255, 0x60/255]
+};
+var TILE = { w: 0.9, h: 0.05, d: 0.9, spacing: 1.05, y: -1.2, colA: [0x0f/255,0x1a/255,0x17/255], colB: [0x12/255,0x28/255,0x20/255] };
+var CUBE = { s: 0.9, y: 0.6, tiltRatio: 0.35, alpha: 0.85 };
+var RING = { radius: 2.8, anchorY: 0.6, nodeR: 0.1, postCol: [0x2a/255,0x4a/255,0x3a/255] };
+var RIBBON = { halfWidth: 0.03, segments: 32 };
+var BADGE = { r: 0.25, y: 2.4 };
+var GRID_N = 10;
+var CAM_HINT = { x: 0, y: 4, z: 9 };
+var N_ANCHORS = 4;                /* RECON: source floor Math.max(frames.length, 4) */
+var TRANSPORTS = [1, -1, 1, -1];  /* RECON: readings.js "frame-cycle transport ±1" */
+var TRUE_CLOSE = Math.PI * 4;     /* DOC: 720° = 4π true close  (idea_catalog.py, eli5.js) */
+var FALSE_CLOSE = Math.PI * 2;    /* DOC: 360° = 2π false close (readings.js) */
+var LIPSCHITZ_L = 1.0;            /* RECON: elder.md prose law; no numeric L in any source */
+var WOBBLE_AMP = 0.55;            /* SRC: belt_domain.js odd-kink amplitude, reused as wobble amp */
+
+/* ---------- tiny mat4 (column-major) ------------------------------------ */
+function m4Ident() { return [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]; }
+function m4Mul(a, b) {
+  var o = new Array(16);
+  for (var c = 0; c < 4; c++) for (var r = 0; r < 4; r++) {
+    o[c*4+r] = a[r]*b[c*4] + a[4+r]*b[c*4+1] + a[8+r]*b[c*4+2] + a[12+r]*b[c*4+3];
+  }
+  return o;
+}
+function m4Persp(fov, asp, n, f) {
+  var t = 1 / Math.tan(fov / 2);
+  return [t/asp,0,0,0, 0,t,0,0, 0,0,(f+n)/(n-f),-1, 0,0,2*f*n/(n-f),0];
+}
+function m4LookAt(e, c, u) {
+  var zx=e[0]-c[0], zy=e[1]-c[1], zz=e[2]-c[2];
+  var zl=Math.hypot(zx,zy,zz); zx/=zl; zy/=zl; zz/=zl;
+  var xx=u[1]*zz-u[2]*zy, xy=u[2]*zx-u[0]*zz, xz=u[0]*zy-u[1]*zx;
+  var xl=Math.hypot(xx,xy,xz); xx/=xl; xy/=xl; xz/=xl;
+  var yx=zy*xz-zz*xy, yy=zz*xx-zx*xz, yz=zx*xy-zy*xx;
+  return [xx,yx,zx,0, xy,yy,zy,0, xz,yz,zz,0,
+    -(xx*e[0]+xy*e[1]+xz*e[2]), -(yx*e[0]+yy*e[1]+yz*e[2]), -(zx*e[0]+zy*e[1]+zz*e[2]), 1];
+}
+function m4T(x, y, z) { var m = m4Ident(); m[12]=x; m[13]=y; m[14]=z; return m; }
+function m4S(x, y, z) { var m = m4Ident(); m[0]=x; m[5]=y; m[10]=z; return m; }
+function m4RX(a) { var c=Math.cos(a), s=Math.sin(a);
+  return [1,0,0,0, 0,c,s,0, 0,-s,c,0, 0,0,0,1]; }
+function m4RY(a) { var c=Math.cos(a), s=Math.sin(a);
+  return [c,0,-s,0, 0,1,0,0, s,0,c,0, 0,0,0,1]; }
+function v3(x, y, z) { return [x, y, z]; }
+
+/* ---------- GL setup ----------------------------------------------------- */
+var canvas = document.getElementById("gl");
+var gl = canvas.getContext("webgl2", { antialias: true });
+if (!gl) { document.getElementById("err").textContent = "ERROR: WebGL2 unavailable in this browser."; }
+
+function makeProg(vsSrc, fsSrc) {
+  function sh(type, src) {
+    var s = gl.createShader(type);
+    gl.shaderSource(s, src); gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
+      throw new Error("shader: " + gl.getShaderInfoLog(s));
+    return s;
+  }
+  var p = gl.createProgram();
+  gl.attachShader(p, sh(gl.VERTEX_SHADER, vsSrc));
+  gl.attachShader(p, sh(gl.FRAGMENT_SHADER, fsSrc));
+  gl.linkProgram(p);
+  if (!gl.getProgramParameter(p, gl.LINK_STATUS))
+    throw new Error("link: " + gl.getProgramInfoLog(p));
+  return p;
+}
+
+var LIT_VS = "#version 300 es\n" +
+  "in vec3 aPos; in vec3 aNormal;\n" +
+  "uniform mat4 uMVP; uniform mat4 uModel;\n" +
+  "out vec3 vN; out vec3 vW;\n" +
+  "void main(){ vec4 w=uModel*vec4(aPos,1.0); vW=w.xyz;\n" +
+  "  vN=mat3(uModel)*aNormal; gl_Position=uMVP*vec4(aPos,1.0); }";
+var LIT_FS = "#version 300 es\n" +
+  "precision highp float;\n" +
+  "in vec3 vN; in vec3 vW;\n" +
+  "uniform vec3 uColor; uniform vec3 uEye; uniform float uEmissive; uniform float uAlpha;\n" +
+  "out vec4 o;\n" +
+  "void main(){ vec3 N=normalize(vN);\n" +
+  "  vec3 L=normalize(vec3(0.5,0.9,0.4));\n" +
+  "  float diff=max(dot(N,L),0.0);\n" +
+  "  vec3 V=normalize(uEye-vW);\n" +
+  "  float rim=pow(1.0-max(dot(N,V),0.0),2.0);\n" +
+  "  vec3 c=uColor*(0.22+0.78*diff)+uColor*rim*0.55+uColor*uEmissive;\n" +
+  "  o=vec4(c,uAlpha); }";
+var LINE_VS = "#version 300 es\n" +
+  "in vec3 aPos; in vec3 aCol; uniform mat4 uMVP; out vec3 vC;\n" +
+  "void main(){ vC=aCol; gl_Position=uMVP*vec4(aPos,1.0); }";
+var LINE_FS = "#version 300 es\n" +
+  "precision highp float; in vec3 vC; out vec4 o;\n" +
+  "void main(){ o=vec4(vC,1.0); }";
+
+var litProg, lineProg, litLoc, lineLoc, boxVAO, sphVAO, boxCount, sphCount, lineVAO, lineBuf, lineVerts;
+
+if (gl) {
+  litProg = makeProg(LIT_VS, LIT_FS);
+  lineProg = makeProg(LINE_VS, LINE_FS);
+  litLoc = {
+    aPos: gl.getAttribLocation(litProg, "aPos"),
+    aNormal: gl.getAttribLocation(litProg, "aNormal"),
+    uMVP: gl.getUniformLocation(litProg, "uMVP"),
+    uModel: gl.getUniformLocation(litProg, "uModel"),
+    uColor: gl.getUniformLocation(litProg, "uColor"),
+    uEye: gl.getUniformLocation(litProg, "uEye"),
+    uEmissive: gl.getUniformLocation(litProg, "uEmissive"),
+    uAlpha: gl.getUniformLocation(litProg, "uAlpha")
+  };
+  lineLoc = {
+    aPos: gl.getAttribLocation(lineProg, "aPos"),
+    aCol: gl.getAttribLocation(lineProg, "aCol"),
+    uMVP: gl.getUniformLocation(lineProg, "uMVP")
+  };
+}
+
+/* unit box: 24 verts, per-face normals */
+function buildBox() {
+  var p = [], n = [], idx = [];
+  var faces = [
+    [[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[0,0,-1]],
+    [[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1],[0,0,1]],
+    [[-1,-1,-1],[-1,-1,1],[-1,1,1],[-1,1,-1],[-1,0,0]],
+    [[1,-1,-1],[1,-1,1],[1,1,1],[1,1,-1],[1,0,0]],
+    [[-1,1,-1],[1,1,-1],[1,1,1],[-1,1,1],[0,1,0]],
+    [[-1,-1,-1],[1,-1,-1],[1,-1,1],[-1,-1,1],[0,-1,0]]
+  ];
+  faces.forEach(function (f) {
+    var base = p.length / 3;
+    for (var i = 0; i < 4; i++) { p.push(f[i][0]*0.5, f[i][1]*0.5, f[i][2]*0.5); n.push(f[4][0], f[4][1], f[4][2]); }
+    idx.push(base, base+1, base+2, base, base+2, base+3);
+  });
+  return { pos: new Float32Array(p), nrm: new Float32Array(n), idx: new Uint16Array(idx) };
+}
+/* low-poly sphere */
+function buildSphere(lat, lon) {
+  var p = [], n = [], idx = [];
+  for (var i = 0; i <= lat; i++) {
+    var th = i / lat * Math.PI, st = Math.sin(th), ct = Math.cos(th);
+    for (var j = 0; j <= lon; j++) {
+      var ph = j / lon * 2 * Math.PI;
+      var x = st * Math.cos(ph), y = ct, z = st * Math.sin(ph);
+      p.push(x, y, z); n.push(x, y, z);
+    }
+  }
+  for (i = 0; i < lat; i++) for (j = 0; j < lon; j++) {
+    var a = i * (lon+1) + j, b = a + lon + 1;
+    idx.push(a, b, a+1, b, b+1, a+1);
+  }
+  return { pos: new Float32Array(p), nrm: new Float32Array(n), idx: new Uint16Array(idx) };
+}
+function makeMeshVAO(geo) {
+  var vao = gl.createVertexArray(); gl.bindVertexArray(vao);
+  var pb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, pb);
+  gl.bufferData(gl.ARRAY_BUFFER, geo.pos, gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(litLoc.aPos); gl.vertexAttribPointer(litLoc.aPos, 3, gl.FLOAT, false, 0, 0);
+  var nb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, nb);
+  gl.bufferData(gl.ARRAY_BUFFER, geo.nrm, gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(litLoc.aNormal); gl.vertexAttribPointer(litLoc.aNormal, 3, gl.FLOAT, false, 0, 0);
+  var ib = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, geo.idx, gl.STATIC_DRAW);
+  gl.bindVertexArray(null);
+  return { vao: vao, count: geo.idx.length };
+}
+var boxMesh, sphMesh;
+if (gl) { boxMesh = makeMeshVAO(buildBox()); sphMesh = makeMeshVAO(buildSphere(10, 14)); }
+
+/* dynamic line batch (pos+color interleaved) */
+var MAXLINES = 32768;
+if (gl) {
+  lineVAO = gl.createVertexArray(); gl.bindVertexArray(lineVAO);
+  lineBuf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, lineBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, MAXLINES * 6 * 4, gl.DYNAMIC_DRAW);
+  gl.enableVertexAttribArray(lineLoc.aPos); gl.vertexAttribPointer(lineLoc.aPos, 3, gl.FLOAT, false, 24, 0);
+  gl.enableVertexAttribArray(lineLoc.aCol); gl.vertexAttribPointer(lineLoc.aCol, 3, gl.FLOAT, false, 24, 12);
+  gl.bindVertexArray(null);
+  lineVerts = 0;
+}
+function line(a, b, c) {
+  if (lineVerts + 6 > MAXLINES) return;
+  var arr = lineData, o = lineVerts * 6;
+  arr[o]=a[0]; arr[o+1]=a[1]; arr[o+2]=a[2]; arr[o+3]=c[0]; arr[o+4]=c[1]; arr[o+5]=c[2];
+  arr[o+6]=b[0]; arr[o+7]=b[1]; arr[o+8]=b[2]; arr[o+9]=c[0]; arr[o+10]=c[1]; arr[o+11]=c[2];
+  lineVerts += 6;
+}
+var lineData = new Float32Array(MAXLINES * 6);
+
+/* ---------- anchors (frame ring) ---------------------------------------- */
+var anchors = [];
+for (var ai = 0; ai < N_ANCHORS; ai++) {
+  var th = (ai / N_ANCHORS) * Math.PI * 2;      /* SRC: belt_domain.js */
+  anchors.push({
+    x: RING.radius * Math.cos(th),
+    y: RING.anchorY,
+    z: RING.radius * Math.sin(th),
+    label: "f" + ai
+  });
+}
+
+/* ---------- demo state machine ------------------------------------------
+   idle | run360 | fail (naive untangle attempt, shown failing) |
+   run720 | untangle (homotopy melts 2 turns to 0)                    */
+var S = {
+  mode: "idle",
+  angle: 0,            /* cube spin angle (SRC variable name) */
+  turns: 0,            /* stored belt twist, full turns = angle / 2π */
+  u: 0,                /* untangle progress 0..1 */
+  phaseT: 0,           /* phase clock */
+  stamp: "idle",
+  msg: "idle — the cube is still. Run a close to test the holonomy.",
+  odd: false
+};
+function spinSpeed(odd) { return 0.45 + (odd ? 0.55 : 0.2) + 0 * 0.9; }  /* SRC, liveTwist=0 */
+
+function setMode(m) {
+  S.mode = m; S.phaseT = 0; S.u = 0;
+  document.querySelectorAll("button").forEach(function (b) { b.classList.remove("on"); });
+  var el = { run360: "b360", run720: "b720" }[m];
+  if (el) document.getElementById(el).classList.add("on");
+  var st = document.getElementById("stamp");
+  st.className = "stamp " + ({ fail: "fail", untangle: "true", idle: "idle" }[m === "fail" ? "fail" : (m === "untangle" ? "true" : "idle")]);
+}
+
+document.getElementById("b360").onclick = function () {
+  S.angle = 0; S.turns = 0; setMode("run360");
+  S.msg = "360° naive close: spinning to 2π — the base will LOOK closed…";
+};
+document.getElementById("b720").onclick = function () {
+  S.angle = 0; S.turns = 0; setMode("run720");
+  S.msg = "720° true close: spinning to 4π — then the homotopy may run.";
+};
+document.getElementById("breset").onclick = function () {
+  S.angle = 0; S.turns = 0; setMode("idle");
+  S.msg = "idle — the cube is still. Run a close to test the holonomy.";
+  resetMarch();
+};
+
+function oddHolonomy() { return (Math.round(S.turns) % 2) === 1; }  /* DOC: odd = fake close */
+
+function stepDemo(dt, t) {
+  S.phaseT += dt;
+  S.odd = oddHolonomy();
+  if (S.mode === "run360") {
+    var sp = spinSpeed(S.odd);
+    S.angle = Math.min(FALSE_CLOSE, S.angle + sp * dt);
+    S.turns = S.angle / (Math.PI * 2);
+    if (S.angle >= FALSE_CLOSE - 1e-9) {
+      setMode("fail"); S.msg = "2π FALSE CLOSE — belts still twisted. Attempting the untangle that does not exist…";
+    }
+  } else if (S.mode === "fail") {
+    /* the untangle attempt that CANNOT complete: twist fights back */
+    var cyc = S.phaseT / 3.0;
+    S.u = 0.5 * (1 - Math.cos(Math.min(cyc, 1) * Math.PI * 2)) * 0.85;
+    if (S.phaseT > 6) {
+      S.u = 0;
+      setMode("idle"); S.stamp = "fail";
+      S.msg = "FAIL PROVEN: at 2π no homotopy to flat exists (π₁(SO(3)) = ℤ/2, nontrivial class). The belt keeps its twist.";
+    } else {
+      S.msg = "attempting untangle at 2π: residual twist " + (1 - S.u).toFixed(3) + " turns — it will not melt.";
+    }
+  } else if (S.mode === "run720") {
+    var sp2 = spinSpeed(S.odd);       /* speed law is odd-dependent: SRC */
+    S.angle = Math.min(TRUE_CLOSE, S.angle + sp2 * dt);
+    S.turns = S.angle / (Math.PI * 2);
+    if (S.angle >= TRUE_CLOSE - 1e-9) {
+      setMode("untangle"); S.msg = "4π reached (even holonomy). Running the homotopy: the two turns melt to zero.";
+    }
+  } else if (S.mode === "untangle") {
+    S.u = Math.min(1, S.phaseT / 2.5);
+    if (S.u >= 1) {
+      setMode("idle"); S.stamp = "true";
+      S.msg = "TRUE CLOSE: 720° and the belts lie flat. Identity restored (4π ≡ id in the spin cover).";
+    } else {
+      S.msg = "homotopy in flight: residual twist " + (2 * (1 - S.u)).toFixed(3) + " turns → 0.";
+    }
+  }
+}
+
+/* effective twist shown on ribbons */
+function renderTurns() {
+  if (S.mode === "fail") return 1 * (1 - S.u * 0.85);   /* fights back, never melts */
+  if (S.mode === "untangle") return 2 * (1 - S.u);
+  return S.turns;
+}
+
+/* ---------- Lipschitz-bounded march --------------------------------------
+   elder.md doctrine: SDF marching with Lipschitz continuity gives provable
+   invalidation radii for free. Naive marcher: samples once, trusts cache.
+   Bounded marcher: s = f(p)/L − v·Δt every step.                             */
+var march = {
+  naive: { p: null, f0: 0, steps: 0, violations: 0, done: false, wait: 0, trail: [] },
+  bounded: { p: null, f: 0, steps: 0, violations: 0, done: false, wait: 0, trail: [], hits: 0 },
+  v: 0, maxF: 0
+};
+function cubeCenter(t, wobble) {
+  var cy = CUBE.y;
+  if (wobble) cy += WOBBLE_AMP * Math.sin(t * spinSpeed(true));  /* amp SRC, ω = max spin speed */
+  return [0, cy, 0];
+}
+function sdBox(p, bx, by, bz) {
+  var dx = Math.abs(p[0]) - bx, dy = Math.abs(p[1]) - by, dz = Math.abs(p[2]) - bz;
+  var ox = Math.max(dx, 0), oy = Math.max(dy, 0), oz = Math.max(dz, 0);
+  return Math.hypot(ox, oy, oz) + Math.min(Math.max(dx, Math.max(dy, dz)), 0);
+}
+function sdScene(x, y, z, t, wobble, cubeAng, cubeCy) {
+  var d = 1e9, i, j, q;
+  for (i = -1; i <= 1; i++) for (j = -1; j <= 1; j++) {
+    q = [x - i * TILE.spacing, y + 1.2, z - j * TILE.spacing];
+    d = Math.min(d, sdBox(q, TILE.w / 2, TILE.h / 2, TILE.d / 2));
+  }
+  /* rotating cube (exact SDF: rotate into cube frame) */
+  q = [x, y - cubeCy, z];
+  var ca = Math.cos(-cubeAng), sa = Math.sin(-cubeAng);       /* inverse Ry */
+  var q1 = [ca * q[0] + sa * q[2], q[1], -sa * q[0] + ca * q[2]];
+  var cb = Math.cos(-cubeAng * CUBE.tiltRatio), sb = Math.sin(-cubeAng * CUBE.tiltRatio); /* inverse Rx */
+  var q2 = [q1[0], cb * q1[1] - sb * q1[2], sb * q1[1] + cb * q1[2]];
+  d = Math.min(d, sdBox(q2, CUBE.s / 2, CUBE.s / 2, CUBE.s / 2));
+  /* badge sphere */
+  q = [x, y - BADGE.y, z];
+  d = Math.min(d, Math.hypot(q[0], q[1], q[2]) - BADGE.r);
+  return d;
+}
+var MARCH_FROM = [RING.radius + 0.4, 1.9, RING.radius + 0.4];
+var MARCH_DIR = (function () {
+  var d = [0 - MARCH_FROM[0], CUBE.y - MARCH_FROM[1], 0 - MARCH_FROM[2]];
+  var l = Math.hypot(d[0], d[1], d[2]);
+  return [d[0] / l, d[1] / l, d[2] / l];
+})();
+function resetMarch() {
+  march.naive = { p: MARCH_FROM.slice(), f0: 0, steps: 0, violations: 0, done: false, wait: 0, trail: [] };
+  march.bounded = { p: MARCH_FROM.slice(), f: 0, steps: 0, violations: 0, done: false, wait: 0, trail: [], hits: 0 };
+}
+resetMarch();
+function stepMarcher(m, isBounded, dt, t, wobble, cubeAng, cubeCy) {
+  if (m.done) {
+    m.wait -= dt;
+    if (m.wait <= 0) {
+      m.p = MARCH_FROM.slice(); m.steps = 0; m.done = false; m.trail = [];
+      if (isBounded) m.hits++;
+    }
+    return;
+  }
+  var f = sdScene(m.p[0], m.p[1], m.p[2], t, wobble, cubeAng, cubeCy);
+  if (!isBounded && m.steps === 0) m.f0 = f;           /* the naive cache: sampled ONCE */
+  var s;
+  if (isBounded) {
+    s = Math.max(f / LIPSCHITZ_L - march.v * dt, 0);   /* SAFE STEP: f/L − vΔt */
+  } else {
+    s = Math.max(m.f0 - m.steps * 0, 0.012);           /* naive: trusts cached clearance, no v term */
+  }
+  s = Math.min(s, 0.6);
+  var np = [m.p[0] + MARCH_DIR[0] * s, m.p[1] + MARCH_DIR[1] * s, m.p[2] + MARCH_DIR[2] * s];
+  var fn = sdScene(np[0], np[1], np[2], t, wobble, cubeAng, cubeCy);
+  if (fn < -0.005) {                                   /* crossed the surface = overshoot */
+    m.violations++;
+    m.done = true; m.wait = 1.2;
+  } else if (fn < 0.02 && isBounded) {                 /* clean, bounded hit */
+    m.done = true; m.wait = 1.2;
+  } else if (m.p[2] < -9 || m.steps > 220 || fn < 0.015) {
+    m.done = true; m.wait = 1.2;
+  }
+  m.trail.push([m.p[0], m.p[1], m.p[2], np[0], np[1], np[2]]);
+  if (m.trail.length > 24) m.trail.shift();
+  m.p = np; m.steps++;
+  m.lastF = f; m.lastS = s;
+}
+
+/* ---------- camera / input ---------------------------------------------- */
+var cam = (function () {
+  var r = Math.hypot(CAM_HINT.x, CAM_HINT.y, CAM_HINT.z);   /* SRC cameraHint (0,4,9) */
+  var phi = Math.acos(CAM_HINT.y / r), theta = Math.atan2(CAM_HINT.x, CAM_HINT.z);
+  return { r: r, phi: phi, theta: theta, target: [0, 0.2, 0] };
+})();
+var dragging = false, lastX = 0, lastY = 0;
+canvas.addEventListener("mousedown", function (e) { dragging = true; lastX = e.clientX; lastY = e.clientY; canvas.classList.add("drag"); });
+window.addEventListener("mouseup", function () { dragging = false; canvas.classList.remove("drag"); });
+window.addEventListener("mousemove", function (e) {
+  if (!dragging) return;
+  cam.theta += (e.clientX - lastX) * 0.006;
+  cam.phi = Math.min(1.45, Math.max(0.15, cam.phi + (e.clientY - lastY) * 0.005));
+  lastX = e.clientX; lastY = e.clientY;
+});
+canvas.addEventListener("wheel", function (e) {
+  e.preventDefault();
+  cam.r = Math.min(24, Math.max(4, cam.r * Math.exp(e.deltaY * 0.001)));
+}, { passive: false });
+
+/* ---------- ribbon geometry (flat twist strip; SRC tube → PORT strip) ---- */
+function catmull(p0, p1, p2, p3, t) {
+  var t2 = t * t, t3 = t2 * t;
+  return [
+    0.5 * ((2*p1[0]) + (-p0[0]+p2[0])*t + (2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*t2 + (-p0[0]+3*p1[0]-3*p2[0]+p3[0])*t3),
+    0.5 * ((2*p1[1]) + (-p0[1]+p2[1])*t + (2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*t2 + (-p0[1]+3*p1[1]-3*p2[1]+p3[1])*t3),
+    0.5 * ((2*p1[2]) + (-p0[2]+p2[2])*t + (2*p0[2]-5*p1[2]+4*p2[2]-p3[2])*t2 + (-p0[2]+3*p1[2]-3*p2[2]+p3[2])*t3)
+  ];
+}
+function ribbonPoint(ctrl, s) {
+  /* 3 control points, duplicated ends: a → mid → cube */
+  if (s < 0.5) return catmull(ctrl[0], ctrl[0], ctrl[1], ctrl[2], s * 2);
+  return catmull(ctrl[0], ctrl[1], ctrl[2], ctrl[2], (s - 0.5) * 2);
+}
+var ribbonBuf = gl ? gl.createBuffer() : null;
+var ribbonVAO = gl ? gl.createVertexArray() : null;
+function drawRibbons(mvp, angle, t, wobble) {
+  var turns = renderTurns();
+  var kink = S.odd ? Math.sin(angle) * 0.55 : Math.sin(angle * 0.5) * 0.12;   /* SRC */
+  var strain = (S.mode === "fail") ? Math.sin(t * 6.0) * 0.06 * S.u : 0;      /* the melt that will not take */
+  var swing = (S.mode === "untangle") ? Math.sin(S.u * Math.PI) * 0.8 : 0;    /* homotopy: pass the end around */
+  var twistTotal = turns * Math.PI * 2;
+  gl.useProgram(litProg);
+  gl.bindVertexArray(ribbonVAO);
+  var pb = ribbonBuf;
+  gl.bindBuffer(gl.ARRAY_BUFFER, pb);
+  for (var i = 0; i < N_ANCHORS; i++) {
+    var a = anchors[i], tr = TRANSPORTS[i];
+    var mid = [a.x * 0.5,
+               a.y + kink * tr + strain * tr + swing * tr,
+               a.z * 0.5];                                     /* SRC update() midpoint law */
+    var ctrl = [[a.x, a.y, a.z], mid, [0, CUBE.y + (wobble ? WOBBLE_AMP * Math.sin(t * spinSpeed(true)) : 0), 0]];
+    var n = RIBBON.segments, verts = [], idx = [];
+    for (var k = 0; k <= n; k++) {
+      var s = k / n;
+      var P = ribbonPoint(ctrl, s);
+      var Pa = ribbonPoint(ctrl, Math.min(1, s + 0.01));
+      var Pb = ribbonPoint(ctrl, Math.max(0, s - 0.01));
+      var T = [Pa[0]-Pb[0], Pa[1]-Pb[1], Pa[2]-Pb[2]];
+      var tl = Math.hypot(T[0], T[1], T[2]) || 1; T = [T[0]/tl, T[1]/tl, T[2]/tl];
+      var N0 = [T[1]*0 - T[2]*1, T[2]*0 - T[0]*0, T[0]*1 - T[1]*0]; /* cross(T, (0,1,0)) */
+      var nl = Math.hypot(N0[0], N0[1], N0[2]);
+      if (nl < 1e-4) { N0 = [1, 0, 0]; } else { N0 = [N0[0]/nl, N0[1]/nl, N0[2]/nl]; }
+      var B = [T[1]*N0[2]-T[2]*N0[1], T[2]*N0[0]-T[0]*N0[2], T[0]*N0[1]-T[1]*N0[0]];
+      var phi = twistTotal * s;                                /* frame-fixed → cube-end twist */
+      var cw = Math.cos(phi) * RIBBON.halfWidth, sw = Math.sin(phi) * RIBBON.halfWidth;
+      verts.push(P[0]+N0[0]*cw+B[0]*sw, P[1]+N0[1]*cw+B[1]*sw, P[2]+N0[2]*cw+B[2]*sw,
+                 N0[0]*Math.cos(phi)+B[0]*Math.sin(phi), N0[1]*Math.cos(phi)+B[1]*Math.sin(phi), N0[2]*Math.cos(phi)+B[2]*Math.sin(phi));
+      verts.push(P[0]-N0[0]*cw-B[0]*sw, P[1]-N0[1]*cw-B[1]*sw, P[2]-N0[2]*cw-B[2]*sw,
+                 -(N0[0]*Math.cos(phi)+B[0]*Math.sin(phi)), -(N0[1]*Math.cos(phi)+B[1]*Math.sin(phi)), -(N0[2]*Math.cos(phi)+B[2]*Math.sin(phi)));
+    }
+    for (k = 0; k < n; k++) {
+      var b0 = k * 2;
+      idx.push(b0, b0+1, b0+2, b0+1, b0+3, b0+2);
+    }
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.DYNAMIC_DRAW);
+    gl.enableVertexAttribArray(litLoc.aPos); gl.vertexAttribPointer(litLoc.aPos, 3, gl.FLOAT, false, 24, 0);
+    gl.enableVertexAttribArray(litLoc.aNormal); gl.vertexAttribPointer(litLoc.aNormal, 3, gl.FLOAT, false, 24, 12);
+    var ib = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(idx), gl.DYNAMIC_DRAW);
+    var col = tr < 0 ? PAL.danger : PAL.gold;                  /* SRC transport colors */
+    gl.uniform3f(litLoc.uColor, col[0], col[1], col[2]);
+    gl.uniform1f(litLoc.uEmissive, 0.15);
+    gl.uniform1f(litLoc.uAlpha, 1.0);
+    gl.uniformMatrix4fv(litLoc.uModel, false, m4Ident());
+    gl.uniformMatrix4fv(litLoc.uMVP, false, mvp);
+    gl.drawElements(gl.TRIANGLES, idx.length, gl.UNSIGNED_SHORT, 0);
+    gl.deleteBuffer(ib);
+  }
+  gl.bindVertexArray(null);
+}
+
+/* ---------- frame ------------------------------------------------------- */
+var prevT = performance.now() / 1000;
+function resize() {
+  var dpr = window.devicePixelRatio || 1;
+  var w = Math.floor(canvas.clientWidth * dpr), h = Math.floor(canvas.clientHeight * dpr);
+  if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+}
+function fmt(n, d) { return n.toFixed(d === undefined ? 3 : d); }
+
+function frame() {
+  requestAnimationFrame(frame);
+  if (!gl) return;
+  var now = performance.now() / 1000;
+  var dt = Math.min(0.05, now - prevT); prevT = now;
+  var wobble = document.getElementById("cwobble").checked;
+  var showMarch = document.getElementById("cmarch").checked;
+
+  stepDemo(dt, now);
+  var cubeAng = S.angle, cubeCy = cubeCenter(now, wobble)[1];
+  march.v = wobble ? WOBBLE_AMP * spinSpeed(true) : 0;   /* SRC-derived bound: amp × max spin */
+  if (showMarch) {
+    stepMarcher(march.naive, false, dt, now, wobble, cubeAng, cubeCy);
+    stepMarcher(march.bounded, true, dt, now, wobble, cubeAng, cubeCy);
+  }
+
+  resize();
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.clearColor(PAL.bg[0], PAL.bg[1], PAL.bg[2], 1);
+  gl.enable(gl.DEPTH_TEST);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+  var eye = [
+    cam.target[0] + cam.r * Math.sin(cam.phi) * Math.sin(cam.theta),
+    cam.target[1] + cam.r * Math.cos(cam.phi),
+    cam.target[2] + cam.r * Math.sin(cam.phi) * Math.cos(cam.theta)
+  ];
+  var view = m4LookAt(eye, cam.target, [0, 1, 0]);
+  var asp = canvas.width / Math.max(1, canvas.height);
+  var proj = m4Persp(Math.PI / 4, asp, 0.1, 100);
+  var vp = m4Mul(proj, view);
+
+  gl.useProgram(litProg);
+  gl.uniform3f(litLoc.uEye, eye[0], eye[1], eye[2]);
+  gl.disable(gl.BLEND);
+
+  function drawMesh(mesh, model, color, emissive, alpha) {
+    gl.uniformMatrix4fv(litLoc.uModel, false, model);
+    gl.uniformMatrix4fv(litLoc.uMVP, false, m4Mul(vp, model));
+    gl.uniform3f(litLoc.uColor, color[0], color[1], color[2]);
+    gl.uniform1f(litLoc.uEmissive, emissive || 0);
+    gl.uniform1f(litLoc.uAlpha, alpha === undefined ? 1 : alpha);
+    gl.bindVertexArray(mesh.vao);
+    gl.drawElements(gl.TRIANGLES, mesh.count, gl.UNSIGNED_SHORT, 0);
+    gl.bindVertexArray(null);
+  }
+
+  /* domain tiles: 3×3 period-2 lattice (SRC) */
+  for (var ix = -1; ix <= 1; ix++) for (var iz = -1; iz <= 1; iz++) {
+    var col = ((ix + iz) % 2 === 0) ? TILE.colA : TILE.colB;
+    drawMesh(boxMesh, m4Mul(m4T(ix * TILE.spacing, TILE.y, iz * TILE.spacing), m4S(TILE.w, TILE.h, TILE.d)), col, 0, 1);
+  }
+  /* frame anchors + posts (SRC) */
+  for (var i2 = 0; i2 < N_ANCHORS; i2++) {
+    var a = anchors[i2];
+    drawMesh(sphMesh, m4Mul(m4T(a.x, a.y, a.z), m4S(RING.nodeR, RING.nodeR, RING.nodeR)), PAL.accent2, 0.4, 1);
+  }
+  /* holonomy badge (SRC colors: odd→danger, even→accent) */
+  var badgeCol = S.odd ? PAL.danger : PAL.accent;
+  drawMesh(sphMesh, m4Mul(m4T(0, BADGE.y, 0), m4S(BADGE.r, BADGE.r, BADGE.r)), badgeCol, 0.5, 1);
+  /* ribbons */
+  drawRibbons(vp, cubeAng, now, wobble);
+  /* spinning cube — translucent (SRC opacity 0.85), emissive pulse when odd (SRC) */
+  var emis = S.odd ? 0.35 + 0.25 * Math.abs(Math.sin(cubeAng)) : 0.2;
+  var cubeModel = m4Mul(m4T(0, cubeCy, 0), m4Mul(m4RY(cubeAng), m4RX(cubeAng * CUBE.tiltRatio)));
+  gl.enable(gl.BLEND); gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  gl.depthMask(false);
+  drawMesh(boxMesh, cubeModel, S.odd ? PAL.danger : PAL.accent, emis, CUBE.alpha);
+  gl.depthMask(true); gl.disable(gl.BLEND);
+  /* march probes */
+  if (showMarch) {
+    if (!march.naive.done) drawMesh(sphMesh, m4Mul(m4T(march.naive.p[0], march.naive.p[1], march.naive.p[2]), m4S(0.07, 0.07, 0.07)), PAL.danger, 0.8, 1);
+    if (!march.bounded.done) drawMesh(sphMesh, m4Mul(m4T(march.bounded.p[0], march.bounded.p[1], march.bounded.p[2]), m4S(0.07, 0.07, 0.07)), PAL.accent2, 0.8, 1);
+  }
+
+  /* lines: grid + posts + rays + step trails */
+  lineVerts = 0;
+  var gridCol = [0.16, 0.28, 0.22];
+  var e = GRID_N / 2;
+  for (var g = -e; g <= e; g++) {
+    line([g, TILE.y + 0.03, -e], [g, TILE.y + 0.03, e], gridCol);   /* grid 10: SRC */
+    line([-e, TILE.y + 0.03, g], [e, TILE.y + 0.03, g], gridCol);
+  }
+  for (i2 = 0; i2 < N_ANCHORS; i2++) {
+    var a2 = anchors[i2];
+    line([a2.x, TILE.y, a2.z], [a2.x, a2.y, a2.z], RING.postCol);   /* posts: SRC */
+  }
+  if (showMarch) {
+    line(MARCH_FROM, [0, CUBE.y, 0], [0.25, 0.3, 0.35]);
+    march.naive.trail.forEach(function (seg) { line([seg[0], seg[1], seg[2]], [seg[3], seg[4], seg[5]], PAL.danger); });
+    march.bounded.trail.forEach(function (seg) { line([seg[0], seg[1], seg[2]], [seg[3], seg[4], seg[5]], PAL.accent2); });
+  }
+  if (lineVerts > 0) {
+    gl.useProgram(lineProg);
+    gl.uniformMatrix4fv(lineLoc.uMVP, false, vp);
+    gl.bindVertexArray(lineVAO);
+    gl.bindBuffer(gl.ARRAY_BUFFER, lineBuf);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, lineData.subarray(0, lineVerts * 6));
+    gl.drawArrays(gl.LINES, 0, lineVerts / 3);
+    gl.bindVertexArray(null);
+  }
+
+  updateHUD(showMarch);
+}
+
+/* ---------- HUD / DOM readouts ------------------------------------------ */
+var hudEl = document.getElementById("hud");
+var liveEl = document.getElementById("live");
+var marchEl = document.getElementById("marchlive");
+var stampEl = document.getElementById("stamp");
+var hudTick = 0;
+function updateHUD(showMarch) {
+  S.stamp = (S.mode === "fail") ? "fail" : (S.mode === "untangle" ? "true" : (S.turns >= 1.999 ? "true" : (S.mode === "idle" && Math.round(S.turns) % 2 === 1 ? "fail" : "idle")));
+  stampEl.className = "stamp " + S.stamp;
+  if (S.stamp === "fail") stampEl.textContent = "✗ FALSE CLOSE — residual twist " + Math.round(renderTurns()) + " turn(s): odd holonomy, badge red.";
+  else if (S.stamp === "true") stampEl.textContent = "✓ TRUE CLOSE — belts flat: even holonomy, 4π ≡ identity.";
+  else stampEl.textContent = S.msg;
+
+  if (++hudTick % 6) return;   /* ~10 Hz DOM updates */
+  hudEl.innerHTML =
+    '<span class="law">LIPSCHITZ BOUND (DISPLAYED):</span> L = ' + fmt(LIPSCHITZ_L) +
+    ' · v ≤ ' + fmt(march.v) + ' u/s<br>' +
+    'SAFE STEP = f(p)/L − v·Δt' +
+    ' · DIRTY RADIUS r = (d − v·Δt)/L<br>' +
+    (march.naive.violations > 0
+      ? '<span class="bad">naive marcher: ' + march.naive.violations + ' WIPEOUT(S) — the wobble violates the unbounded trust</span>'
+      : '<span class="v">naive marcher: no violations yet (cache still lucky)</span>') +
+    ' · <span class="ok">bounded marcher: ' + march.bounded.violations + ' violations</span>';
+  liveEl.innerHTML =
+    '<div class="kv"><span class="k">θ (cube angle)</span><span>' + fmt(S.angle * 180 / Math.PI, 1) + '° (' + fmt(S.turns, 2) + ' turns)</span></div>' +
+    '<div class="kv"><span class="k">stored twist</span><span>' + fmt(renderTurns(), 3) + ' full turns (' + (S.odd ? "ODD" : "EVEN") + ' holonomy)</span></div>' +
+    '<div class="kv"><span class="k">badge</span><span style="color:' + (S.odd ? "#ff3d5a" : "#ff2d95") + '">' + (S.odd ? "ODD — false close" : "EVEN — true close") + '</span></div>' +
+    '<div class="kv"><span class="k">ribbon kink</span><span>' + (S.odd ? "sin θ·0.55" : "sin θ/2·0.12") + '</span></div>' +
+    '<div class="kv"><span class="k">spin speed</span><span>' + fmt(spinSpeed(S.odd)) + ' rad/s (SRC law)</span></div>';
+  if (showMarch) {
+    marchEl.innerHTML =
+      '<div class="kv"><span class="k">naive (cached, L-trusting)</span><span>steps ' + march.naive.steps + ' · f₀=' + fmt(march.naive.f0) + ' · <span class="' + (march.naive.violations ? "bad" : "v") + '">' + march.naive.violations + ' overshoots</span></span></div>' +
+      '<div class="kv"><span class="ok">bounded (f/L − vΔt each step)</span><span>steps ' + march.bounded.steps + ' · f=' + fmt(march.bounded.lastF || 0) + ' · s=' + fmt(march.bounded.lastS || 0) + ' · <span class="ok">' + march.bounded.violations + ' overshoots · ' + march.bounded.hits + ' clean hits</span></span></div>';
+  } else {
+    marchEl.innerHTML = '<div class="kv"><span class="k">march probes hidden</span></div>';
+  }
+}
+
+if (gl) requestAnimationFrame(frame);
+</script>
+</body>
+</html>

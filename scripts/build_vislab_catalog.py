@@ -34,6 +34,7 @@ STAR_SUMMARIES = {
     "bad_apple_field.html": "bad_apple_field — field render of the bad-apple stream.",
     "burn_board.html": "burn_board — the burn-down board.",
     "agents.html": "agents — fleet agent roster view.",
+    "vislab/belt_trick.html": "belt_trick — THE BELT TRICK DOMAIN LATTICE (CV5 revival of the operator's own math from the sovereign-mirror-scaffold worktree): 360° false close shown failing vs 720° true untangle, Lipschitz-bounded SDF march with the bound displayed live; constants ported verbatim from belt_domain.js + engine.js, provenance table on the plaque.",
 }
 
 GAME_TYPE_FOR_MODULE = {
@@ -174,6 +175,17 @@ def build() -> dict:
                            summary=STAR_SUMMARIES.get(name, "visual deck / dashboard surface"),
                            game_type=("visual deck (ambience candidate)" if name.endswith(".html") else "shared UI logic"),
                            launch=f"/static/{name}"))
+
+    # VISLAB (dashboard/static/vislab/*.html — self-contained vis pages; CV5 2026-09-16)
+    for p in sorted(glob.glob(str(ROOT / "dashboard/static/vislab/*.html"))):
+        p = Path(p)
+        if p.name in ("catalog.html", "play.html"):
+            continue  # the catalog's own surfaces
+        rel_key = "vislab/" + p.name
+        items.append(entry(p, "VISLAB", p.name[:-5].replace("_", " "),
+                           summary=STAR_SUMMARIES.get(rel_key, "vislab vis page"),
+                           game_type="vis (webgl/math surface)",
+                           launch=f"/static/vislab/{p.name}"))
 
     # SHADERS
     for p in sorted(glob.glob(str(ROOT / "dashboard/static/shaders/**/*.glsl"), recursive=True) +

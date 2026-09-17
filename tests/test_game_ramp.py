@@ -21,11 +21,25 @@ sys.path.insert(0, str(ROOT))
 from mag import game_ramp as gr  # noqa: E402
 
 
+def _world_get(key: str, default=None):
+    from mag import game_world as gw
+    r = gw.get_state(key)
+    return r.get("value") if isinstance(r, dict) and r.get("found") else default
+
+
+def _world_set(key: str, value) -> None:
+    from mag import game_world as gw
+    gw.set_state(key, value, source="test_game_ramp")
+
+
 def test_tiers_and_status():
     st = gr.status()
     assert st["ok"] is True
-    assert st["tier"] in gr.TIERS
-    assert gr.TIERS == ["tabletop", "mud", "roguelite"]
+    # the shared world's tier persists between runs and may legitimately sit at tier 4 ("wow")
+    # since the 2026-09-16 rewire — so the live tier checks against the full ladder
+    assert st["tier"] in gr.LADDER
+    assert gr.TIERS == ["tabletop", "mud", "roguelite"]      # frozen public contract
+    assert gr.LADDER == gr.TIERS + ["wow"]
 
 
 def test_tabletop_always_ok_and_persists():
@@ -49,12 +63,21 @@ def test_roguelite_run_descends_and_permadeath():
 
 
 def test_descend_ramps_tiers():
-    # master tabletop -> descend to mud (the ramp)
+    # master tabletop -> descend to mud (the ramp). The tier lives in the SHARED world, so
+    # pin it for the assert and restore whatever the world had afterwards (no stray writes).
     from mag import game_ramp as _gr
-    r = _gr.descend()
-    assert r["ok"] is True
-    assert r["tier"] in _gr.TIERS
-    assert "tabletop" in r["mastered"]
+    keep_tier = _world_get("game.ramp.tier", "tabletop")
+    keep_mastered = _world_get("game.ramp.mastered", [])
+    _world_set("game.ramp.tier", "tabletop")
+    _world_set("game.ramp.mastered", [])
+    try:
+        r = _gr.descend()
+        assert r["ok"] is True
+        assert r["tier"] in _gr.TIERS
+        assert "tabletop" in r["mastered"]
+    finally:
+        _world_set("game.ramp.tier", keep_tier)
+        _world_set("game.ramp.mastered", keep_mastered)
 
 
 def test_render_base_pixels():

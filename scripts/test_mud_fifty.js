@@ -65,7 +65,11 @@ function eq(a, b, msg) { if (a !== b) throw new Error(`${msg || 'eq'}: got ${JSO
 const M = MUD;
 const P = () => M.player;
 function god() { P().hp = 100; P().iframes = 2; P().stamina = 100; } // the tester does not die to walk-through hazards
-function pump(n, dt) { M.pump(n, dt); }
+// FX4: a stray super-orb (9% kill drop, homing pickup) can light SUPERHOT — world-time then runs
+// at 0.06x while the tester stands still, breaking the fixed-step pump(N) assumptions of the
+// mechanics lanes (ally t / orb life / mourn decay windows). No lane under test exercises
+// SUPERHOT, so the tester shakes it off — same spirit as god() covering walk-through hazards.
+function pump(n, dt) { M.G.super = 0; M.pump(n, dt); }
 function tele(x, y) { P().x = x; P().y = y; }
 function roomCleared(id) { return !!(M.ROOM_STATE[id] && M.ROOM_STATE[id].cleared); }
 function aliveIn(id) { return M.enemies.filter(e => e.room === id && e.hp > 0).length; }
@@ -485,6 +489,62 @@ lane('M: fuse replaces the champion (no double boss)', () => {
   tele(345, 745);   // be in the room — the clear fires from roomTick
   hp0(wardens[0]); pump(4);
   assert(roomCleared('refectory'), 'fused room never clears');
+});
+
+// ================= vault phase (fresh run — the N10 consumer: key → plates → gate → the pocket pays) =================
+M.startGame();
+M.forceBell = false;
+
+lane('V: the vault gate exists in the world and starts sealed (dead link gone)', () => {
+  const gw = M.walls.find(w => w.gate);
+  assert(gw, 'no gate wall in the world — puzzleTick opens nothing');
+  assert(!gw.open, 'gate wall spawned open');
+  assert(!M.puzzle.gateOpen, 'gateOpen true at reset');
+});
+lane('V: the sealed gate physically blocks the vault pocket', () => {
+  tele(1600, 780);   // the strip south of the forge, at the band
+  M.keys['KeyS'] = true;
+  for (let i = 0; i < 90; i++) { god(); pump(1); }
+  M.keys['KeyS'] = false;
+  assert(P().y < 800, `player walked through the sealed gate (y ${P().y})`);
+});
+lane('V: plate I sinks underfoot in the infirmary', () => {
+  tele(220, 340); god(); pump(2);
+  assert(M.puzzle.plates[0].on, 'plate I never sank');
+});
+lane('V: plate II sinks in the forge — the gate grinds open', () => {
+  tele(1720, 700); god(); pump(2);
+  assert(M.puzzle.plates[1].on, 'plate II never sank');
+  assert(M.puzzle.gateOpen, 'two plates did not open the gate');
+  const gw = M.walls.find(w => w.gate);
+  assert(gw.open, 'gate wall not opened in the world');
+});
+lane('V: the opened gate yields — the pocket is enterable', () => {
+  tele(1600, 780);
+  M.keys['KeyS'] = true;
+  for (let i = 0; i < 150; i++) { god(); pump(1); }
+  M.keys['KeyS'] = false;
+  assert(P().y > 850, `vault pocket still sealed after gate open (y ${P().y})`);
+});
+lane('V: the key answers the walk (cold brass, picked up)', () => {
+  assert(M.puzzle.key, 'no key placed at reset');
+  tele(M.puzzle.key.x, M.puzzle.key.y); god(); pump(2);
+  assert(M.puzzle.key === null, 'walk-over did not take the key');
+});
+lane('V: the vault pays — 120 souls + full heal + weapon row + sliver of time', () => {
+  const cx = M.puzzle.chest.x, cy = M.puzzle.chest.y;
+  assert(cx > 1300 && cy > 840, `chest not in the vault pocket (${cx},${cy}) — the gate gates nothing`);
+  const s0 = P().souls;
+  const loot0 = M.lootDrops.length;
+  const lootEv0 = M.evlog.filter(ev => ev.e === 'loot').length;
+  P().hp = 37;
+  tele(cx, cy + 30);   // within chest radius (34), outside orb pickup (r+14)
+  god(); pump(1);
+  assert(M.puzzle.chest === null, 'chest never opened with the key held');
+  eq(P().souls - s0, 120, 'souls payout');
+  eq(P().hp, P().maxHp, 'chest did not heal');
+  assert(M.lootDrops.length > loot0 || M.evlog.filter(ev => ev.e === 'loot').length > lootEv0, 'no weapon paid out');
+  assert(M.superOrbs.length > 0, 'no super orb paid out');
 });
 
 // ================= report =================

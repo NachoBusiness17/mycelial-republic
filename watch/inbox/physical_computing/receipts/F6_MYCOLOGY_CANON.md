@@ -1,0 +1,51 @@
+# F6 RECEIPT — MYCOLOGY OPEN CANON: full-text paper library for the cube program
+
+- **Date:** 2026-09-16
+- **Lane:** wave F6, physical_computing
+- **Mission:** complete the mycology open canon at `memory/corpus/mycology_canon/` — the cube program's full paper library in one place with FULL TEXTS. Gather every open-access paper cited across tonight's receipts (S1/S3/S4/C15/C17/G-B/G-D/G-A + K2/K7/K9/K10/C18/C19/G-E/O3 citations named in the mission), save PDFs/full-XML with `manifest.jsonl` {url,file,sha256,title,tier}, and mark paywalled items in a blocked list (no bypass).
+- **Wave law:** receipt FIRST, appended as work proceeds · no git · free fetches only (PMC full-text XML / E-utilities / arXiv / verified open PDFs).
+- **Interpreter:** `.venv\Scripts\python.exe` only (never bare `python` — Hermes venv).
+
+## Target list (from mission + lane receipts)
+
+PRIORITY (mission-named): Adamatzky line incl. 2026 star-array (arXiv 2601.08099) + Sci Rep twin (PMC13212958) · Telhan 2026 Sci Rep (PMC13500807) · LaRocco 2025 PLOS ONE (PMC12513579) · Buffi 2025 FEMS review (PMC11995700) + iScience FPC (PMC12483595) · Kramar & Alim 2021 PNAS (PMC7958412) · Yoneoka 2023 (PMC10667701) · Boussard 2019 (PMID 31006372) · Beasley 2022 (arXiv:2002.06413) · Schmidt failed-replication papers (MRS Advances 10.1557/s43580-025-01198-8 + Front. Soft Matter 5:1588404) · Mishra 2024 Science Robotics via NSF open PDF (par.nsf.gov/servlets/purl/10548775) · Prakash & Gershenfeld 2007 (if open) · Yamamoto 2024 PLOS Biology (PMC11288418) · Moratto 2023 (PMID 37442125) · Brand & Gow 2009 (PMC2728830) · Montiel-Rubies 2025 Biomimetics (10.3390/biomimetics10050287).
+
+SECONDARY (open papers cited in the same lanes, S4 register + G-D chain + GA rig table): Adamatzky 2018 Towards fungal computer (PMC6227805) · Adamatzky 2018 P. djamor spiking (PMC5959856) · Adamatzky 2022 Language of fungi (PMC8984380) · Adamatzky 2023 moisture (PMC10069029) · Adamatzky 2023 S. commune (PMC10406843) · Adamatzky 2023 insoles (PMC10030783) · Adamatzky 2022 psilocybin (PMC9601536) · Fungal sensing skin RETRACTED (PMC7972235) + retraction note (PMC8173894) + Towards fungal sensing skin NOT retracted (PMC8117569) · Adamatzky 2020 Boolean gates (arXiv:2002.09680) · Mayne 2023 (arXiv:2304.10675) · Boisseau 2016 (PMC4855389) · Nishi 2026 (PMC13481565) · Kagan 2022 DishBrain (PMC9747182) · Sumi 2023 PNAS (PMC10288593) · Volkov 2007 (PMC2634039) · Thomas & Cooper 2022 (PMC9673936) · Blatt 2023 challenge (PMC10259323) · arXiv items 1303.4969 / 1306.3414 / 0810.4179 / 2510.19976 / 1306.0258 / 2505.02114 / 2508.19145 / 2506.12803 · Moratto 2024 Sci Rep (10.1038/s41598-024-68730-y).
+
+## Log (appended as evidence lands)
+
+- [t0] Receipt opened before any fetch. Canon dir created: `memory/corpus/mycology_canon/`.
+- [t1] Fetch engine: Europe PMC fullTextXML REST + NCBI E-utilities + arXiv PDF + verified open publisher PDFs (route that worked for GA/G-D lanes).
+- [t2] Bulk fetch: 37 landed first pass. Fixes after: 3 arXiv retries via export.arxiv.org (IncompleteRead / 406), Mishra NSF PDF via curl retry (11.7 MB), 4 abstract-only eutils stubs (PMC7958412, PMC6227805, PMC4855389, PMC2634039) replaced by PMC full-text HTML (EPMC fullTextXML 500s persist for these — same publisher-block GA lane hit for "Towards fungal computer"), PEARL 403 confirmed twice (browser UA + referer) → Schmidt MRS Advances honestly blocked, Kramar reply + Boussard + Kramar-critique via PMC search→PMC HTML, Prakash 2007 via author Stanford copy, Moratto 2023 via Imperial Spiral (it is OPEN ACCESS at IOP — published version secured), Montiel-Rubies/Moratto-2024/Pieters via resolved PMCIDs, Nikolić 2023 (S4 appendix) added. UWE "Fungal electronics" repository copy 403s → blocked, not bypassed.
+- [t3] Verification pass (pypdf + XML grep) — all spot-check numbers HIT; see verdict below. Note: a first fetch script wrote to `watch/memory/` (path bug); caught and moved to the durable root same session; stray tree removed.
+- [t4] Manifest rebuilt from disk bytes: 50 artifacts, sha256 verified line-by-line, 0 mismatches, 0 orphans. Index line added to `memory/corpus/MANIFEST.md`.
+
+## VERDICT — canon status
+
+**50 full texts · 100.8 MiB · manifest.jsonl (50 rows, {url,file,sha256,title,tier}) · blocked.jsonl (22 entries)**
+Tiers: T1 = 15 (core measurement/protocol), T2 = 14 (substrate+mechanism), T3 = 21 (adjacent/context/critique). No git, no paid APIs; free lanes only: Europe PMC REST, NCBI E-utilities, arXiv, PMC HTML, Frontiers/NSF/Imperial-Spiral/Stanford-author open PDFs.
+
+### Reading order for a new fleet member (the 5 first)
+
+1. **Buffi 2025 FEMS review** (`pmc11995700.xml`) — the artifact checklist: Faraday cage mandatory, uncolonized-substrate + killed-fungus controls, Donnan-potential trap of steel needles, real band 0.0003–0.1 Hz. Decides whether everything else you read is signal or noise.
+2. **Adamatzky 2026 star array** (`arxiv_2601_08099.pdf`) — the characterization instrument to clone (8 differential compass channels, ADC-24, 1 Hz, days): its own honest findings are the null to beat — order-of-magnitude anisotropy, localised coupling, NO global synchrony.
+3. **Adamatzky 2026 Sci Rep linear array** (`pmc13212958.xml`) — the analysis template: ~0.7 cm/min propagation, 0.2–1.4 mV spikes, temporally-shuffled spike trains as the biological-origin control (steal this falsifier for every cube run).
+4. **Buffi 2025 iScience FPC** (`pmc12483595.xml`) — the hardware upgrade path: PCB with 8 gold differential pairs the mycelium grows onto; +1,604% PSD (1,604.752 in Table 1, p<0.001) colonization vs control; microvolt-class under a Faraday cage.
+5. **Telhan 2026 mycelium chips** (`pmc13500807.xml`) — the "is it COMPUTING" bar: memory capacity 0.209/0.052/0.048 across three chips, NARMA-10, open GitHub; spiking without MC is just electrophysiology.
+
+Then (second week): Beasley 2022 (`arxiv_2002_06413.pdf`), Kramar & Alim 2021 (`kramar2021_alim.html`), Yoneoka 2023 (`pmc10667701.xml`), Schmidt 2025 Front. Soft Matter (`schmidt2025_slime_mould_circuit_model.pdf`), Blatt 2023 (`pmc10259323.xml`).
+
+### Full-text vs abstract-level contradictions (what a new member must not mislearn)
+
+1. **S1 attribution error (fixed here):** Front. Soft Matter 5:1588404 is **Schmidt-first** (Biofaction KG: Schmidt, Seyfried, Reutina, Seskir, Miranda-last), title "From simulation to reality: experimental analysis of a quantum entanglement simulation with slime molds…". S1 row 5 filed it as an "ICCMR — E. R. Miranda" group paper; it is ONE paper of the same failed-replication cluster, not two (S1 row 5 vs G-D hit A5ii overlap).
+2. **S4 T2.1 overstated Telhan:** S4 wrote "chips score MC_peak > 0.05" — full text: chip #43 = **0.048 ± 0.016**, below that bar. Two of three chips clear 0.05; the honest statement is "MC 0.048–0.209, device spread ≈4x".
+3. **LaRocco 2025 title implies living material; text is dried:** samples sun-dried ~7 days, then rehydrated/misted; all memory demos explicitly "Volatile memory testing" (0.01–0.1 ms reads); no hours-scale retention. (G-D hit A1 already flagged this; primary text now confirms. Also: "Memristors… non-volatile" appears only as background framing, their own tests are volatile.)
+4. **Mayne 2023 controls:** the earlier web-summary claim ("spikes recorded where no electrical connection was made") is **contradicted by the paper** — verbatim: "No signals were measured in control experiments, indicating that neither the growth medium or interstitial moisture were capable of conducting the input signals between blocks A and B"; the "no electrical connection" phrase describes failed samples. S3 already self-corrected; the primary text now pins it.
+5. **Canon WIN (open item closed):** O3 flagged Mishra 2024's light-stimulus numbers as "retrieve before build" — now retrieved from the NSF PDF full text: *"at longer wavelengths beyond UV, our mycelium scaffold only responded to blue light stimulation, with V light potentials reaching **83 ± 11 µV** at an illumination distance of **12 cm** and an exposure time of **2 s**"* — and **no response to red and white light**. This confirms O3's 650 nm red read-light-is-inert design and gives the write-channel an effect-size prior (sub-100-µV class under unshielded-ish conditions).
+6. **All other relied-on numbers verified against full text:** Adamatzky 2026 linear (0.7 cm/min = 40 cm/h, 180 s/2 cm median delay, 0.2–1.4 mV, shuffled control), star array (anisotropy order-of-magnitude, Pico ADC-24, 1 Hz, no global synchrony), Buffi FEMS (+50 to −300 mV unshielded fruit-body spikes matching uncolonized control; door/people/shades artifacts), Kramar & Alim (~15 min diameter redistribution, ≥310 min imprint, 0.5 M glucose + 0.1 M leucine 1 µL), Yoneoka (0.5 mM quinine, tree→mesh, cut/rotate = "as if the memory had been deleted"), Boussard (6-day training, 2 h constrained sodium inception, habituation survives one month dormant as sclerotia, "circulating memory"), Beasley (±0.5 V/±1 V electrolysis-capped sweeps, Ir-coated needles 10 mm apart, mem-fractor classification — the ladder's "±0.55 V" remains unsupported; closest published is ±0.5 V), Prakash 2007 (AND/OR/NOT + toggle FF + ripple counter + ring oscillator confirmed), Moratto 2023 (0.7–1.0 V/cm anodal, germination up, encystment unaffected — and it IS open access at IOP).
+
+### Blocked (22 entries in blocked.jsonl — paywalled or bot-gated, NOT bypassed)
+
+Headliners: Slayman 1976 (founding intracellular AP), Olsson & Hansson 1995, Nakagaki 2000, Tero 2010, Saigusa 2008, Karst 2023, Blatt 2024 fungal-language rebuttal, six Elsevier Biosystems items, Fernando & Sojakka 2003, **Schmidt 2025 MRS Advances (open PDF exists at Plymouth PEARL but 403s scripted fetch — flagged for a manual browser grab)**, Empa Reyes ACS (DOI unverified per S1), UWE "Fungal electronics" repository copy (403). Journal versions of canon items already covered by open twins (Boolean gates→arXiv, Mayne→arXiv, Mishra→NSF PDF, Prakash→author copy, Moratto 2023→IOP OA) are noted as such in blocked.jsonl.
+
+Status: DONE — 50 full texts + manifest + blocked list filed to `memory/corpus/mycology_canon/`; receipt, fetch/verify/manifest scripts (`f6_fetch.py`, `f6_verify.py`, `f6_manifest.py`) on file in this receipts dir as audit trail. No git, $0, free fetch lanes only.

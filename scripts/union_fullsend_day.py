@@ -1,6 +1,8 @@
-"""union_fullsend_day -- all-day two-window mesh drive.
+"""union_fullsend_day -- 24/7 standing full-width mesh drive (season 1).
 
-Operator order (2026-09-17): "run union alpha all day full blast on everything our whole
+Operator order (2026-09-17, evening): "it needs to be run 24/7 from this point forward,
+full width on our problems, research or builds."
+Original order (2026-09-17): "run union alpha all day full blast on everything our whole
 mesh; we have 10k credits and a parallel line to 5.3 flash, use it; drive 2 windows."
 
 WINDOW 1: or-union-alpha (OpenRouter stealth/union-alpha, free window ends ~2026-09-23).
@@ -52,6 +54,7 @@ QUEUE = OUT / "queue.jsonl"
 RAW = OUT / "raw.jsonl"
 STATE = OUT / "state.json"
 PACK = OUT / "DAY_PACK.md"
+LOCK = OUT / "run.lock"  # one driver at a time; a scheduled fire during a manual run no-ops
 
 SYSTEMS = {
     "digger": rf.SYSTEM,
@@ -72,6 +75,29 @@ SYSTEMS = {
 
 # --- SSRF guard: the only hosts this driver may ever contact -------------------------
 _LANE_HOSTS = {urllib.parse.urlsplit(l["base"]).hostname.lower() for l in rf.LANES}
+
+# 24/7 resilience: attempt-2 rotation over lanes verified live 2026-09-17. The union-alpha
+# free window ends ~2026-09-23; when it dies, retries carry items on the other free lanes
+# instead of killing them (a dead window is a lane-swap, not a queue death).
+_RETRY_ORDER = ["or-union-alpha", "zai-lite", "or-ling3", "or-nemotron",
+                "groq-oss", "cerebras-oss"]
+
+
+def _route(item: dict[str, Any], attempt: int, done_count: int, env: dict[str, str]) -> str:
+    hint = item.get("lane_hint", "any")
+    if hint == "union":
+        primary = "or-union-alpha"
+    elif hint == "lite":
+        primary = "zai-lite"
+    else:
+        primary = "or-union-alpha" if done_count % 2 == 0 else "zai-lite"
+    if attempt <= 1:
+        return primary
+    for lane_id in _RETRY_ORDER:
+        if lane_id != primary and env.get(
+                {l["id"]: l["key"] for l in rf.LANES}.get(lane_id, "")):
+            return lane_id
+    return primary
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -240,7 +266,7 @@ def _write_pack(rows: list[dict[str, Any]], merged: dict[str, dict[str, Any]],
         d = per_lane.setdefault(r["lane"], {"ok": 0, "fail": 0})
         d["ok" if r.get("ok") else "fail"] += 1
     lines = [
-        "# UNION FULLSEND DAY — 2026-09-17 — two windows full blast",
+        "# UNION FULLSEND — season 1 — 24/7 standing full-width drive",
         "",
         f"*queue_digest `{queue_digest(rows)}` · done {len(state['done'])}/{len(rows)} · "
         f"dead {len(state['dead'])} · runs {state['runs']} · "
@@ -302,18 +328,17 @@ def main(argv: list[str] | None = None) -> int:
                    "dead": len(state.get("dead", {}))}
         print(json.dumps(summary))
         return 0
+    if LOCK.is_file() and (time.time() - LOCK.stat().st_mtime) < 900:
+        # another driver instance holds the lock (crashed holders self-clear after 15 min)
+        print(json.dumps({"ok": True, "note": "LOCKED"}))
+        return 0
+    LOCK.write_text(_now(), encoding="utf-8")
 
     batch = todo[: max(1, a.batch)]
     results: list[dict[str, Any]] = []
 
     def job(item: dict[str, Any]) -> dict[str, Any]:
-        hint = item.get("lane_hint", "any")
-        if hint == "union":
-            lane_id = "or-union-alpha"
-        elif hint == "lite":
-            lane_id = "zai-lite"
-        else:
-            lane_id = ("or-union-alpha" if len(done) % 2 == 0 else "zai-lite")
+        lane_id = _route(item, attempts.get(item["id"], 0) + 1, len(done), env)
         lane = lane_by_id[lane_id]
         key = env.get(lane["key"], "")
         if not key:
@@ -347,6 +372,7 @@ def main(argv: list[str] | None = None) -> int:
         if r.get("lane") == "zai-lite")
     save_state(state)
     _write_pack(rows, _latest_by_id(), state)
+    LOCK.unlink(missing_ok=True)
 
     ok = sum(1 for r in results if r.get("ok"))
     summary = {"ok": True, "schema": SCHEMA, "run": state["runs"],

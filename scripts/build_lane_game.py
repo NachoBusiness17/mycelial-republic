@@ -50,8 +50,12 @@ SCHEMA = "build_lane_game.v1"
 ENV_FILES = [ROOT / ".env", Path.home() / "AppData" / "Local" / "hermes" / ".env"]
 ALLOWED_HOSTS = {"openrouter.ai"}
 
-_LANES = {"base": "https://openrouter.ai/api/v1", "key": "OPENROUTER_API_KEY_2",
-          "model_env": "OPENROUTER_MODEL", "model_default": "stealth/union-alpha"}
+_LANES = {"base": "https://openrouter.ai/api/v1",
+          "keys": ["OPENROUTER_API_KEY_2", "OPENROUTER_API_KEY"],  # rotate on 429/401/402
+          "models": ["stealth/union-alpha", "z-ai/glm-5.3-flash"]}
+# operator 2026-09-17: "i know what ox is, thats an old config. we're using union."
+# (env OPENROUTER_MODEL=stealth/ox-alpha is stale; ox's own 404 revealed it was
+#  glm-5.3-flash — kept only as the last-resort fallback.)
 
 SYSTEM = (
     "You are a level designer for RUINS GO, a grid-turn tomb puzzle. The world only moves "
@@ -129,9 +133,12 @@ def _validate_base(base: str) -> None:
             raise ValueError(f"{host} resolves to non-public {ip}; refusing")
 
 
-def _call(model: str, key: str, prompt: str, timeout: int = 240) -> dict:
+def _call(model: str, keys: list[str], prompt: str, timeout: int = 240) -> dict:
+    """Rotate keys on 429/401/402/404 (operator: multiple OpenRouter keys, use them).
+    A key-rotation miss reports the last body verbatim — the ox-alpha 404 that named
+    glm-5.3-flash arrived through exactly this path."""
     t0 = time.time()
-    rec: dict = {"lane": "build-ox", "model": model, "ts": _now()}
+    rec: dict = {"lane": "build-union", "model": model, "ts": _now()}
     try:
         _validate_base(_LANES["base"])
     except ValueError as e:
@@ -140,32 +147,43 @@ def _call(model: str, key: str, prompt: str, timeout: int = 240) -> dict:
     # no max_tokens cap: these are 100k+ context windows and the reasoning channel
     # spends freely before content (fleet receipt: rationing caused every empty_content;
     # the solved problem is to let the model run to its own stop).
-    body = {"model": model, "temperature": 0.4,
-            "messages": [{"role": "system", "content": SYSTEM},
-                         {"role": "user", "content": prompt}]}
-    req = urllib.request.Request(
-        _LANES["base"].rstrip("/") + "/chat/completions",
-        data=json.dumps(body).encode("utf-8"),
-        headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json",
-                 "User-Agent": "mag-build-lane/1.0",
-                 "HTTP-Referer": "https://local-sovereign-agent.invalid",
-                 "X-Title": "Mag Build Lane"})
-    try:
-        with _OPENER.open(req, timeout=timeout) as r:
-            d = json.loads(r.read().decode("utf-8", "replace"))
-        txt = (d["choices"][0]["message"].get("content") or "").strip()
-        if not txt:
-            rec.update({"ok": False, "error": "empty_content",
-                        "detail": f"finish={d['choices'][0].get('finish_reason')} "
-                                  f"tokens={d.get('usage', {}).get('completion_tokens')}"})
-        else:
-            rec.update({"ok": True, "answer": txt, "chars": len(txt),
-                        "usage": d.get("usage") or {}})
-    except urllib.error.HTTPError as e:
-        rec.update({"ok": False, "error": f"HTTP {e.code}",
-                    "detail": e.read().decode("utf-8", "replace")[:200]})
-    except Exception as e:
-        rec.update({"ok": False, "error": f"{type(e).__name__}: {str(e)[:160]}"})
+    for ki, key in enumerate(keys):
+        body = {"model": model, "temperature": 0.4,
+                "messages": [{"role": "system", "content": SYSTEM},
+                             {"role": "user", "content": prompt}]}
+        req = urllib.request.Request(
+            _LANES["base"].rstrip("/") + "/chat/completions",
+            data=json.dumps(body).encode("utf-8"),
+            headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json",
+                     "User-Agent": "mag-build-lane/1.0",
+                     "HTTP-Referer": "https://local-sovereign-agent.invalid",
+                     "X-Title": "Mag Build Lane"})
+        try:
+            with _OPENER.open(req, timeout=timeout) as r:
+                d = json.loads(r.read().decode("utf-8", "replace"))
+            txt = (d["choices"][0]["message"].get("content") or "").strip()
+            if not txt:
+                rec.update({"ok": False, "error": "empty_content",
+                            "detail": f"finish={d['choices'][0].get('finish_reason')} "
+                                      f"tokens={d.get('usage', {}).get('completion_tokens')}"})
+            else:
+                rec.update({"ok": True, "answer": txt, "chars": len(txt),
+                            "usage": d.get("usage") or {}, "key_index": ki})
+            rec["latency_ms"] = int((time.time() - t0) * 1000)
+            return rec
+        except urllib.error.HTTPError as e:
+            detail = e.read().decode("utf-8", "replace")[:200]
+            rec.update({"ok": False, "error": f"HTTP {e.code}", "detail": detail,
+                        "key_index": ki})
+            if e.code in (429, 401, 402) and ki < len(keys) - 1:
+                continue  # rotate to the next key
+            rec["latency_ms"] = int((time.time() - t0) * 1000)
+            return rec
+        except Exception as e:
+            rec.update({"ok": False, "error": f"{type(e).__name__}: {str(e)[:160]}",
+                        "key_index": ki})
+            rec["latency_ms"] = int((time.time() - t0) * 1000)
+            return rec
     rec["latency_ms"] = int((time.time() - t0) * 1000)
     return rec
 
@@ -215,10 +233,10 @@ def _load_state() -> dict:
         st = json.loads(STATE.read_text(encoding="utf-8"))
     else:
         st = {"done": [], "dead": {}, "runs": 0, "promoted": 0, "rejected": 0}
-    # transport failures (dead model id, reasoning-budget empties) are not brief-merit
-    # deaths: prune them so the brief gets its real two attempts.
+    # transport failures (dead model id, reasoning-budget empties, 200-with-error bodies)
+    # are not brief-merit deaths: prune them so the brief gets its real two attempts.
     st["dead"] = {sid: why for sid, why in (st.get("dead") or {}).items()
-                  if not any(t in str(why) for t in ("empty_content", "HTTP", "SSRF"))}
+                  if not any(t in str(why) for t in ("empty_content", "HTTP", "SSRF", "KeyError"))}
     return st
 
 
@@ -234,33 +252,30 @@ def main(argv=None) -> int:
         return 0
 
     env = _env()
-    key = env.get(_LANES["key"])
+    keys = [env[k] for k in _LANES["keys"] if env.get(k)]
     state = _load_state()
-    if not key:
-        state["dead"]["key"] = f"{_LANES['key']} missing"
+    if not keys:
+        state["dead"]["key"] = "no OpenRouter keys in env"
         STATE.write_text(json.dumps(state, indent=2), encoding="utf-8")
-        print(json.dumps({"ok": False, "error": "NO_KEY", "key_name": _LANES["key"]}))
+        print(json.dumps({"ok": False, "error": "NO_KEY", "key_names": _LANES["keys"]}))
         return 0
-    # model chain: sticky working model first, then env preference, then known fallbacks.
-    # (receipt 2026-09-17: stealth/ox-alpha's window ended; OpenRouter's 404 body revealed
-    #  it WAS z-ai glm-5.3-flash and invited the direct id — the "parallel line to 5.3
-    #  flash" the operator named.)
+    # model chain (operator 2026-09-17: "we're using union" — ox in env is an old config).
+    # sticky working model first, then union-alpha, then glm-5.3-flash direct.
     chain = [m for m in [state.get("model"),
-                         env.get(_LANES["model_env"]),
-                         "z-ai/glm-5.3-flash",
-                         "stealth/union-alpha"] if m]
+                         "stealth/union-alpha",
+                         "z-ai/glm-5.3-flash"] if m]
     seen: set[str] = set()
     model = None
     for m in chain:
         if m in seen:
             continue
         seen.add(m)
-        probe = _call(m, key, "Reply with exactly: READY", timeout=60)
+        probe = _call(m, keys, "Reply with exactly: READY", timeout=90)
         if probe.get("ok"):
             model = m
             break
         rec_detail = (probe.get("detail") or "")
-        if probe.get("error") == "HTTP 404" and "glm-5.3-flash" in rec_detail:
+        if probe.get("error") == "HTTP 404" and ("glm-5.3-flash" in rec_detail or m in rec_detail):
             continue  # dead stealth id with the migration pointer
         model = m  # other errors: still try it for the real batch (row will record it)
         break
@@ -283,7 +298,7 @@ def main(argv=None) -> int:
             prompt = (f"Design one RUINS GO level. Brief: {brief} "
                       f"Constraints: 7x7 grid, solvable, under 25 moves, exactly one exit. "
                       f"Output only the ```json block.")
-            rec = _call(model, key, prompt)
+            rec = _call(model, keys, prompt)
             rec.update({"brief": sid})
             defn = _extract_level(rec.get("answer") or "") if rec.get("ok") else None
             verdict, vline = None, None

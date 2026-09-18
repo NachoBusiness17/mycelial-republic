@@ -107,7 +107,11 @@ def _wide_lanes(env: dict[str, str]) -> list[dict[str, str]]:
     add("zai-lite", "https://api.z.ai/api/coding/paas/v4", "glm-5.3-flash", "ZAI_API_KEY_Lite")
     # OpenRouter free models across BOTH keys (free-tier ceiling is 20 req/min per key;
     # two keys double it; stable SYSTEM prefixes ride provider sticky-cache)
-    for n, (mid, model) in enumerate([("union-alpha", "stealth/union-alpha"),
+    # receipt 2026-09-17 ~21:00Z: union-alpha window ENDED (404 body named the successor:
+    # unbiased/pareto). Strike the new window immediately; keep union in the list until
+    # it stops 404ing at the models endpoint.
+    for n, (mid, model) in enumerate([("pareto", "unbiased/pareto"),
+                                      ("union-alpha", "stealth/union-alpha"),
                                       ("ling3", "inclusionai/ling-3.0-flash-sante:free"),
                                       ("nemotron", "nvidia/nemotron-3.5-lightning:free")]):
         for ki, k in enumerate(_OR_KEYS):

@@ -1,75 +1,76 @@
-# HERMES $100 SPEND PLAN — buy meters, not answers (2026-09-17)
+# HERMES $100 — REVISED: train the low tier on our frontier thinking (2026-09-17)
 
-*Operator question: "How could we best spend $100 in Hermes API to advance ourselves,
-like we did the astra ask, just everywhere, and have it design the cold load system,
-elder?"*
+*Operator redirect: "I want our frontier design and thinking full record so we can train
+the low tier. Dogfood our thesis. One design spec: Sherpa maps footholds, code direction
+orchestrates it cheaply through our surfaces, D iterates. That's how we should spend
+the $100."*
 
-## The principle
+## THE ONE BRIEF (not five)
 
-**The free lanes proved they do research.** 113/113 rows, zero dead. What the free lanes
-cannot do is *design instruments* — the meters the Elder demanded in pass 1. Spend the
-$100 on architecture: type systems, test batteries, probe code. Every meter compounds;
-every answer evaporates.
+**Design the frontier-thinking training corpus curator + the QLoRA training recipe.**
 
-The Astra-ask pattern (one deep brief → calibrated outputs → a standing bay) applied
-five times, one per open gap. Each brief goes through chat_provider with the fleet
-material packed (the imprint + the relevant audit findings) and returns executable
-artifacts, not prose.
+The corpus already exists (265KB research answers, 390KB imprint, 8 architect docs,
+3 laws, 21 gate-proven levels with inscriptions, ~30 LINKS crosswalks, the NPC=seat
+architecture, the transfer matrix, the gap analysis, the recap). What's missing is
+the PAIRING: {situation → decision} instruction-tuning rows. Hermes designs the
+curator script; the free lanes execute it forever.
 
-## The five briefs
+## THE PIPELINE (Sherpa → code direction → iterate)
 
-### 1. THE COLD LOAD CONSTITUTION — $30 (the operator's named ask)
+1. **SHERPA MAPS FOOTHOLDS** (the planning lens): the curator extracts {situation,
+   constraint, decision, why, falsifier} tuples from every receipt, law, inscription,
+   and architect doc. The Sherpa thesis encoded as training data: rank over brightness,
+   decompose before moving, add a basis vector when stuck.
 
-Design the imprint lifecycle end-to-end: versioning law (digest per regen, diff on
-change), freshness meters (what triggers regen vs what serves stale), the UF-47
-citation-exactness battery as an executable test (20 fixed questions with known-answer
-ground truth, scoring citation-path hits vs content hits vs inventions separately), the
-verkle-chain crosswalk (imprint digest → ledger row per regen), and the decay alarm
-(when a regen is >48h old, the Librarian must say so). Output: spec + test script +
-the freshness meters wired into the regen script.
+2. **CODE DIRECTION ORCHESTRATES CHEAPLY** (the free lanes execute): the trained model
+   emits design DIRECTIONS (which mechanic, which inscription, which gate, which law
+   applies), not code. The free lanes turn direction into code. The gate verifies.
+   Cost per iteration: crumbs.
 
-### 2. CONTROL_SURFACE_AUDIT Phase 0-1 — $25 (the S-001 steal, made ours)
+3. **D ITERATES** (the evolution loop): the model's outputs go through the same
+   gate → verdict → feedback cycle as the level briefs. Gen-1 failures become
+   training pairs for the next epoch. The loop that breeds levels now breeds
+   the model that designs levels.
 
-Build the observe-only inspector (a script that walks the fleet's write paths and logs
-each as { actor, action, target, pre_hash, post_hash, evidence_class } without blocking).
-Then wrap one path — write_file in the drive — with typed ActionRequest→Capability→
-ActionReceipt. Old path stays feature-flagged for comparison. Output: the inspector
-script + the typed wrapper + a one-week diff report showing what the untyped path did.
+## THE $100 BREAKDOWN (Hermes designs, free lanes execute)
 
-### 3. THE DEGENERACY PROBE — $20 (UF-109, the Elder's #1)
+- **$40 — corpus curator design**: the extraction spec (which files, which fields,
+  how to pair situation→decision, dedup law, quality gates) + a working prototype
+  script Hermes writes against our actual receipts.
+- **$35 — QLoRA recipe for gemma-2b/4b**: the exact training config (unsloth params,
+  dataset format, eval design to prove the trained model beats base on held-out fleet
+  decisions, hardware estimate for our Mac Studio).
+- **$15 — the Sherpa planning prompt**: the system prompt that makes the trained model
+  plan like the Sherpa (rank, decompose, add basis vectors) instead of hallucinate.
+- **$10 — the evaluation battery**: held-out fleet decisions the model has never seen,
+  scored by the same gate discipline (design verdicts are right/wrong against known
+  constraints, not vibes).
 
-Implement the spec as a test mode in test_ruins_go.js: for each pack level, compute
-(placed mechanics on solution path / total placed), (mechanic interaction count),
-(solution length percentile vs chapter cohort). Flag HACKED below thresholds. Output:
-scores for all 20 levels + a redesign queue ordered by degeneracy. This closes the
-Elder's "the loop breeds toward what the gate can see" — the gate grows eyes.
+## THE DOGFLOOD LOOP (after training)
 
-### 4. THE ELDER PASS 2 — $15
+```
+situation → TRAINED MODEL (gemma, local, $0) → design direction
+  → free lanes execute → BFS gate + tests verify
+  → verdict fed back → next epoch trains better
+```
 
-Re-run the Elder audit WITH the new meters. The Elder reads the degeneracy scores,
-the citation battery results, and the control-surface diff, then re-cuts: what changed,
-what the instruments missed, what to build next. Output: ELDER_AUDIT_p2.md, the
-second-third of the x3 iteration.
-
-### 5. THE 12-FACE KABUKI REGISTRY — $10
-
-Design the face registry schema for NPC=seat: {face, class, spec_weights (OCEAN),
-lane_assignment, grudge, tale, ramp_rung} + the routing rule (DM face → strongest free
-lane; mob faces → fast small lanes; Elder face → reads only). Output: the schema +
-3 starter faces wired to chat_provider through face prompts.
-
-## The warm-state dividend
-
-After all five, the fleet gains: a measured evolution loop, a verified memory system,
-a typed write path, and a face registry — all compounding, all fed by the free lanes
-going forward. The $100 buys the instruments that make the $0 lanes self-correcting.
+The low tier doesn't need to be smart. It needs to know WHICH direction to point.
+The Sherpa's thesis is the training data's shape: rank over brightness, decompose
+before moving, add the missing basis vector. After one training run the fleet has
+a $0 designer that speaks our register, cites our laws, and improves with every
+iteration the same way the bred levels did.
 
 ## What NOT to spend on
 
-- More research batteries (the free lanes proved this — 113/113).
-- Another knowledge graph (the one we have has 6 organs unfilled).
-- NPC dialogue at scale (the faces need the registry first, or they're mush).
+- Meters first (the old plan) — the meters matter but they don't compound the way
+  a trained model does. A meter reads one thing once; a trained model designs forever.
+- More research (the free lanes own it).
+- Training on generic text — the corpus is our receipts, our laws, our inscriptions.
+  The model learns to be US, not to be a chatbot.
 
-*Falsifier: if after spending the $100 the Elder pass 2 cannot point to a measurement
-that changed a decision, the spend was waste — file it and stop buying instruments
-that don't compound.*
+## FALSIFIER
+
+After one QLoRA epoch on the curated corpus, give the trained model and base gemma
+the same 10 held-out design situations. If the trained model doesn't produce
+register-consistent, law-citing, gate-passing design directions at ≥2x base rate,
+the corpus was too thin — fix the curator, not the model.

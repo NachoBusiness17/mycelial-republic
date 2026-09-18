@@ -21,6 +21,22 @@ Keep it short. Update the STATE section, not the procedure._
 
 ## STATE (update this section only)
 
+- **WITNESS FOLD 2026-09-18 (committed 7a35ab29e):** the operator ran Matthew's
+  response by a second AI (Codex) — analysis landed
+  (watch/inbox/CODEX_WITNESS_*): no stego in the manual (verified twice);
+  D&D remark technically accurate (narrative-steg code is real);
+  **both its code claims verified LIVE by this window**: verkle_knot
+  amend-in-place confirmed (append-only doctrine reconciliation STILL OWED —
+  name the amendment path in chain law), chain_guard tip canary was
+  unconsulted → **FIXED: tip_stale now an actionable state; live verdict
+  healthy, tip matches root 46d8e5ecfd7de0f6, 8,600 rows.** False-success
+  disease triple-witnessed (elder lens, Codex, elder-trail fix).
+  Follow-throughs: CIO map adopted; identity-claim separation pending
+  Rocinante; Sep-6 incident extract buildable from LOCAL raw logs (the
+  bundle excluded them; we hold them). chain_guard has no direct test file
+  (small debt). TRUNK: Sep-20 in 2 days — Astra I2/I3, HOLD 3/4, and the
+  founding ASTRA blind-review (prompt preserved, Astra now public) are the
+  next stones.
 - **NIGHT FOLD 2026-09-18 (committed 45c66ee42):** **THOUGHT QUANTIZER v0.2
   SHIPPED** — percolator invariants compile to tiered instruction packs
   (memory/corpus/quantized_thought/: 24 frontier / 12 flash / 12 local;

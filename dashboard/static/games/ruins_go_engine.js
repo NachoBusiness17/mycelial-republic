@@ -336,13 +336,30 @@ function step(st, dir) {
     if (free) { st.twin.x = t2.x; st.twin.y = t2.y; }
   }
 
-  // --- L7 snakes ---
+  // --- L7 snakes (traits: vision → pathfind toward player's most-visited cell) ---
   for (const s of st.snakes) {
     const sH = walkHeight(cellT(st, s.x, s.y)) ?? 0;
     const cand = [];
-    const ddx = st.player.x - s.x, ddy = st.player.y - s.y;
-    if (Math.abs(ddx) >= Math.abs(ddy)) { if (ddx) cand.push([Math.sign(ddx), 0]); if (ddy) cand.push([0, Math.sign(ddy)]); }
-    else { if (ddy) cand.push([0, Math.sign(ddy)]); if (ddx) cand.push([Math.sign(ddx), 0]); }
+    const sb = st.sb || {};
+    if (sb.trait === "vision") {
+      // pathfind: prefer the axis of greatest distance, but break ties toward
+      // the player's start cell (where they've been)
+      const ddx = st.player.x - s.x, ddy = st.player.y - s.y;
+      const sx0 = def.player ? def.player[0] : st.player.x;
+      const sy0 = def.player ? def.player[1] : st.player.y;
+      const sdx = sx0 - s.x, sdy = sy0 - s.y;
+      if (Math.abs(sdx) + Math.abs(sdy) > Math.abs(ddx) + Math.abs(ddy)) {
+        if (Math.abs(sdx) >= Math.abs(sdy)) { if (sdx) cand.push([Math.sign(sdx), 0]); if (sdy) cand.push([0, Math.sign(sdy)]); }
+        else { if (sdy) cand.push([0, Math.sign(sdy)]); if (sdx) cand.push([Math.sign(sdx), 0]); }
+      } else {
+        if (Math.abs(ddx) >= Math.abs(ddy)) { if (ddx) cand.push([Math.sign(ddx), 0]); if (ddy) cand.push([0, Math.sign(ddy)]); }
+        else { if (ddy) cand.push([0, Math.sign(ddy)]); if (ddx) cand.push([Math.sign(ddx), 0]); }
+      }
+    } else {
+      const ddx = st.player.x - s.x, ddy = st.player.y - s.y;
+      if (Math.abs(ddx) >= Math.abs(ddy)) { if (ddx) cand.push([Math.sign(ddx), 0]); if (ddy) cand.push([0, Math.sign(ddy)]); }
+      else { if (ddy) cand.push([0, Math.sign(ddy)]); if (ddx) cand.push([Math.sign(ddx), 0]); }
+    }
     for (const [cx, cy] of cand) {
       const tx = s.x + cx, ty = s.y + cy;
       const t = cellT(st, tx, ty);
@@ -350,7 +367,6 @@ function step(st, dir) {
       const occ = entityAt(st, tx, ty);
       if (h !== undefined && h === sH && bridgesOk(t, st) && (occ === "player" || occ === null)) {
         if (occ === "player") { kill(st, "the snake"); break; }
-        // snakes avoid cranks and exits
         if (t === "k" || t === "E") continue;
         s.x = tx; s.y = ty; break;
       }
@@ -359,19 +375,24 @@ function step(st, dir) {
   }
   if (st.dead) return { moved: true, dead: true, won: false, why: "snake" };
 
-  // --- L8 lizards ---
+  // --- L8 lizards (traits: berserk → moves twice per player step) ---
   for (const l of st.lizards) {
-    const gx = l.toB ? l.bx : l.ax, gy = l.toB ? l.by : l.ay;
-    const dx2 = Math.sign(gx - l.x), dy2 = Math.sign(gy - l.y);
-    const tx = l.x + dx2, ty = l.y + dy2;
-    if (dx2 === 0 && dy2 === 0) { l.toB = !l.toB; continue; }
-    const occ = entityAt(st, tx, ty);
-    const t = cellT(st, tx, ty);
-    const lh = walkHeight(cellT(st, l.x, l.y)) ?? 0;
-    const th = walkHeight(t);
-    if (occ === "player" && th !== undefined && th === lh) { kill(st, "the sentry"); break; }
-    if (th === undefined || th !== lh || (occ && occ !== "player")) { l.toB = !l.toB; }
-    else { l.x = tx; l.y = ty; if (l.x === gx && l.y === gy) l.toB = !l.toB; }
+    const lSteps = (st.sb && st.sb.trait === "berserk") ? 2 : 1;
+    for (let li = 0; li < lSteps; li++) {
+      const gx = l.toB ? l.bx : l.ax, gy = l.toB ? l.by : l.ay;
+      const dx2 = Math.sign(gx - l.x), dy2 = Math.sign(gy - l.y);
+      const tx = l.x + dx2, ty = l.y + dy2;
+      if (dx2 === 0 && dy2 === 0) { l.toB = !l.toB; continue; }
+      const occ = entityAt(st, tx, ty);
+      const t = cellT(st, tx, ty);
+      const lh = walkHeight(cellT(st, l.x, l.y)) ?? 0;
+      const th = walkHeight(t);
+      if (occ === "player" && th !== undefined && th === lh) { kill(st, "the sentry"); break; }
+      if (th === undefined || th !== lh || (occ && occ !== "player")) { l.toB = !l.toB; }
+      else { l.x = tx; l.y = ty; if (l.x === gx && l.y === gy) l.toB = !l.toB; }
+      if (st.dead) break;
+    }
+    if (st.dead) break;
   }
   if (st.dead) return { moved: true, dead: true, won: false, why: "lizard" };
 

@@ -22,12 +22,13 @@ runs on free and near-free inference tiers (16 provider lanes, 143 recorded
 dispatch attempts at 88.8% success, roughly $0 marginal cost), keeps every
 action receipted, and re-derives its capabilities from its own corpus.
 
-Current phase: pre-proof. A dated proof gate (Sep 20) requires: the record
-verified end-to-end, a review bundle sealed at an external reviewer's bar,
-and the chain reading consistently in both directions. Sunk costs to date:
-approximately $300 to $500 in remote inference and domains, plus one home
-workstation. Remaining budget: near-zero by design; the project runs on free
-tiers and local compute.
+Current phase: pre-proof. The integration date (Sep 20) is self-imposed and
+originally pegged to a vendor promotion expiring that day (the free z.ai
+lane that seeded the day-shift seats); the promotion's expiry changes one
+lane's economics among sixteen, and the proof content below is valuable
+regardless of the date. Sunk costs to date: approximately $300 to $500 in
+remote inference and domains, plus one home workstation. Remaining budget:
+near-zero by design; the project runs on free tiers and local compute.
 
 Trigger event for this briefing: your Manual Audit of 13 SEP, your question
 "did you ever run my response by your AI?", and your request for a breakdown
@@ -35,7 +36,8 @@ of the project in operable terms rather than in its own vocabulary.
 
 ## 2. Definition & Threshold for Completion
 
-"Done" for the current phase (the Sep 20 gate), each item binary:
+"Done" for the current phase is a checklist, not a calendar date. The four
+binary items (each independently verifiable):
 1. The record verifies end-to-end: chain_guard reports healthy with
    tip-matches-chain true over 8,600+ rows (currently PASSING as of
    2026-09-18).

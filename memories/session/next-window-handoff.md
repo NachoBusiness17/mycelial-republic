@@ -21,6 +21,15 @@ Keep it short. Update the STATE section, not the procedure._
 
 ## STATE (update this section only)
 
+- **SESSION CLOSE 2026-09-18 (~06:40Z):** checkpoint commit **e692b2259**
+  landed (whole window: catalog v3, askability tools, shadow steal, watch
+  mining, context OS, wave protocol, skill forge, audits, graph v2, gaps
+  UF-119..130). 12 files remain dirty (trail/telemetry churn — normal).
+  Operator signing off; TOMORROW'S DECISIONS LEFT FOR HIM: (1) trunk order —
+  say "go trunk" and windows serve Sep-20 (Astra I2/I3, HOLD 3 rehearsal,
+  seal); (2) junction `training` policy (mirror vs duplicate); (3) netlify
+  deploy auth + Discord token rotation, whenever. Lanes drain UF-119..130
+  autonomously; receipts in union raw.jsonl. Drift patrol sweeps at 08:00.
 - **2026-09-18 (cathedral-map window):** **THE_CATHEDRAL_MAP_20260918.md**
   filed — go player = evolution-loop genome over the code layer (board=catalog
   zones, moves=TOOL_MAP actions under RUINS GO's ten laws, kifu=trajectory,

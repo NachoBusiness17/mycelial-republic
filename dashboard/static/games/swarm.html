@@ -571,7 +571,7 @@ function startGame(forcedSeed){
  wthr={temp:0,state:'clear',t:0,wind:0,fireT:55,bolts:[],rainT:0,fog:0};weavePts=[];
  recompute();
  enemies=[];gems=[];projs=[];parts=[];dmgNums=[];shake=0;toast=null;toastT=0;
- player={x:200,y:GY-30,w:20,h:30,vx:0,vy:0,hp:upg.maxhp,onGround:false,coyote:0,atkT:0,flash:0,face:1,xp:0,xpNext:5};
+ player={x:200,y:GY-30,w:20,h:30,vx:0,vy:0,hp:upg.maxhp,onGround:false,coyote:0,atkT:0,flash:0,face:1,xp:0,xpNext:5,souls:0};
  platforms=PLATFORM_SETS[0].p.map(p=>({...p}));
  if(!grid.length)gridInit();
  spawnEnemy(player.x+190);spawnEnemy(player.x-230);
@@ -600,9 +600,9 @@ function gainXp(g){
 function hurtFishTouch(e){
  if(player.iframes>0)return;
  player.hp-=e.dmg*(1-(upg.armor||0))*depthMods.take;
- player.flash=0.25;player.iframes=0.6;G.shake=10;
+ player.flash=0.25;player.iframes=0.6;shake=10;
  beep(130,0.2,'sawtooth',0.05);
- if(player.hp<=0&&state==='play'){state='dead';meta.bank+=player.souls;metaSave();if(T>best){best=T;SAFE_STORE.set('swarmbest',best);}}
+ if(player.hp<=0&&state==='play'){state='dead';player.souls=player.souls||0;meta.bank+=player.souls;metaSave();if(T>best){best=T;SAFE_STORE.set('swarmbest',best);}}
 }
 function damageEnemy(e,dmg,px,py){
  if(e.kind==='bubble'&&(e.shieldT||0)>0)return;
@@ -1001,8 +1001,8 @@ function update(dt){
  for(let d of dmgNums){d.t-=dt;d.y-=30*dt;if(d.t<=0)d.dead=true;}
 
  // the HERALD — the run's story: at five minutes, something with a name comes
- if(T>=300&&!spawnBoss.__done){
-  spawnBoss.__done=true;
+ if(T>=300&&!window.__heraldDone){
+  window.__heraldDone=true;
   let hb={x:player.x+(player.x<WW/2?420:-420),y:gyAt(player.x)-60,w:56,h:70,vy:0,type:'herald',flash:0,hitT:0,
    hp:400*(1+T/120),maxHp:400*(1+T/120),spd:55,dmg:25,color:'#ff4a6a',isBoss:true,baseY:gyAt(player.x)-60,ph:0};
   enemies.push(hb);
@@ -1632,7 +1632,7 @@ function updatePass(dt){
   if(r.z<70){
    if(Math.abs(p.x-W/2)<80){
     player.hp-=14*(1-(upg.armor||0));mtn.crash=1;shake=12;beep(90,0.3,'sawtooth',0.07);
-    if(player.hp<=0){state='dead';meta.bank+=player.souls;metaSave();if(T>best){best=T;SAFE_STORE.set('swarmbest',best);}}
+    if(player.hp<=0){state='dead';player.souls=player.souls||0;meta.bank+=player.souls;metaSave();if(T>best){best=T;SAFE_STORE.set('swarmbest',best);}}
    }
    mtn.rocks.splice(i,1);
   }
@@ -1723,6 +1723,6 @@ function loop(ts){
  update(dt);beatRead();draw();
  requestAnimationFrame(loop);
 }
-player={x:200,y:GY-30,w:20,h:30,vx:0,vy:0,hp:100,onGround:false,coyote:0,atkT:0,flash:0,face:1,xp:0};
+player={x:200,y:GY-30,w:20,h:30,vx:0,vy:0,hp:100,onGround:false,coyote:0,atkT:0,flash:0,face:1,xp:0,souls:0};
 requestAnimationFrame(loop);
 </script></body></html>

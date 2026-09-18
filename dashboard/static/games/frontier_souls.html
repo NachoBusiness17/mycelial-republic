@@ -548,7 +548,9 @@ function deathPhase(f, n) {
 
 // ---- run control ----
 function newRun(charIdx, scrap) {
+  try { G.runs = Math.max(G.runs | 0, parseInt(SAFE_STORE.get('fs_runs') || '0', 10) || 0); } catch (e) {}
   G.runs++;
+  try { SAFE_STORE.set('fs_runs', String(G.runs)); } catch (e) {}
   runSeed = pendingSeed !== undefined ? pendingSeed : FLEET_SEED;   // fleet law: explicit seed wins, else the day's fleet seed
   pendingSeed = undefined;
   wseed(runSeed);

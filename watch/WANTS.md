@@ -24,4 +24,16 @@
 - WANT (SELF-AUDIT F5): a witness pass on SELF_AUDIT_ZCODE_20260918.md +
   the elder lens backlog (deepseek-pro, 14d pending) → done = countersigned
   receipts on both.
+- WANT (BRING-IN 2026-09-18): validate `deploy/flock-k8s-solved.yaml` against
+  the current mag-sovereign:local image + k8s_bridge dry-apply → done = the
+  GA-breeding trigger (>5 parallel genomes) deploys in one command.
+- WANT (BRING-IN 2026-09-18): hologram v2 — one lattice render fed by the
+  knowledge-graph families + catalog HOT temps + quantized-thought pools,
+  served from mag-sovereign:8765 → done = the operator sees the estate
+  breathing on the dashboard wall.
+- WANT (LINKS 250/251, 2026-09-18): fetch Gärdenfors & Osta-Vélez 2026
+  "Reasoning with Concepts: Conceptual Spaces" (MIT Press, OPEN ACCESS,
+  doi 10.7551/mitpress/15931.001.0001) into memory/corpus (concepts lane)
+  → done = text + sha receipt + one mining pass mapping conceptual-space
+  dimensions onto our zones/kinds/lens system. STAYING IS THE GAME NOW.
 - WANT: SQLite FTS5 decision executed per UF-120's threshold — not before.

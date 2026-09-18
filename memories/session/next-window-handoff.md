@@ -21,6 +21,16 @@ Keep it short. Update the STATE section, not the procedure._
 
 ## STATE (update this section only)
 
+- **NIGHT FOLD 2026-09-18 (committed 45c66ee42):** **THOUGHT QUANTIZER v0.2
+  SHIPPED** — percolator invariants compile to tiered instruction packs
+  (memory/corpus/quantized_thought/: 24 frontier / 12 flash / 12 local;
+  weight = recency × shape, raw counts demoted — **percolator echo PROVEN,
+  142×/event inflation**). v0.3 owed: two-pass classification (over-refuses
+  error-quoting laws), source-distinct weighting, wire into wave rebuilds.
+  Shadow strata decoded (march = Mimosa finding batches; sea = 25-shape era
+  board; octant = seat_contract.v1 briefs — steal for lane handoffs).
+  Elder-lens skill forged. Night receipt: **watch/inbox/NIGHT_FOLD_20260918.md**
+  (registered 64E6B1353CB6). LINKS at 249.
 - **SESSION CLOSE 2026-09-18 (~06:40Z):** checkpoint commit **e692b2259**
   landed (whole window: catalog v3, askability tools, shadow steal, watch
   mining, context OS, wave protocol, skill forge, audits, graph v2, gaps

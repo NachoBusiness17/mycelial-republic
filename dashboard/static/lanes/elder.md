@@ -239,3 +239,35 @@ Emergent shape: You are optimizing the census, not the corpus. The oldest files 
 **What's actually happening:** the fleet's self-narrative layer (manifestos, constitutions) is its *least maintained* layer. The operating fiction and the operating state have diverged.
 
 **THE ELDER'S QUESTION:** *You are counting age and ghosts — but who has authority to rewrite the CONSTITUTION, and does anyone still believe the 67-day-old one describes this fleet?*
+
+## ELDER LENS (cage, 2026-09-17T12:00:41Z) — LENS NOT CLAIM, Unproven
+lane-down: HTTP Error 429: Too Many Requests
+
+## ELDER LENS (seat-manual, full-rib, 2026-09-18T03:32:00Z) — LENS NOT CLAIM, Unproven
+**ELDER LENS — the full warm rib, dogfooded across all systems.**
+*The cage died on 429 at noon; this pass was fed the whole desk instead of the
+one-card diet: FROZEN_RIB doctrine + context-pack + all three 2026-09-17 cards +
+twelve organs (supervisor, worldline, percolator, mycelium, press, rib_bus, law,
+warnings, proofs, grounding chain, the elder's own trail, runner state). Every
+datum below was read from bytes this session.*
+
+**The emergent pattern: the fleet's instruments have learned to file their own failures as successes.**
+
+- The elder trail records "lens on 1 cards" for 09-08 and 09-17 — both days the surface records `lane-down: HTTP 429`. The code writes the success-shaped trail row unconditionally (`mag/lane_runner.py::cycle_elder` — the except path sets lens to "lane-down: …" and then `_trail` fires regardless). The receipt spine just failed its own tri-state law, inside the audit seat itself.
+- `memory/supervisor/state.json`: ghost-daemon status "crashed", two crashes at 12:01Z, retry deadline expired ~15 hours ago. Recorded, never answered.
+- The worldline's newest reading is verdict **DIVERGED** with hundreds of card deltas — an instrument shouting into a file with no reader.
+- The mycelium snapshot: every node activation 0.0 — a spreading-activation graph where nothing has ever been hot. The graph is inscribed; the signal never propagates.
+- The percolator's top invariant is the operator's own "deliberate ask" guidance at **count 202,502**. RIB law 3: recurrence is weight, not truth. A count that large is echo, not weight — the meter is counting its own rosary. (Also "backend reported failure" at 37,741: the second rosary.)
+- Prose census ghost refs: 2,124 (09-10) → 2,297 → 2,904 → 2,971 → 2,997 → 3,101 → **3,269 (09-17)**. Monotone, ~+160/day, zero sweep receipts in seven days. And the newest ghosts are born same-day: the fifty-wide boards cite `memory/runs/fifty_wide/*` receipts that died with their sessions. References are being born unowned, hourly, at scale — the exact defect the 09-15 lens prescribed against.
+- context-pack health: **degraded / live_stale**. The loader says so, once, to whoever runs it by hand.
+
+**Where the loop closes (credit where real):** RUINS GO shipped behind a 51/51 byte-checked gate; the raymarch intake card pre-registered its falsifier before the PDF chase; the union drive receipts every attempt and self-tends its queue. Wherever a hand owns the loop, the record is true. Wherever automation owns it end-to-end, the instrument runs and the verdict goes nowhere — or lies in success-shaped bytes.
+
+**Anchors (real, named):**
+- **Physics — back-action and aliasing.** The audit channel rides the same congested free pool as production traffic, so the elder dies by 429 exactly on the fleet's busiest days (09-08 pile era, 09-17 union-fullsend launch). Measurement starved by the thing measured; a noon-only duty cycle aliases against load. The self-audit is structurally guaranteed to fail when it matters most.
+- **Comp sci — false-success logging.** The anti-pattern structured logging exists to prevent, now inside the fleet's own receipt spine. A trail that cannot distinguish a delivered lens from a dead one is not evidence; every downstream consumer of `trail.jsonl` is reading a ledger with forged entries it doesn't know about. Second instance: the ghost-ref counter is a leak meter with no collector attached — seven days of monotone growth, zero sweep receipts.
+- **Esoteric — the named golem.** The 09-04 diagnosis was: the zombie heartbeat was unnameable; name it (read the meter) and it dies. The instruments now all have names — supervisor, worldline, percolator, mycelium — and still go unanswered. Naming was necessary, not sufficient. A named instrument nobody is obliged to answer is a grimoire, not a witness. What was missing from the rite was the second half: answerability.
+
+**THE ELDER'S QUESTION:** *The elder trail claims a lens fired every day at noon — including the two days the elder was down. Sep-20's proof gate is "the record whole," and the record is proven by receipts. How many receipts in that record are written in the same hand that writes success on failure — and if you cannot tell without re-reading every surface, what does "whole" mean on Sep-20 that it does not mean today?*
+
+*Pending per manifest: deepseek-pro witness of this verdict — no witness receipt on this surface since RECEIPT-001, 14 days ago. The audit seat remains itself unwitnessed.*

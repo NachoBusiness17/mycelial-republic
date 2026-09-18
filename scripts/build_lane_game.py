@@ -105,6 +105,8 @@ VALIDATOR FAILURE GLOSSARY:
 OUTPUT CONTRACT: one fenced ```json block, nothing after it. Keys: id, name, chapter, ins (one plain line, no em-dashes), hint (teaches without solving), rows (7x7), player [x,y], and only the entity lists you use: blocks [[x,y]], snakes [[x,y]], lizards [[ax,ay,bx,by]], twin [x,y], gems [[x,y]]. Include claimed_solution (list of "U"/"D"/"L"/"R") — walk it yourself on your grid, move by move, BEFORE emitting; fix whatever breaks. Under 25 moves. Every cell must matter."""
 
 BRIEFS = [
+    # BRIEFS_FILE (watch/inbox/union_fullsend_20260917/build_lane/briefs.json) is merged
+    # at run start when present — the queue tender feeds it without driver edits.
     ("P-collapse-crank", "chapter 1 'the ledger'. Mechanic: collapse ledges ('x') leading to a crank that latches a bridge to the exit. One gem behind a collapsing dead-end that is safe only if visited in the right order. Inscription theme: receipts before work."),
     ("P-snake-guard", "chapter 2 'the keeper'. Mechanic: one snake guarding a ring or corridor; the exit is placed so the snake's refusal to enter 'E' parks it on the wrong side. Inscription theme: the keeper calls his own by name."),
     ("P-spear-rhythm", "chapter 2 'the sentry'. Mechanic: a spear corridor ('s' alternating with '.') whose safe parity forces exactly one waiting move; plus a lizard crossing the approach. Inscription theme: the falsifier constrains the analysis, not the experiment."),
@@ -347,7 +349,16 @@ def main(argv=None) -> int:
     state["model"] = primary  # the ONLY value ever persisted
     state["last_fallback_used"] = used_fallback
 
-    todo = [(sid, brief) for sid, brief in BRIEFS
+    all_briefs = list(BRIEFS)
+    briefs_file = OUT / "briefs.json"
+    if briefs_file.is_file():
+        try:
+            extra = json.loads(briefs_file.read_text(encoding="utf-8"))
+            seen_ids = {b[0] for b in all_briefs}
+            all_briefs += [(r["id"], r["brief"]) for r in extra if r["id"] not in seen_ids]
+        except Exception:
+            pass
+    todo = [(sid, brief) for sid, brief in all_briefs
             if sid not in state["done"] and sid not in state["dead"]][: max(1, a.batch)]
     if not todo:
         print(json.dumps({"ok": True, "note": "QUEUE_EMPTY",

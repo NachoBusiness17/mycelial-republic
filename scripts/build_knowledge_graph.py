@@ -60,6 +60,22 @@ FAMILIES = {
                      "watch/monitor_lane.state", "watch/HUNGER_LEDGER.md"],
     "imprint-librarian": ["watch/inbox/FLEET_IMPRINT*.md", "scripts/build_fleet_imprint.py",
                           "scripts/librarian.py", "memory/corpus/tide_cards"],
+    "skills-engine": [".agents/skills/memweave", ".agents/skills/memlance",
+                      ".agents/skills/retrocausal-steering", ".agents/skills/mesh-comms",
+                      ".agents/skills/salon", "tools/corpus.py", "tools/research.py",
+                      "mag/mcp_server.py"],
+    "askability-layer": ["watch/inbox/CORPUS_MAP_SALON_20260918.md", "catalog/tags.jsonl",
+                         "catalog/TAG_REPORT.md", "watch/inbox/SEAT_CAPABILITIES_20260918.md",
+                         "watch/WANTS.md"],
+    "shadow-corpus": ["memory/corpus/zcode_history", "memory/corpus/watch_mining",
+                      "watch/inbox/ZCODE_SHADOW_STEAL_20260918.md",
+                      "watch/inbox/WATCH_MINING_20260918.md"],
+    "operating-doctrine": ["watch/inbox/CONTEXT_OS_20260918.md",
+                           "watch/inbox/STANDING_WAVE_PROTOCOL_20260918.md",
+                           "watch/inbox/SKILL_FORGE_20260918.md"],
+    "audits-lenses": ["watch/inbox/SELF_AUDIT_ZCODE_20260918.md",
+                      "watch/inbox/SOCRATIC_GAPS_20260918.md",
+                      "watch/inbox/SELF_STEAL_DEEP_20260918.md", "queue/lanes/elder"],
 }
 
 # explicit successions (old -> new) the map must carry by name
@@ -72,6 +88,14 @@ SUCCESSIONS = [
     ("catalog_scan estate zones", "FLEET_KNOWLEDGE_GRAPH (this file)"),
     ("memory index MEMORY.md", "FLEET_IMPRINT (librarian cold-load)"),
     ("salon_50 / research_fanout 12 lanes", "union_fullsend wave mode (18 lanes)"),
+    ("Sep-16 estate snapshot (946,773 rows, junction doubles)", "catalog v3 rebuild (757,667 rows, deduped, junction-pruned)"),
+    ("chan clause 11 + ractor panels", "mesh-comms skill"),
+    ("napkin seed + dead-drop ribs", "retrocausal-steering + memlance skills"),
+    ("MINDSWEAVE eval + ghost doctrine", "memweave skill"),
+    ("zcode store operator-voice attrition", "watch card timeline (770-card arc)"),
+    ("standing wave 143 receipts / 16 lanes", "STANDING_WAVE_PROTOCOL spec"),
+    ("catalog map without consumer", "corpus + research askability tools"),
+    ("elder 14-lens question canon", "self-audit + socratic gaps (the seat audits itself)"),
 ]
 
 
@@ -166,10 +190,15 @@ FAMILY_DESC = {
     "links-press": "canonical link ledger, press digests, X radar chains",
     "game-builds": "shipped games + their harnesses (mud, frontier, ruins_go...)",
     "providers-drive": "the 24/7 drive: lanes, keys mapping, evolution loop, librarian",
-    "estate-catalog": "the 1.47M-file estate index and its walkers",
+    "estate-catalog": "the askability spine: catalog.jsonl (757,667 rows post-v3) + walkers + tags",
     "mycelium-graph": "association edges, percolator invariants, rib doctrine",
-    "lanes-trails": "the seven lanes' trails and states",
+    "lanes-trails": "lane trails and states (7 base lanes; 12/16/18 in wave modes)",
     "imprint-librarian": "the anti-forgetting layer: imprint, librarian, tide cards",
+    "skills-engine": "forged skills (memweave, memlance, retrocausal-steering, mesh-comms) + the tool drivers they run on",
+    "askability-layer": "the map-consumer layer: corpus/research tools, tags, WANTS intake",
+    "shadow-corpus": "recovered primary voices: zcode session history + the 770-card watch timeline",
+    "operating-doctrine": "specs distilled from our own machinery: context OS, standing wave, skill forge",
+    "audits-lenses": "the seat examining itself: self-audit, socratic gaps, deep steal, elder surface",
 }
 
 

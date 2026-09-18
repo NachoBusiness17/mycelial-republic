@@ -56,3 +56,7 @@ fill the lanes for N consecutive windows. This ledger is that instrument.
 
 | 2026-09-16 | 1 | 0 | 1 | 0 | 100% | 4 | 1105 |  |
 
+| 2026-09-17 | 1 | 0 | 1 | 0 | 100% | 3 | 1108 |  |
+
+| 2026-09-18 | 1 | 0 | 1 | 0 | 100% | 5 | 1113 |  |
+

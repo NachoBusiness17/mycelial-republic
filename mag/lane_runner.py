@@ -413,6 +413,13 @@ def cycle_elder() -> str:
             "\n\n".join(digest)[:6000], max_tokens=900)
     except Exception as e:  # noqa: BLE001
         lens = f"lane-down: {e}"
+    # TRI-STATE TRAIL LAW (elder lens 2026-09-18): the trail may not file a
+    # success-shaped CYCLE row when the lens died. lane-down gets CYCLE_FAIL.
+    if lens.startswith("lane-down:"):
+        _surface_append("elder", f"\n## ELDER LENS (cage, {_ts()}) — LENS NOT CLAIM, Unproven\n"
+                        f"{lens}\n")
+        _trail("elder", "CYCLE_FAIL", lens[:200])
+        return "lane-down"
     _surface_append("elder", f"\n## ELDER LENS (cage, {_ts()}) — LENS NOT CLAIM, Unproven\n"
                     f"{lens}\n")
     _trail("elder", "CYCLE", f"lens on {len(cards)} cards")

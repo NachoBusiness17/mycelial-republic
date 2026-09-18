@@ -1,4 +1,4 @@
-from . import code_execution, filesystem, sense_tools, shell, swarm_tools
+from . import code_execution, corpus, filesystem, research, sense_tools, shell, swarm_tools
 from mag import vision
 
 TOOL_MAP = {
@@ -32,6 +32,15 @@ TOOL_MAP = {
     "invariant_sheet": lambda **kw: __import__("mag.desk_tools", fromlist=["invariant_sheet"]).invariant_sheet(**kw),
     "kvos_stats": lambda **kw: __import__("mag.desk_tools", fromlist=["kvos_stats"]).kvos_stats(**kw),
     "fence_strike": lambda **kw: __import__("mag.desk_tools", fromlist=["fence_strike"]).fence_strike(**kw),
+    # corpus — the estate catalog surface, read-only, byte-true (salon fold 2026-09-18)
+    "corpus_search": lambda **kw: corpus.corpus_search(**kw),
+    "corpus_get": lambda **kw: corpus.corpus_get(**kw),
+    "corpus_tail": lambda **kw: corpus.corpus_tail(**kw),
+    "corpus_stats": lambda **kw: corpus.corpus_stats(**kw),
+    # research — the fleet's research corpus surface, read-only (2026-09-18)
+    "research_search": lambda **kw: research.research_search(**kw),
+    "research_sources": lambda **kw: research.research_sources(**kw),
+    "research_stats": lambda **kw: research.research_stats(**kw),
 }
 
 
@@ -123,6 +132,15 @@ _FN = {
     "invariant_sheet": __import__("mag.desk_tools", fromlist=["invariant_sheet"]).invariant_sheet,
     "kvos_stats": __import__("mag.desk_tools", fromlist=["kvos_stats"]).kvos_stats,
     "fence_strike": __import__("mag.desk_tools", fromlist=["fence_strike"]).fence_strike,
+    # corpus (salon fold 2026-09-18)
+    "corpus_search": corpus.corpus_search,
+    "corpus_get": corpus.corpus_get,
+    "corpus_tail": corpus.corpus_tail,
+    "corpus_stats": corpus.corpus_stats,
+    # research (2026-09-18)
+    "research_search": research.research_search,
+    "research_sources": research.research_sources,
+    "research_stats": research.research_stats,
 }
 
 

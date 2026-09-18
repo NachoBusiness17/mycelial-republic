@@ -46,11 +46,15 @@ ROLE_TOOLSETS: dict[str, tuple[str, ...]] = {
         "list_dir", "read_file", "search_files", "blackboard_read",
         "pheromone_trail", "scan_measure", "scan_probe", "scan_grid",
         "mean_field", "whisper_decode",
+        "corpus_search", "corpus_get", "corpus_tail", "corpus_stats",
+        "research_search", "research_sources", "research_stats",
     ),
     "scout": (
         "list_dir", "read_file", "search_files", "swarm_sense",
         "pheromone_trail", "scan_measure", "scan_probe", "scan_grid",
         "mean_field", "research",
+        "corpus_search", "corpus_get", "corpus_tail", "corpus_stats",
+        "research_search", "research_sources", "research_stats",
     ),
     "builder": (
         "list_dir", "read_file", "search_files", "write_file", "apply_patch",
@@ -66,6 +70,8 @@ ROLE_TOOLSETS: dict[str, tuple[str, ...]] = {
     "historian": (
         "list_dir", "read_file", "search_files", "blackboard_read", "pheromone_trail",
         "whisper_decode",
+        "corpus_search", "corpus_get", "corpus_tail", "corpus_stats",
+        "research_search", "research_sources", "research_stats",
     ),
     "salon": (
         "list_dir", "read_file", "search_files", "blackboard_read", "pheromone_trail",
@@ -99,6 +105,10 @@ _READ_TOOLS = {
     "list_dir", "read_file", "search_files", "blackboard_read", "pheromone_trail",
     "scan_measure", "scan_probe", "scan_grid", "mean_field", "swarm_sense",
     "whisper_decode",
+    # corpus — the estate catalog surface, read-only, byte-true (2026-09-18)
+    "corpus_search", "corpus_get", "corpus_tail", "corpus_stats",
+    # research — the fleet's research corpus surface, read-only (2026-09-18)
+    "research_search", "research_sources", "research_stats",
 }
 _MUTATING_TOOLS = {"write_file", "apply_patch", "run_shell", "run_python",
                    "pheromone_drop", "blackboard_post"}

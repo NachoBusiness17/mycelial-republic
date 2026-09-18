@@ -94,3 +94,27 @@
 - [arxiv] Playing log(N)-Questions over Wikipedia Abstracts: Communication Efficiency Between Paired Frontier Models
   http://arxiv.org/abs/2609.19113v1
   We evaluate six frontier language models on the two-agent $\log(N)$-Questions game. A questioner sees $N$ Wikipedia lead paragraphs and must identify a secretly chosen target using exactly $\log_2 N$ yes/no questions. An answerer sees only…
+## monitor_lane run 2026-09-17T11:03:05Z — 1 new items across 1 terms
+
+### term: "GLM-5.3" (1 new)
+- [hn] Show HN: GLM-5.3 744B at 4 tok/s on a MacBook Pro, experts streamed from 4 SSDs
+  https://github.com/argonautlabsai/argodrive
+  HN story: points=2 comments=0 by=Argonautlabs
+## monitor_lane run 2026-09-17T15:13:34Z — 1 new items across 1 terms
+
+### term: "AI game building agents" (1 new)
+- [hn] Show HN: I forked JetBrains' new agent IDE to host Claude Code
+  https://github.com/CommanderTvis/thinkrail
+  ThinkRail is JetBrains' open-source IDE shell for AI coding agents: worktree-per-tab, chat + file tree + terminal, but hardwired to one agent (Pi). p My fork adds a plugin API so it can host others too, starting with Claude Code running in…
+## monitor_lane run 2026-09-17T17:03:18Z — 1 new items across 1 terms
+
+### term: "AI game building agents" (1 new)
+- [hn] Show HN: AutoBot – live voice control for long-running AI work
+  https://github.com/demeyer1/Autobot
+  I wanted to manage long horizon agentic workstreams via voice, then put my phone down, and have a harness manage completion - extending into full computer use. p I was trying to build a personal Jarvis, so I benchmarked AutoBot to see how…
+## monitor_lane run 2026-09-17T19:24:11Z — 1 new items across 1 terms
+
+### term: "AI game building agents" (1 new)
+- [hn] Show HN
+  https://www.mcpjam.com
+  Prathmesh, CEO of MCPJam here. p Users now start in ChatGPT, Claude, Cursor, and other AI clients. They reach your product through your MCP server. p That means your users often aren’t in your product anymore. You can’t see what they promp…

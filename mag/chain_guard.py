@@ -122,9 +122,19 @@ def check() -> dict:
     # reported, not alarmed.
     unflagged_dangling = [r for r in dangling if not r.get("evidence_lost")]
     regression = len(unflagged_dangling) > 0
-    state = "regression" if regression else "healthy"
+    # THE CANARY IS NOW LOAD-BEARING (2026-09-18, Codex witness finding): a
+    # tip-vs-chain mismatch used to ride inside a "healthy" verdict as an
+    # unconsulted field. CHAIN_STOP proved silent divergence is the failure
+    # mode — so a false match is its own actionable state, never cosmetic.
+    tip_stale = chain_root_match is False
+    if tip_stale and not regression:
+        state = "tip_stale"
+    elif regression:
+        state = "regression"
+    else:
+        state = "healthy"
     return {
-        "ok": not regression,
+        "ok": not (regression or tip_stale),
         "state": state,
         **live,
         "dangling_unflagged": len(unflagged_dangling),
@@ -133,7 +143,10 @@ def check() -> dict:
         "marker_root": m.get("repair_root"),
         "marker_at": m.get("marked_at"),
         "alarm": ("REGRESSION: dangling row(s) lack the evidence_lost flag — a pre-repair "
-                  "restore or flag-stripping amend happened.") if regression else None,
+                  "restore or flag-stripping amend happened.") if regression else (
+                  "TIP STALE: recomputed chain root does not match the tip bookmark — "
+                  "rows moved without the tip; re-anchor via repair before trusting reads."
+                  ) if tip_stale else None,
     }
 
 

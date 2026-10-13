@@ -1,0 +1,140 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>QUILL FIELD — instanced EM quills over the B1 operator field</title>
+<style>
+:root{--bg:#030806;--ink:#c8e6d9;--accent:#7cf5ff;--gold:#e8c96a}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:ui-monospace,Consolas,monospace;overflow:hidden}
+canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block}
+#hdr{position:fixed;top:0;left:0;right:0;padding:10px 14px;pointer-events:none;
+ background:linear-gradient(rgba(3,8,6,.85),rgba(3,8,6,0));z-index:2}
+h1{font-size:.85rem;letter-spacing:.1em;color:var(--accent);margin:0 0 2px;font-weight:600}
+.credit{font-size:.68rem;color:#8ab8a4}
+#mut{position:fixed;bottom:0;left:0;right:0;padding:8px 14px;pointer-events:none;text-align:center;
+ font-size:.68rem;color:#6f9b88;background:linear-gradient(rgba(3,8,6,0),rgba(3,8,6,.85));z-index:2}
+#mut b{color:var(--gold)}
+</style></head><body>
+<canvas id="gl"></canvas>
+<div id="hdr">
+ <h1>QUILL FIELD — 2000 instanced quills riding one vector field</h1>
+ <div class="credit">quill-field skin — technique: @damarberlari EM-wave sketch &middot; fleet surface: B1 maze_arena GPU field</div>
+</div>
+<div id="mut">mouse moves the primary charge &middot; <b>click cycles the nearest charge's sign</b> (attract &harr; repel) &middot; hue = field direction &middot; length = |field| &middot; base curl vortex at center &mdash; same Gaussian-well + swirl family as arena_operator_field.html</div>
+<script>
+"use strict";
+// ==== zero-dep WebGL2 instanced quill field ====
+// same math family as arena_operator_field.html: Gaussian wells/sources (-grad)
+// + a curl vortex ring (tangential swirl). Rendered as ~2000 instanced line
+// segments ("quills"), each oriented along the local field vector.
+const cvs=document.getElementById('gl');
+const gl=cvs.getContext('webgl2',{antialias:true,alpha:false});
+if(!gl){document.getElementById('mut').innerHTML='<span style="color:#ff6b6b">WebGL2 unavailable</span>';throw new Error('no webgl2');}
+// GLSL ES 3.00 — #version on line 1, highp precision, constant loop bound (i<4)
+const VS=`#version 300 es
+precision highp float;
+layout(location=0) in float a_tip;   // per-vertex: 0.0 or 1.0 (line ends)
+layout(location=1) in vec2 a_grid;   // per-instance: grid point, uv in [0,1]
+uniform vec2 u_res;                  // canvas px (for aspect)
+uniform vec4 u_ch[4];                // charges: x,y,strength(+attract/-repel),radius (world)
+uniform vec4 u_vortex;               // x,y,strength,r0 (world)
+uniform float u_gain;
+out vec4 v_col;
+vec2 vfield(vec2 p){
+  vec2 f=vec2(0.0);
+  for(int i=0;i<4;i++){                       // constant bound — GLSL ES 3.00 safe
+    vec2 d=p-u_ch[i].xy;
+    float r=length(d)+1e-5;
+    float R=u_ch[i].w;
+    float fall=exp(-(r*r)/(R*R));             // Gaussian cell, mirrors operator LIGHTS
+    f+=-u_ch[i].z*fall*(2.0*r/(R*R))*(d/r);   // -grad of the potential well/source
+  }
+  vec2 dv=p-u_vortex.xy;
+  float d=length(dv)+1e-5;
+  float w=0.28;
+  float ring=u_vortex.z*exp(-((d-u_vortex.w)*(d-u_vortex.w))/(w*w));
+  f+=vec2(-dv.y,dv.x)/d*ring;                 // tangential curl, mirrors VORTEX swirl
+  return f;
+}
+vec3 hsl2rgb(float h,float s,float l){
+  vec3 rgb=clamp(abs(mod(h*6.0+vec3(0.0,4.0,2.0),6.0)-3.0)-1.0,0.0,1.0);
+  return l+s*(rgb-0.5)*(1.0-abs(2.0*l-1.0));
+}
+void main(){
+  float aspect=u_res.x/u_res.y;
+  vec2 p=(a_grid*2.0-1.0)*vec2(aspect,1.0);   // grid -> world (screen height = 2)
+  vec2 f=vfield(p);
+  float m=length(f);
+  vec2 dir=m>1e-6?f/m:vec2(1.0,0.0);
+  float L=clamp(m*u_gain,0.008,0.075);        // quill length ∝ |field|
+  vec2 pos=p+dir*(a_tip-0.5)*L;
+  float hue=atan(f.y,f.x)/6.2831853+0.5;      // color ∝ direction angle
+  float lit=0.30+0.40*clamp(m*1.6,0.0,1.0);
+  v_col=vec4(hsl2rgb(fract(hue),0.85,lit),clamp(m*2.5,0.18,0.85));
+  gl_Position=vec4(pos,0.0,1.0);
+}`;
+const FS=`#version 300 es
+precision highp float;
+in vec4 v_col;
+out vec4 o;
+void main(){o=v_col;}`;
+function sh(t,src){const s=gl.createShader(t);gl.shaderSource(s,src);gl.compileShader(s);
+ if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))console.error(gl.getShaderInfoLog(s));return s;}
+const prog=gl.createProgram();
+gl.attachShader(prog,sh(gl.VERTEX_SHADER,VS));gl.attachShader(prog,sh(gl.FRAGMENT_SHADER,FS));
+gl.linkProgram(prog);gl.useProgram(prog);
+// geometry: 2-vert base line + instanced grid (50x40 = 2000 quills)
+const NQ_X=50,NQ_Y=40,NQ=NQ_X*NQ_Y;
+const tipBuf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,tipBuf);
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([0,1]),gl.STATIC_DRAW);
+gl.enableVertexAttribArray(0);gl.vertexAttribPointer(0,1,gl.FLOAT,false,0,0);gl.vertexAttribDivisor(0,0);
+const grid=new Float32Array(NQ*2);let gi=0;
+for(let j=0;j<NQ_Y;j++)for(let i=0;i<NQ_X;i++){grid[gi++]=(i+0.5)/NQ_X;grid[gi++]=(j+0.5)/NQ_Y;}
+const gridBuf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,gridBuf);
+gl.bufferData(gl.ARRAY_BUFFER,grid,gl.STATIC_DRAW);
+gl.enableVertexAttribArray(1);gl.vertexAttribPointer(1,2,gl.FLOAT,false,0,0);gl.vertexAttribDivisor(1,1);
+const U={res:gl.getUniformLocation(prog,'u_res'),ch:gl.getUniformLocation(prog,'u_ch'),
+ vortex:gl.getUniformLocation(prog,'u_vortex'),gain:gl.getUniformLocation(prog,'u_gain')};
+// ==== charges — world coords (screen height = 2, x spans ±aspect) ====
+// ch[0] = primary, mouse-driven; ch[1..3] drift on slow Lissajous orbits
+const charges=[
+ {x:0,y:0,s:1.0,r:0.45,ox:0.0,oy:0.0,ax:0.0,ay:0.0,primary:true},
+ {x:0,y:0,s:-0.9,r:0.40,ox:-0.55,oy:0.35,ax:0.30,ay:0.22},
+ {x:0,y:0,s:0.8, r:0.35,ox:0.60,oy:0.40,ax:0.24,ay:0.30},
+ {x:0,y:0,s:-0.7,r:0.38,ox:0.05,oy:-0.62,ax:0.34,ay:0.18}
+];
+const VORTEX={x:0,y:0,s:0.85,r0:0.55};
+function resize(){
+ const dpr=Math.min(window.devicePixelRatio||1,2);
+ cvs.width=Math.floor(innerWidth*dpr);cvs.height=Math.floor(innerHeight*dpr);
+ gl.viewport(0,0,cvs.width,cvs.height);
+}
+addEventListener('resize',resize);resize();
+function toWorld(ev){
+ const aspect=cvs.width/cvs.height;
+ return[(ev.clientX/innerWidth*2-1)*aspect,1-2*ev.clientY/innerHeight];
+}
+addEventListener('mousemove',ev=>{const[x,y]=toWorld(ev);charges[0].x=x;charges[0].y=y;});
+addEventListener('click',ev=>{ // cycle nearest charge's sign: attract <-> repel
+ const[mx,my]=toWorld(ev);let best=-1,bd=1e9;
+ for(let i=0;i<4;i++){const d=Math.hypot(mx-charges[i].x,my-charges[i].y);if(d<bd){bd=d;best=i;}}
+ if(best>=0)charges[best].s*=-1;
+});
+// ==== frame ====
+gl.enable(gl.BLEND);gl.blendFunc(gl.SRC_ALPHA,gl.ONE); // additive glow on dark
+gl.clearColor(0.012,0.031,0.024,1.0);
+const chArr=new Float32Array(16);
+function frame(t){
+ const s=t*0.001;
+ for(let i=1;i<4;i++){const c=charges[i];
+  c.x=c.ox+Math.sin(s*0.31+i*2.1)*c.ax;
+  c.y=c.oy+Math.cos(s*0.23+i*1.7)*c.ay;}
+ for(let i=0;i<4;i++){const c=charges[i];chArr.set([c.x,c.y,c.s,c.r],i*4);}
+ gl.clear(gl.COLOR_BUFFER_BIT);
+ gl.uniform2f(U.res,cvs.width,cvs.height);
+ gl.uniform4fv(U.ch,chArr);
+ gl.uniform4f(U.vortex,VORTEX.x,VORTEX.y,VORTEX.s,VORTEX.r0+Math.sin(s*0.4)*0.06);
+ gl.uniform1f(U.gain,0.05);
+ gl.drawArraysInstanced(gl.LINES,0,2,NQ);
+ requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script></body></html>

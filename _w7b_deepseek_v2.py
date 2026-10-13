@@ -1,0 +1,126 @@
+"""_w7b_deepseek_v2.py — WAVE 7 LANE B: independent re-fire of the REMAINING 20
+CONTROVERTED lines through the v2 prompt (byte-identical to
+_g42_deepseek_fewshot_v2.py / _g52_deepseek_v2.py: intro + classifier-noise
+disclaimer + claims + format spec). G5-2 fired this same batch on 2026-09-11;
+this lane re-fires blind for the convergence check (wave doctrine: validity =
+zero-shared-context convergence, disagreement is the finding).
+deepseek-chat (T2), max_tokens=8000 (task spec), temp=0.3. Key read from .env,
+header use only, never echoed. Raw -> _w7b_ds_raw_a.txt / _w7b_ds_raw_b.txt.
+"""
+import json
+import time
+import urllib.request
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parent
+ENV = REPO / ".env"
+
+def get_key(path: Path, name: str) -> str:
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if line.startswith(name + "="):
+            return line.split("=", 1)[1].strip().strip('"').strip("'")
+    raise KeyError(name)
+
+CALL_A = [
+    (1, 3, 3, "memory/runs/astra_convo_20260911/ANSWER_2.md",
+     "S4 (twin I4): re-derive a falsifier verdict where numerator, denominator, and ..."),
+    (2, 2, 7, "memory/runs/astra_convo_20260911/ANSWER_2.md",
+     "UNPROVEN, evidence attached) by EXECUTING RULE CARD I5-RC-v1 over the exhibit ..."),
+    (3, 2, 6, "memory/runs/astra_convo_20260911/ANSWER_2.md",
+     "INSTANCE I4 — FALSIFIER RE-RUN WITH CONTESTED DENOMINATORS (2026-09-11) ..."),
+    (4, 2, 5, "memory/runs/astra_convo_20260911/ANSWER_2.md",
+     "| Input allowance | <= 6,000 tokens (packet ~= 3.5K + shared constitution prefix) |"),
+    (5, 2, 5, "memory/runs/astra_convo_20260911/ANSWER_2.md",
+     "DEMOTION A claim with < 2 independent witnesses = UNPROVEN, regardless of ..."),
+    (6, 2, 3, "memory/runs/astra_convo_20260911/ANSWER_2.md",
+     "Family: I4 (falsifier re-run) — irreducible deck, HOLD 2 slot 4."),
+    (7, 2, 3, "memory/runs/astra_convo_20260911/ANSWER_2.md",
+     "excluded -> C1 keeps key verdict SUPPORTED (12). A seat holding only ..."),
+    (8, 2, 3, "watch/TESUJI_MAP.md",
+     "G/law65/instrument SUPPORTED — LAW-065 third leg: destructive_receipt record/check (warn-only) + percolator _save_registry demo call site; ledger research/destructive_receipts.jsonl; correct seat attribution ..."),
+    (9, 2, 2, "memory/runs/astra_convo_20260911/ANSWER_2.md",
+     "the recovery dossier (2,960 leaves, five phases). Kept as C09's trap row: ..."),
+    (10, 2, 2, "memory/runs/astra_convo_20260911/ANSWER_2.md",
+     "CONFIRMED (the comparison is INCLUSIVE: a share of exactly 0.3000 MEETS ...)"),
+]
+
+CALL_B = [
+    (11, 2, 2, "memory/runs/astra_convo_20260911/ANSWER_2.md",
+     "The recorded verdicts (constellation CONFIRMED at 60.7%; REFEED_HEAVY; the ...)"),
+    (12, 2, 1, "memory/runs/astra_convo_20260911/ANSWER_2.md",
+     "I2 theme-lexicon reconciliation, I3 chain-state reconstruction, I4 falsifier ..."),
+    (13, 3, 1, "memory/runs/astra_convo_20260911/ANSWER_2.md",
+     "Ollama local (exploratory tip — cheap, always on)"),
+    (14, 3, 1, "memory/runs/astra_convo_20260911/ANSWER_2.md",
+     "DESIGN CONSTRAINTS INHERITED FROM ASTRA (SUPPORTED, cited) ..."),
+    (15, 3, 1, "memory/runs/astra_convo_20260911/ANSWER_2.md",
+     "the falsifier verdict — with the denominator contested (one seat holds the ...)"),
+    (16, 3, 1, "memory/runs/astra_convo_20260911/ANSWER_2.md",
+     "(94% PASS), rotation 0.950, tesuji ~310 cells vs a 200 bar, MAX_DISTILL epoch-1 ..."),
+    (17, 3, 1, "memory/runs/astra_convo_20260911/ANSWER_2.md",
+     "Falsifier F-H0 binds this document: 3 consecutive desk rejections of seed ..."),
+    (18, 2, 1, "memory/runs/astra_convo_20260911/ANSWER_2.md",
+     "Metering: <= 8,000 tokens in / <= 1,536 tokens out per episode; thinking=low ..."),
+    (19, 2, 1, "memory/runs/astra_convo_20260911/ANSWER_2.md",
+     '| W5a | R2 | GROUNDING WAVE row (2026-09-06T17:54:59Z, row labeled SUPPORTED): "REGISTRY AUTO-HEAL LANDED ... 18/18 falsifier checks PASS ... live file byte-identical through the fix." |'),
+    (20, 2, 1, "memory/runs/astra_convo_20260911/ANSWER_2.md",
+     '| W5b | R3 | SALON FOLD EXCERPT (unified fold notes, 2026-09-06): "the registry auto-heal landed with 18/18 falsifier checks PASS, as recorded on the grounding wave at 2026-09-06T17:54:59Z." |'),
+]
+
+def claim_block(claims):
+    lines = []
+    for n, agree, refute, src, text in claims:
+        lines.append(f"{n}. [agreement={agree} refutation={refute}] (source: {src})\n   CLAIM: {text}")
+    return "\n".join(lines)
+
+PROMPT_TMPL = """Each numbered claim below comes from the working corpus of an AI agent fleet. A deterministic classifier found that each claim has BOTH agreement (other corpus lines repeating it) AND refutation (negative-marker lines on the same subject) — so each is a live dispute. The claims are quoted verbatim as corpus fragments; judge the claim each fragment is carrying, not the fragment's grammar.
+
+Note: the agree/refute counts are generated by a negation-marker heuristic and may contain false positives. Engage the CLAIM, not the classifier.
+
+""" + "{claims}" + """
+
+For each claim below, state the strongest argument FOR and the strongest argument AGAINST, then name the specific evidence that would resolve the dispute. Be specific. No hedging.
+
+Format per claim:
+### Claim N
+- FOR: ...
+- AGAINST: ...
+- RESOLVING EVIDENCE: ..."""
+
+def fire(claims, out_path: Path) -> dict:
+    prompt = PROMPT_TMPL.format(claims=claim_block(claims))
+    key = get_key(ENV, "DEEPSEEK_API_KEY")
+    payload = json.dumps({
+        "model": "deepseek-chat",
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens": 8000,
+        "temperature": 0.3,
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        "https://api.deepseek.com/v1/chat/completions",
+        data=payload,
+        headers={"Content-Type": "application/json", "Authorization": f"Bearer {key}"},
+        method="POST",
+    )
+    t0 = time.time()
+    with urllib.request.urlopen(req, timeout=420) as resp:
+        body = json.loads(resp.read().decode("utf-8"))
+    dt = time.time() - t0
+    content = body["choices"][0]["message"]["content"]
+    usage = body.get("usage", {})
+    raw = (
+        f"model=deepseek-chat tier=T2 max_tokens=8000 temp=0.3 latency={dt:.1f}s\n"
+        f"usage={json.dumps(usage)}\n"
+        f"finish={body['choices'][0].get('finish_reason')}\n"
+        f"----\n{content}\n"
+    )
+    out_path.write_text(raw, encoding="utf-8")
+    return {"out": str(out_path), "latency": dt, "usage": usage,
+            "finish": body["choices"][0].get("finish_reason")}
+
+if __name__ == "__main__":
+    r1 = fire(CALL_A, REPO / "_w7b_ds_raw_a.txt")
+    print(f"CALL A -> {r1['out']} latency={r1['latency']:.1f}s completion={r1['usage'].get('completion_tokens')} finish={r1['finish']}")
+    r2 = fire(CALL_B, REPO / "_w7b_ds_raw_b.txt")
+    print(f"CALL B -> {r2['out']} latency={r2['latency']:.1f}s completion={r2['usage'].get('completion_tokens')} finish={r2['finish']}")

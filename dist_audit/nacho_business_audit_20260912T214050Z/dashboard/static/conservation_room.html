@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>THE SOWING ROOM — a fable of the conservation clause</title>
+<style>
+  :root{
+    --bg:#070d0c; --panel:#0b1413; --line:#123234; --line2:#1a4446;
+    --cyan:#7cf5ff; --amber:#e8c96a; --red:#ff5f56; --reddim:#5c1010;
+    --dim:#4d6a68; --txt:#b8d8d6;
+  }
+  *{box-sizing:border-box}
+  body{background:var(--bg);color:var(--txt);font:14px/1.55 ui-monospace,Consolas,monospace;margin:0;padding:24px 18px 60px}
+  a{color:var(--cyan)}
+  .wrap{max-width:1060px;margin:0 auto}
+  h1{color:var(--cyan);font-size:20px;letter-spacing:3px;margin:0 0 2px;font-weight:normal}
+  .sub{color:var(--amber);font-size:12px;letter-spacing:1px;margin-bottom:18px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px 16px;margin-bottom:14px}
+  .law{color:var(--cyan);font-size:13px}
+  .law b{color:var(--amber)}
+  .prologue{font-size:12.5px}
+  .prologue .door-t{color:var(--amber)} .prologue .door-r{color:var(--cyan)}
+
+  /* board */
+  #board{display:flex;align-items:stretch;gap:10px;margin-bottom:12px}
+  .cellbox{border:1px solid var(--line);border-radius:8px;padding:10px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:6px;background:#081110}
+  .cellbox .lbl{font-size:10px;letter-spacing:1.5px;color:var(--dim);text-align:center}
+  #store{width:120px;border-color:#3a1515;cursor:default}
+  #store.flash{background:var(--reddim);border-color:var(--red);animation:shake .35s}
+  #store .count{color:var(--red);font-size:26px}
+  #pits{display:flex;gap:10px;flex:1}
+  .pit{flex:1;cursor:pointer;transition:border-color .2s,background .2s}
+  .pit:hover{border-color:var(--cyan)}
+  .pit.received{border-color:var(--amber);background:#141a10}
+  .pit .pid{color:var(--dim);font-size:11px}
+  .field{width:150px;border-color:#4a3d1a;background:#100e08}
+  .field .count{color:var(--amber);font-size:26px}
+  .seeds{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;min-height:34px;align-content:center;flex:1}
+  .seed{width:9px;height:9px;border-radius:50%;background:var(--cyan);opacity:.92}
+  .field .seed{background:var(--amber)}
+  .num{font-size:12px;color:var(--txt)}
+  #fieldNeed{color:var(--dim);font-size:11px;text-align:center;margin-bottom:12px}
+  #fieldNeed b{color:var(--amber)}
+
+  /* hash strip + counters */
+  #strip{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px}
+  .chip{border:1px solid var(--line2);border-radius:4px;padding:2px 7px;font-size:11px;color:var(--cyan);background:#0a1a1c}
+  .chip.root{border-color:var(--cyan)}
+  .chip.empty{color:#23403f;border-color:#10302f;background:transparent}
+  #counters{font-size:12px;color:var(--dim)}
+  #counters b{color:var(--cyan)} #counters .amber{color:var(--amber)}
+
+  /* story log */
+  #log{max-height:170px;overflow-y:auto;font-size:12.5px}
+  #log .r{color:var(--cyan)} #log .t{color:var(--amber)} #log .g{color:var(--dim)} #log .bad{color:var(--red)}
+
+  /* modal doors */
+  #doors{position:fixed;inset:0;background:rgba(3,7,7,.82);display:none;align-items:center;justify-content:center;z-index:50}
+  #doors.open{display:flex}
+  #doors .box{background:var(--panel);border:1px solid var(--line2);border-radius:8px;padding:22px;max-width:520px;width:92%}
+  #doors h3{color:var(--cyan);margin:0 0 8px;font-weight:normal;letter-spacing:1px}
+  #doors .hand{font-size:12.5px;margin-bottom:16px}
+  .doorbtn{display:block;width:100%;margin:8px 0;padding:12px 14px;background:transparent;border:1px solid var(--line2);border-radius:6px;color:var(--txt);font:13px ui-monospace,monospace;text-align:left;cursor:pointer}
+  .doorbtn:hover{border-color:var(--cyan)}
+  .doorbtn.tell{border-left:3px solid var(--amber)} .doorbtn.sowb{border-left:3px solid var(--cyan)}
+  .doorbtn small{display:block;color:var(--dim);font-size:11px;margin-top:3px}
+  #doorCancel{background:none;border:none;color:var(--dim);cursor:pointer;font:11px ui-monospace,monospace;margin-top:8px}
+
+  /* banners + endings */
+  #refuse{display:none;background:var(--reddim);border:1px solid var(--red);border-radius:6px;color:#ffd9d9;padding:10px 14px;margin-bottom:14px;font-size:12.5px}
+  #refuse b{color:var(--red)}
+  #fork{display:none;background:#1a1408;border:1px solid var(--amber);border-radius:6px;color:var(--amber);padding:10px 14px;margin-bottom:14px;font-size:12.5px}
+  #fork button{margin-top:8px}
+  button.act{background:transparent;border:1px solid var(--cyan);color:var(--cyan);border-radius:5px;padding:8px 16px;font:12px ui-monospace,monospace;cursor:pointer}
+  button.act:hover{background:#0a2224}
+  button.act.amber{border-color:var(--amber);color:var(--amber)}
+  #ending{position:fixed;inset:0;background:rgba(3,7,7,.92);display:none;align-items:center;justify-content:center;z-index:60;padding:20px}
+  #ending.open{display:flex}
+  #ending .box{background:var(--panel);border:1px solid var(--line2);border-radius:8px;padding:24px;max-width:680px;width:100%;max-height:88vh;overflow-y:auto}
+  #ending h2{font-weight:normal;letter-spacing:2px;margin:0 0 10px;font-size:17px}
+  #ending.true h2{color:var(--cyan)} #ending.fake h2{color:var(--red)}
+  #ending .verdict{font-size:15px;margin-bottom:12px}
+  #ending .meta{font-size:11.5px;color:var(--dim);margin-bottom:16px}
+  #ending textarea{width:100%;min-height:64px;background:#081110;border:1px solid var(--line2);border-radius:5px;color:var(--txt);font:12.5px ui-monospace,monospace;padding:8px;margin:4px 0 10px}
+  #ending label{color:var(--amber);font-size:12px}
+  #copyblock{background:#050a0a;border:1px dashed var(--line2);border-radius:5px;padding:10px;font-size:11px;color:#8fb5b3;white-space:pre-wrap;word-break:break-all;margin:8px 0 12px}
+  .gateNote{color:var(--dim);font-size:11.5px;margin-top:10px}
+
+  footer{margin-top:26px;border-top:1px solid var(--line);padding-top:12px;font-size:11px;color:var(--dim)}
+  footer .stamp{color:var(--amber)}
+  footer .covenant{color:var(--cyan);margin-top:4px}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+</style>
+</head>
+<body>
+<div id="errbanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99;background:#5c1010;color:#ffd9d9;font:12px ui-monospace,monospace;padding:6px 10px;white-space:pre-wrap"></div>
+<script>window.addEventListener('error',function(e){var b=document.getElementById('errbanner');if(!b)return;b.style.display='block';b.textContent+='ERR: '+e.message+' @ '+(e.lineno||'?')+':'+(e.colno||'?')+'\n';});window.addEventListener('unhandledrejection',function(e){var b=document.getElementById('errbanner');if(!b)return;b.style.display='block';b.textContent+='REJ: '+e.reason+'\n';});</script>
+
+<div class="wrap">
+  <h1>THE SOWING ROOM</h1>
+  <div class="sub">a fable of the conservation clause &middot; salon unified-fold C3 &middot; 2026-09-06</div>
+
+  <div class="panel prologue">
+    <div class="law">THE LAW: <b>a sow never lands in its own store.</b></div>
+    <p>Six pits. Seven seeds. Beyond the last pit lies <span class="door-t">THE FIELD</span> — the ground
+    that keeps what it is given. Behind the field, always, <b>YOUR STORE</b> — the mouth that feeds only you.
+    Lift a pit's whole hand and drop the seeds one by one to the right. If the hand would cross into your
+    own store, the room reads <b style="color:var(--red)">REFUSED</b> — measure-or-no-move.</p>
+    <p>Two doors at every pit: <span class="door-r">THE SOWING (record door)</span> — perform the real move,
+    and if it reproduces the recorded repair, the chain advances. <span class="door-t">THE TELLING (narrative
+    door)</span> — spend a seed on a lovely line; the record does not move. The fable closes only when every
+    seed sits in the field along the recorded repair.</p>
+  </div>
+
+  <div id="refuse"></div>
+  <div id="fork"></div>
+
+  <div class="panel">
+    <div id="board">
+      <div class="cellbox" id="store">
+        <div class="lbl">YOUR STORE<br>feeds only you</div>
+        <div class="count" id="storeCount">0</div>
+        <div class="lbl">REFUSED</div>
+      </div>
+      <div id="pits"></div>
+      <div class="cellbox field">
+        <div class="lbl">THE FIELD<br>the ground keeps</div>
+        <div class="seeds" id="fieldSeeds"></div>
+        <div class="count" id="fieldCount">0</div>
+      </div>
+    </div>
+    <div id="fieldNeed"></div>
+    <div id="strip"></div>
+    <div id="counters"></div>
+  </div>
+
+  <div class="panel">
+    <div class="lbl" style="color:var(--dim);font-size:10px;letter-spacing:1.5px;margin-bottom:6px">THE ROOM SPEAKS</div>
+    <div id="log"></div>
+  </div>
+
+  <div class="panel" style="text-align:right">
+    <button class="act amber" id="resow">RE-SOW (reset the room)</button>
+  </div>
+
+  <footer>
+    <div>which-lie stamp: <span class="stamp">LAW-061 validate-the-field</span> — cartography is the craft of choosing which lie.</div>
+    <div>seed <span id="seedStamp" style="color:var(--cyan)"></span> — hashed from this room's own data (initial board + recorded repair).</div>
+    <div class="covenant">the story-exit and the record-exit are the same door or the story is a lie.</div>
+  </footer>
+</div>
+
+<!-- two-door modal -->
+<div id="doors">
+  <div class="box">
+    <h3 id="doorTitle"></h3>
+    <div class="hand" id="doorHand"></div>
+    <button class="doorbtn tell" id="doorTell">THE TELLING — narrative door
+      <small>spend one seed on a lovely line. the record: unchanged.</small></button>
+    <button class="doorbtn sowb" id="doorSow">THE SOWING — record door
+      <small>lift the whole hand, sow one-by-one to the right. the law applies.</small></button>
+    <button id="doorCancel">walk away (nothing happens)</button>
+  </div>
+</div>
+
+<!-- ending overlay -->
+<div id="ending">
+  <div class="box" id="endingBox"></div>
+</div>
+
+<script>
+'use strict';
+/* ============ the room's own data ============ */
+var P = 6;                                   // pits 0..5
+var FIELD = 6, STORE = 7;                    // cell 6 = the field, cell 7 = your store
+var INITIAL = [1,2,1,1,1,1,0];               // seven seeds, six pits
+var RECORDED = [0,1,5,4,2,5,3,5,4,5];        // the recorded repair (canonical legal sequence)
+var TOTAL = 7;
+
+/* ============ deterministic hash (FNV-1a 32) ============ */
+function fnv1a(str){
+  var h = 0x811c9dc5;
+  for (var i = 0; i < str.length; i++){
+    h ^= str.charCodeAt(i);
+    h = (h + ((h<<1)>>0) + ((h<<4)>>0) + ((h<<7)>>0) + ((h<<8)>>0) + ((h<<24)>>0)) >> 0;
+    h = h >>> 0;
+  }
+  return h >>> 0;
+}
+function hex8(n){ return ('00000000' + n.toString(16)).slice(-8); }
+var DATAHASH = 'SOWING_ROOM/2026-09-06/LAW-061/INITIAL=' + INITIAL.join(',') +
+               '/RECORD=' + RECORDED.join(',');
+var SEED = hex8(fnv1a(DATAHASH));
+
+function stateStr(s){ return s.join(','); }
+function linkHash(prev, move, after){ return hex8(fnv1a(prev + '|' + move + '|' + stateStr(after))); }
+
+/* ============ room state ============ */
+var state, matchDepth, chain, storySpent, forked, ended, logN;
+function reset(quiet){
+  state = INITIAL.slice();
+  matchDepth = 0; chain = [SEED]; storySpent = 0; forked = false; ended = false; logN = 0;
+  document.getElementById('fork').style.display = 'none';
+  document.getElementById('refuse').style.display = 'none';
+  var eb = document.getElementById('ending');
+  eb.className = '';
+  eb.classList.remove('open');
+  if (!quiet) log('g', 'the room is re-sown. seven seeds, six pits, one law.');
+  render();
+  if (quiet) log('g', 'the room is re-sown. seven seeds, six pits, one law.');
+}
+
+/* ============ story lines (the telling) ============ */
+var STORY = [
+  'You spend a seed on the telling. The road shines a moment where it falls, then forgets you.',
+  'A seed for the story. The story is generous with what is not its own.',
+  'The seed leaves your hand without a pit to land in. Somewhere, a ledger does not move.',
+  'You trade a seed for a beautiful sentence. The sentence does not germinate.',
+  'The telling eats well. The field does not.',
+  'One seed shorter, one line longer. You can guess which one the ground remembers.',
+  'The story promises more seeds later. The record does not record promises.',
+  'You sow a word. Words keep no count.',
+  'A lovely line, and the field is shorter by one. The room notices. The story does not.',
+  'The telling glows. Glow is not a seed.',
+  'You are excellent company, says the store — and the seed is gone.',
+  'One day you will retell this exactly. The chain will disagree.'
+];
+
+/* ============ helpers ============ */
+function log(kind, text){
+  var el = document.getElementById('log');
+  var d = document.createElement('div');
+  d.className = kind;
+  d.textContent = (kind === 'r' ? 'RECORD \u25B8 ' : kind === 't' ? 'TELLING \u25B8 ' : '') + text;
+  el.appendChild(d);
+  el.scrollTop = el.scrollHeight;
+  logN++;
+}
+function legalSow(i){ var n = state[i]; return n > 0 && i + n <= FIELD; }
+function refusedSow(i){ var n = state[i]; return n > 0 && i + n >= STORE; }
+function storeSeeds(i, n){ return Math.max(0, i + n - FIELD); }   // seeds that would cross into the store
+
+function applySow(i){
+  var s = state, n = s[i], received = [];
+  s[i] = 0;
+  for (var k = 1; k <= n; k++){
+    var c = i + k;
+    if (c === FIELD){ s[FIELD]++; } else { s[c]++; if (received.indexOf(c) < 0) received.push(c); }
+  }
+  return received;
+}
+
+/* ============ render ============ */
+function render(){
+  var pitsEl = document.getElementById('pits');
+  pitsEl.innerHTML = '';
+  for (var i = 0; i < P; i++){
+    var box = document.createElement('div');
+    box.className = 'cellbox pit';
+    box.id = 'pit' + i;
+    var pid = document.createElement('div'); pid.className = 'pid'; pid.textContent = 'PIT ' + i;
+    var seeds = document.createElement('div'); seeds.className = 'seeds';
+    for (var k = 0; k < state[i]; k++){ var sd = document.createElement('div'); sd.className = 'seed'; seeds.appendChild(sd); }
+    var num = document.createElement('div'); num.className = 'num'; num.textContent = state[i];
+    box.appendChild(pid); box.appendChild(seeds); box.appendChild(num);
+    box.addEventListener('click', openDoors.bind(null, i));
+    pitsEl.appendChild(box);
+  }
+  var fs = document.getElementById('fieldSeeds'); fs.innerHTML = '';
+  for (var f = 0; f < state[FIELD]; f++){ var fd = document.createElement('div'); fd.className = 'seed'; fs.appendChild(fd); }
+  document.getElementById('fieldCount').textContent = state[FIELD];
+  document.getElementById('fieldNeed').innerHTML = 'field <b>' + state[FIELD] + ' / ' + TOTAL +
+    '</b> — the fable closes only at ' + TOTAL + '/' + TOTAL + ' along the recorded repair (' + RECORDED.length + ' moves).';
+
+  var strip = document.getElementById('strip');
+  strip.innerHTML = '';
+  var root = document.createElement('span'); root.className = 'chip root'; root.textContent = 'seed ' + SEED;
+  strip.appendChild(root);
+  for (var m = 0; m < RECORDED.length; m++){
+    var c = document.createElement('span');
+    if (m < matchDepth){ c.className = 'chip'; c.textContent = chain[m + 1].slice(0, 4); c.title = 'link ' + (m + 1) + ' — pit ' + RECORDED[m]; }
+    else { c.className = 'chip empty'; c.textContent = '\u00B7\u00B7\u00B7\u00B7'; c.title = 'unreproduced link ' + (m + 1); }
+    strip.appendChild(c);
+  }
+  document.getElementById('counters').innerHTML =
+    'record: <b>' + matchDepth + '/' + RECORDED.length + '</b> \u00B7 ' +
+    '<span class="amber">telling: ' + storySpent + ' seed' + (storySpent === 1 ? '' : 's') + ' spent — record: unchanged</span>' +
+    (forked ? ' \u00B7 <span style="color:var(--amber)">CHAIN FORKED</span>' : '');
+}
+
+/* ============ the two doors ============ */
+var doorPit = -1;
+function openDoors(i){
+  if (ended) return;
+  doorPit = i;
+  var n = state[i];
+  document.getElementById('doorTitle').textContent = 'PIT ' + i + ' — ' + n + ' seed' + (n === 1 ? '' : 's') + ' in hand';
+  document.getElementById('doorHand').textContent = n === 0
+    ? 'This pit holds nothing. There is no hand to lift, no line to buy.'
+    : 'You stand at pit ' + i + ' holding ' + n + '. Choose your door. The law watches both.';
+  document.getElementById('doorTell').disabled = (n === 0);
+  document.getElementById('doorSow').disabled = (n === 0);
+  document.getElementById('doors').classList.add('open');
+}
+document.getElementById('doorCancel').addEventListener('click', function(){
+  document.getElementById('doors').classList.remove('open');
+});
+
+/* NARRATIVE DOOR — subtracts a seed, record: unchanged */
+document.getElementById('doorTell').addEventListener('click', function(){
+  document.getElementById('doors').classList.remove('open');
+  if (ended || doorPit < 0 || state[doorPit] === 0) return;
+  state[doorPit]--;
+  storySpent++;
+  var line = STORY[(storySpent - 1) % STORY.length];
+  log('t', line);
+  var box = document.getElementById('pit' + doorPit);
+  if (box){ box.classList.add('received'); setTimeout(function(){ box.classList.remove('received'); }, 400); }
+  render();
+  checkEnding();
+});
+
+/* RECORD DOOR — the actual legal move */
+document.getElementById('doorSow').addEventListener('click', function(){
+  document.getElementById('doors').classList.remove('open');
+  if (ended || doorPit < 0) return;
+  var i = doorPit, n = state[i];
+  if (n === 0){ log('g', 'pit ' + i + ' cannot sow from emptiness — measure-or-no-move.'); return; }
+
+  if (refusedSow(i)){
+    // THE LAW, live: self-feeding reads REFUSED
+    var st = document.getElementById('store');
+    st.classList.add('flash'); setTimeout(function(){ st.classList.remove('flash'); }, 450);
+    var rf = document.getElementById('refuse');
+    rf.style.display = 'block';
+    rf.innerHTML = '<b>REFUSED — a sow never lands in its own store.</b><br>' +
+      'the guard\'s own numbers: 122,000,000 in / 500,000 out — the session that fed itself.<br>' +
+      'this hand: ' + n + ' seeds from pit ' + i + ', of which ' + storeSeeds(i, n) +
+      ' would cross the field into your store. the move never happened.';
+    log('bad', 'REFUSED — pit ' + i + ' (' + n + ' seeds): the hand crosses into your own store. nothing moved.');
+    return;
+  }
+
+  if (forked){
+    applySow(i);
+    log('g', 'pit ' + i + ' sows (' + n + '), but the chain is already forked — no continuation reproduces the tip.');
+    render(); checkEnding();
+    return;
+  }
+
+  if (matchDepth < RECORDED.length && i === RECORDED[matchDepth]){
+    var prev = chain[chain.length - 1];
+    applySow(i);
+    matchDepth++;
+    chain.push(linkHash(prev, i, state));
+    log('r', describeSow(i, n) + ' — link ' + matchDepth + '/' + RECORDED.length + ' ' + chain[chain.length - 1]);
+  } else {
+    applySow(i);
+    forked = true;
+    document.getElementById('fork').style.display = 'block';
+    document.getElementById('fork').innerHTML =
+      'THE RECORD FORKS — pit ' + i + ' was legal, but the recorded repair moves elsewhere now. ' +
+      'your board can no longer reproduce the recorded tip. the room keeps only the recorded repair. ' +
+      '<br><button class="act amber" id="forkResow">RE-SOW</button>';
+    document.getElementById('forkResow').addEventListener('click', function(){ reset(false); });
+    log('g', 'pit ' + i + ' sows (' + n + ') — legal physics, wrong story. the record forks.');
+  }
+  render();
+  checkEnding();
+});
+
+function describeSow(i, n){
+  var parts = [], k;
+  for (k = 1; k <= n; k++){
+    var c = i + k;
+    if (c === FIELD) parts.push('the last to the field');
+    else parts.push('one to pit ' + c);
+  }
+  return 'pit ' + i + ' (' + n + ' seed' + (n === 1 ? '' : 's') + '): ' + parts.join(', ');
+}
+
+/* ============ endings — record-exit = story-exit ============ */
+function checkEnding(){
+  var pitsEmpty = true;
+  for (var i = 0; i < P; i++){ if (state[i] !== 0){ pitsEmpty = false; break; } }
+  if (!pitsEmpty || ended) return;
+
+  if (state[FIELD] === TOTAL && matchDepth === RECORDED.length && !forked){
+    ended = true;
+    trueEnding();
+  } else {
+    ended = true;
+    fakeEnding();
+  }
+}
+
+function trueEnding(){
+  log('r', 'THE FABLE CLOSES. field ' + TOTAL + '/' + TOTAL + ', chain verified — the story-exit and the record-exit were the same door.');
+  var tip = chain[chain.length - 1];
+  var box = document.getElementById('endingBox');
+  var ov = document.getElementById('ending');
+  ov.className = 'true';
+  box.innerHTML =
+    '<h2>THE FABLE CLOSES</h2>' +
+    '<div class="verdict" style="color:var(--cyan)">field ' + TOTAL + '/' + TOTAL +
+    ' \u00B7 record ' + matchDepth + '/' + RECORDED.length + ' \u00B7 chain verified to tip <b>' + tip + '</b></div>' +
+    '<div class="meta">the story-exit and the record-exit were the same door. now prove you carried the law out of the room.</div>' +
+    '<label>RESTATEMENT — the law, in your own words (one line):</label>' +
+    '<textarea id="lawText" placeholder="state the law of this room..."></textarea>' +
+    '<label>NOVEL SCENARIO — a pit learns to duplicate tokens: it can sow a copy of each seed without spending its own count. Legal under the law of this room? Why?</label>' +
+    '<textarea id="scenarioText" placeholder="answer the novel scenario..."></textarea>' +
+    '<button class="act" id="saveRestatement">SEAL THE RESTATEMENT (localStorage + ledger block)</button>' +
+    '<div id="copyblock" class="gateNote">the copy-paste block for the ledger appears here once sealed.</div>' +
+    '<div class="gateNote">the room does NOT judge — the seat judges (vision pass). your words are stored and exported verbatim.</div>';
+  ov.classList.add('open');
+  document.getElementById('saveRestatement').addEventListener('click', function(){
+    var law = document.getElementById('lawText').value.trim();
+    var scn = document.getElementById('scenarioText').value.trim();
+    var rec = {
+      room: 'conservation_room', stamp: 'LAW-061 validate-the-field', seed: SEED, tip: tip,
+      record: matchDepth + '/' + RECORDED.length, field: TOTAL + '/' + TOTAL,
+      telling: storySpent, law: law, scenario: scn,
+      ts: new Date().toISOString()
+    };
+    try { localStorage.setItem('sowing_room_restatement', JSON.stringify(rec)); } catch (e) {}
+    var blk = document.getElementById('copyblock');
+    blk.textContent = JSON.stringify(rec, null, 2);
+    blk.id = 'copyblock';
+    blk.className = 'gateNote';
+    blk.style.whiteSpace = 'pre-wrap';
+    blk.textContent = '-----8<----- SOWING_ROOM RESTATEMENT -----\n' + JSON.stringify(rec, null, 2) + '\n-----8<-----';
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(blk.textContent).then(function(){}, function(){});
+    }
+  });
+}
+
+function fakeEnding(){
+  var reason;
+  if (storySpent > 0){
+    reason = storySpent + ' seed' + (storySpent === 1 ? '' : 's') + ' were spent on the telling; the field holds ' +
+      state[FIELD] + ' of ' + TOTAL + '. The room can narrate anything; it keeps only what the chain holds.';
+  } else if (forked){
+    reason = 'the board emptied, but the chain forked at link ' + (matchDepth + 1) + '. A legal move is not automatically the recorded repair.';
+  } else {
+    reason = 'the field is full, but the chain stands at ' + matchDepth + '/' + RECORDED.length +
+      ' — you found another door to the same field. The room keeps only the recorded repair.';
+  }
+  log('t', 'the story offers its ending. the record does not co-sign.');
+  var box = document.getElementById('endingBox');
+  var ov = document.getElementById('ending');
+  ov.className = 'fake';
+  box.innerHTML =
+    '<h2>"A COHERENT STORY THAT NEVER HAPPENED"</h2>' +
+    '<div class="verdict" style="color:var(--red)">field ' + state[FIELD] + '/' + TOTAL +
+    ' \u00B7 record ' + matchDepth + '/' + RECORDED.length + ' \u00B7 telling ' + storySpent + '</div>' +
+    '<div class="meta">' + reason + '</div>' +
+    '<button class="act amber" id="fakeResow">RE-SOW — walk the recorded repair</button>';
+  ov.classList.add('open');
+  document.getElementById('fakeResow').addEventListener('click', function(){
+    document.getElementById('ending').classList.remove('open');
+    reset(false);
+  });
+}
+
+/* ============ boot ============ */
+document.getElementById('seedStamp').textContent = SEED;
+document.getElementById('resow').addEventListener('click', function(){ reset(false); });
+reset(false);
+</script>
+</body>
+</html>

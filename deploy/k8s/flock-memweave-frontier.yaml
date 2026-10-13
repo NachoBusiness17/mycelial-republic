@@ -1,0 +1,126 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: mag-flock-memweave-frontier
+  namespace: mag
+  labels:
+    app: mag
+    kind: flock
+  annotations:
+    mag.flock/goal: "Frontier opinion + direction on the memweave doctrine: is the memlang x RIB x we"
+    mag.flock/n: "5"
+    mag.flock/invariants: "consent_first,local_first,no_throne,residual_is_dna,window_steer"
+    mag.flock/ribs: "feeding 14 RIB files to the flock terminals"
+spec:
+  parallelism: 5
+  completions: 5
+  backoffLimit: 2
+  ttlSecondsAfterFinished: 600
+  template:
+    spec:
+      restartPolicy: Never
+      volumes:
+        - name: mag-state
+          persistentVolumeClaim:
+            claimName: mag-state
+      containers:
+      - name: flock-0
+        image: mag-sovereign:local
+        imagePullPolicy: IfNotPresent
+        envFrom:
+          - secretRef:
+              name: mag-secrets
+        env:
+          - name: MAG_SLOT
+            value: "flock-0"
+          - name: MAG_SOURCE
+            value: "flock_job"
+          - name: MAG_FLOCK_RIB
+            value: "DOCTRINE_MEMWEAVE_20260810.md"
+          - name: MAG_FLOCK_POS
+            value: "[158.0, 107.0, 166.0]"
+        volumeMounts:
+          - name: mag-state
+            mountPath: /app/memory
+            subPath: memory
+        command: ["python", "-m", "mag.flock_steal", "Frontier opinion + direction on the memweave doctrine: is the memlang x RIB x weave doctrine sound and novel? What are the sharpest risks (deniable steering, fleet emergence, source-backed truth)? Highest-leverage next moves in order?", "--tag", "memweave-frontier", "--providers", "ollama,deepseek"]
+      - name: flock-1
+        image: mag-sovereign:local
+        imagePullPolicy: IfNotPresent
+        envFrom:
+          - secretRef:
+              name: mag-secrets
+        env:
+          - name: MAG_SLOT
+            value: "flock-1"
+          - name: MAG_SOURCE
+            value: "flock_job"
+          - name: MAG_FLOCK_RIB
+            value: "GROK_ADVICE_RUNAWAY_PYTHON_20260810.md"
+          - name: MAG_FLOCK_POS
+            value: "[163.0, 117.0, 148.0]"
+        volumeMounts:
+          - name: mag-state
+            mountPath: /app/memory
+            subPath: memory
+        command: ["python", "-m", "mag.flock_steal", "Frontier opinion + direction on the memweave doctrine: is the memlang x RIB x weave doctrine sound and novel? What are the sharpest risks (deniable steering, fleet emergence, source-backed truth)? Highest-leverage next moves in order?", "--tag", "memweave-frontier", "--providers", "ollama,deepseek"]
+      - name: flock-2
+        image: mag-sovereign:local
+        imagePullPolicy: IfNotPresent
+        envFrom:
+          - secretRef:
+              name: mag-secrets
+        env:
+          - name: MAG_SLOT
+            value: "flock-2"
+          - name: MAG_SOURCE
+            value: "flock_job"
+          - name: MAG_FLOCK_RIB
+            value: "GROK_PLAN_K8S_KNOT_SEAT_20260810.md"
+          - name: MAG_FLOCK_POS
+            value: "[154.0, 135.0, 158.0]"
+        volumeMounts:
+          - name: mag-state
+            mountPath: /app/memory
+            subPath: memory
+        command: ["python", "-m", "mag.flock_steal", "Frontier opinion + direction on the memweave doctrine: is the memlang x RIB x weave doctrine sound and novel? What are the sharpest risks (deniable steering, fleet emergence, source-backed truth)? Highest-leverage next moves in order?", "--tag", "memweave-frontier", "--providers", "ollama,deepseek"]
+      - name: flock-3
+        image: mag-sovereign:local
+        imagePullPolicy: IfNotPresent
+        envFrom:
+          - secretRef:
+              name: mag-secrets
+        env:
+          - name: MAG_SLOT
+            value: "flock-3"
+          - name: MAG_SOURCE
+            value: "flock_job"
+          - name: MAG_FLOCK_RIB
+            value: "RIB_CASTLES_FOUNDATIONS_20260810.md"
+          - name: MAG_FLOCK_POS
+            value: "[165.0, 130.0, 148.0]"
+        volumeMounts:
+          - name: mag-state
+            mountPath: /app/memory
+            subPath: memory
+        command: ["python", "-m", "mag.flock_steal", "Frontier opinion + direction on the memweave doctrine: is the memlang x RIB x weave doctrine sound and novel? What are the sharpest risks (deniable steering, fleet emergence, source-backed truth)? Highest-leverage next moves in order?", "--tag", "memweave-frontier", "--providers", "ollama,deepseek"]
+      - name: flock-4
+        image: mag-sovereign:local
+        imagePullPolicy: IfNotPresent
+        envFrom:
+          - secretRef:
+              name: mag-secrets
+        env:
+          - name: MAG_SLOT
+            value: "flock-4"
+          - name: MAG_SOURCE
+            value: "flock_job"
+          - name: MAG_FLOCK_RIB
+            value: "RIB_EMERGENT_FLOCK_ON_K8S_20260810.md"
+          - name: MAG_FLOCK_POS
+            value: "[148.0, 132.0, 166.0]"
+        volumeMounts:
+          - name: mag-state
+            mountPath: /app/memory
+            subPath: memory
+        command: ["python", "-m", "mag.flock_steal", "Frontier opinion + direction on the memweave doctrine: is the memlang x RIB x weave doctrine sound and novel? What are the sharpest risks (deniable steering, fleet emergence, source-backed truth)? Highest-leverage next moves in order?", "--tag", "memweave-frontier", "--providers", "ollama,deepseek"]

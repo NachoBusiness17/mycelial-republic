@@ -1,0 +1,293 @@
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+agents/pytest-*/
+.mypy_cache/
+.ruff_cache/
+*.bak
+*.bak-*
+
+# travel kit: zip is regenerable via scripts/build_travel_kit.py; the manifest.json is the receipt and stays tracked
+memory/portable_bags/travel_kit_*.zip
+
+# IDE / local agent
+.cursor/
+
+# secrets — never commit
+.env
+.env.local
+.env.*
+!.env.example
+# live provider/mesh credentials - never commit (tracked fix 2026-08-20)
+configs/providers.yaml
+deploy/k8s/mag-secret.yaml
+# seal copies of the chain + providers.yaml — local-only snapshots (audit 2026-09-30
+# finding #7; untracked from index 2026-09-30, history left intact per operator).
+# Latest-seal pointer lives on disk at state/seal_latest.json (state/ is ignored).
+memory/seals/
+# trajectory stream - runtime append-only log that carries command output;
+# 7 live .env values were committed in it (audit 2026-09-30 finding #1).
+# Untracked 2026-09-30; history left intact per operator (no rewrite).
+# Hook-side redaction: mag/trajectory_step.py; commit gate: tools/precommit_secret_check.py
+memory/trajectory/steps.jsonl
+# model weights â€" downloadable build artifacts, NOT source (moved out of repo 2026-08-19)
+models/
+*.gguf
+# runtime state
+.mag_active_env
+state/
+state/**/*
+!state/.gitkeep
+
+logs/*
+!logs/.gitkeep
+
+queue/handoff/*
+!queue/handoff/.gitkeep
+queue/results/*
+!queue/results/.gitkeep
+queue/todo.md
+queue/wait_human.md
+
+mine/raw/**
+mine/staging/**
+mine/curated/**
+mine/proposals/**
+
+# ---------------------------------------------------------------------------
+# Live memory (operator soil) — code publishes; memory stays local
+# Seed templates are whitelisted in memory/README.md
+# ---------------------------------------------------------------------------
+memory/biography/**
+!memory/biography/.gitkeep
+# Rotating verkle backup — local only (opsec; chain data stays on the machine)
+memory/biography_backup/**
+!memory/biography_backup/.gitkeep
+memory/briefs/**
+!memory/briefs/.gitkeep
+memory/ingest/**
+!memory/ingest/.gitkeep
+memory/research_packs/**
+!memory/research_packs/.gitkeep
+memory/agent_state/**
+!memory/agent_state/.gitkeep
+memory/agent_sessions/**
+!memory/agent_sessions/.gitkeep
+memory/improve/**
+!memory/improve/.gitkeep
+!memory/improve/GOAL.md
+!memory/improve/HABIT.md
+!memory/improve/SEATS.md
+!memory/improve/MIRROR.md
+!memory/improve/pins/
+!memory/improve/pins/spine_posts.json
+!memory/improve/releases/
+!memory/improve/releases/README.md
+memory/improve/releases/gates.jsonl
+!memory/improve/growth/
+!memory/improve/growth/steer.yaml.example
+memory/improve/growth/steer.yaml
+memory/improve/growth/*.jsonl
+memory/improve/growth/*-growth.md
+memory/improve/growth/*-model-snapshot.json
+memory/ideas/**
+!memory/ideas/.gitkeep
+memory/boot/**
+!memory/boot/.gitkeep
+!memory/boot/REPUBLIC_LAUNCH.md
+memory/story/**
+!memory/story/.gitkeep
+memory/runs/**
+!memory/runs/.gitkeep
+!memory/runs/README.md
+memory/factory/**
+memory/steward/**
+memory/training/**
+!memory/training/README.md
+memory/handoff/**
+!memory/handoff/.gitkeep
+!memory/handoff/ACTIVATION.md
+!memory/handoff/DEEPSEEK_START.md
+memory/remedies/**
+!memory/remedies/.gitkeep
+!memory/remedies/rem-write-file-shape.md
+memory/failure_kb/**
+!memory/failure_kb/.gitkeep
+memory/working/**
+memory/working_*.py
+memory/portable_bags/**
+memory/interaction_logs/**
+memory/ledger/**
+memory/lattice/**
+!memory/lattice/.gitkeep
+memory/viewports/**
+!memory/viewports/.gitkeep
+memory/mail/**
+memory/plans/**
+
+memory/bonds_active.*
+memory/nervous_system.*
+memory/diary_latest.*
+memory/live_from_grok.md
+memory/live_from_cursor.md
+memory/attention.md
+memory/working.md
+memory/boot_report.md
+memory/context_pack_latest.*
+memory/STARTER.md
+memory/decisions_log.jsonl
+memory/operator_inbox.json
+memory/orchestrator_synthesis.md
+memory/running_commentary.md
+memory/_tmp*
+memory/_hermes*
+memory/*_tmp*
+memory/locus.md
+memory/tangents/**
+memory/agent_preamble_latest.md
+
+watch/*.json
+watch/*.jsonl
+watch/*.txt
+watch/.chat_offset
+watch/mag.pid
+!watch/__init__.py
+!watch/*.py
+
+_tmp*
+*.tmp.txt
+scripts/_*.py
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local reference clones (third-party inspiration — see reference/README.md)
+reference/gstdcoin/
+
+# Android build artifacts (source tracked; builds not)
+android/**/build/
+android/**/.gradle/
+android/**/local.properties
+*.apk
+*.aab
+
+# ── Ghost sovereign memory (local only, never commit) ──
+memory/bard/**
+memory/copilot/**
+memory/freeze/**
+memory/ghost/**
+memory/graph/**
+memory/pile/**
+memory/steer_policy.json
+memory/assumptions.md
+memory/steer_policy.json
+
+# throwaway session probes (2026-08-25)
+mag/_fold_*.py
+memory/runs/_agent_1010_repro.txt
+
+# runtime append-only logs — stay on disk, out of history (fixed 2026-09-14)
+watch/*.log
+.pytest-*/
+# fold_gate runtime locks (transient mutex state; the .log audit trail stays on disk, 2026-10-05)
+memory/runs/fold_locks/
+# local machine caches / agent state (2026-09-14)
+_archaeology_out/
+.zcode/
+.claude/
+.mimosa/
+.obsidian/
+.mag_active_auth
+%SystemDrive%/
+# vendored/oversized data — stays on disk, out of git (2026-09-14)
+node_modules/
+*.log
+corpus/library/
+corpus/oral_history/
+watch/bay/logs/
+memory/corpus/shadertoy21k/all_codes.zip
+watch/organs/kimodo/
+# round-2 self-steal patches (2026-09-14)
+agents/pytest-*/
+memory/biography_backup_*/
+dashboard/static/ractor_board.full-40k-*
+vendor/
+
+# DFHack local mirror (mined in place, too big for the repo)
+corpus/dfhack_mirror/
+corpus/dfhack_full/
+configs/secrets/
+
+# 2026-09-27 gate-fix window: never-a-blob set (audit LANE4B + checkpoint law;
+# the 2.2GB runaway blob precedent). ESSENTIALS_PACK = 1.59GB single-copy
+# encrypted backup whose key is unversioned; catalog_fts = 155MB derived index
+# rebuilt daily by the sanctioned writer; .tmp_dig + %TEMP%* = lane scratch and
+# env-var-expansion defect residue (the literal-%TEMP% write bug is a filed defect).
+watch/inbox/ESSENTIALS_PACK_*.tar.gz.enc
+catalog/catalog_fts.sqlite
+.tmp_dig/
+%TEMP%*
+
+
+# bash.exe shim at estate root (wave5 fold-gate repair, 2026-09-29): Windows
+# CreateProcess resolves bare `bash` to System32's WSL launcher before PATH, and
+# the WSL default distro had no /bin/bash, so spawned shell gates died exit 1.
+# This compiled forwarder to Git\bin\bash.exe sits in the harness cwd (searched
+# before System32) and forwards argv + std handles verbatim. Source and receipt:
+# watch/inbox/gala_20260925/wave5-repair/bash_shim_forwarder.cs and fold-gate-repair.md
+/bash.exe
+
+
+# AH2 proof signing key (2026-09-30): ed25519 seed for mag/proof.py sign_payload.
+# Auto-generated dev key on first use (0600); env override MAG_PROOF_KEY wins.
+# NEVER commit this file — a committed key makes every "signature" theater.
+configs/.proof_key
+memory/mycelium/
+memory/thinking/
+watch/inbox/INDEX.json
+watch/inbox/index_events.jsonl
+watch/inbox/transcripts/
+watch/receipts/
+
+
+# ask_bank hidden half (AJ2 2026-09-30): rendered hidden asks + draw ledger stay
+# out of the repo and out of any prompt-visible surface; only tools/ask_bank.py
+# reads them. Manifest in configs/ask_bank/v1/ carries the sha256 receipts.
+configs/ask_bank/*/hidden/
+
+# B5 build pipeline (2026-09-30): game export output, regenerable via scripts/build_game.ps1
+/build/
+watch/inbox/last_mile_20260930/imp10_operator_pool.jsonl
+
+# store_io OS locks (server/store_io.py exclusive()) - never commit
+*.lock
+corpus/tools/
+
+# raw scrape exhaust may carry third-party tokens - never track (2026-10-01 secret-gate catch)
+watch/inbox/frontier_olm_*/sweep/_raw/
+# grok-bot estate audit 2026-10-03
+# secrets / key material (lan.key untracked same day; rotate - it remains in history)
+*.env
+*.pem
+*.key
+id.json
+*keypair*
+wallet*.json
+memory/tls/*.key
+# model weights / binaries (2 tracked .pt under tools/pain_replication stay tracked)
+*.safetensors
+*.pt
+*.onnx
+attic/*.tar
+# root scrape exhaust (may carry third-party tokens); already-tracked ones stay tracked
+/sweep_*.html
+/sweep_*.json
+/safereddit_*.html
+/reddit_*
+/arctic_*
+/pullpush_*
+/nul

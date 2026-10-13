@@ -1,0 +1,108 @@
+# SPEND OVERLAY — the layers no receipt stream can see (v1, 2026-09-03)
+# Joined into /api/v1/cost by the dashboard refresher. Edit freely; the wall
+# picks it up on the next 60s cycle. Any null renders as UNKNOWN on the wall,
+# never as zero — unknown is a fact, zero is a lie.
+schema: spend_overlay.v1
+
+subscriptions:
+  # Flat monthly plans — the scarce unit here is QUOTA, not dollars.
+  # Fill monthly_usd from the card statement; null = wall shows UNKNOWN.
+  - name: zcode Max seat (zcode seat / Sancho)
+    monthly_usd: null
+    since: 2026-08-25
+    note: deep-work lane, judgment beats only
+  - name: zcode Lite seat (2nd coding plan)
+    monthly_usd: null
+    since: 2026-08-25
+    note: second seat
+  - name: openclaw coding-plan
+    monthly_usd: null
+    since: null
+    note: cage lane
+  - name: autoclaw (free z.ai credits app)
+    monthly_usd: 0
+    since: null
+    note: plan-bound zai_auto, free credits
+
+prepaid_credits:
+  # The float on the street. balance_usd null = go look at the dashboard once
+  # and write it down; as_of dates make stale numbers honest.
+  - key: DEEPSEEK_API_KEY
+    provider: deepseek
+    balance_usd: null
+    as_of: null
+  - key: ZAI_API_KEY
+    provider: z_ai
+    balance_usd: null
+    as_of: null
+  - key: ZAI_API_KEY_2
+    provider: z_ai
+    balance_usd: null
+    as_of: null
+  - key: ZAI_API_KEY_3
+    provider: z_ai
+    balance_usd: null
+    as_of: null
+  - key: ZAI_API_KEY_Lite
+    provider: z_ai
+    balance_usd: null
+    as_of: null
+  - key: ZAI_API_KEY_Pro
+    provider: z_ai
+    balance_usd: null
+    as_of: null
+  - key: GROQ_API_KEY
+    provider: groq
+    balance_usd: null
+    as_of: null
+    note: free tier, 100 calls / 100K tok per day, ONE cap across both keys
+  - key: GROQ_API_KEY_2
+    provider: groq
+    balance_usd: null
+    as_of: null
+  - key: OPENROUTER_API_KEY
+    provider: openrouter
+    balance_usd: null
+    as_of: null
+  - key: OPENROUTER_API_KEY_2
+    provider: openrouter
+    balance_usd: null
+    as_of: null
+  - key: TOGETHER_API_KEY
+    provider: together
+    balance_usd: null
+    as_of: null
+  - key: CEREBAS_API_KEY
+    provider: cerebras
+    balance_usd: null
+    as_of: null
+    status: "dormant-no-credit (B2-134 truth sweep 2026-09-26: lane is a card-gated trial, chat 402 Payment Required x3, no balance exists to track; providers.yaml dormant: true)"
+    note: "env-name split named here too: the fleet key is CEREBAS_API_KEY while providers.yaml primary api_key_env is CEREBRAS_API_KEY, which matches no .env var"
+  - key: GEMINI_API_KEY
+    provider: google
+    balance_usd: null
+    as_of: null
+  - key: GROK_API_KEY
+    provider: xai
+    balance_usd: null
+    as_of: null
+  - key: XAI_API_KEY
+    provider: xai
+    balance_usd: null
+    as_of: null
+  - key: MISTRAL (both keys)
+    provider: mistral
+    balance_usd: null
+    as_of: null
+  - key: VASTAI_API_KEY
+    provider: vast
+    balance_usd: 33.18
+    as_of: 2026-08-29
+    note: floor $25 covenant; invoice total through Sep 1 = $15.86
+
+recharges:
+  # Money actually moved. Append one line per top-up.
+  - ts: 2026-09-02
+    amount_usd: 15.86
+    target: vast
+    note: invoice #170099260803260902 cumulative through Sep 1 (operator CSV)

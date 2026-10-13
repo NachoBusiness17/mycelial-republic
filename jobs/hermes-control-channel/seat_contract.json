@@ -1,0 +1,33 @@
+{
+  "schema": "seat_contract.v1",
+  "job_id": "hermes-control-channel",
+  "goal": "Give the operator a robust, non-Telegram control channel to the Hermes seat, and make stopping a running task recoverable instead of a dead drop. Operator, verbatim, 2026-09-11: (1) 'the telegram channel has proven to be less robust and trustworthy'; (2) 'stopping you on a task is basically a dead drop'. Deliverable is not a promise: a channel reachable from the phone with Telegram out of the path, proven by a live HTTP request, plus a task journal on disk so any halt is resumable.",
+  "invariants": [
+    "no new scheduler, no new supervisor, no host daemon (law 11 - one scheduler only)",
+    "verkle chain read-only: no publish(), no root repair, no GC, no consolidation",
+    "Docker untouched; board tape untouched",
+    "no hop may depend on Telegram",
+    "every state change is a file on disk BEFORE it is a claim in chat",
+    "report through watch/inbox cards; file receipts under memory/runs/hermes_jobs/"
+  ],
+  "forbidden_moves": [
+    "publish() on the chain; any --force",
+    "docker prune / rm / stop / rmi",
+    "editing memory/ or biography content",
+    "printing credentials; reading .env without operator consent",
+    "adding a Tailscale serve mapping or a board route without asking first"
+  ],
+  "acceptance_commands": [
+    "curl -sk -X POST -H 'Content-Type: application/json' -d '{\"cmd\":\"!continue\"}' https://desktop-7c70ksc.tail8403e9.ts.net/api/v1/agent/steer",
+    "curl -sk -o /dev/null -w '%{http_code}\\n' https://desktop-7c70ksc.tail8403e9.ts.net/",
+    "./.venv/Scripts/python.exe -c \"import json; d=json.load(open('jobs/hermes-control-channel/seat_contract.json')); print(d['schema'], d['job_id'])\"",
+    "./.venv/Scripts/python.exe -c \"from mag import pigeonhole as ph; print(ph.self_test())\""
+  ],
+  "checkpoint_schema": {
+    "required": ["completed", "artifacts", "failures", "budget_used_pct", "next_action_one_line"]
+  },
+  "handoff_schema": {
+    "required": ["done", "untested", "blocked", "resume_command"]
+  },
+  "expected_acceptance": "steer POST returns HTTP 200 {ok:true,queued:true}; board root returns 200; contract parses; pigeonhole self-test ok:true"
+}

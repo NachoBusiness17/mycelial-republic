@@ -1,0 +1,40 @@
+# Ollama — OPTIONAL local-LLM sidecar. Only apply if you want local models in
+# the cluster (or point OLLAMA_HOST at an external/GPU node instead).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+  namespace: mag
+  labels:
+    app: ollama
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ollama
+  template:
+    metadata:
+      labels:
+        app: ollama
+    spec:
+      containers:
+        - name: ollama
+          image: ollama/ollama:latest
+          ports:
+            - { containerPort: 11434 }
+          volumeMounts:
+            - { name: models, mountPath: /root/.ollama }
+      volumes:
+        - name: models
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama
+  namespace: mag
+spec:
+  selector:
+    app: ollama
+  ports:
+    - { port: 11434, targetPort: 11434 }

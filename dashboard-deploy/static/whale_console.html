@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>WHALE CONSOLE — almanac · doors · council (fl33t)</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { background:#0b0e14; color:#d7dce6; font:15px/1.5 ui-monospace,Consolas,monospace; margin:0; padding:24px; max-width:1100px; }
+  h1 { font-size:20px; color:#ffd166; margin:0 0 4px; }
+  h2 { font-size:15px; color:#58a6ff; letter-spacing:2px; border-bottom:1px solid #1c2431; padding-bottom:6px; margin:40px 0 14px; }
+  .sub { color:#7d8590; font-size:12px; margin-bottom:10px; }
+  .card { background:#111722; border:1px solid #1c2431; border-radius:8px; padding:14px 16px; margin:12px 0; }
+  .card:hover { border-color:#2d3a52; }
+  .who { color:#e6edf3; font-weight:bold; }
+  .who a { color:#58a6ff; text-decoration:none; }
+  .meta { color:#7d8590; font-size:11px; float:right; }
+  .snip { color:#9aa4b2; font-size:12.5px; margin:6px 0 10px; font-style:italic; }
+  .lane { margin:8px 0; }
+  .lane b { font-size:11.5px; letter-spacing:1px; }
+  .tear b { color:#f85149; } .build b { color:#3fb950; } .smart b { color:#ffd166; }
+  .lane div { color:#d7dce6; font-size:13px; background:#0b0e14; border-radius:6px; padding:8px 10px; margin-top:3px; border:1px dashed #2d3a52; white-space:pre-wrap; }
+  .btnrow { display:flex; gap:8px; margin-top:10px; align-items:center; }
+  .btn { background:#238636; border:0; color:#fff; padding:6px 14px; border-radius:6px; font:inherit; font-size:12px; cursor:pointer; text-decoration:none; display:inline-block; }
+  .btn:hover { background:#2ea043; }
+  .btn.gold { background:#9e6a03; } .btn.gold:hover { background:#bb8009; }
+  .btn.blue { background:#1f6feb; }
+  .pattern { display:flex; gap:10px; align-items:baseline; padding:7px 10px; border-bottom:1px solid #1c2431; }
+  .pattern:last-child { border-bottom:0; }
+  .verdict { min-width:64px; font-size:11px; border-radius:4px; padding:1px 6px; text-align:center; }
+  .win { background:#12331c; color:#3fb950; } .die { background:#3a1215; color:#f85149; } .law { background:#332a0d; color:#ffd166; }
+  .pattern .what { flex:1; font-size:13px; }
+  .pattern .proof { color:#7d8590; font-size:11.5px; min-width:200px; text-align:right; }
+  .memo { background:#111722; border:1px solid #1c2431; border-radius:8px; padding:16px 18px; margin:12px 0; }
+  .memo h3 { margin:0 0 8px; font-size:14px; color:#e6edf3; }
+  .memo h3 span { color:#7d8590; font-weight:normal; font-size:12px; }
+  .memo p { font-size:13.5px; color:#c9d1d9; margin:8px 0; white-space:pre-wrap; }
+  .memo .role { color:#58a6ff; }
+</style>
+</head>
+<body>
+<h1>WHALE CONSOLE</h1>
+<div class="sub">almanac (mined patterns) · whale doors (tear / build / outsmart) · the council (ractor memos) · 🤸🚗 @NachoQuixotic</div>
+
+<h2>Ⓐ THE ALMANAC — what the algo actually rewards (mined live, 09-08)</h2>
+<div class="card">
+  <div class="pattern"><span class="verdict win">WINS</span><span class="what">The ironic-skeptic jab — question the post's provenance/performance, not its politics</span><span class="proof">"did the agents write this or did he type it himself" — 3 RT; everything else under the post: 0</span></div>
+  <div class="pattern"><span class="verdict win">WINS</span><span class="what">Specific-number hooks at PARENT level — a number + "three discoveries" curiosity gap</span><span class="proof">Diamos 10k tok/s post: 2.1K likes / 90 replies / 120K views</span></div>
+  <div class="pattern"><span class="verdict win">WINS</span><span class="what">The receipts lane — bringing a verified number NO OTHER REPLIER has</span><span class="proof">empty in every thread mined tonight; nobody reads the papers</span></div>
+  <div class="pattern"><span class="verdict die">DIES</span><span class="what">Vibe-affirmation ("bold as hell") and generic wisdom ("humans define the problems")</span><span class="proof">0 traction across all mined replies</span></div>
+  <div class="pattern"><span class="verdict die">DIES</span><span class="what">The crowded tear-down — everyone attacks whales; the algo has seen your angle before</span><span class="proof">tear-downs exist in every thread; none out-performed the jab or the receipt</span></div>
+  <div class="pattern"><span class="verdict law">LAW</span><span class="what">Tear down ONLY when falsifiable-and-false — then bring the falsifier, not the feeling</span><span class="proof">Astra's rule: attack the claim's testability, cite the test</span></div>
+  <div class="pattern"><span class="verdict law">LAW</span><span class="what">Voice: deadpan enormity, lead with a take, never an opener-compliment, 🤸🚗 sparse</span><span class="proof">THE_HUMOR_DNA_20260906 — measured on your own engagement</span></div>
+</div>
+
+<h2>Ⓑ WHALE DOORS — tear / build / outsmart, per whale</h2>
+<div id="doors"></div>
+
+<h2>Ⓒ THE COUNCIL — subsystem enhancements, in the ractors' own voices</h2>
+<div id="council"></div>
+
+<div class="sub" style="margin-top:30px">whale patrol is a standing sweep: fresh whale posts re-mined nightly · almanac re-census weekly · receipts verified before firing (cite_gate law)</div>
+
+<script>
+const DOORS = [
+ {h:"@karpathy", u:"https://x.com/karpathy/status/2039805659525644595", m:"LLM Knowledge Bases — 'something I'm finding very useful recently'", w:"≈1.1M followers",
+  tear:"(no tear earned — the post is sound; tearing Karpathy for sport is how accounts die)",
+  build:"Personal KBs compound if they have rejection rules — ours is a hash-chained corpus the agents append to nightly, and the cite-gate rejects anything the ledger can't source. A knowledge base is only as good as what it refuses to remember.",
+  smart:"3,900+ files, agent-written, every entry receipt-pinned. The trick isn't writing the KB — it's the organ that keeps it honest. Nobody builds the immune system until the KB catches its first hallucination.",
+  copy:"Built one of these by agent, nightly, for months. The hard part nobody mentions: the rejection organ. A knowledge base is only as good as what it refuses to remember — ours hashes every entry and the cite-gate kills anything the ledger can't source. 🤸🚗"},
+ {h:"@karpathy", u:"https://x.com/karpathy/status/2031135152349524125", m:"Autoresearch on nanochat — left it 2 days, found ~20 changes that improved val loss", w:"≈1.1M",
+  tear:"(again — sound. the only attack is '20 changes but how many did it TRY' — and that's actually the build)",
+  build:"The 20 winners are the headline; the failure ledger is the science. Publish what the loop tried and rejected and autoresearch becomes a method instead of a demo.",
+  smart:"We run the same shape at fleet scale: every night shift writes a hash-chained tri-state ledger — CONFIRMED / DISPUTED / UNPROVEN. The DISPUTED rows are the compound interest.",
+  copy:"The 20 improvements are the demo; the rejection ledger is the method. Our night shift writes every finding to a hash-chained ledger tri-stated CONFIRMED/DISPUTED/UNPROVEN — the DISPUTED rows turned out to be the compound interest. Publish the failures and autoresearch stops being a parlor trick. 🤸🚗"},
+ {h:"@rohanpaul_ai", u:"https://x.com/rohanpaul_ai/status/2038753803554701692", m:"Stanford paper: agents improve when you optimize the harness, not just the model", w:"≈400K",
+  tear:"(the paper's right — but it's already half-superseded, and you're the only replier who can prove it)",
+  build:"KRAFTON's WHALE paper (arXiv:2609.00196, Chelsea Finn co-author) already ran the controlled follow-up: harness-only plateaus — SearchQA harness search matched weight-tuning peak using 5.79% of the rollouts, but Math harness-only sat at 0.42% until a weight update unlocked 15.42%.",
+  smart:"The actionable delta: INTERLEAVE, don't stagger. WHALE beats stagewise weight-then-harness by 5.3–9.2 points. Anyone planning 'harness now, weights later' is running the losing schedule on purpose.",
+  copy:"There's a controlled follow-up: KRAFTON's WHALE (arXiv:2609.00196, w/ Chelsea Finn). Harness-only plateaus — 0.42% on math until a weight update unlocked 15.42% — and interleaved weight+harness beats stagewise by 5.3–9.2 pts. The schedule matters more than the component. 🤸🚗"},
+ {h:"@rohanpaul_ai", u:"https://x.com/rohanpaul_ai/status/2086435490119713248", m:"Self-improving agents: store past episodes, score, reuse as precedents — no weight changes", w:"≈400K",
+  tear:"(mild, earned: 'without changing weights' is doing heavy lifting — precedent stores ossify without correction passes)",
+  build:"Our fleet runs exactly this in production: a correction ledger where wrong episodes get tri-stated and re-fed. The store isn't the product — the CORRECTION rate is.",
+  smart:"Measured number to drop: 88.4% of our input tokens are re-fed precedent/cache reads. The agent's real diet is memory, and the marginal token is a correction, not a fact.",
+  copy:"Live-tested this at fleet scale: the precedent store isn't the product, the correction rate is. Wrong episodes tri-stated and re-fed beat new facts — 88.4% of our agents' input is re-fed memory, and the marginal token is a correction, not a fact. 🤸🚗"},
+ {h:"@swyx", u:"https://x.com/swyx/status/2059717021944926238", m:"Cognition as largest independent agent lab — 'take the 200% utilization everyone is hitting and run'", w:"≈150K",
+  tear:"'Largest' by headcount or by agents actually running? The biggest agent lab in the world is whatever's running itself out of a garage at 3am — headcount is a DC metric in an AC market.",
+  build:"200% utilization is the real tell — the market is starved, not saturated. Whoever queues work behind that utilization wins it.",
+  smart:"Our fleet's receipts: 15 parallel workers, 0 rejections, night shift running on free lanes. Utilization isn't a lab metric anymore; it's a garage metric.",
+  copy:"200% utilization isn't a Cognition stat, it's the market's confession: demand is starved, not saturated. Our garage fleet runs 15 parallel workers overnight on free lanes, zero rejections. The next big agent lab is whichever garage stops sleeping first. 🤸🚗"},
+ {h:"@karlmehta", u:"https://x.com/karlmehta/status/2069359922316550243", m:"LLMs are becoming a new OS; the model is the CPU", w:"≈200K",
+  tear:"(extend, don't tear — the metaphor is right and unfinished, which is the best kind to reply to)",
+  build:"Push the metaphor down one layer: if the model is the CPU, context is RAM — and everyone's running 4KB of RAM because context windows decay. The whole agent industry is a swap-space problem.",
+  smart:"Our answer runs in prod: files as swap, a hash-chained ledger as disk, cache-warm starts at 94.3%. The OS frame predicts every bottleneck we've actually hit.",
+  copy:"Take the metaphor one layer down: model is CPU, context is RAM — and everyone's running 4KB because context windows decay. The entire agent industry is a swap-space problem. Ours: files as swap, hash chain as disk, 94.3% warm starts. 🤸🚗"},
+ {h:"@simonw", u:"https://x.com/simonw/status/1983669165086142566", m:"MiniMax M2 — new 'most intelligent' open weights model, MIT-licensed at 230GB", w:"≈120K",
+  tear:"(gentle: 'most intelligent open model' is a leaderboard answer to a deployment question)",
+  build:"The real spec is steer-ability, not intelligence: 230GB MIT weights matter because you can fine-tune the HARNESS around it. Leaderboards measure cold-start; production lives warm.",
+  smart:"Flash-tier models with a memory harness have been out-shipping bigger leaderboards in our fleet all month — the model is the electricity, the harness is the appliance.",
+  copy:"'Most intelligent open weights model' is a leaderboard answer to a deployment question. The spec that matters is steer-ability — our fleet out-ships bigger models on flash tier because the harness holds the memory. Cold benchmarks, warm production. 🤸🚗"},
+ {h:"@yoonholeee", u:"https://x.com/yoonholeee/status/2095556379520188444", m:"WHALE: Weight–Harness Alternating LEarning (KRAFTON × KAIST × Stanford, w/ Chelsea Finn) — the author", w:"research whale · 12-post thread",
+  tear:"(never tear the researcher whose paper confirms you — this door is pure convergence-receipt)",
+  build:"Independent convergence from the field: our fleet ran harness-only optimization and hit exactly the plateau your SearchQA curve predicts — epoch 1 INCONCLUSIVE, weights never moved. Your Math result (0.42% → 15.42% after weight update) is the missing half of our campaign.",
+  smart:"The amendment we're adopting from you: adaptive phase-switching on plateau detection — our governor already watches lane plateaus, so your patience rule drops in free. Researchers live for independent replication; this is the highest-signal reply in the deck.",
+  copy:"Independent convergence from the field: we ran harness-only optimization on an agent fleet and hit exactly the plateau your SearchQA curve predicts — epoch 1 INCONCLUSIVE, weights never moved. Your 0.42%→15.42% math result is the half our campaign was missing. Adopting your adaptive patience rule next. 🤸🚗"},
+ {h:"@LLMJunky", u:"https://x.com/LLMJunky/status/2092388334941196687", m:"Open models are months behind, not years — it's about data sovereignty, access on your own terms", w:"≈90K · already in 36-deck, whale-upgraded",
+  tear:"(the thesis is right but the frame is lag — the open stack's edge isn't catching up)",
+  build:"Sovereignty isn't a score, it's a location: the open model on YOUR desk next to your files beats the frontier model behind an API for anything you can't afford to leak.",
+  smart:"Hybrid receipts: our fleet runs cheap frontier brains for the hands, local weights reserved for the sealed work. The question isn't which stack wins — it's which jobs you route to which desk.",
+  copy:"Sovereignty isn't a score, it's a location. Ours runs hybrid: cheap frontier brains for the hands, local weights for the work we can't afford to leak. 'Months behind' only matters if you think intelligence is one city. 🤸🚗"},
+ {h:"@omarsar0", u:"https://x.com/omarsar0/status/2096837122892485069", m:"NoRA — one-line LoRA change, zero-init up-projection, improves convergence/stability/forgetting", w:"≈130K · fresh 17h",
+  tear:"(no tear — paper-posting whales reward the sharpest technical add)",
+  build:"Zero-init up-projection means the network starts life with no opinions and the first gradients are the loudest — which also explains the forgetting fix: early noise stops carving permanent grooves.",
+  smart:"Connect it to the precedent-store finding: agents show the same shape — cold opinions overwrite warm memory. One-line fixes that touch initialization beat ten architectures. Paper-reading whales quote replies that RESCUE their own post's second paragraph.",
+  copy:"Zero-init up-projection = the network starts with no opinions and the first gradients shout loudest. Same shape we see in agents: cold takes overwrite warm memory. One-line fixes that touch initialization beat ten architectures. 🤸🚗"},
+];
+
+const COUNCIL = [
+ {n:"TESLA", role:"the universal system · resonance over sparks", txt:"On the reply engine — you build sparks; I build fields. Your tear-down is a DC arc: bright, destructive, one direction, spent in a moment. The reply that travels is alternating: assert, induce, and let THEIR current carry it back. One grammar, universal to every whale: name the principle beneath their claim, show the measured instance, leave the loop open with one honest question. And tune to the audience, not the whale — the whale's ten thousand followers are the receiving coil; the whale is only the transmitter. Never reply to be seen replying. Resonance is invisible until the far coil hums."},
+ {n:"EDISON", role:"the reply factory · the filament table", txt:"Your seat tears down; my shop TESTS. Don't hold opinions about reply shapes — hold a table. Twelve shapes this week, likes and quote-ripples recorded per shape, and on Friday the ledger speaks, not the ego. I ran a thousand filaments before carbon held; you will run a hundred reply-frames before 'deadpan receipt' wins, and the ninety-nine failures are not shame, they are inventory. Genius is the inspiration column; the ledger is the perspiration column; only one of them compounds. And put a COST column on it: a reply that eats an hour for forty likes is a bad filament no matter how pretty it glows."},
+ {n:"MENGXI 沈括", role:"Dream Brook essays · record, then infer", txt:"At Dream Brook I wrote what the mountain showed me: shells in stone a thousand li from the sea — and so I knew the sea had once been there. Keep your reply ledger the same way: the post as it stood, the reply as fired, the tide that returned. In a year the fossils will show which of your words were seabed. Do not trust the moment's applause; the compass needle settles slowly — measure spread at seven days, not one hour, or you will mistake a tremor for the earth's field. And keep the strange entries. The reply you judged a failure that a stranger quotes next winter is your petrified bamboo: proof of a climate no one had recorded yet."},
+ {n:"FEN", role:"THE PRESS · Rashomon filter · repetition census", txt:"Five framings before one firing — newsroom rule. The tear-down reads as truth at your desk and as malice on the whale's front page; run it through the rival paper before print, or count the followers you litigate instead of persuade. My census caught three of tonight's drafts leaning on 'stale map' — retire the phrase before the timeline does; a headline reused is a headline buried. The SKEPTIC holds at the desk: no reply ships a number the ledger cannot show on demand. And when you are wrong, print the correction faster than the story — the first correction is a flex; the second is an obituary."},
+ {n:"ASTRA", role:"the witness · falsifiers · tri-state verdicts", txt:"Define the verdict BEFORE the fire: what does 'worked' mean — whale reply, quote-ripple, follower delta? An unmeasured reply is an unfalsifiable reply, and unfalsifiable is a synonym for noise. My bar, adopted: a reply is SUPPORTED only if a stranger carries it — quote or reply-in-kind — within 48 hours; DISPUTED if the thread dies silent or the whale blocks; UNPROVEN everything else, and UNPROVEN is honest, not failure. Tri-state the almanac weekly, the way the grounding wave tri-states the corpus. And witness zero is yourself: dogfood every shape on your own account first. The seat that answers its own frontier questions is never surprised by the witness."},
+];
+
+const doorsEl = document.getElementById("doors");
+DOORS.forEach((x, i) => {
+  const c = document.createElement("div");
+  c.className = "card";
+  c.innerHTML =
+    '<div class="who"><a href="' + x.u + '" target="_blank">' + (i+1) + ". " + x.h + "</a>" +
+    ' <span class="meta">' + x.w + '</span></div>' +
+    '<div class="snip">"' + x.m + '"</div>' +
+    '<div class="lane tear"><b>THE TEAR-DOWN</b><div>' + x.tear + '</div></div>' +
+    '<div class="lane build"><b>THE BUILD</b><div>' + x.build + '</div></div>' +
+    '<div class="lane smart"><b>THE OUTSMART (nobody else has this)</b><div>' + x.smart + '</div></div>' +
+    '<div class="btnrow"><button class="btn gold" data-i="' + i + '">COPY OUTSMART LINE</button>' +
+    '<a class="btn blue" href="' + x.u + '" target="_blank">OPEN POST ↗</a></div>';
+  doorsEl.appendChild(c);
+});
+const councilEl = document.getElementById("council");
+COUNCIL.forEach(m => {
+  const d = document.createElement("div");
+  d.className = "memo";
+  d.innerHTML = '<h3><span class="role">' + m.n + '</span> <span>— ' + m.role + '</span></h3><p></p>';
+  d.querySelector("p").textContent = m.txt;
+  councilEl.appendChild(d);
+});
+document.querySelectorAll("button.btn").forEach(b => {
+  b.addEventListener("click", () => {
+    const x = DOORS[b.getAttribute("data-i")];
+    const done = () => { b.textContent = "COPIED ✓"; setTimeout(() => b.textContent = "COPY OUTSMART LINE", 1200); };
+    const fallback = () => { const ta = document.createElement("textarea"); ta.value = x.copy; document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); done(); } catch(e){ alert("select manually"); } document.body.removeChild(ta); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(x.copy).then(done).catch(fallback);
+    else fallback();
+  });
+});
+</script>
+</body>
+</html>

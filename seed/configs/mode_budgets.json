@@ -1,0 +1,61 @@
+{
+  "schema": "mode_budgets.v1",
+  "what": "Boot context is budgeted per job mode. Each seat activation picks ONE mode; the pack builder reads this table and includes only the layers the mode pays for. Boot context is chosen, not dumped. See BOOT_BUDGET_CARD.md for the human page.",
+  "valid_modes": ["janitor", "route", "build", "audit", "plan", "full"],
+  "normalize": "unknown or empty mode falls back to 'full' - never an error, always a valid pack",
+  "field_gloss": {
+    "max_brief": "cap (units) on the brief layer",
+    "max_bonds": "cap on the residual/bonds layer",
+    "max_live": "cap on the live-status layer",
+    "max_chars": "hard total-characters cap on the rendered pack",
+    "default_job": "job the mode defaults to",
+    "include_*": "layer gates - a layer not included never enters the pack",
+    "compact_nervous": "true = render the nervous-system layer compressed"
+  },
+  "modes": {
+    "janitor": {
+      "max_brief": 400, "max_bonds": 500, "max_live": 0, "max_chars": 1200,
+      "default_job": "ask",
+      "include_resonance": false, "include_trail": false, "include_skills": false,
+      "include_ijl": false, "include_heat": false, "include_coordination": false,
+      "include_mirror_clue": false, "compact_nervous": true
+    },
+    "route": {
+      "max_brief": 600, "max_bonds": 800, "max_live": 200, "max_chars": 1800,
+      "default_job": "route",
+      "include_resonance": true, "include_trail": false, "include_skills": true,
+      "include_ijl": false, "include_heat": false, "include_coordination": true,
+      "include_mirror_clue": false, "compact_nervous": true
+    },
+    "build": {
+      "max_brief": 900, "max_bonds": 1200, "max_live": 400, "max_chars": 5500,
+      "default_job": "build",
+      "include_resonance": true, "include_trail": true, "include_skills": true,
+      "include_ijl": true, "include_heat": false, "include_coordination": true,
+      "include_mirror_clue": false, "include_build": true, "include_scope": true,
+      "compact_nervous": false
+    },
+    "audit": {
+      "max_brief": 600, "max_bonds": 600, "max_live": 200, "max_chars": 7500,
+      "default_job": "audit",
+      "include_resonance": false, "include_trail": true, "include_skills": true,
+      "include_ijl": false, "include_heat": false, "include_coordination": true,
+      "include_mirror_clue": false, "include_build": true, "compact_nervous": false
+    },
+    "plan": {
+      "max_brief": 1200, "max_bonds": 1600, "max_live": 600, "max_chars": 11000,
+      "default_job": "plan",
+      "include_resonance": true, "include_trail": false, "include_skills": true,
+      "include_ijl": true, "include_heat": true, "include_coordination": true,
+      "include_mirror_clue": true, "compact_nervous": false
+    },
+    "full": {
+      "max_brief": 1200, "max_bonds": 1600, "max_live": 800, "max_chars": 4500,
+      "default_job": "default",
+      "include_resonance": true, "include_trail": true, "include_skills": true,
+      "include_ijl": true, "include_heat": true, "include_coordination": true,
+      "include_mirror_clue": true, "compact_nervous": false
+    }
+  },
+  "receipt": "values byte-read from mag/context_pack.py:15-112 (estate) this session; the seat-mode names are the source estate's roles - rename the modes to your own roles, keep the budget shape"
+}

@@ -1,0 +1,27 @@
+# Mag runtime configuration (non-secret). Cadence knobs are in TICKS at 5s
+# interval (e.g. 120 ticks ≈ 10 min). The autorun loop drives fill/drain/
+# governor/cadence; the process_supervisor owns loop lifecycle inside the pod.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mag-config
+  namespace: mag
+data:
+  # Container/native knobs
+  MAG_BIND_HOST: "0.0.0.0"
+  MAG_CONTAINER: "1"
+  MAG_NO_MIRROR: "1"
+  MAG_DRAINER: "1"
+  # Service discovery inside the cluster
+  # B2-490 seat-scope (2026-09-26): this name is CLUSTER-INTERNAL only; it
+  # resolves via the ollama Service (deploy/k8s/ollama.yaml) inside the
+  # namespace. On a host shell the same value is the B2-107 locality trap:
+  # doctor reads DOWN none(locality) and every real call fails URLError
+  # (measured live 2026-09-26; the host .env carries this exact shape today).
+  OLLAMA_HOST: "http://ollama:11434"
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  # Cadence (ticks @ 5s): janitor ~25min, orphan ~15min, warning sweep ~10min
+  MAG_JANITOR_EVERY: "300"
+  MAG_ORPHAN_EVERY: "180"
+  MAG_WARN_EVERY: "120"

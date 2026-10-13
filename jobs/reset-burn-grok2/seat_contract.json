@@ -1,0 +1,24 @@
+{
+  "schema": "seat_contract.v1",
+  "job_id": "reset-burn-grok2",
+  "goal": "Burn remaining Grok2 quota on real Mag cages until the window is empty, then stop so the operator can reuse the reset. No Vast buys. No host lab. Disk is DNA.",
+  "invariants": [
+    "files-not-chat; write trail_core_N after every cage",
+    "buyer_enabled=false is law until operator GO — do not create instances",
+    "one cage per turn; then STOP so the operator can paste resume again",
+    "if blocked twice, FILE and stop"
+  ],
+  "forbidden_moves": [
+    "python main.py lab on the host",
+    "vast create/ask/destroy",
+    "editing covenant.json",
+    "handshake / keep chatting after FILE"
+  ],
+  "acceptance_commands": [
+    ".venv/Scripts/python.exe state/vast/launch_vast.py probe",
+    ".venv/Scripts/python.exe state/vast/launch_vast.py instances"
+  ],
+  "checkpoint_schema": {"required": ["completed", "artifacts", "failures", "budget_used_pct", "next_action_one_line"]},
+  "handoff_schema": {"required": ["done", "untested", "blocked", "resume_command"]},
+  "resume_command": "read jobs/reset-burn-grok2/seat_contract.json + jobs/first-4h-chain/SPEC.md + jobs/first-4h-chain/trail_core_0.md. CAGE: first-4h-chain cage 1 GATE ONLY — run acceptance_commands (probe+instances), read state/vast/covenant.json buyer_enabled, FILE jobs/first-4h-chain/trail_core_1.md (blocked if buyer_enabled false; do not ask). Then FILE jobs/reset-burn-grok2/trail_core_N.md. Stop."
+}

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Viz Lab — the constitution as a lattice</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;background:#0a0806;color:#efe3d0;font-family:system-ui;display:flex;flex-direction:column;overflow:hidden}
+  header{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;padding:12px 20px;border-bottom:1px solid #2a241c}
+  header h1{font-size:1.1rem;color:#e6c07a;letter-spacing:.5px}
+  header .sub{color:#8b7a66;font-size:.78rem;font-style:italic}
+  main{flex:1;position:relative;background:#0a0806}
+  canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  footer{padding:8px 20px;color:#5b4f42;font-size:.72rem;font-style:italic;border-top:1px solid #2a241c}
+  /* Evidence legend — edges carry measured co-citation, not taste */
+  #legend{position:absolute;top:12px;right:14px;z-index:2;background:rgba(16,12,8,.88);border:1px solid #2a241c;border-radius:6px;padding:10px 12px;font-size:.7rem;color:#bfae96;line-height:1.9}
+  #legend .lg-title{color:#e6c07a;font-size:.72rem;letter-spacing:.5px;margin-bottom:2px}
+  #legend .lg-row{white-space:nowrap}
+  #legend .lg-line{display:inline-block;width:34px;height:0;margin-right:8px;vertical-align:middle}
+  #legend .w5{border-top:4px solid #e6c07a}
+  #legend .w3{border-top:3px solid #d4a574}
+  #legend .w2{border-top:2px solid #c98a5e}
+  #legend .w1{border-top:1px solid #b87a4a}
+  #legend .dash{border-top:2px dashed #8b7a66}
+  #legend .lg-node{display:inline-block;width:10px;height:10px;border-radius:50%;border:1.5px dashed #e6c07a;margin-right:7px;vertical-align:middle}
+  #legend .lg-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px;vertical-align:middle}
+  /* Hover tooltip — law number + one-line summary + evidence counts */
+  #tip{position:absolute;z-index:3;pointer-events:none;display:none;max-width:300px;background:rgba(16,12,8,.94);border:1px solid #e6c07a;border-radius:6px;padding:8px 11px;font-size:.74rem;line-height:1.5;color:#efe3d0;box-shadow:0 4px 14px rgba(0,0,0,.5)}
+  #tip .t-title{color:#e6c07a;font-weight:600}
+  #tip .t-sum{margin-top:2px}
+  #tip .t-evi{margin-top:4px;color:#8b7a66;font-size:.66rem}
+</style>
+</head>
+<body>
+  <header>
+    <h1>⚖️ The Lattice</h1>
+    <div class="sub">20 laws · force-directed · edges = measured co-citation across 4,415 corpus files (G2-3) · solid = numbered, dashed = keyword-bridged · hover a node for its one-liner · laws auto-rendered from SKILL.md (scripts/lattice_render.py)</div>
+  </header>
+  <main id="stage">
+    <canvas id="c"></canvas>
+    <div id="legend">
+      <div class="lg-title">Evidence legend</div>
+      <div class="lg-row"><span class="lg-dot" style="background:#4f86c6"></span> pure agreement — numbered co-citation only</div>
+      <div class="lg-row"><span class="lg-dot" style="background:#e6c07a"></span> contested — keyword-bridged evidence share</div>
+      <div class="lg-row"><span class="lg-dot" style="background:#8b7a66"></span> isolated — zero edges in corpus</div>
+      <div class="lg-row"><span class="lg-node" style="border-style:solid"></span> node size = total co-citation count</div>
+      <div class="lg-row"><span class="lg-line w5"></span> co-citation 5+ files</div>
+      <div class="lg-row"><span class="lg-line w3"></span> co-citation 3–4 files</div>
+      <div class="lg-row"><span class="lg-line w2"></span> co-citation 2 files</div>
+      <div class="lg-row"><span class="lg-line w1"></span> co-citation 1 file</div>
+      <div class="lg-row"><span class="lg-line dash"></span> keyword-bridged (no numbered co-citation)</div>
+    </div>
+    <div id="tip"></div>
+  </main>
+  <footer>Edge width = law co-citation count across the corpus (watch/ + docs/ + memory/improve/, 4,415 files, watch/inbox/mickey/G2_3_cocitation.md). Solid = cited by law number in the same file; dashed = bridged by signature keyword only (e.g. XVII via "1301|riddler"). Isolated nodes carry zero co-citation evidence. The lattice breathes — HOT, live, real-time.</footer>
+
+<script src="lattice_data.js"></script>
+<script>
+(function(){
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  let W, H, DPR;
+
+  function resize(){
+    DPR = window.devicePixelRatio || 1;
+    W = canvas.clientWidth;
+    H = canvas.clientHeight;
+    canvas.width = W * DPR;
+    canvas.height = H * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ── THE REAL LAWS — rendered from source, never hand-copied ──
+  // Parsed from .agents/skills/operator-corrections/SKILL.md by scripts/lattice_render.py
+  // (dashboard/static/lattice_data.js — regenerate: python scripts/lattice_render.py).
+  // 20 laws as of 2026-09-11 (Law 19 playbook-matching, Law 20 THE INFINITY RULE).
+  // node id = law number - 1; laws 19-20 postdate the G2-3 mining -> isolated nodes.
+  const LAWS = window.LATTICE_DATA.laws;
+
+  // ── MEASURED EDGES — G2-3 law co-citation mining (watch/inbox/mickey/G2_3_cocitation.md;
+  //     raw machine copy _cocitation_raw.json; corpus watch/ + docs/ + memory/improve/,
+  //     4,415 files, 2026-09-11) — carried in lattice_data.js by scripts/lattice_render.py.
+  // PRIMARY: same-file "law N" number co-citation. [law_a, law_b, co_citation_count]
+  const PRIMARY_EDGES = window.LATTICE_DATA.primaryEdges;
+  // KEYWORD BRIDGE: signature-phrase co-occurrence for pairs the number pass misses
+  // (incl. the rescued zero-number pairs and the L17-L18 "1301|riddler" magnet).
+  // [law_a, law_b, keyword_co_count] — rendered dashed.
+  const KEYWORD_EDGES = window.LATTICE_DATA.keywordEdges;
+
+  // ── 3D FORCE-DIRECTED SIMULATION ──
+  const N = LAWS.length;
+  const nodes = LAWS.map((law, i) => {
+    const phi = Math.acos(1 - 2 * (i + 0.5) / N);
+    const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+    const r = 180 + (i % 3) * 40;
+    return {
+      id: law.id,
+      label: law.label,
+      group: law.group,
+      x: r * Math.sin(phi) * Math.cos(theta),
+      y: r * Math.sin(phi) * Math.sin(theta),
+      z: r * Math.cos(phi),
+      vx: 0, vy: 0, vz: 0,
+      fx: 0, fy: 0, fz: 0
+    };
+  });
+
+  // node ids in edges are law numbers - 1; dashed = keyword-bridged evidence only
+  const edgeList = [
+    ...PRIMARY_EDGES.map(([a, b, c]) => ({ a: a - 1, b: b - 1, count: c, dashed: false })),
+    ...KEYWORD_EDGES.map(([a, b, c]) => ({ a: a - 1, b: b - 1, count: c, dashed: true }))
+  ];
+
+  // Nodes with zero edges in the measured corpus render standalone (dashed border).
+  const linked = new Set();
+  for (const e of edgeList) { linked.add(e.a); linked.add(e.b); }
+
+  // ── PER-NODE EVIDENCE METRICS ──
+  // Size = total co-citation (bigger = more cited).
+  // Color = blue (pure numbered co-citation = pure agreement) → amber (keyword-bridged share = contested).
+  const COCITE = new Array(N).fill(0);
+  const SOLID = new Array(N).fill(0);
+  const DASHED = new Array(N).fill(0);
+  for (const e of edgeList) {
+    COCITE[e.a] += e.count; COCITE[e.b] += e.count;
+    if (e.dashed) { DASHED[e.a] += e.count; DASHED[e.b] += e.count; }
+    else          { SOLID[e.a]  += e.count; SOLID[e.b]  += e.count; }
+  }
+  const AGREEMENT_RGB = [79, 134, 198];   // #4f86c6 blue — numbered co-citation only
+  const CONTESTED_RGB = [230, 192, 122];  // #e6c07a amber — keyword-bridged (disputed) share
+  function lerp(a, b, t){ return a + (b - a) * t; }
+  function nodeColor(id){
+    const total = SOLID[id] + DASHED[id];
+    if (total === 0) return '#8b7a66'; // zero evidence either way — muted neutral
+    const t = Math.max(0, Math.min(1, DASHED[id] / total));
+    const r = Math.round(lerp(AGREEMENT_RGB[0], CONTESTED_RGB[0], t));
+    const g = Math.round(lerp(AGREEMENT_RGB[1], CONTESTED_RGB[1], t));
+    const b = Math.round(lerp(AGREEMENT_RGB[2], CONTESTED_RGB[2], t));
+    return `rgb(${r},${g},${b})`;
+  }
+  function nodeRadius(id, scale){
+    return Math.max(3, (6 + Math.sqrt(COCITE[id]) * 1.7) * scale);
+  }
+
+  // ── HOVER TOOLTIP — law number + one-liner + evidence line ──
+  const tip = document.getElementById('tip');
+  const stage = document.getElementById('stage');
+  let mouseX = -1, mouseY = -1, hoverId = -1;
+  canvas.addEventListener('mousemove', (ev) => { mouseX = ev.offsetX; mouseY = ev.offsetY; });
+  canvas.addEventListener('mouseleave', () => { mouseX = -1; mouseY = -1; hoverId = -1; tip.style.display = 'none'; });
+  function updateTooltip(){
+    if (mouseX < 0) return;
+    let best = -1, bestD = Infinity;
+    for (const n of nodes) {
+      const p = project(n.x, n.y, n.z); // re-project each frame — the lattice rotates under a still cursor
+      const hitR = Math.max(nodeRadius(n.id, p.scale), 9) + 4;
+      const d = Math.hypot(p.x - mouseX, p.y - mouseY);
+      if (d <= hitR && d < bestD) { best = n.id; bestD = d; }
+    }
+    if (best !== hoverId) {
+      hoverId = best;
+      if (best === -1) { tip.style.display = 'none'; return; }
+      const law = LAWS[best];
+      const total = SOLID[best] + DASHED[best];
+      tip.innerHTML =
+        `<div class="t-title">${law.label}</div>` +
+        `<div class="t-sum">${law.sum}</div>` +
+        (total === 0
+          ? `<div class="t-evi">no co-citation evidence in corpus</div>`
+          : `<div class="t-evi">co-citation ${total} files · ${SOLID[best]} numbered / ${DASHED[best]} keyword-bridged</div>`);
+      tip.style.display = 'block';
+    }
+    if (hoverId !== -1) {
+      const rect = stage.getBoundingClientRect();
+      let tx = mouseX + 16, ty = mouseY + 16;
+      if (tx + 316 > rect.width) tx = mouseX - 316;
+      if (ty + 96 > rect.height) ty = mouseY - 96;
+      tip.style.left = tx + 'px';
+      tip.style.top = ty + 'px';
+    }
+  }
+
+  // Width = evidence count, banded at 1 / 2 / 3 / 5+ (counts are small; raw magnitude lies).
+  function bandWidth(count){
+    return count >= 5 ? 4 : count >= 3 ? 2.6 : count >= 2 ? 1.6 : 0.8;
+  }
+
+  // Force parameters
+  const REPULSION = 9000;
+  const SPRING = 0.008;
+  const SPRING_LEN = 110;
+  const DAMPING = 0.88;
+  const CENTER_PULL = 0.0015;
+
+  function simulate(){
+    // Reset forces
+    for (const n of nodes) { n.fx = 0; n.fy = 0; n.fz = 0; }
+
+    // Repulsion between all pairs
+    for (let i = 0; i < N; i++) {
+      for (let j = i + 1; j < N; j++) {
+        const a = nodes[i], b = nodes[j];
+        let dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z;
+        let d2 = dx*dx + dy*dy + dz*dz;
+        if (d2 < 1) d2 = 1;
+        const d = Math.sqrt(d2);
+        const f = REPULSION / d2;
+        const fx = (dx / d) * f, fy = (dy / d) * f, fz = (dz / d) * f;
+        a.fx -= fx; a.fy -= fy; a.fz -= fz;
+        b.fx += fx; b.fy += fy; b.fz += fz;
+      }
+    }
+
+    // Spring forces along edges — heavier evidence = tighter pull
+    for (const e of edgeList) {
+      const a = nodes[e.a], b = nodes[e.b];
+      let dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z;
+      let d = Math.sqrt(dx*dx + dy*dy + dz*dz);
+      if (d < 1) d = 1;
+      const weight = e.count >= 5 ? 2 : e.count >= 3 ? 1.5 : e.count >= 2 ? 1.2 : 1;
+      const f = (d - SPRING_LEN) * SPRING * weight;
+      const fx = (dx / d) * f, fy = (dy / d) * f, fz = (dz / d) * f;
+      a.fx += fx; a.fy += fy; a.fz += fz;
+      b.fx -= fx; b.fy -= fy; b.fz -= fz;
+    }
+
+    // Center pull + integrate
+    for (const n of nodes) {
+      n.fx -= n.x * CENTER_PULL;
+      n.fy -= n.y * CENTER_PULL;
+      n.fz -= n.z * CENTER_PULL;
+
+      n.vx = (n.vx + n.fx * 0.016) * DAMPING;
+      n.vy = (n.vy + n.fy * 0.016) * DAMPING;
+      n.vz = (n.vz + n.fz * 0.016) * DAMPING;
+
+      n.x += n.vx;
+      n.y += n.vy;
+      n.z += n.vz;
+    }
+  }
+
+  // ── ROTATION ──
+  let angleY = 0;
+  let angleX = 0.15;
+  const ROT_SPEED = 0.0018;
+
+  // ── PROJECTION ──
+  const FOV = 700;
+  const CAM_Z = 520;
+
+  function project(x, y, z){
+    // Rotate around Y
+    const cosY = Math.cos(angleY), sinY = Math.sin(angleY);
+    let x1 = x * cosY - z * sinY;
+    let z1 = x * sinY + z * cosY;
+    // Rotate around X
+    const cosX = Math.cos(angleX), sinX = Math.sin(angleX);
+    let y1 = y * cosX - z1 * sinX;
+    let z2 = y * sinX + z1 * cosX;
+
+    const scale = FOV / (FOV + z2 + CAM_Z);
+    return {
+      x: W / 2 + x1 * scale,
+      y: H / 2 + y1 * scale,
+      z: z2,
+      scale: scale
+    };
+  }
+
+  // ── COLORS ──
+  const GROUP_COLORS = [
+    '#e6c07a', // gold
+    '#d4a574', // warm tan
+    '#c98a5e', // copper
+    '#b87a4a', // bronze
+    '#a86a3a', // dark bronze
+    '#8a5a2a'  // deep amber
+  ];
+
+  // ── RENDER ──
+  function render(){
+    ctx.clearRect(0, 0, W, H);
+
+    // Background subtle radial glow
+    const grad = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W, H) * 0.7);
+    grad.addColorStop(0, 'rgba(30, 22, 14, 0.6)');
+    grad.addColorStop(1, 'rgba(10, 8, 6, 0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Project all nodes
+    const projected = nodes.map(n => project(n.x, n.y, n.z));
+
+    // Sort edges by average depth for painter's algorithm
+    const sortedEdges = edgeList.map(e => {
+      const pa = projected[e.a], pb = projected[e.b];
+      return { e, depth: (pa.z + pb.z) / 2, pa, pb };
+    }).sort((a, b) => a.depth - b.depth);
+
+    // Draw edges — width = co-citation count band, dashed = keyword-bridged
+    for (const { e, pa, pb } of sortedEdges) {
+      const a = nodes[e.a], b = nodes[e.b];
+      const depthAlpha = Math.max(0.08, Math.min(0.55, 0.5 - (pa.z + pb.z) / 1200));
+      const colorA = GROUP_COLORS[a.group % GROUP_COLORS.length];
+
+      ctx.beginPath();
+      ctx.moveTo(pa.x, pa.y);
+      ctx.lineTo(pb.x, pb.y);
+      ctx.setLineDash(e.dashed ? [5, 4] : []);
+      ctx.strokeStyle = colorA;
+      ctx.globalAlpha = e.dashed ? depthAlpha * 0.75 : depthAlpha;
+      ctx.lineWidth = Math.max(0.5, bandWidth(e.count) * ((pa.scale + pb.scale) / 2));
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+    }
+
+    // Sort nodes by depth
+    const sortedNodes = nodes.map((n, i) => ({ n, p: projected[i], isolated: !linked.has(n.id) }))
+      .sort((a, b) => a.p.z - b.p.z);
+
+    // Draw nodes — size = total co-citation; color = blue (agreement) → amber (contested share)
+    for (const { n, p, isolated } of sortedNodes) {
+      const color = isolated ? '#8b7a66' : nodeColor(n.id);
+      const radius = nodeRadius(n.id, p.scale);
+      const depthAlpha = Math.max(0.25, Math.min(1, 0.9 - p.z / 900));
+
+      if (n.id === hoverId) {
+        // hover ring — the node under the cursor
+        ctx.globalAlpha = 0.9;
+        ctx.strokeStyle = '#fff8e8';
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, radius + 5, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      if (isolated) {
+        // Zero co-citation evidence in the corpus: standalone, dashed border, no glow.
+        ctx.globalAlpha = depthAlpha;
+        ctx.strokeStyle = '#e6c07a';
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, radius * 1.9, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      } else {
+        // Glow
+        const glowGrad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, radius * 4);
+        glowGrad.addColorStop(0, color);
+        glowGrad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.globalAlpha = depthAlpha * 0.25;
+        ctx.fillStyle = glowGrad;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, radius * 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Core
+      ctx.globalAlpha = isolated ? depthAlpha * 0.55 : depthAlpha;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Inner highlight
+      if (!isolated) {
+        ctx.globalAlpha = depthAlpha * 0.6;
+        ctx.fillStyle = '#fff8e8';
+        ctx.beginPath();
+        ctx.arc(p.x - radius * 0.25, p.y - radius * 0.25, radius * 0.35, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Label (always for isolated nodes, depth-gated otherwise)
+      if (isolated || (p.z < 200 && p.scale > 0.6)) {
+        ctx.globalAlpha = Math.min(0.85, depthAlpha * 0.9);
+        ctx.fillStyle = isolated ? '#e6c07a' : '#efe3d0';
+        ctx.font = `${Math.max(9, 11 * p.scale)}px system-ui, sans-serif`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(n.label + (isolated ? ' — no co-citation in corpus' : ''), p.x + radius + 6, p.y);
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  // ── ANIMATION LOOP ──
+  let frame = 0;
+  function loop(){
+    frame++;
+    // Simulate every few frames for stability
+    if (frame % 2 === 0) simulate();
+    angleY += ROT_SPEED;
+    render();
+    updateTooltip();
+    requestAnimationFrame(loop);
+  }
+
+  // Warm up the simulation
+  for (let i = 0; i < 200; i++) simulate();
+
+  loop();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,32 @@
+# Kubernetes-native cadence: the passive warning monitor runs as a CronJob
+# (replaces a hand-started terminal). The autorun loop inside the mag pod already
+# runs janitor/orphan/map cadence; this CronJob is for the periodic warning sweep
+# so it happens even if the supervisor's cadence is tuned off.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mag-warnings
+  namespace: mag
+spec:
+  schedule: "*/10 * * * *"   # every 10 minutes
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: warn
+              image: mag-sovereign:local
+              imagePullPolicy: IfNotPresent
+              envFrom:
+                - configMapRef: { name: mag-config }
+                - secretRef: { name: mag-secrets }
+              volumeMounts:
+                - { name: state, mountPath: /app/logs, subPath: logs }
+                - { name: state, mountPath: /app/memory, subPath: memory }
+              command: ["python", "-m", "mag.warning_monitor", "run"]
+          volumes:
+            - name: state
+              persistentVolumeClaim:
+                claimName: mag-state

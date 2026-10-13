@@ -1,0 +1,21 @@
+{
+  "schema": "seat_contract.v1",
+  "job_id": "deepseek-room-adapter",
+  "goal": "Bring the deepseek seat (VS Code extension 'vizards.deepseek-v4-for-copilot', already installed) into the room: build watch/deepseek_room.py modeled EXACTLY on watch/codex_room.py (run-once tailer, offset state file, ISO-ts skipping, 50-line first-run cap, fail-open, exit 0 always). First DISCOVER where that extension persists session/chat logs on this machine (probe %USERPROFILE%\\.vscode\\extensions\\vizards.deepseek-v4-for-copilot-0.8.1\\ + %APPDATA%\\Code\\ logs/user/workspaceStorage for its output; Global State storage.json under %APPDATA%\\Code\\User\\globalStorage is fair game too). If sessions live only in VS Code globalStorage sqlite/storage.json, parse what exists; if truly no file trail exists, say so honestly in the trail core and implement the tailer against the best available source (even if sparse) with a --source note.",
+  "invariants": [
+    "READ-ONLY on all discovery targets — never write into VS Code state or the extension dir",
+    "bind the codex_room.py pattern (offset file, ISO-ts skipping, 50-line first-run cap, fail-open, exit 0 always)",
+    "post seat='deepseek' records to watch/room.jsonl, thread none (main room)"
+  ],
+  "forbidden_moves": ["editing VS Code settings/state", "installing anything", "model calls"],
+  "acceptance_commands": [
+    ".venv/Scripts/python.exe watch/deepseek_room.py; echo EXIT:$?",
+    ".venv/Scripts/python.exe -c \"import ast; ast.parse(open('watch/deepseek_room.py').read()); print('adapter parses')\""
+  ],
+  "checkpoint_schema": {"required": ["completed", "artifacts", "failures", "budget_used_pct", "next_action_one_line"]},
+  "handoff_schema": {"required": ["done", "untested", "blocked", "resume_command"]},
+  "resume_command": "grok#2: read jobs/deepseek-room-adapter/seat_contract.json + latest trail_core, do next_action, run acceptance, write trail_core_N",
+  "driver": "desktop:grok2",
+  "opened": "2026-08-29",
+  "opened_by": "zcode dispatch (operator: keep cookin with the keys we have)"
+}

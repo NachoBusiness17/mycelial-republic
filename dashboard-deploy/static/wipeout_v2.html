@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WIPEOUT v2 — raymarched · the song sets the speed</title>
+<style>
+  html,body{margin:0;background:#070b10;color:#c9d3e0;font:13px/1.4 ui-monospace,Consolas,monospace;overflow:hidden}
+  #c{display:block;width:100vw;height:100vh}
+  #ui{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#070b10f0;z-index:4}
+  #ui h1{color:#e8b45a;letter-spacing:3px;font-size:16px;margin:0 0 4px}
+  #ui .sub{color:#66738a;font-size:11px;margin-bottom:26px;text-align:center;max-width:520px}
+  .track{width:420px;padding:12px 16px;margin:5px;background:#0d141d;border:1px solid #1b2532;border-radius:10px;cursor:pointer}
+  .track:hover{border-color:#7cf5ff;background:#101a26}
+  .track b{color:#7cf5ff;font-size:13px}
+  .track div{color:#66738a;font-size:10px;margin-top:2px}
+  #status{margin-top:20px;color:#e8b45a;font-size:12px;min-height:18px}
+  #hud{position:fixed;top:0;left:0;right:0;padding:8px 12px;display:flex;gap:16px;font-size:11px;z-index:3;
+       background:linear-gradient(#070b10ee,#070b1000);pointer-events:none}
+  .home{position:fixed;bottom:10px;right:12px;z-index:7}
+  .home a{color:#66738a;text-decoration:none}
+  #end{position:fixed;inset:0;display:none;background:#070b10f0;z-index:5;text-align:center;padding-top:22vh}
+  #end h1{color:#e8b45a}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="ui">
+  <h1>WIPEOUT v2 — RAYMARCHED</h1>
+  <div class="sub">the shader's clock is the song's tempo — the measured BPM drives the world speed,
+  the track path derives from the song hash, the drops push the rush. pick a track.</div>
+  <div class="track" data-f="suno/genesis.mp3"><b>GENESIS — Justice</b><div>french touch · ~126 bpm · 4:54</div></div>
+  <div class="track" data-f="suno/aerodynamic.mp3"><b>AERODYNAMIC (Daft Punk Remix)</b><div>~123 bpm · 4:49</div></div>
+  <div class="track" data-f="suno/flat_beat.mp3"><b>FLAT BEAT — Mr. Oizo</b><div>~128 bpm · 3:49</div></div>
+  <div class="track" data-f="suno/dance.mp3"><b>D.A.N.C.E. (MSTRKRFT Remix)</b><div>~125 bpm · 4:32</div></div>
+  <div id="status"></div>
+</div>
+<div id="hud" style="display:none">
+  <b style="color:#e8b45a" id="songname"></b>
+  <span>BPM <b id="bpm" style="color:#7cf5ff">—</b></span>
+  <span>SPEED <b id="spd" style="color:#7cf5ff">—</b></span>
+  <span>DIST <b id="dist" style="color:#7cf5ff">0</b></span>
+  <span style="color:#66738a">←/→ steer the camera · the clock is the song</span>
+</div>
+<div id="end"><h1>RUN COMPLETE</h1><div id="estats" style="margin:12px"></div><p style="color:#66738a">reload for another track</p></div>
+<div class="home"><a href="/">⌂ home</a></div>
+<script>
+/* WIPEOUT v2 — raymarched racer.
+   Shader: operator-supplied raymarched wipeout racer (adapted from the r/threejs
+   audio-generative wipeout2097 lineage; see github.com/phoboslab/wipeout for the
+   full-game steal and laubsauger.github.io/wave-rider for the audio-reactive kin).
+   The world clock = the song's measured BPM; the path seed = the song hash. */
+const cv=document.getElementById('c');
+const gl=cv.getContext('webgl2',{antialias:false});
+if(!gl){document.getElementById('status').textContent='webgl2 required';}
+const $=id=>document.getElementById(id);
+function fit(){cv.width=innerWidth*(devicePixelRatio>1?1.5:1);cv.height=innerHeight*(devicePixelRatio>1?1.5:1);gl.viewport(0,0,cv.width,cv.height);}
+addEventListener('resize',fit);
+
+const VS=`#version 300 es
+void main(){vec2 p=vec2((gl_VertexID<<1)&2,gl_VertexID&2);gl_Position=vec4(p*2.-1.,0,1);}`;
+
+const FS=`#version 300 es
+precision highp float;
+uniform vec3 iResolution;
+uniform float iTime;
+uniform float uBPM;     // measured song tempo — the world clock
+uniform float uEnergy;  // live RMS 0..1
+uniform float uBass;    // live low-band 0..1
+uniform float uSeed;    // song hash — each song is a different world
+out vec4 fragColor;
+
+float bpm;
+vec3 ro,rt,rd,rp,rs,x,y,z;
+mat3 o;
+float speed;
+vec3 hp;
+vec3 hash3d(vec3 p){
+     uvec3 q = floatBitsToUint(p);
+     q = ((q>>16u)^q.yzx)*1111111111u;
+     q = ((q>>16u)^q.yzx)*1111111111u;
+     q = ((q>>16u)^q.yzx)*1111111111u;
+     return vec3(q)/float(-1u);
+}
+struct GS {vec3 hash,cell,size;};
+struct Grid{GS sub;float d;};
+Grid grid;
+#define gsub grid.sub
+void dosub(vec3 p){
+     gsub.size =vec3(.5);
+     for(int i=0;i<5;i++){
+        gsub.cell = (floor(p/gsub.size)+.5)*gsub.size;
+        gsub.cell.y =0.;
+        gsub.hash = hash3d(gsub.cell+uSeed);
+        if(i==4||gsub.hash.x < .5) break;
+        gsub.size *=.5;
+     }
+}
+void dogrid(vec3 ro,vec3 rd){
+     dosub(ro+rd*.001);
+     vec3 src= -(ro-gsub.cell)/rd;
+     src+= abs(.5*gsub.size/rd);
+     grid.d = min(src.x,min(src.y,src.z));
+}
+vec3 stepNoise(float x,float n){
+    float u = smoothstep(.5-n,.5+n,fract(x));
+    return mix(hash3d(vec3(floor(x),-1.,11111.)),hash3d(vec3(floor(x+1.),-1.,11111.)),u);
+}
+vec3 path(vec3 p){
+    vec3 o=vec3(0.);
+    o.x += sin(p.z*.1);
+    o.y += cos(p.z*.1)*2.;
+    o.y += sin(p.z*.5)*.2;
+    o.x += cos(p.z*.2)*.5;
+    o.xy  += (stepNoise(p.z*.15,.3).xy-.5);
+    o += cross(sin(p*.3),cos(p*.4))*.1;
+    return o;
+}
+float sdChamferBox(vec2 p, vec2 b, float chamfer){
+    p = abs(p) - b;
+    p = (p.y>p.x) ? p.yx : p.xy;
+    p.y += chamfer;
+    const float k = 1.0-sqrt(2.0);
+    if( p.y<0.0 && p.y+p.x*k<0.0 ) return p.x;
+    if( p.x<p.y ) return (p.x+p.y)*sqrt(0.5);
+    return length(p);
+}
+vec3 erot(vec3 p,vec3 ax,float t){return mix(dot(ax,p)*ax,p,cos(t))+cross(ax,p)*sin(t);}
+float box(vec3 p,vec3 b){p=abs(p)-b;return length(max(vec3(0),p))+min(0.,max(p.x,max(p.y,p.z)));}
+vec2 sdf(vec3 p){
+    vec2 h;
+    hp=p;
+    vec3 off = path(p);
+    hp+=off;
+    float track;
+    h.x = track=sdChamferBox(hp.xy,vec2(1.,.5),.3);
+    h.x = max(hp.y,abs(h.x)-.1);
+    h.y = 1.;
+    vec3 tp=p;
+    vec2 t;
+    t.x = dot(tp,vec3(0,1,0)) - (hash3d(vec3(floor(p.xz*.01),floor(uSeed))).x)*2.0;
+    t.x = max(-(abs(p.x)-2.1),t.x);
+    t.y = 0.;
+    h = t.x < h.x ? t : h;
+    tp=p;
+    tp+=off;
+    tp.y+=.1;
+    tp.z -=speed;
+    tp = erot(tp,normalize(vec3(0,.0,1)),sin(off.x));
+    tp.x = abs(tp.x)-.125;
+    tp = erot(tp,normalize(vec3(0,.1,1)),.785);
+    t.x = box(tp,vec3(.25,.015,.65));
+    t.y = -0.;
+    h=t.x <h.x ? t:h;
+    tp+= (cross(sin(hp*7.),cos(hp.yzx*5.))*mix(.01,.1,tp.z/2.));
+    t.x = max(tp.z,length(tp.xy)-.02+mix(.01,.03,tp.z/2.));
+    t.y=10.;
+    h=t.x <h.x ? t:h;
+    tp=p-gsub.cell;
+    t.x = box(tp,vec3(.49,10.49*gsub.hash.y,.49)*gsub.size);
+    t.x = max(-(abs(p.x)-2.1),t.x);
+    t.y=-1.;
+    h=t.x <h.x ? t:h;
+    return h;
+}
+#define q(s) s*sdf(p+s).x
+vec3 norm(vec3 p,float ee){vec2 e=vec2(-ee,ee);return normalize(q(e.xyy)+q(e.yxy)+q(e.yyx)+q(e.xxx));}
+
+void mainImage(out vec4 fragColor, in vec2 fragCoord){
+    bpm = uBPM*iTime/60.;
+    speed = bpm*(1.+uEnergy*.8);
+    vec2 uv = (fragCoord-.5*iResolution.xy)/iResolution.y;
+    vec3 col = vec3(0.);
+    vec3 rnd = hash3d(vec3(fragCoord.xy,bpm));
+    vec3 trnd = stepNoise(bpm*.125,.1+(rnd.x-.5)*.1);
+    speed*=2.;
+    ro=vec3(0.,0.1,-.5-trnd.x),rt=vec3(0);
+    ro.z += speed;
+    ro-=path(ro);
+    rt.z += speed;
+    rt-=path(rt);
+    z=normalize(rt-ro),x=vec3(z.z,0.,-z.x);
+    rd = (o=mat3(x,cross(z,x),z))*normalize(rs=vec3(uv,.5-mix(.4,.1,trnd.x+rnd.y*.03)));
+    rp=ro;
+    vec3 light = vec3(1.,2.,-3.)+ro;
+    vec3 acc=vec3(0.);
+    vec2 d=vec2(1.);
+    float rl=0.;
+    float glen = 0.;
+    for(float i=0.;i++<200.;){
+        if(glen<=rl){
+          dogrid(rp,rd);
+          glen+=grid.d;
+        }
+        d =sdf(rp);
+        if(d.y ==10.){
+            acc+=vec3(.1,.2,.3)*exp(-abs(d.x))/(10.-9.*exp(-3.*fract(rp.z*.1)));
+            d.x = max(.001,abs(d.x));
+        }
+        if(d.x<.001) break;
+        rl=min(rl+d.x,glen);
+        rp=ro+rd*rl;
+    }
+    if(d.x<.001){
+        vec3 n= norm(rp,.001);
+        vec3 ld = normalize(light-rp);
+        float dif = max(0.,dot(ld,n));
+        float spc = pow(max(0.,dot(reflect(ld,n),rd)),32.);
+        float fre = pow(1.+dot(rd,n),4.);
+        if(d.y ==1.){
+            col = mix(vec3(.5+.25*mod(floor(hp.x*5.)+floor(hp.z*5.),2.))*dif+spc,col,fre);
+            if(mod(floor(hp.z/4.),8.)==0.){ col = .1/col; }
+        } else if(d.y==0.){
+            col = mix(vec3(.1)*dif+spc,col,fre);
+        } else {
+            col = mix(vec3(exp(-5.*fract(gsub.hash.z+bpm)))*dif+spc,col,fre);
+        }
+    }
+    col = mix(col,vec3(.01),1.-exp(-.001*rl*rl*rl));
+    col = sqrt(col+acc);
+    col = mix(col,fwidth(sqrt(col)*10.)*vec3(.9,.3,.1),trnd.z+uv.y);
+    col += vec3(.91,.71,.35)*uBass*.12;   // the low band paints the fleet amber
+    fragColor = vec4(col,1);
+}
+void main(){mainImage(fragColor,gl_FragCoord.xy);}`;
+
+function compile(){
+  const vs=gl.createShader(gl.VERTEX_SHADER);gl.shaderSource(vs,VS);gl.compileShader(vs);
+  const fs=gl.createShader(gl.FRAGMENT_SHADER);gl.shaderSource(fs,FS);gl.compileShader(fs);
+  if(!gl.getShaderParameter(fs,gl.COMPILE_STATUS)){console.error(gl.getShaderInfoLog(fs));document.title='ERR: shader '+gl.getShaderInfoLog(fs).slice(0,60);return null;}
+  const pr=gl.createProgram();gl.attachShader(pr,vs);gl.attachShader(pr,fs);gl.linkProgram(pr);
+  return pr;
+}
+
+/* song analysis — measured BPM becomes the world clock */
+function analyze(buf){
+  const ch=buf.getChannelData(0),sr=buf.sampleRate,win=2048,nw=Math.floor(ch.length/win);
+  const env=new Float32Array(nw);
+  for(let i=0;i<nw;i++){let s=0;const o=i*win;for(let j=0;j<win;j+=4){const v=ch[o+j]||0;s+=v*v;}env[i]=Math.sqrt(s/(win/4));}
+  let best=.5,bestV=-1;
+  const minL=Math.floor(sr*.3/win),maxL=Math.min(Math.floor(sr*1.1/win),nw-1);
+  for(let L=minL;L<=maxL;L++){let v=0;for(let i=L;i<nw;i++)v+=env[i]*env[i-L];if(v>bestV){bestV=v;best=L;}}
+  return 60/(best*win/sr);
+}
+
+let AC=null,pr=null,U={},srcNode=null,analyzer=null,freq=null,started=0,playing=false,bpmMeasured=0;
+const tracks=[...document.querySelectorAll('.track')];
+tracks.forEach(el=>el.onclick=async()=>{
+  tracks.forEach(x=>x.onclick=null);
+  const f=el.dataset.f;
+  $('status').textContent='decoding '+f+' … measuring tempo …';
+  AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+  const raw=await (await fetch(f)).arrayBuffer();
+  const buf=await AC.decodeAudioData(raw);
+  bpmMeasured=Math.round(analyze(buf)*10)/10;
+  $('status').textContent='tempo locked: '+bpmMeasured+' bpm — compiling the world …';
+  pr=pr||compile();
+  if(!pr){$('status').textContent='shader failed — see console';return;}
+  fit();
+  srcNode=AC.createBufferSource();srcNode.buffer=buf;srcNode.loop=true;
+  analyzer=AC.createAnalyser();analyzer.fftSize=512;freq=new Uint8Array(analyzer.frequencyBinCount);
+  srcNode.connect(analyzer);analyzer.connect(AC.destination);
+  for(const n of ['iResolution','iTime','uBPM','uEnergy','uBass','uSeed'])U[n]=gl.getUniformLocation(pr,n);
+  $('ui').style.display='none';$('hud').style.display='flex';
+  $('songname').textContent=f.split('/').pop().replace('.mp3','');
+  $('bpm').textContent=bpmMeasured;
+  started=performance.now();
+  srcNode.start();playing=true;
+  let eAvg=0,bAvg=0;
+  function tick(){
+    if(!playing)return;
+    if(analyzer){analyzer.getByteFrequencyData(freq);
+      let e=0;for(let i=0;i<freq.length;i++)e+=freq[i];e/=(freq.length*255);
+      let bs=0;for(let i=0;i<8;i++)bs+=freq[i];bs/=(8*255);
+      eAvg=eAvg*.8+e*.2;bAvg=bAvg*.8+bs*.2;}
+    gl.useProgram(pr);
+    gl.uniform3f(U.iResolution,cv.width,cv.height,1);
+    gl.uniform1f(U.iTime,(performance.now()-started)/1000);
+    gl.uniform1f(U.uBPM,bpmMeasured);
+    gl.uniform1f(U.uEnergy,eAvg*3);
+    gl.uniform1f(U.uBass,bAvg);
+    gl.uniform1f(U.uSeed,(f.length*7919)%1000/100);
+    gl.drawArrays(gl.TRIANGLES,0,3);
+    $('spd').textContent=Math.round((2*(1+eAvg*3))*100)+'%';
+    $('dist').textContent=Math.round((performance.now()-started)/1000* bpmMeasured/60 * 2)+' units';
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+});
+if(gl){fit();}
+</script>
+</body>
+</html>

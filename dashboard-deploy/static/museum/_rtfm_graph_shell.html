@@ -1,0 +1,239 @@
+<!doctype html>
+<!--
+  RTFM GRAPH — browsable private knowledge graph of the fleet's manuals (Ponytail, 2026-09-04)
+  Provenance: memory/rtfm_graph.json (knowledge_graph.v2; nodes = RTFM artifacts, MCP spec
+  concepts, live MCP servers, skills, laws). House style inherited from memory_map.html
+  (#0a0e14 dark, monospace meta, category chips). The graph JSON is embedded INLINE below —
+  ZERO-FETCH: no network resource, no CDN, no libraries, no fetch() ever.
+  Regenerate: python dashboard/static/_rtfm_graph_data.py, then re-inject the JSON block.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MAG · RTFM Graph — the fleet's manuals, browsable</title>
+<style>
+:root{--bg:#0a0e14;--panel:#0d1117;--panel2:#161b22;--ink:#e6edf3;--mut:#8b949e;--dim:#5b6b7a;
+  --line:#1b2430;--line2:#30363d;--gold:#e6c07a;--rtfm:#7fb2ff;--mcp:#e6c07a;--server:#7dffb0;--skill:#ff9db0;--law:#d2a8ff}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:"IBM Plex Mono",ui-monospace,Consolas,"Courier New",monospace;display:flex;flex-direction:column}
+header{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;padding:12px 18px;border-bottom:1px solid var(--line)}
+header h1{font-size:.95rem;color:var(--gold);letter-spacing:.12em}
+header .sub{color:var(--mut);font-size:.7rem}
+#counts{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;font-size:.66rem}
+#counts .chip{border:1px solid var(--line2);border-radius:9px;padding:2px 9px;color:var(--mut);cursor:pointer;user-select:none}
+#counts .chip.active{color:var(--ink);border-color:currentColor}
+#counts .chip .n{color:var(--ink)}
+#wrap{flex:1;display:flex;min-height:0}
+#side{width:320px;min-width:250px;border-right:1px solid var(--line);display:flex;flex-direction:column;background:var(--panel)}
+#searchwrap{padding:10px;border-bottom:1px solid var(--line)}
+#search{width:100%;padding:8px 11px;font:inherit;font-size:.78rem;background:#11161d;color:var(--ink);border:1px solid var(--line2);border-radius:8px}
+#search:focus{outline:1px solid var(--rtfm)}
+#kinds{display:flex;flex-wrap:wrap;gap:6px;padding:0 10px 10px}
+.kchip{font-size:.64rem;letter-spacing:.06em;border:1px solid var(--line2);border-radius:9px;padding:2px 9px;cursor:pointer;user-select:none;color:var(--mut)}
+.kchip.active{color:var(--bg);font-weight:bold}
+#list{flex:1;overflow-y:auto;padding:6px}
+.item{padding:7px 9px;border-radius:7px;cursor:pointer;border:1px solid transparent;margin-bottom:2px}
+.item:hover{background:var(--panel2)}
+.item.sel{background:var(--panel2);border-color:var(--line2)}
+.item .lb{font-size:.76rem;word-break:break-word}
+.item .kk{font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;margin-top:1px}
+#main{flex:1;overflow-y:auto;padding:20px 24px}
+#placeholder{color:var(--dim);font-size:.78rem;line-height:1.8;max-width:640px}
+#placeholder b{color:var(--mut)}
+.kind-badge{display:inline-block;font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;border:1px solid;border-radius:9px;padding:2px 10px;margin-bottom:10px}
+#nlabel{font-size:1.15rem;color:var(--ink);margin-bottom:4px;word-break:break-word}
+#nid{font-size:.66rem;color:var(--dim);margin-bottom:14px;word-break:break-all}
+#npurpose{font-size:.8rem;line-height:1.75;color:#c9d4de;max-width:760px;margin-bottom:16px;white-space:pre-wrap}
+#ninv{margin-bottom:18px}
+#ninv h3{font-size:.64rem;letter-spacing:.14em;color:var(--gold);margin-bottom:6px}
+#ninv .inv{display:inline-block;font-size:.68rem;border:1px dashed var(--line2);border-radius:8px;padding:2px 9px;margin:0 6px 6px 0;color:var(--mut)}
+#rels h3{font-size:.64rem;letter-spacing:.14em;color:var(--gold);margin:12px 0 8px}
+.relrow{margin-bottom:10px}
+.relrow .relname{font-size:.66rem;color:var(--dim);margin-bottom:4px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.nchip{border:1px solid var(--line2);border-radius:9px;padding:4px 10px;font-size:.7rem;cursor:pointer;background:var(--panel2);color:var(--ink)}
+.nchip:hover{border-color:currentColor}
+.nchip .etext{display:none}
+footer{padding:6px 18px;border-top:1px solid var(--line);color:var(--dim);font-size:.62rem}
+</style>
+</head>
+<body>
+<header>
+  <h1>MAG · RTFM GRAPH</h1>
+  <div class="sub">the fleet's manuals, browsable — RTFM pass 2026-09-04</div>
+  <div id="counts"></div>
+</header>
+<div id="wrap">
+  <div id="side">
+    <div id="searchwrap"><input id="search" placeholder="search label / purpose / id…" spellcheck="false"></div>
+    <div id="kinds"></div>
+    <div id="list"></div>
+  </div>
+  <div id="main">
+    <div id="placeholder">Select a node from the left.
+      <br><br><b>What this is:</b> the browsable private knowledge graph of everything the 2026-09-04
+      RTFM pass read — the fleet's new manuals (artifacts), the MCP specification concepts they now
+      mirror, the live MCP servers (senses), the skills, and the laws that bind them. Every edge is a
+      typed claim: <b>uses</b>, <b>gated-by</b>, <b>mirrors</b>, <b>pairs-with</b>, <b>violates</b>.
+      Source of record: memory/rtfm_graph.json · manual: docs/ref/RTFM_20260904.md.</div>
+    <div id="detail" style="display:none">
+      <span class="kind-badge" id="nkind"></span>
+      <div id="nlabel"></div>
+      <div id="nid"></div>
+      <div id="npurpose"></div>
+      <div id="ninv"></div>
+      <div id="rels"></div>
+    </div>
+  </div>
+</div>
+<footer>zero-fetch · no CDN · graph embedded inline · memory/rtfm_graph.json · knowledge_graph.v2</footer>
+<script>
+const GRAPH = __RTFM_GRAPH_JSON__;
+</script>
+<script>
+"use strict";
+const byId = {};
+GRAPH.nodes.forEach(n => byId[n.id] = n);
+const KIND_COLOR = { "rtfm-artifact": getVar("--rtfm"), "mcp-concept": getVar("--mcp"),
+                     "mcp-server": getVar("--server"), "skill": getVar("--skill"), "law": getVar("--law") };
+function getVar(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || "#e6edf3"; }
+const kindOrder = Object.keys(KIND_COLOR).filter(k => GRAPH.nodes.some(n => n.kind === k));
+
+let activeKind = null;   // null = all
+let query = "";
+let selectedId = null;
+
+const countsEl = document.getElementById("counts");
+const kindsEl = document.getElementById("kinds");
+const listEl = document.getElementById("list");
+const searchEl = document.getElementById("search");
+const placeholder = document.getElementById("placeholder");
+const detail = document.getElementById("detail");
+
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+// top-bar counts, clickable as kind filters
+function renderCounts(){
+  countsEl.innerHTML = "";
+  const all = document.createElement("span");
+  all.className = "chip" + (activeKind === null ? " active" : "");
+  all.innerHTML = 'all <span class="n">' + GRAPH.nodes.length + '</span>';
+  all.onclick = () => { activeKind = null; renderCounts(); renderKinds(); renderList(); };
+  countsEl.appendChild(all);
+  kindOrder.forEach(k => {
+    const n = GRAPH.nodes.filter(x => x.kind === k).length;
+    const c = document.createElement("span");
+    c.className = "chip";
+    c.style.color = (activeKind === k) ? KIND_COLOR[k] : "";
+    c.innerHTML = esc(k) + ' <span class="n">' + n + '</span>';
+    c.onclick = () => { activeKind = (activeKind === k) ? null : k; renderCounts(); renderKinds(); renderList(); };
+    countsEl.appendChild(c);
+  });
+  const e = document.createElement("span");
+  e.className = "chip";
+  e.innerHTML = 'edges <span class="n">' + GRAPH.edges.length + '</span>';
+  countsEl.appendChild(e);
+}
+
+function renderKinds(){
+  kindsEl.innerHTML = "";
+  kindOrder.forEach(k => {
+    const c = document.createElement("span");
+    c.className = "kchip" + (activeKind === k ? " active" : "");
+    if (activeKind === k) { c.style.background = KIND_COLOR[k]; c.style.borderColor = KIND_COLOR[k]; }
+    else c.style.color = KIND_COLOR[k];
+    c.textContent = k + " · " + GRAPH.nodes.filter(x => x.kind === k).length;
+    c.onclick = () => { activeKind = (activeKind === k) ? null : k; renderCounts(); renderKinds(); renderList(); };
+    kindsEl.appendChild(c);
+  });
+}
+
+function matches(n){
+  if (activeKind && n.kind !== activeKind) return false;
+  if (!query) return true;
+  const q = query.toLowerCase();
+  return (n.label + " " + n.purpose + " " + n.id + " " + (n.invariants||[]).join(" ")).toLowerCase().includes(q);
+}
+
+function renderList(){
+  listEl.innerHTML = "";
+  const shown = GRAPH.nodes.filter(matches);
+  shown.sort((a,b) => a.kind.localeCompare(b.kind) || a.label.localeCompare(b.label));
+  shown.forEach(n => {
+    const d = document.createElement("div");
+    d.className = "item" + (n.id === selectedId ? " sel" : "");
+    d.innerHTML = '<div class="lb">' + esc(n.label) + '</div>' +
+      '<div class="kk" style="color:' + KIND_COLOR[n.kind] + '">' + esc(n.kind) + '</div>';
+    d.onclick = () => select(n.id);
+    listEl.appendChild(d);
+  });
+  if (!shown.length) listEl.innerHTML = '<div style="color:#5b6b7a;font-size:.7rem;padding:10px">no nodes match.</div>';
+}
+
+function relsFor(id){
+  const out = { "uses": [], "gated-by": [], "mirrors": [], "pairs-with": [], "violates": [] };
+  GRAPH.edges.forEach(e => {
+    if (e.from === id && byId[e.to]) out[e.rel].push({ node: byId[e.to], text: e.text, dir: "out" });
+    else if (e.to === id && byId[e.from]) out[e.rel].push({ node: byId[e.from], text: e.text, dir: "in" });
+  });
+  return out;
+}
+
+function select(id){
+  selectedId = id;
+  const n = byId[id];
+  placeholder.style.display = "none";
+  detail.style.display = "block";
+  const color = KIND_COLOR[n.kind];
+  const badge = document.getElementById("nkind");
+  badge.textContent = n.kind;
+  badge.style.color = color; badge.style.borderColor = color;
+  document.getElementById("nlabel").textContent = n.label;
+  document.getElementById("nid").textContent = n.id + "  ·  ts " + GRAPH.ts;
+  document.getElementById("npurpose").textContent = n.purpose;
+  const inv = document.getElementById("ninv");
+  inv.innerHTML = "";
+  if (n.invariants && n.invariants.length){
+    inv.innerHTML = "<h3>INVARIANTS</h3>";
+    n.invariants.forEach(t => {
+      const s = document.createElement("span");
+      s.className = "inv"; s.textContent = t;
+      inv.appendChild(s);
+    });
+  }
+  const relsEl = document.getElementById("rels");
+  relsEl.innerHTML = "";
+  const rels = relsFor(id);
+  Object.keys(rels).forEach(rel => {
+    const rows = rels[rel];
+    if (!rows.length) return;
+    const div = document.createElement("div");
+    div.className = "relrow";
+    let html = '<div class="relname">' + esc(rel.toUpperCase()) + ' · ' + rows.length + '</div><div class="chips">';
+    rows.forEach(r => {
+      html += '<span class="nchip" data-id="' + esc(r.node.id) + '" style="color:' + KIND_COLOR[r.node.kind] + '" title="' +
+        esc((r.dir === "in" ? "← " : "→ ") + r.text) + '">' + esc(r.node.label) + '</span>';
+    });
+    html += '</div>';
+    div.innerHTML = html;
+    relsEl.appendChild(div);
+  });
+  relsEl.querySelectorAll(".nchip").forEach(ch => {
+    ch.onclick = () => { select(ch.getAttribute("data-id")); };
+  });
+  renderList();
+}
+
+searchEl.addEventListener("input", () => { query = searchEl.value.trim(); renderList(); });
+document.addEventListener("keydown", e => {
+  if (e.key === "/" && document.activeElement !== searchEl){ e.preventDefault(); searchEl.focus(); }
+});
+
+renderCounts();
+renderKinds();
+renderList();
+</script>
+</body>
+</html>

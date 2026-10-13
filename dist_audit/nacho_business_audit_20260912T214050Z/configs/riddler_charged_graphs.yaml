@@ -1,0 +1,95 @@
+# riddler_charged_graphs — the law-17 bridge for charged-register work.
+#
+# THE REQUEST STREAM IS A FILTERED SURFACE (operator-corrections law 17, ratified
+# 2026-09-10 "stamp it bad ass"): charged-register source lives in files; sessions
+# reference by path; cross-lane transport goes through the riddler — compile local,
+# story travels, decode local, mapping key never leaves the machine.
+#
+# Usage (bind, don't invent — mag/riddler.py organs only):
+#   1. Load the graph block below into mag.riddler.PrivateGraph.
+#   2. compile_surrogate(graph, domain=<template domain>, seed=<template seed>).
+#   3. FALSIFIER (mandatory before any dispatch): word-boundary scan of story_text +
+#      question against (a) the kill-delta lexicon (always kept, from
+#      memory/runs/riddler/1301_lexicon_diff_20260910.json key expert_flywheel_write_delta)
+#      and (b) register-specific terms of the source cards — proper-nouns/ALLCAPS/hyphenates
+#      MINUS any term appearing in >=2 benign watch cards (English, not charged register —
+#      receipt 2026-09-10: 304 -> 185 terms, removed ALREADY/API/AUDIT/Board-class noise).
+#      Generic heading caps (THE/AND/STATE/...) are excluded. PASS = zero hits. On any
+#      hit: fix the GRAPH WORDING, not the scan.
+#   4. Dispatch via mag.riddler_transport.send_surrogate to a non-z.ai lane.
+#   5. Decode locally. Save story + decode under memory/runs/riddler/.
+#
+# LAW NOTE (receipt 2026-09-10): the graph wording itself is part of the law-17
+# surface — one charged word in a conflict string passed through the weaver verbatim.
+# Territory-free words only, in the graph too.
+
+graphs:
+  consent_research:
+    # The charged register: century-stack influence-history + the honest counter-stack
+    # + the distillation program. Structure preserved, territory withheld.
+    source_cards:
+      - watch/CONSENT_ARCHETYPE_LAYER_20260909.md
+      - watch/X_TOS_ANALYSIS_20260909.md
+      - watch/EXPERT_FLYWHEEL_20260909.md
+    domain: medieval_guild
+    seed: 20260910
+    graph:
+      actors:
+        - the gardener
+        - the field archivists
+        - the reading public
+        - the old persuaders' guild
+        - the oversight hall
+      resources:
+        - name: the century playbooks
+          type: knowledge
+          scarcity: public-domain now
+        - name: the sealed files
+          type: knowledge
+          scarcity: partially released
+        - name: the live town square
+          type: venue
+          scarcity: foreign-owned
+        - name: the receipt ledger
+          type: record
+          scarcity: unique
+        - name: the seed tales
+          type: instruments
+          scarcity: cheap to make
+      dependencies:
+        - before: the century playbooks
+          after: the sealed files
+        - before: the sealed files
+          after: the live town square
+        - before: the live town square
+          after: the seed tales
+        - before: the century playbooks
+          after: the receipt ledger
+      constraints:
+        - every claim in the ledger carries its provenance stamp
+        - watching the square stays one-way glass, never capture
+        - the guild's own book never trains outsiders' engines
+        - verbatim quoting only from public-domain pages
+        - every seed tale is announced as a tale
+      conflicts:
+        - studying the old craft vs seeming to practice it
+        - a public record vs the record being turned into a weapon
+        - open research vs the square's house rules
+        - faithful copies of old masters' methods vs the masters' heirs still holding pages
+      goal: >-
+        How should the gardener and the archivists keep an honest record of the old
+        persuaders' craft, teach the town to question it, and carry their work through
+        the town gates without the gatekeepers burning the cart?
+    falsifier:
+      pass: zero word-boundary hits
+      last_receipt:
+        date: 2026-09-10
+        blocklist_terms: 336
+        hits: 0
+        dispatch: deepseek ok, 872 tokens, 5.4s
+        artifacts:
+          - memory/runs/riddler/charged_register_dogfood_20260910.json
+          - riddler-2026-09-09T183508-46d6f5549226ef0f.public.json
+    known_weaver_debt: >-
+      constraint weaver produces "must finish before begin" loops and duplicated lines —
+      remote decoders flag the paradox. Compile-quality work item, not a transport failure.

@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DOORBENCH — cache-invalidation falsifier</title>
+<style>
+  html,body{margin:0;height:100%;background:#05070b;overflow:hidden}
+  #gl{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:grab}
+  #gl:active{cursor:grabbing}
+  #hud{position:fixed;top:14px;left:14px;width:400px;max-width:94vw;font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#c9d4e3;background:rgba(7,10,16,.88);border:1px solid #232c3d;border-radius:6px;padding:12px 14px;box-shadow:0 8px 30px rgba(0,0,0,.55)}
+  #hud h1{margin:0;font-size:14px;letter-spacing:.18em;color:#ffb35c}
+  #hud h1 span{color:#5f6b80;font-weight:400}
+  .sub{color:#5f6b80;font-size:10px;letter-spacing:.12em;margin:2px 0 8px}
+  .mrow{display:flex;justify-content:space-between;gap:10px;border-top:1px dashed #1c2534;padding:2px 0}
+  .mrow b{color:#8fa3bd;font-weight:600;white-space:nowrap}
+  .mrow span{color:#e8eef7;text-align:right}
+  .pl{padding:3px 7px;margin-top:4px;border-left:3px solid #333;font-size:11px;white-space:pre-wrap}
+  .pl.pass{border-color:#39d98a;color:#8affc4;background:rgba(57,217,138,.07)}
+  .pl.fail{border-color:#ff5f56;color:#ff9d97;background:rgba(255,95,86,.08)}
+  .pl.unproven{border-color:#ffb35c;color:#ffd9a1;background:rgba(255,179,92,.07)}
+  #events{margin-top:8px;font-size:10px;color:#7d8aa0;white-space:pre-line;border-top:1px dashed #1c2534;padding-top:6px;min-height:46px}
+  #hit{margin-top:6px;color:#ffcf9a;font-size:11px}
+  #keys{margin-top:5px;color:#57637a;font-size:10px;letter-spacing:.05em}
+  #seal{position:fixed;right:14px;bottom:12px;font:10px ui-monospace,Consolas,monospace;color:#3d4759;letter-spacing:.22em}
+  #fatal{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#12060a;color:#ff8d84;font:13px/1.6 ui-monospace,Consolas,monospace;white-space:pre;padding:40px;z-index:9}
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div id="hud">
+  <h1>DOORBENCH <span>// cache-invalidation falsifier</span></h1>
+  <div class="sub">layer1 field R16F 64^3 · layer2 state RGBA8 64^3 · measured live</div>
+  <div class="mrow"><b>MODE</b><span id="mMode">—</span></div>
+  <div class="mrow"><b>FIELD UPL/FRAME</b><span id="mField">—</span></div>
+  <div class="mrow"><b>FIELD COST</b><span id="mFieldMs">—</span></div>
+  <div class="mrow"><b>STATE WRITES</b><span id="mState">—</span></div>
+  <div class="mrow"><b>FPS</b><span id="mFps">—</span></div>
+  <div id="pl0" class="pl unproven">[UNPROVEN] DOOR TOGGLE</div>
+  <div id="pl1" class="pl unproven">[UNPROVEN] B-STORM</div>
+  <div id="pl2" class="pl unproven">[UNPROVEN] CONTROL</div>
+  <div id="events"></div>
+  <div id="hit">hit: —</div>
+  <div id="keys">K door · B storm · C control · drag orbit · wheel zoom</div>
+</div>
+<div id="seal">SALON · TWO-LAYER LAW · FALSIFIABLE OR IT DID NOT HAPPEN</div>
+<div id="fatal" hidden></div>
+<script>
+'use strict';
+// ============================================================ doorbench
+// Falsifiable cache-invalidation benchmark. Field = 64^3 R16F 3D texture
+// (SDF arena, sphere-traced per pixel). State = 64^3 RGBA8 3D texture
+// (generation byte + flags). KEY K recomputes ONLY the door's 48 swept
+// cells on CPU and uploads them via one texSubImage3D dirty-region call.
+// KEY B bumps 1000 cell generations per frame with ZERO field uploads.
+// KEY C is the naive control: full-grid field upload every frame.
+// Every pass line is measured with performance.now() around the CPU+upload
+// section and printed tri-state; unmeasurable lines print UNPROVEN.
+const N = 64, NC = N * N * N, W = 2 / N;
+const $ = function(id){ return document.getElementById(id); };
+const fatal = function(msg){ const f = $('fatal'); f.hidden = false; f.textContent = msg; };
+
+// ---------------------------------------------------------------- GL boot
+const canvas = $('gl');
+const gl = canvas.getContext('webgl2', { antialias:false, alpha:false, powerPreference:'high-performance' });
+if(!gl){ fatal('WEBGL2 UNAVAILABLE\n\ndoorbench needs a WebGL2 context (3D textures, sampler3D).'); throw new Error('no webgl2'); }
+
+const VERT_SRC = `#version 300 es
+void main(){
+  vec2 v = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));
+  gl_Position = vec4(v * 2.0 - 1.0, 0.0, 1.0);
+}
+`;
+
+const FRAG_SRC = `#version 300 es
+precision highp float;
+precision highp sampler3D;
+uniform highp sampler3D uField;
+uniform highp sampler3D uState;
+uniform vec3 uCam;
+uniform vec3 uTgt;
+uniform vec2 uRes;
+uniform float uDoorOpen;
+uniform float uTime;
+out vec4 outColor;
+float field(vec3 p){ return texture(uField, (p + 1.0) * 0.5).r; }
+vec3 normalAt(vec3 p){
+  vec2 e = vec2(0.004, 0.0);
+  return normalize(vec3(
+    field(p + e.xyy) - field(p - e.xyy),
+    field(p + e.yxy) - field(p - e.yxy),
+    field(p + e.yyx) - field(p - e.yyx)));
+}
+void main(){
+  vec2 ndc = (gl_FragCoord.xy * 2.0 - uRes) / uRes.y;
+  vec3 fw = normalize(uTgt - uCam);
+  vec3 rt = normalize(cross(fw, vec3(0.0, 1.0, 0.0)));
+  vec3 up = cross(rt, fw);
+  vec3 rd = normalize(fw * 1.25 + rt * ndc.x + up * ndc.y);
+  vec3 ro = uCam;
+  vec3 doorC = vec3(0.953, -0.844, 0.0);
+  float t = 0.0;
+  float glow = 0.0;
+  bool hit = false;
+  vec3 p = ro;
+  for(int i = 0; i < 110; i++){
+    p = ro + rd * t;
+    if(max(max(abs(p.x), abs(p.y)), abs(p.z)) > 1.02) break;
+    float d = field(p);
+    if(uDoorOpen > 0.5){
+      vec3 q = p - doorC;
+      glow += 0.0016 / (0.004 + dot(q, q));
+    }
+    if(d < 0.0015){ hit = true; break; }
+    t += d * 0.85;
+    if(t > 3.0) break;
+  }
+  vec3 col = vec3(0.010, 0.012, 0.018);
+  col += vec3(0.016, 0.020, 0.030) * (1.0 - clamp(ndc.y * 0.5 + 0.5, 0.0, 1.0));
+  if(hit){
+    vec3 n = normalAt(p);
+    vec3 alb = vec3(0.17, 0.16, 0.15);
+    if(p.y < -0.80 && n.y > 0.5){
+      vec2 g = abs(fract(p.xz * 8.0) - 0.5);
+      float line = smoothstep(0.44, 0.5, max(g.x, g.y));
+      alb = mix(vec3(0.10, 0.11, 0.125), vec3(0.30, 0.19, 0.08), line * 0.55);
+    }
+    vec3 ld = normalize(vec3(-0.45, 0.85, -0.30));
+    float dif = clamp(dot(n, ld), 0.0, 1.0);
+    float amb = 0.38 + 0.22 * n.y;
+    vec3 dl = doorC - p;
+    float dd = length(dl);
+    float dLight = uDoorOpen * 2.4 / (1.0 + dd * dd * 7.0)
+                 * clamp(dot(n, dl / max(dd, 0.001)), 0.0, 1.0);
+    vec3 cellf = clamp(floor((p + 1.0) * 32.0), vec3(0.0), vec3(63.0));
+    float gen = texelFetch(uState, ivec3(cellf), 0).r;
+    float pulse = 0.5 + 0.5 * sin(uTime * 2.5 + gen * 25.13);
+    vec3 sh = alb * (amb * vec3(0.55, 0.65, 0.90) + dif * vec3(0.85, 0.92, 1.05));
+    sh += alb * dLight * vec3(1.0, 0.50, 0.22);
+    sh += (gen / 255.0) * 0.40 * pulse * vec3(1.0, 0.45, 0.18);
+    sh *= exp(-t * 0.20);
+    col = sh;
+  }
+  col += vec3(1.0, 0.45, 0.15) * min(glow, 1.5) * uDoorOpen;
+  col *= 1.0 - 0.30 * dot(ndc * 0.6, ndc * 0.6);
+  outColor = vec4(pow(max(col, vec3(0.0)), vec3(0.4545)), 1.0);
+}
+`;
+
+// On-screen (not console-only) compile failure: first 3 log lines in #fatal.
+function makeShader(type, src, name){
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)){
+    const log = (gl.getShaderInfoLog(s) || 'unknown error').split('\n').slice(0, 3).join('\n');
+    fatal('SHADER COMPILE FAILED [' + name + ']\n' + log);
+    throw new Error('shader compile: ' + log);
+  }
+  return s;
+}
+const prog = gl.createProgram();
+gl.attachShader(prog, makeShader(gl.VERTEX_SHADER, VERT_SRC, 'vert'));
+gl.attachShader(prog, makeShader(gl.FRAGMENT_SHADER, FRAG_SRC, 'frag'));
+gl.linkProgram(prog);
+if(!gl.getProgramParameter(prog, gl.LINK_STATUS)){
+  fatal('PROGRAM LINK FAILED\n' + (gl.getProgramInfoLog(prog) || ''));
+  throw new Error('link failed');
+}
+gl.useProgram(prog);
+const U = {};
+['uField','uState','uCam','uTgt','uRes','uDoorOpen','uTime'].forEach(function(n){ U[n] = gl.getUniformLocation(prog, n); });
+gl.uniform1i(U.uField, 0);
+gl.uniform1i(U.uState, 1);
+
+// ------------------------------------------------------------- geometry
+// All geometry lives on the 64^3 cell lattice so the door's swept region
+// is exact: cells x[62,62] y[2,7] z[28,35] = 1x6x8 = 48 dirty cells.
+function cb(x0, x1, y0, y1, z0, z1){
+  return [-1 + (x0 + x1 + 1) * W * 0.5, -1 + (y0 + y1 + 1) * W * 0.5, -1 + (z0 + z1 + 1) * W * 0.5,
+          (x1 - x0 + 1) * W * 0.5, (y1 - y0 + 1) * W * 0.5, (z1 - z0 + 1) * W * 0.5];
+}
+const PRIMS = [
+  cb(0, 63, 0, 1, 0, 63),      // floor
+  cb(0, 63, 62, 63, 0, 63),    // ceiling
+  cb(0, 1, 0, 63, 0, 63),      // wall west
+  cb(0, 63, 0, 63, 0, 1),      // wall south
+  cb(0, 63, 0, 63, 62, 63),    // wall north
+  cb(62, 63, 0, 63, 0, 27),    // wall east, south of door
+  cb(62, 63, 0, 63, 36, 63),   // wall east, north of door
+  cb(62, 63, 8, 63, 28, 35),   // lintel above door
+  cb(63, 63, 2, 7, 28, 35),    // door back leaf (static)
+  cb(15, 17, 2, 61, 15, 17),   // pillar A
+  cb(15, 17, 2, 61, 46, 48),   // pillar B
+  cb(46, 48, 2, 61, 15, 17),   // pillar C
+  cb(46, 48, 2, 61, 46, 48),   // pillar D
+  cb(20, 27, 2, 9, 40, 47),    // crate 1
+  cb(38, 43, 2, 7, 8, 13),     // crate 2
+  cb(8, 20, 2, 5, 52, 56),     // bench
+  cb(30, 32, 2, 30, 8, 24)     // partition wall
+];
+const DOOR = cb(62, 62, 2, 7, 28, 35); // the toggleable slab
+function sdBox(px, py, pz, b){
+  const dx = Math.abs(px - b[0]) - b[3];
+  const dy = Math.abs(py - b[1]) - b[4];
+  const dz = Math.abs(pz - b[2]) - b[5];
+  const ax = dx > 0 ? dx : 0, ay = dy > 0 ? dy : 0, az = dz > 0 ? dz : 0;
+  const ox = dx > dy ? (dx > dz ? dx : dz) : (dy > dz ? dy : dz);
+  return Math.sqrt(ax * ax + ay * ay + az * az) + (ox < 0 ? ox : 0);
+}
+function evalAt(x, y, z, doorClosed){
+  const px = -1 + (x + 0.5) * W, py = -1 + (y + 0.5) * W, pz = -1 + (z + 0.5) * W;
+  let d = 1e9;
+  for(let i = 0; i < PRIMS.length; i++){ const v = sdBox(px, py, pz, PRIMS[i]); if(v < d) d = v; }
+  if(doorClosed){ const v = sdBox(px, py, pz, DOOR); if(v < d) d = v; }
+  return d;
+}
+
+// ------------------------------------------------------- field + textures
+let doorOpen = true;
+const field = new Float32Array(NC);
+function bakeFull(doorClosed){
+  let i = 0;
+  for(let z = 0; z < N; z++) for(let y = 0; y < N; y++) for(let x = 0; x < N; x++){
+    field[i++] = evalAt(x, y, z, doorClosed);
+  }
+}
+bakeFull(false); // door starts open
+
+const DR = { x0:62, y0:2, z0:28, w:1, h:6, d:8 };
+const DCELLS = DR.w * DR.h * DR.d; // 48
+const doorRegion = new Float32Array(DCELLS);
+function recomputeDoor(){
+  let i = 0;
+  for(let z = DR.z0; z < DR.z0 + DR.d; z++)
+    for(let y = DR.y0; y < DR.y0 + DR.h; y++)
+      for(let x = DR.x0; x < DR.x0 + DR.w; x++){
+        const v = evalAt(x, y, z, !doorOpen);
+        doorRegion[i] = v;
+        field[x + y * N + z * N * N] = v;
+        i++;
+      }
+}
+function tex3d(unit){
+  const t = gl.createTexture();
+  gl.activeTexture(gl.TEXTURE0 + unit);
+  gl.bindTexture(gl.TEXTURE_3D, t);
+  gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE);
+  return t;
+}
+const fieldTex = tex3d(0);
+gl.texImage3D(gl.TEXTURE_3D, 0, gl.R16F, N, N, N, 0, gl.RED, gl.FLOAT, field);
+const state = new Uint8Array(NC * 4); // per cell: R=gen G=bumps-low B=0 A=flags
+for(let z = DR.z0; z < DR.z0 + DR.d; z++)
+  for(let y = DR.y0; y < DR.y0 + DR.h; y++)
+    for(let x = DR.x0; x < DR.x0 + DR.w; x++)
+      state[(x + y * N + z * N * N) * 4 + 3] = 1; // flag bit0: door zone
+const stateTex = tex3d(1);
+gl.texImage3D(gl.TEXTURE_3D, 0, gl.RGBA8, N, N, N, 0, gl.RGBA, gl.UNSIGNED_BYTE, state);
+
+// ------------------------------------------------------------ dirty path
+let frameCount = 0;
+let lastToggle = { ms: 0, frame: -1 };
+const toggleHist = [];
+function toggleDoor(reason){
+  doorOpen = !doorOpen;
+  const t0 = performance.now();
+  recomputeDoor();                                        // CPU: 48 cell evals ONLY
+  gl.activeTexture(gl.TEXTURE0);
+  gl.texSubImage3D(gl.TEXTURE_3D, 0, DR.x0, DR.y0, DR.z0, // GPU: 1 dirty-region call
+    DR.w, DR.h, DR.d, gl.RED, gl.FLOAT, doorRegion, 0);
+  const ms = performance.now() - t0;
+  toggleHist.push(ms); if(toggleHist.length > 5) toggleHist.shift();
+  lastToggle = { ms: ms, frame: frameCount };
+  logEv(reason + ' door ' + (doorOpen ? 'OPEN' : 'CLOSED') + ' — ' + ms.toFixed(3)
+    + 'ms · ' + DCELLS + ' dirty cells · ' + (DCELLS * 2) + 'B (R16F)');
+}
+
+// -------------------------------------------------------- control (naive)
+let control = false, controlFrames = 0, controlMs = 0, controlRun = 0, strobeLast = 0;
+function controlFrame(){
+  const t0 = performance.now();
+  recomputeDoor();
+  gl.activeTexture(gl.TEXTURE0);
+  gl.texSubImage3D(gl.TEXTURE_3D, 0, 0, 0, 0, N, N, N,   // FULL-grid upload
+    gl.RED, gl.FLOAT, field, 0);
+  const ms = performance.now() - t0;
+  controlMs = controlMs ? controlMs * 0.9 + ms * 0.1 : ms;
+  controlFrames++;
+}
+
+// -------------------------------------------------------- state storm (B)
+let storm = false, idleMs = 0, idleN = 0, stormMs = 0, stormN = 0;
+const bumpLog = new Int32Array(1000);
+function stormFrame(){
+  const s = state;
+  for(let i = 0; i < 1000; i++){
+    const ci = (Math.random() * NC) | 0;
+    const b = ci * 4;
+    if(s[b] < 255) s[b]++;       // generation bump
+    s[b + 1] = (s[b + 1] + 1) & 255;
+    s[b + 3] |= 2;               // flag bit1: bumped
+    bumpLog[i] = ci;
+  }
+  // attribute write-through: ONE z-slab per frame, round robin over 64
+  // frames (16KB). The FIELD texture is never touched here.
+  const z = frameCount % N;
+  gl.activeTexture(gl.TEXTURE1);
+  gl.texSubImage3D(gl.TEXTURE_3D, 0, 0, 0, z, N, N, 1,
+    gl.RGBA, gl.UNSIGNED_BYTE, state.subarray(z * N * N * 4, (z + 1) * N * N * 4), 0);
+}
+
+// ------------------------------------------------------------- camera
+const TGT = [0.0, -0.2, 0.30];
+let yaw = 4.0, pitch = -0.12, radius = 0.40;
+let dragging = false, lx = 0, ly = 0, lastPointer = -1e9;
+canvas.addEventListener('pointerdown', function(e){
+  dragging = true; lx = e.clientX; ly = e.clientY;
+  canvas.setPointerCapture(e.pointerId); lastPointer = performance.now();
+});
+addEventListener('pointermove', function(e){
+  if(!dragging) return;
+  yaw += (e.clientX - lx) * 0.005;
+  pitch -= (e.clientY - ly) * 0.004;
+  pitch = Math.max(-0.55, Math.min(0.40, pitch));
+  lx = e.clientX; ly = e.clientY; lastPointer = performance.now();
+});
+addEventListener('pointerup', function(){ dragging = false; });
+canvas.addEventListener('wheel', function(e){
+  e.preventDefault();
+  radius = Math.max(0.28, Math.min(0.45, radius * Math.exp(e.deltaY * 0.001)));
+  lastPointer = performance.now();
+}, { passive: false });
+addEventListener('keydown', function(e){
+  if(e.code === 'KeyK'){ toggleDoor('KEY K'); }
+  else if(e.code === 'KeyB'){ storm = !storm; logEv('KEY B storm ' + (storm ? 'ON — 1000 gen bumps/frame, 0 field bytes' : 'OFF')); }
+  else if(e.code === 'KeyC'){ control = !control; strobeLast = performance.now(); controlRun = 0;
+    logEv('KEY C control ' + (control ? 'ON — naive full-grid upload/frame' : 'OFF')); }
+});
+
+// --------------------------------------------------- CPU mirror raycast
+function sampleField(px, py, pz){
+  const gx = Math.min(Math.max((px + 1) * 32 - 0.5, 0), N - 1.001);
+  const gy = Math.min(Math.max((py + 1) * 32 - 0.5, 0), N - 1.001);
+  const gz = Math.min(Math.max((pz + 1) * 32 - 0.5, 0), N - 1.001);
+  const x0 = gx | 0, y0 = gy | 0, z0 = gz | 0;
+  const x1 = Math.min(x0 + 1, 63), y1 = Math.min(y0 + 1, 63), z1 = Math.min(z0 + 1, 63);
+  const fx = gx - x0, fy = gy - y0, fz = gz - z0;
+  const i = function(X, Y, Z){ return field[X + Y * N + Z * N * N]; };
+  const a = i(x0, y0, z0) + (i(x1, y0, z0) - i(x0, y0, z0)) * fx;
+  const b = i(x0, y1, z0) + (i(x1, y1, z0) - i(x0, y1, z0)) * fx;
+  const c = i(x0, y0, z1) + (i(x1, y0, z1) - i(x0, y0, z1)) * fx;
+  const d = i(x0, y1, z1) + (i(x1, y1, z1) - i(x0, y1, z1)) * fx;
+  const e = a + (b - a) * fy, f = c + (d - c) * fy;
+  return e + (f - e) * fz;
+}
+function cpuRay(cam){
+  const dx = TGT[0] - cam[0], dy = TGT[1] - cam[1], dz = TGT[2] - cam[2];
+  const dl = Math.sqrt(dx * dx + dy * dy + dz * dz);
+  const rx = dx / dl, ry = dy / dl, rz = dz / dl;
+  let t = 0, px = cam[0], py = cam[1], pz = cam[2], hit = false;
+  for(let i = 0; i < 110; i++){
+    if(Math.max(Math.abs(px), Math.abs(py), Math.abs(pz)) > 1.02) break;
+    const d = sampleField(px, py, pz);
+    if(d < 0.0015){ hit = true; break; }
+    t += d * 0.85;
+    px = cam[0] + rx * t; py = cam[1] + ry * t; pz = cam[2] + rz * t;
+    if(t > 3.0) break;
+  }
+  if(!hit) return null;
+  const cx = Math.min(63, Math.max(0, ((px + 1) * 32) | 0));
+  const cy = Math.min(63, Math.max(0, ((py + 1) * 32) | 0));
+  const cz = Math.min(63, Math.max(0, ((pz + 1) * 32) | 0));
+  return [cx, cy, cz];
+}
+
+// --------------------------------------------------------------- metrics
+const ftRing = new Float32Array(120); let ftN = 0, ftI = 0;
+const events = [];
+const t0ms = performance.now();
+function logEv(s){
+  events.unshift('[' + ((performance.now() - t0ms) / 1000).toFixed(1) + 's] ' + s);
+  if(events.length > 5) events.pop();
+}
+function median(arr, n){
+  const a = Array.prototype.slice.call(arr, 0, n).sort(function(x, y){ return x - y; });
+  return a[a.length >> 1];
+}
+const plEls = [$('pl0'), $('pl1'), $('pl2')];
+function setPass(i, ln){
+  plEls[i].className = 'pl ' + ln[0].toLowerCase();
+  plEls[i].textContent = '[' + ln[0] + '] ' + ln[1];
+}
+function doorLine(){
+  if(toggleHist.length < 3 || ftN < 120)
+    return ['UNPROVEN', 'DOOR TOGGLE — ' + toggleHist.length + '/3 toggles, fps window '
+      + Math.round(ftN) + '/120 frames (gate <0.5ms, <=64 cells, >=60fps)'];
+  const m = median(toggleHist, toggleHist.length);
+  const fps = 1000 / median(ftRing, ftN);
+  const ok = m < 0.5 && DCELLS <= 64 && fps >= 59.7; // 59.7 = 60Hz vsync floor
+  return [ok ? 'PASS' : 'FAIL', 'DOOR TOGGLE ' + m.toFixed(3) + 'ms / ' + DCELLS
+    + ' cells / ' + fps.toFixed(1) + 'fps (gate <0.5ms, <=64, >=60; 59.7=vsync floor)'];
+}
+function stormLine(){
+  if(idleN < 90 || stormN < 90)
+    return ['UNPROVEN', 'B-STORM — idle ' + idleN + 'f / storm ' + stormN
+      + 'f, need 90/90 (gate <1% frame delta)'];
+  const delta = (stormMs - idleMs) / idleMs * 100;
+  return [delta < 1 ? 'PASS' : 'FAIL', 'B-STORM delta ' + delta.toFixed(2)
+    + '% (idle ' + idleMs.toFixed(2) + 'ms vs storm ' + stormMs.toFixed(2) + 'ms; gate <1%)'];
+}
+function controlLine(){
+  if(controlFrames < 30 || toggleHist.length < 3)
+    return ['UNPROVEN', 'CONTROL — ' + controlFrames + '/30 frames, ' + toggleHist.length
+      + '/3 toggles (auto at ~7.6s or press C; gate >=10x dirty)'];
+  const m = median(toggleHist, toggleHist.length);
+  const r = controlMs / m;
+  return [r >= 10 ? 'PASS' : 'FAIL', 'CONTROL ' + controlMs.toFixed(2) + 'ms vs dirty '
+    + m.toFixed(3) + 'ms = ' + r.toFixed(0) + 'x (gate >=10x full-upload)'];
+}
+function updateHUD(){
+  const fm = ftN > 30 ? median(ftRing, ftN) : 0;
+  $('mMode').textContent = (control ? 'CONTROL (naive)' : 'DIRTY') + ' · storm '
+    + (storm ? 'ON' : 'off') + ' · door ' + (doorOpen ? 'OPEN' : 'closed');
+  $('mField').textContent = control
+    ? '524288 B/frame · full 64^3 R16F'
+    : (lastToggle.frame === frameCount
+        ? DCELLS * 2 + ' B · ' + DCELLS + ' dirty cells'
+        : '0 B idle · last event ' + (DCELLS * 2) + ' B / ' + DCELLS + ' cells');
+  $('mFieldMs').textContent = control
+    ? controlMs.toFixed(3) + ' ms/frame (ewma)'
+    : (toggleHist.length ? 'last toggle ' + toggleHist[toggleHist.length - 1].toFixed(3) + ' ms' : '—');
+  $('mState').textContent = storm
+    ? '1000 bumps/frame · 16384 B slab flush · 0 field B'
+    : '0 writes · 0 B';
+  $('mFps').textContent = fm ? (1000 / fm).toFixed(1) + ' fps · median ' + fm.toFixed(2) + ' ms' : '—';
+  setPass(0, doorLine()); setPass(1, stormLine()); setPass(2, controlLine());
+  $('events').textContent = events.join('\n');
+}
+let hudTick = 0;
+function updateHit(){
+  const h = window._lastHit;
+  const el = $('hit');
+  if(!h){ el.textContent = 'hit: — (void)'; return; }
+  const ci = h[0] + h[1] * N + h[2] * N * N;
+  let k = 0;
+  if(storm && !control){ for(let i = 0; i < 1000; i++) if(bumpLog[i] === ci) k++; }
+  el.textContent = 'hit cell (' + h.join(',') + ') · gen=' + state[ci * 4]
+    + ' · flags=0x' + state[ci * 4 + 3].toString(16) + ' · bumps this frame=' + k;
+}
+
+// ------------------------------------------------------------ resize/draw
+function resize(){
+  const dpr = Math.min(devicePixelRatio || 1, 1.5) * 0.9;
+  canvas.width = Math.max(2, Math.round(canvas.clientWidth * dpr));
+  canvas.height = Math.max(2, Math.round(canvas.clientHeight * dpr));
+}
+addEventListener('resize', resize);
+resize();
+
+const seq = { s: 0, d: 0, c: 0 };
+let lastT = performance.now();
+logEv('armed — 64^3 R16F field + 64^3 RGBA8 state · dirty-path mode');
+
+function frame(now){
+  requestAnimationFrame(frame);
+  const dt = now - lastT; lastT = now;
+  frameCount++;
+
+  // control mode strobes the door so the naive upload is visible
+  if(control && now - strobeLast > 450){ doorOpen = !doorOpen; strobeLast = now; }
+
+  // hands-free proof sequence
+  const T = now - t0ms;
+  if(seq.s === 0 && T > 2000){ storm = true; seq.s = 1;
+    logEv('AUTO B-storm ON — 1000 gen bumps/frame, 0 field bytes'); }
+  if(seq.d < 4 && T > 4000 + seq.d * 800){ toggleDoor('AUTO ' + (seq.d + 1) + '/4'); seq.d++; }
+  if(seq.c === 0 && T > 7600){ control = true; strobeLast = now; controlRun = 0; seq.c = 1;
+    logEv('AUTO control baseline — full-grid upload per frame'); }
+
+  if(control){
+    controlFrame(); controlRun++;
+    if(seq.c === 1 && controlRun >= 45){ control = false; seq.c = 2;
+      logEv('control done — CONTROL pass line now measured'); }
+  } else {
+    if(storm) stormFrame();
+    ftRing[ftI] = dt; ftI = (ftI + 1) % 120; if(ftN < 120) ftN++;
+    if(storm){ stormMs = stormMs ? stormMs * 0.05 + dt * 0.05 : dt; stormN++; }
+    else { idleMs = idleMs ? idleMs * 0.05 + dt * 0.05 : dt; idleN++; }
+  }
+
+  // camera (slow drift when idle)
+  if(now - lastPointer > 4000) yaw += dt * 0.00004;
+  const cp = Math.cos(pitch), sp = Math.sin(pitch);
+  const cam = [TGT[0] + radius * Math.sin(yaw) * cp,
+               TGT[1] + radius * sp,
+               TGT[2] + radius * Math.cos(yaw) * cp];
+
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.uniform3f(U.uCam, cam[0], cam[1], cam[2]);
+  gl.uniform3f(U.uTgt, TGT[0], TGT[1], TGT[2]);
+  gl.uniform2f(U.uRes, canvas.width, canvas.height);
+  gl.uniform1f(U.uDoorOpen, doorOpen ? 1 : 0);
+  gl.uniform1f(U.uTime, (now - t0ms) * 0.001);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+  window._lastHit = cpuRay(cam);
+  hudTick++;
+  if(hudTick % 3 === 0){ updateHUD(); }
+  updateHit();
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

@@ -1,0 +1,350 @@
+# OX NOVELTY INDEX (honest)
+
+Total banked: 602
+
+- **noise**: 9
+- **consolidated**: 253
+- **novel?** (candidate, needs a read): 340
+
+## novel? candidates — read to confirm before calling novel
+
+- **t0000** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Give the precise definition, schema, and the exact algorithm.
+- **t0001** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Give the precise definition, schema, and the exact algorithm.
+- **t0002** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Give the precise definition, schema, and the exact algorithm.
+- **t0003** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Give the precise definition, schema, and the exact algorithm.
+- **t0004** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Give the precise definition, schema, and the exact algorithm.
+- **t0005** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Give the precise definition, schema, and the exact algorithm.
+- **t0006** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Give the precise definition, schema, and the exact algorithm.
+- **t0007** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Give the precise definition, schema, and the exact algorithm.
+- **t0008** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0009** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0010** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0011** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0012** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0013** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0014** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0015** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0016** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0017** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0018** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0019** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0020** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0021** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0022** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0023** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0024** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0025** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0026** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0027** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0028** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0029** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0030** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0031** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0032** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0033** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0034** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0035** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0036** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0037** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0038** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0039** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0040** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0041** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0042** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0043** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0044** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0045** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0046** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0047** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0048** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0049** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0050** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0051** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0052** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0053** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0054** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0055** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0056** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0057** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0058** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0059** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0060** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0061** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0062** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0063** | the meta-token: one content-addressed anchor resolving meaning across multiple token sets | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0064** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Give the precise definition, schema, and the exact algorithm.
+- **t0065** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Give the precise definition, schema, and the exact algorithm.
+- **t0066** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Give the precise definition, schema, and the exact algorithm.
+- **t0067** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Give the precise definition, schema, and the exact algorithm.
+- **t0068** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Give the precise definition, schema, and the exact algorithm.
+- **t0069** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Give the precise definition, schema, and the exact algorithm.
+- **t0070** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Give the precise definition, schema, and the exact algorithm.
+- **t0071** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Give the precise definition, schema, and the exact algorithm.
+- **t0072** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0073** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0074** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0075** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0076** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0077** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0078** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0079** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0080** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0081** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0082** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0083** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0084** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0085** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0086** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0087** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0089** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0090** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0091** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0092** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0093** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0094** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0095** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0096** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0097** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0098** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0099** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0100** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0101** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0102** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0103** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0104** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0105** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0106** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0107** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0108** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0109** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0110** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0111** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0112** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0113** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0114** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0115** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0116** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0117** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0118** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0119** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0120** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0121** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0122** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0123** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0124** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0125** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0126** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0127** | a compact verkle/merkle proof any neutral verifier can re-derive without the full tree | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0320** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Give the precise definition, schema, and the exact algorithm.
+- **t0321** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Give the precise definition, schema, and the exact algorithm.
+- **t0322** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Give the precise definition, schema, and the exact algorithm.
+- **t0323** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Give the precise definition, schema, and the exact algorithm.
+- **t0324** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Give the precise definition, schema, and the exact algorithm.
+- **t0325** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Give the precise definition, schema, and the exact algorithm.
+- **t0326** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Give the precise definition, schema, and the exact algorithm.
+- **t0327** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Give the precise definition, schema, and the exact algorithm.
+- **t0328** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0329** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0330** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0331** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0332** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0333** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0334** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0335** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0336** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0337** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0338** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0339** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0340** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0341** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0342** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0343** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0344** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0345** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0346** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0347** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0348** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0349** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0350** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0351** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0352** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0353** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0354** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0355** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0356** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0357** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0358** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0359** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0360** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0361** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0362** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0363** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0364** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0365** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0366** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0367** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0368** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0369** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0370** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0371** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0372** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0373** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0374** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0375** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0376** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0377** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0378** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0379** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0380** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0381** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0382** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0383** | consensus without a central brain: N stateless workers speak as one honest voice, no drift | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0384** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Give the precise definition, schema, and the exact algorithm.
+- **t0385** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Give the precise definition, schema, and the exact algorithm.
+- **t0386** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Give the precise definition, schema, and the exact algorithm.
+- **t0387** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Give the precise definition, schema, and the exact algorithm.
+- **t0388** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Give the precise definition, schema, and the exact algorithm.
+- **t0389** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Give the precise definition, schema, and the exact algorithm.
+- **t0390** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Give the precise definition, schema, and the exact algorithm.
+- **t0391** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Give the precise definition, schema, and the exact algorithm.
+- **t0392** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0393** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0394** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0395** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0396** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0397** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0398** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0399** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0400** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0401** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0402** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0403** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0404** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0405** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0406** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0407** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0408** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0409** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0410** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0411** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0412** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0413** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0414** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0415** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0416** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0417** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0418** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0419** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0420** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0421** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0422** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0423** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0424** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0425** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0426** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0427** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0428** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0429** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0430** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0431** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0432** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0433** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0434** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0435** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0436** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0437** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0438** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0439** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0440** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0441** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0442** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0443** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0444** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0445** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0446** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0447** | consensus-illusion detection: separating true agreement from N correlated hallucinations | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0448** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Give the precise definition, schema, and the exact algorithm.
+- **t0449** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Give the precise definition, schema, and the exact algorithm.
+- **t0450** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Give the precise definition, schema, and the exact algorithm.
+- **t0451** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Give the precise definition, schema, and the exact algorithm.
+- **t0452** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Give the precise definition, schema, and the exact algorithm.
+- **t0453** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Give the precise definition, schema, and the exact algorithm.
+- **t0454** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Give the precise definition, schema, and the exact algorithm.
+- **t0455** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Give the precise definition, schema, and the exact algorithm.
+- **t0456** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0457** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0458** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0459** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0460** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0461** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0462** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0463** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0464** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0465** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0466** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0467** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0468** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0469** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0470** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0471** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0472** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0473** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0474** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0475** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0476** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0477** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0478** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0479** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0480** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0481** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0482** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0483** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0484** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0485** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0486** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0487** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Give the edge cases: the failure modes, the boundaries, and what must never happen.
+- **t0488** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0489** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0490** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0491** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0492** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0493** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0494** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0495** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Design it for a stateless seat that dies and respawns: what persists vs recomputes.
+- **t0496** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0497** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0498** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0499** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0500** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0501** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0502** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0503** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Integrate it into our existing mag/law.py enforcement registry as a LAW record (id, trigger, condition, action, guardrail, tier).
+- **t0504** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0505** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0506** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0507** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0508** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0509** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0510** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0511** | a measured split q* = m*B_P/B_H that makes two resource paths finish together | Design it so two independent implementations produce byte-identical roots from the same start.
+- **t0576** | an invariant lattice as code-as-law: authored invariants that govern without a central enforcer | Give the precise definition, schema, and the exact algorithm.
+- **t0577** | an invariant lattice as code-as-law: authored invariants that govern without a central enforcer | Give the precise definition, schema, and the exact algorithm.
+- **t0578** | an invariant lattice as code-as-law: authored invariants that govern without a central enforcer | Give the precise definition, schema, and the exact algorithm.
+- **t0579** | an invariant lattice as code-as-law: authored invariants that govern without a central enforcer | Give the precise definition, schema, and the exact algorithm.
+- **t0580** | an invariant lattice as code-as-law: authored invariants that govern without a central enforcer | Give the precise definition, schema, and the exact algorithm.
+- **t0581** | an invariant lattice as code-as-law: authored invariants that govern without a central enforcer | Give the precise definition, schema, and the exact algorithm.
+- **t0582** | an invariant lattice as code-as-law: authored invariants that govern without a central enforcer | Give the precise definition, schema, and the exact algorithm.
+- **t0583** | an invariant lattice as code-as-law: authored invariants that govern without a central enforcer | Give the precise definition, schema, and the exact algorithm.
+- **t0584** | an invariant lattice as code-as-law: authored invariants that govern without a central enforcer | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0585** | an invariant lattice as code-as-law: authored invariants that govern without a central enforcer | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0588** | an invariant lattice as code-as-law: authored invariants that govern without a central enforcer | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0589** | an invariant lattice as code-as-law: authored invariants that govern without a central enforcer | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0590** | an invariant lattice as code-as-law: authored invariants that govern without a central enforcer | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0591** | an invariant lattice as code-as-law: authored invariants that govern without a central enforcer | Give the exact state change / data shape and an acceptance test that proves byte-identity.
+- **t0592** | an invariant lattice as code-as-law: authored invariants that govern without a central enforcer | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0594** | an invariant lattice as code-as-law: authored invariants that govern without a central enforcer | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0595** | an invariant lattice as code-as-law: authored invariants that govern without a central enforcer | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0596** | an invariant lattice as code-as-law: authored invariants that govern without a central enforcer | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0597** | an invariant lattice as code-as-law: authored invariants that govern without a central enforcer | Red-team this: enumerate the bypass attempts and the deterministic mitigation for each.
+- **t0600** | an invariant lattice as code-as-law: authored invariants that govern without a central enforcer | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.
+- **t0601** | an invariant lattice as code-as-law: authored invariants that govern without a central enforcer | Make it measured-not-guessed: give the measured signals and the closed-form decision rule.

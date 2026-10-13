@@ -1,0 +1,1258 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DECK — Rocinante</title>
+<style>
+:root{--bg:#0a0a0a;--panel:#111114;--line:#232328;--ink:#d8d8dc;--mut:#8a8a92;--gold:#e8b64a;--accent:#7cf5ff}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-monospace,Consolas,monospace}
+header{display:flex;justify-content:space-between;align-items:center;padding:14px 22px;border-bottom:1px solid var(--line)}
+h1{font-size:.9rem;letter-spacing:.12em;margin:0}
+a{color:var(--accent);text-decoration:none}
+button{background:#141418;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 12px;font-family:inherit;font-size:.72rem;cursor:pointer}
+.wrap{padding:22px;max-width:1000px;margin:0 auto}
+h2{font-size:.75rem;letter-spacing:.14em;color:var(--gold);margin:22px 0 10px}
+.q{display:block;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:6px 0;font-size:.75rem;color:var(--ink)}
+.q:hover{border-color:var(--accent)}
+.q small{color:var(--mut);display:block;margin-top:2px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:10px 0;cursor:pointer}
+.card .t{font-weight:bold;font-size:.82rem;margin-bottom:4px}
+.card .n{font-size:.72rem;color:var(--mut);line-height:1.45}
+.card pre{display:none;white-space:pre-wrap;font-size:.7rem;color:#b8b8c0;background:#0d0d10;border:1px solid #1c1c22;border-radius:8px;padding:10px;max-height:380px;overflow:auto;margin-top:8px}
+.card.open pre{display:block}
+</style></head><body>
+<header><h1>DECK — Rocinante</h1><div><a href="/static/decks.html">← all decks</a></div></header>
+<div class="wrap">
+<h2>INVARIANT HUNT — click to arm on X (live)</h2>
+<a class="q" href="https://x.com/search?q=%22turns%20out%22%20%28min_faves%3A200%29&f=live" target="_blank">"turns out" (min_faves:200)<small>arms on X — live search</small></a><a class="q" href="https://x.com/search?q=%22the%20fix%20was%22%20OR%20%22root%20cause%20was%22%20%28min_faves%3A100%29&f=live" target="_blank">"the fix was" OR "root cause was" (min_faves:100)<small>arms on X — live search</small></a><a class="q" href="https://x.com/search?q=%22we%20measured%22%20OR%20%22we%20proved%22%20OR%20%22we%20benchmarked%22%20%28min_faves%3A100%29&f=live" target="_blank">"we measured" OR "we proved" OR "we benchmarked" (min_faves:100)<small>arms on X — live search</small></a><a class="q" href="https://x.com/search?q=%22anti-pattern%22%20OR%20gotcha%20OR%20%22footgun%22%20%28min_faves%3A100%29&f=live" target="_blank">"anti-pattern" OR gotcha OR "footgun" (min_faves:100)<small>arms on X — live search</small></a><a class="q" href="https://x.com/search?q=%22after%2010%20years%22%20OR%20%22lessons%20learned%22%20%28min_faves%3A300%29&f=live" target="_blank">"after 10 years" OR "lessons learned" (min_faves:300)<small>arms on X — live search</small></a><a class="q" href="https://x.com/search?q=%28MLX%20OR%20%22mac%20studio%22%20OR%20ollama%29%20%28%22turns%20out%22%20OR%20measured%29&f=live" target="_blank">(MLX OR "mac studio" OR ollama) ("turns out" OR measured)<small>arms on X — live search</small></a><a class="q" href="https://x.com/search?q=%28%22local%20llm%22%29%20invariant&f=live" target="_blank">("local llm") invariant<small>arms on X — live search</small></a>
+<h2>CARDS ON THIS DECK (13)</h2>
+<div class="card" data-text="# INTAKE CARD — ANTIREZ: GLM 5.3 vs DeepSeek v4 Flash LOCAL QUANT BENCHMARK (Grok batch 10/10, 2026-09-04)
+
+## ITEM (verbatim root, fetched via fxtwitter 200 OK)
+@antirez, Sep 03 2026 22:11Z, note-length: &quot;I ran an extensive benchmark against DeepSeek
+v4 Flash and GLM 5.3 Flash Q2, Q4 and mixed quants. Those are the results obtained. Mix of
+(hard-ish) benchmarks on cybersecurity, math, QA, ...&quot;
+Stats: 8,286 views / 12 replies / 6 RT / 104 likes / 22 bookmarks.
+
+## INGEST — the benchmark table (image read directly: HRUxWFPbIAApoLU, terminal screenshot)
+| model | 4K greedy baseline | combined after reruns |
+|---|---|---|
+| DeepSeek 0731 Q2 | 7/12 | 10/12 strict, 11/12 semantically |
+| DeepSeek 0731 mixed Q2/Q4 | 7/12 | 8/12 |
+| Vision Experimental Q2 | 6/12 | 9/12 |
+| Vision Experimental mixed Q2/Q4 | 7/12 | 10/12 |
+| GLM 5.3 Q2 | 8/12 | 9/12 |
+| GLM 5.3 Q4, two-Mac TP | 8/12 | 10/12 |
+His caption: recovery totals (winning 4K cases not rerun); overall completion 43/72 →
+56/72 strict, 57/72 counting DeepSeek Q2's mathematically-right/wrongly-formatted answer;
+&quot;GLM Q2's greedy 16K run scored 10/12 versus 9/12 using normal sampling&quot;; remaining
+failures = &quot;long Olympiad proofs that identify promising or correct results but never
+emit a final answer.&quot;
+
+## THREAD (Amendment 2, web_reader through the wall)
+- @XadenRyan: evals nice, but &quot;how much did it stay on task — smaller models spray crap
+  all over the codebase&quot; → the missing axis is out-of-answer damage. (379 views)
+- @ivanfioravanti: &quot;I bet Qwen 3.8 Flash Next will be lower.&quot; (744 views)
+- No community note. Author's second sentence is in the image caption itself (greedy vs
+  sampling tradeoff) — he attacks his own numbers before the thread does.
+
+## MAP
+- ROCINANTE DOCK (watch/ROCINANTE_PREP_20260903.md): &quot;GLM 5.3 Q4, two-Mac TP&quot; is a named
+  person already running the fleet's future substrate class (Mac cluster, tensor parallel)
+  on the fleet's workhorse model family. Day-one receipt, not speculation.
+- GLM53FLASH_RESEARCH_20260901 + ECONOMIST_53FLASH_HOSTING_VERDICT_20260901 (antirez
+  already cited once in corpus — author known, this content new). Quant-sizing data feeds
+  the local-quant decision table (Q2 usable-at-9/12 vs Q4 10/12 on 512G-class memory).
+- Converges with SWARM_SCALE_PLAN's output-envelope discipline: his &quot;never emits a final
+  answer&quot; failure mode and Ryan's &quot;spray&quot; complaint are the completeness/discipline axes
+  the flight recorder already encodes.
+
+## [SOCRATIC] assumption attacked: &quot;a 12-task self-run table is just vibes&quot; — attacked by
+reading the image (methodology is unusually honest: reruns, strict/semantic split, greedy
+vs sampling disclosed, failure modes named). Instrument: image read + thread fetch.
+What survives: directional quant-ranking value, not a general leaderboard.
+
+## ASSERT (steel-man)
+Locally quantized GLM 5.3 and DeepSeek v4 Flash are both usable on hard mixed benchmarks
+at Q2–Q4, with GLM 5.3 Q4 (two-Mac tensor parallel) at 10/12 and DeepSeek Q2 the semantic
+leader at 11/12 — long proofs fail by non-termination, not by wrong direction.
+
+## ATTACK
+1. n=12, self-curated tasks, no latency/tok-s, &quot;recovery totals&quot; mix runs across settings
+   — ranking noise is high (evidence: his own 8/12→10/12 swings from reruns alone).
+2. Quant-conditional and hardware-conditional (two-Mac TP config not fully specified in
+   root) — not replicable from the post alone (image lacks mem/context-length rows).
+3. Ryan's reply names the missing axis: no out-of-answer damage metric (spray/task-hygiene).
+Survives as directional because the author is high-signal, methodology-transparent, and
+self-attacking — but &quot;GLM beats/loses to DeepSeek&quot; as a general claim stays out of reach.
+
+## MEASURE ($0, run)
+Table read directly from the image bytes; thread fetched; author existence/credibility
+cross-checked (ECONOMIST_53FLASH_HOSTING_VERDICT already cites him). Kill condition for
+the directional claim: our Oct 27 probe runs a 12-task hard mix, GLM 5.3 Q4 TP vs Q2
+single-Mac; if Q2-single ≥ Q4-TP score, the &quot;two-Mac TP matters&quot; reading is dead.
+
+## SCORE — F:5 P:4 C:5 W:4 N:4 = **22/25 → BUILD NOW**
+
+## TRI-STATE
+- The table is antirez's honest self-run result — **Supported** (image read; methodology
+  disclosed; author credibility on file).
+- GLM 5.3 Q4 two-Mac TP 10/12 / DeepSeek 0731 Q2 10/12 strict 11/12 semantic —
+  **Supported as his numbers**, **Unproven** as general ranking (n=12, self-curated).
+- Greedy 16K beats sampling for GLM Q2 — **Unproven** (single setting, no variance).
+- Quantized-frontier-on-Mac-cluster is practically usable — **Supported-directional**
+  (his completion rates + the fleet's own weights plan), falsifiable Oct 27.
+
+## VERDICT — **BUILD** (small, $0, today)
+File the table into the GLM/Rocinante corpus as probe-target evidence; add the two-Mac TP
+receipt to ROCINANTE_PREP; add &quot;out-of-answer damage / stays-on-task&quot; as a scored axis in
+the next gauntlet design (Ryan's reply is the receipt the axis is externally demanded).
+TWO COUNTERS: FORBIDS citing &quot;GLM 5.3 Q4 > DeepSeek v4&quot; as settled model selection from
+this table. PAID RENT: one day-one probe protocol + one gauntlet axis, both pinned.
+
+## THE CROP
+Latency and tok/s were not benchmarked (completeness only); the exact TP topology and
+memory footprint sit below the fold; a different-mind contest (Economist chair) should
+re-derive what n=12 can and cannot support before this enters any LOCKED order.
+
+## FILED — watch/INTAKE_ANTIREZ_GLM_QUANT_20260904.md + room thread &quot;intake&quot;
+"><div class="t">Antirez Glm Quant</div><div class="n">@antirez, Sep 03 2026 22:11Z, note-length: "I ran an extensive benchmark against DeepSeek</div><pre></pre></div><div class="card" data-text="# INTAKE CARD — @polynoamial &quot;GPT-6 ASTRA / SCIENTIFIC DISCOVERY&quot; + openai/PrimeGaps186 (2026-09-04)
+
+## ITEM
+Operator tasking (verbatim): https://x.com/polynoamial/status/2095583211950833768?s=20 —
+X post by &quot;polynoamial&quot; (Noam Brown — Libratus/Cicero game-theory/AI-reasoning
+researcher). High-attention flag: primary-source researcher; full socratic depth.
+Root post (@polynoamial, Sep 3 2026, 18:42 UTC, 120.8K views): &quot;Of all the use cases
+for GPT-6 Astra, I'm most excited for scientific discovery. We at @OpenAI have not
+pushed it to its limits on math and science. I look forward to waking up every
+morning and seeing what new scientific breakthrough someone has made with this
+model!&quot; — a FORWARD-LOOKING HYPE FRAME, zero claims in the root. The load-bearing
+payload rode the reply layer: @scaling01 (Sep 4): &quot;New OpenAI repo with a Lean
+formalization by GPT-6-Astra proves that there are infinitely many pairs of
+consecutive primes whose distance is at most 186 — github.com/openai/PrimeGa…&quot;
+(with screenshot). Amplifier: @weijie444 &quot;GPT-6 Astra has pushed the prime gap to
+186, with Lean formalization!&quot; Plus an OpenAI blog (&quot;Ten advances in mathematics
+and theoretical computer science&quot;), companion repo openai/ten-proofs, and paper
+&quot;Improved short gaps between primes&quot; (Aug 30 2026, cdn.openai.com).
+
+[SOCRATIC] Assumption attacked: &quot;a frontier researcher's hype post about new math is
+either (a) breakthrough news or (b) marketing — score it and file it.&quot; Instrument:
+$0 primary-source reads — repo README fetched whole, search triangulation. What
+survives: a real, self-honest, machine-checked CONDITIONAL result on a 12-year-stale
+record. What dies: the tweet-level verb &quot;proves ... at most 186&quot; (the artifact
+itself says conditional), and any clean &quot;by GPT-6 Astra&quot; attribution from the
+primary artifact (repo carries ZERO attribution of any kind).
+
+## RECEIPTS (consult-first, this turn)
+- Root post fetched whole via web_reader (X wall did NOT block the root): text,
+  timestamp, 120.8K views captured. THREAD REPLY LAYER PARTIALLY WALLED: web_reader
+  returned root + truncated conversation; WebFetch on the status URL timed out
+  (60s). scaling01 reply contents Supported via search-snippet mirror + Facebook
+  mirror (xixidu post) — quote layer (RTs/quotes) UNSEEN.
+- **FALSIFIER RUN (MEASURE step, $0): WebFetch github.com/openai/PrimeGaps186.**
+  Primary-source receipt, whole README read:
+  - Title: &quot;Conditional Lean formalization and numerical certificate for prime
+    gaps at most 186.&quot; Target: liminf (p_{n+1} − p_n) ≤ 186 via DHL[40,2] applied
+    to an admissible tuple of diameter 186. Apache-2.0, openai org, single
+    undated commit, Lean 4.34.0-rc2 / Mathlib pinned.
+  - THREE CONDITIONAL HYPOTHESES as Lean axioms (namespace PrimeGap186):
+    (1) kloosterman3_bound: |Kl₃(c;p)| ≤ 3 — README says it &quot;follows from
+        Deligne's theorem&quot; via Katz 1988 (literature-backed, formalization debt);
+    (2) kloosterman2_correlation_bound ≤ 8p√p — citing Fouvry–Kowalski–Michel
+        2013 (literature-backed, formalization debt);
+    (3) physical_integral_bounds: 104 outer + 45 inner numerical upper bounds
+        + 3 cap bounds, backed by a Python certificate.
+  - Axiom whitelist = the 3 project axioms + propext + Quot.sound +
+    Classical.choice; README verbatim: this &quot;verifies conditional proofs, not the
+    inputs themselves,&quot; and the Python certificate &quot;does not discharge any Lean
+    axiom.&quot;
+  - **NO ATTRIBUTION OF ANY KIND** — no &quot;GPT-6 Astra,&quot; no human names, no author
+    section; credit only to cited literature. README does NOT mention the prior
+    record of 246.
+- WebSearch sweep: repo named correctly as openai/PrimeGaps186 (&quot;Conditional Lean
+  formalization...&quot;); Unite.ai coverage (&quot;two new results on the gaps between
+  prime numbers: a bound of 186...&quot;); r/mathematics thread (&quot;Lean is absolute...
+  it's a proof checker&quot;); AxiomMath/PrimeGapsLib companion. openai.com blog
+  fetch → **403 bot wall**; blog content known via search snippets only.
+- Prior-world context (outside-corpus knowledge, tri-stated below): previous
+  unconditional record = 246 (Polymath8b, 2014, Maynard sieving); &quot;consecutive
+  primes&quot; phrasing is strength-equivalent to prime-pair bounded gaps.
+- Tooling check: no elan/lake on the host — the compile falsifier is NOT
+  executable from this seat today; written cold for the next seat (below).
+
+## SCORE — F:4 P:2 C:5 W:4 N:3 = **18/25 → BUILD WINDOWED band** (verb: CALIBRATE — see READ)
+
+## READ (the honest why)
+The root post alone scores REMEMBER-grade (hype frame, no claim); the reply-layer
+artifact scores doctrine-calibration-grade — which is why &quot;do not score from the
+root post alone&quot; is the whole game on this item (threads-are-signal, third
+deployment). FIT 4: four live consumers — test-time-compute doctrine (frontier
+inference compute → new-math artifact, externally validated), the standing WHALE
+comparison order (&quot;reasoning-scaling claims get compared against it&quot; — this one
+RHYMES with WHALE rather than contradicting: the artifact's real structure is
+composition — two cited-theorem inputs + one numerical-certificate input +
+machine-checked reduction — i.e. a HARNESS story wearing a weights story, exactly
+the interleaving lesson), the receipts law (gains a new named nuance: RECEIPTS
+HAVE HYPOTHESES — a Lean receipt receipts the reduction, not the theorem; unscoped
+receipt-claiming lies by implication — same shape as the vast-arc &quot;gate-pass ≠
+alive&quot; wedge, now seen at frontier scale), and the method-post / Sep-20 arc
+(strongest external exhibit to date that receipt-first verification is how the
+frontier itself ships math). PULL 2: it pulls doctrine rows and an exhibit row,
+zero machinery — per intake genre rules, math items BUILD only with &quot;wireable
+transform + owed consumer,&quot; and no fleet organ consumes a number-theory repo.
+COST 5: consume was $0, everything downstream is $0. WINDOW 4: announcement wave
+is live now; expert scrutiny of hypothesis (3)'s 104+45 numerics — the only input
+that is genuinely NEW rather than cited — lands in days-to-weeks and will promote
+or kill the strong reading; method-post freshness date-gates the exhibit row.
+NOVELTY 3: &quot;conditional frontier math with Lean receipts&quot; and the
+receipts-have-hypotheses law are new to corpus; &quot;test-time compute buys
+capability&quot; is a re-find (repetition is emphasis — the doctrine predicted this
+and the prediction paid). Band says WINDOWED, verb says CALIBRATE: the buildable
+artifact here is doctrine text, not machinery.
+
+## DOGFOOD
+1. **INVARIANT PASS**: receipts-over-claims honored — scored the ARTIFACT (repo
+   README), not the tweet; falsifier ran BEFORE scoring. Tri-state per claim.
+   Custody clean (all public content). Test-time-compute doctrine: externally
+   validated AND sharpened. Two counters — **FORBIDS**: (1) repeating &quot;GPT-6
+   Astra proved prime gaps ≤ 186&quot; in ANY fleet output without the word
+   &quot;conditional&quot; (scope-collapse propagation — the exact lie the social layer is
+   already telling); (2) reading this as evidence the fleet should chase
+   frontier-math benchmarks (wrong lane; our edge is orchestration + receipts +
+   cost, not frontier search depth). **PAID RENT**: the receipts-scope law named
+   and filed; threads-are-signal paid a third time; the in-context researcher
+   reading changed the score materially (root-only would have been a 6/25
+   REMEMBER).
+2. **STOCKFISH PASS**: placement = **DOCTRINE opcode** (test-time-compute doctrine
+   row + receipts-law amendment + WHALE comparison ledger row) + **public-arc
+   exhibit row** (windowed on operator GO for the method post). Consumers were
+   standing organs before this card — placement succeeds. Failure mode avoided:
+   filing as &quot;cool math news&quot; with no consumer, or over-building a Lean pipeline
+   nobody owes.
+
+## TRI-STATE
+- Brown's root post text/date/views — **Supported** (fetched whole this turn).
+- openai/PrimeGaps186 exists, Apache-2.0, is a CONDITIONAL Lean 4 formalization
+  of liminf consecutive-prime-gap ≤ 186 via DHL[40,2], conditional on the three
+  named axioms (kloosterman3_bound / kloosterman2_correlation_bound /
+  physical_integral_bounds), with a 6-axiom whitelist and a Python certificate
+  that discharges nothing — **Supported** (README fetched whole this turn).
+- &quot;GPT-6 Astra PROVES infinitely many consecutive prime pairs at distance ≤ 186&quot;
+  (scaling01/weijie444 framing) — **Disputed AS WORDED** (the primary artifact
+  itself says conditional and &quot;verifies conditional proofs, not the inputs&quot;);
+  the conditional reduction — **Supported**.
+- 186 improves the standing unconditional record of 246 — **Supported as
+  world-knowledge** (Polymath8b 2014; not stated in the README, which is itself
+  a small flag), **Unproven as a delivered unconditional result** until the
+  three inputs are discharged.
+- &quot;By GPT-6 Astra&quot; (attribution) — **Unproven**: the repo carries no attribution
+  of any kind; OpenAI's blog 403'd this pass (search snippets only); the
+  human-vs-model credit split is unread (the cdn.openai.com PDF is the place it
+  would live).
+- Hypotheses (1)-(2) being literature consequences (Deligne via Katz 1988;
+  Fouvry–Kowalski–Michel 2013) — **Supported as claimed-by-README**; the
+  literature itself unverified this pass (formalization debt, not conjecture,
+  per README's own framing).
+- Hypothesis (3)'s 104+45 numerical bounds — **Unproven** (Python certificate
+  recomputes but does not discharge; no independent check found this pass).
+- KILL CONDITIONS, executable cold by the next seat: (a) `lake build` on
+  openai/PrimeGaps186 (Mathlib 4.34.0-rc2 pin) + `#print axioms
+  primeGapLiminf_le_186` must list EXACTLY the 3+3 axioms — anything else =
+  Disputed; (b) fetch the cdn.openai.com PDF — if OpenAI's own text claims an
+  UNCONDITIONAL proof or the credit split says &quot;autonomous,&quot; upgrade the
+  attribution tri-state; if it says conditional-with-human-mathematicians, the
+  calibration reading stands; (c) watch expert number-theory response to the
+  104+45 integral bounds (fastest promotion/kill path — if any bound fails
+  independent re-verification, the 186 claim dies to 246).
+
+## VERDICT
+**CALIBRATE** (18/25, BUILD WINDOWED band — verb CALIBRATE per genre rule: no
+wireable transform, no owed consumer, and the only buildable artifact is
+doctrine text). Three wires, all text, all $0: (1) test-time-compute doctrine
+gains the row &quot;frontier test-time compute now ships conditional-new-math with
+machine-checked receipts — capability validated, scope always read the
+conditional&quot;; (2) receipts law gains the amendment RECEIPTS HAVE HYPOTHESES
+(a scoped receipt receipts the reduction; unscoped restatement lies by
+implication — gate-pass-≠-alive at frontier scale, folded as emphasis); (3)
+WHALE comparison ledger gains the row: reasoning-scaling claim examined, found
+to be composition (2 cited theorems + numerics + checked reduction) —
+interleaving lesson re-confirmed from the frontier side, no contradiction. Plus
+one exhibit row for the method post, windowed on operator GO.
+
+## ROUTE
+Card filed here; typed room row appended this turn; memory-index row for the
+main seat's fold (doctrine rows land via the standing test-time-compute +
+receipts files, no driver interrupt, no campaign lane touched). Exhibit row
+held until the operator rules on method-post inclusion. The three kill
+conditions route to any Lean-capable or fetch-capable free-lane seat — (a) is
+minutes of machine time once elan exists on the hands box.
+
+## THE CROP
+Not seen this pass: the Lean never compiled here (no elan/lake on host; axiom
+whitelist read from README prose, not `#print axioms` output); the
+cdn.openai.com pa"><div class="t">Brown Gpt6 Primegaps186</div><div class="n">Operator tasking (verbatim): https://x.com/polynoamial/status/2095583211950833768?s=20 —</div><pre></pre></div><div class="card" data-text="# INTAKE CARD — DIMASHVETS: UZU 105 tok/s ON M5 MAX (founder announcement) (Grok batch 2/10, 2026-09-04)
+
+## ITEM (verbatim root, fxtwitter 200 OK)
+@dimashvets (Dima Shvets), Sep 03 2026 15:25Z: &quot;We're releasing speculative decoding in our
+inference engine Uzu, starting with Qwen3.6-27B. On Apple M5 Max with 128 GB of unified
+memory, our Mirai-M stack reaches 105 output tokens/sec entirely on-device - 2.9x faster
+than the fastest MLX speculative-decoding implementation we benchmarked. The result comes
+from full-stack co-design: DFlash + our Weaver model, tree-based speculative decoding,
+Mirai quantization, our verification algorithm, and Metal kernels optimized for Apple
+silicon. ... 105 t/s is the evidence, full-stack integration is the moat. But tokens/sec
+are not actually the metric we ultimately care about. More on that soon.&quot;
+Stats: 126,730 views / 18 replies / 15 RT / 117 likes / 131 bookmarks (bookmarks > likes,
+second time on this release — latent demand census repeats).
+
+## INGEST — the chart (image read directly: HRTQ6hAboAA-_5A)
+Qwen3.6-27B output tok/s, Apple M5 Max 128 GB: uzu+specdec **105** · MTPLX (MLX specdec)
+**55** (&quot;1.9x faster&quot;) · llama.cpp+specdec **30** (&quot;3.5x&quot;) · MLX plain **26** (&quot;4x&quot;).
+Vendor-self-published bar chart.
+
+## THREAD (Amendment 2, web_reader through the wall)
+- @dimashvets self-reply (9h later, 1.4K likes): &quot;Run the model ... Mirai-M ... 105 tok/s
+  specdec on M5 Max — 14.5 GB, 27B parameters. Install with one command.&quot;
+- @artuskg: &quot;(Q)wen 3.8 27B? Asking for a M4 owner.&quot; (578 views) — the M5-gating question,
+  asked by the market, UNANSWERED by the vendor. Same open question the uzu card filed.
+- No community note.
+
+## MAP
+- RE-FIND, filed honestly: this is the SAME release as watch/INTAKE_UZU_SPECDEC_20260903
+  (20/25 BUILD NOW → Rocinante prep) — repetition is emphasis, scored as a re-find (N:2).
+  What is NEW: the founder pinning a CONCRETE falsifiable number (105 t/s, M5 Max 128GB,
+  14.5GB Mirai-M 4-bit) where the uzu card had to work from an implied range (~110-125),
+  plus named stack internals (DFlash + Weaver, tree specdec, Mirai quants).
+- The chart's MTPLX baseline (55) vs the community's r/LocalLLaMA 63: vendor baseline
+  reads low — makes the &quot;2.9x&quot; headline bigger than a 63-baseline would. Noted in attack.
+- Lands in ROCINANTE_PREP_20260903.md: probe target sharpens from &quot;beat ~63, approach
+  ~110-125&quot; to &quot;beat ~63 community MTPLX; vendor pins 105.&quot;
+
+## [SOCRATIC] assumption attacked: &quot;two vendor posts = stronger proof&quot; — attacked by
+reading the chart bytes instead of the headlines. Instrument: image read + baseline
+cross-check. What survives: a sharper falsifiable target; the proof obligation is
+unchanged (still $0 vendor claims until Oct 27).
+
+## ASSERT
+Uzu's full-stack co-design (DFlash draft + Weaver + tree specdec + Mirai quants + Metal
+kernels) makes on-device Qwen3.6-27B run at 105 output tok/s on M5 Max 128GB — ~2x the
+best alternative MLX speculative-decoding stack.
+
+## ATTACK
+1. Vendor-measured, vendor-published baselines: chart MTPLX=55 vs community-measured 63
+   (r/LocalLLaMA, cited in the uzu card) — baseline selection inflates the multiple;
+   against 63 the same absolute number is 1.67x, not 1.9x.
+2. No protocol in the post: prompt classes, context length, accept-rate, and quant of the
+   MTPLX baseline undisclosed — not replicable from the bytes (metrics page is the
+   protocol to replicate, per the uzu card).
+3. The M4 question from the thread is unanswered — M5-gating of the spec-decode boost
+   remains open, and we cannot buy an M5 Max to disprove it before Oct 27.
+
+## MEASURE ($0, run)
+Chart + thread read this turn (image bytes, fxtwitter JSON, web_reader). Probe target
+UPDATE filed to Rocinante prep: day-one protocol stays the uzu card's (tok/s, TTFT,
+memory, same quant, three prompt classes), target now: beat 63 (community MTPLX), check
+against 105 (vendor). Kill condition: our M5 Ultra run < 90 t/s on Mirai-M 4-bit → the
+co-design claim is M5-Max-flattered or non-portable; < 63 → dead.
+
+## SCORE — F:4 P:4 C:5 W:3 N:2 = **18/25 → BUILD, WINDOWED** (Rocinante lane)
+
+## TRI-STATE
+- Release + 105 t/s claim + stack names — **Supported as the vendor's pinned claim**
+  (root + chart + self-reply all consistent, two fetches); **Unproven as performance**
+  (no independent M5 number exists; only M4-plain data so far).
+- 14.5GB Mirai-M 4-bit memory footprint — **Unproven** (vendor self-reply).
+- MTPLX=55 baseline — **Disputed as representative** (community 63 measured independently).
+- Bookmarks>likes demand shape — **Supported** (126.7K views, 131 bm / 117 likes).
+
+## VERDICT — **BUILD** (windowed): update the Oct 27 probe card with the pinned targets
+(105 vendor / 63 community floor; 14.5GB footprint row) inside ROCINANTE_PREP; nothing
+runs before hardware. No new wire — the uzu card's wire already covers this lane.
+TWO COUNTERS: FORBIDS quoting &quot;2.9x&quot; without the baseline dispute attached. PAID RENT:
+replaced an implied target range with one falsifiable number + a footprint row.
+
+## THE CROP
+Qwen3.8-27B and Muse Glimmer support not probed this pass; the metrics-page protocol not
+re-fetched (uzu card holds it); the 17 other replies unread. The Economist chair should
+price the Mirai-quant lock-in against the GGUF fleet standard before engine selection
+freezes.
+
+## FILED — watch/INTAKE_DIMASHVETS_UZU_M5_20260904.md + room thread &quot;intake&quot;
+"><div class="t">Dimashvets Uzu M5</div><div class="n">@dimashvets (Dima Shvets), Sep 03 2026 15:25Z: "We're releasing speculative decoding in our</div><pre></pre></div><div class="card" data-text="# INTAKE CARD — HXIAO: 16-HOUR ZERO-STEERING LOCAL AGENT LOOP (Grok batch 3/10, 2026-09-04)
+
+## ITEM (verbatim root — fxtwitter 200 OK, note tweet, 3,979 chars)
+@hxiao (Han Xiao), Sep 03 2026 20:25Z: &quot;Sharing two long-horizon sessions on pi +
+self-hosted models. first: 16 hours long, zero steering, 99 laps. I used pi + local models
+to port our upcoming Jina model from bf16 PyTorch into MLX+MTP quants (model J in the
+sequel). The local model is qwen3.8-flash-next-omlx-q4 from @jundotkim, running at the full
+262K context window. I have only 2 plugins on pi: no /goal command — the first user msg is
+the goal; pi-vcc for context compaction (drop-in replacement, vcc_search/vcc_recall as
+memory recall tool); web read/search via jina-mcp; search_corpus vector search on a local
+data room ... The whole setup runs on an M3 Ultra 512G ... peak memory ~150GB ... they
+rarely compete at the flops level ... Takes: first lap 3.6h fully autonomous ... '2026
+open-weight models are seriously trained for long-horizon tasks, not just a marketing
+term' ... bash dominated every other tool — qwen3.8 does everything via bash including
+edit/search/read/write ... web search was almost never called, despite every nudge.&quot;
+Stats: 788 views / 2 replies / 8 likes / 10 bookmarks (bm > likes on a small post =
+practitioner demand, same shape as the uzu census).
+
+## THREAD (Amendment 2)
+2 replies (unread — thin thread, root is the full artifact; noted in crop). No community
+note. The author is Jina AI's founder — the post is also a product-adjacent demo, which is
+the bias to price in.
+
+## MAP
+- ROCINANTE PREP (watch/ROCINANTE_PREP_20260903.md): M3 Ultra 512G is one generation off
+  the 4x M5 Ultra buy. Peak ~150GB with two local models resident + &quot;they rarely compete&quot;
+  is a memory-bandwidth/flops interleaving datum for day-one sizing. MLX+MTP quant porting
+  pattern = the horse's first-job candidate list (uzu lane, QLoRA Stage 5).
+- RIB_COMPACTION_DOC_20260831: pi-vcc IS our compaction doctrine independently re-found —
+  algorithmic compaction + search/recall = the RIB fold + memory recall pair. Two lanes,
+  same organ: signal.
+- Long-horizon loop shape (first-msg-is-goal, nudge cadence, swimlane telemetry) maps onto
+  overnight_churn / night cadence lanes.
+
+## [SOCRATIC] assumption attacked: &quot;vendor CEO demo = marketing inflation&quot; — attacked by
+probing the named tooling instead of the narrative. Instrument: $0 GitHub/registry probes.
+What survives: tooling real, claim still self-reported.
+
+## ASSERT
+A minimal-toolset local agent loop (one goal message, algorithmic context compaction with
+search/recall, bash-dominant tool use) sustains 16-hour autonomous sessions at 262K
+context on a 512G Mac — long-horizon reliability is now a local-substrate property, not a
+cloud property.
+
+## ATTACK
+1. Self-reported single-case: one task (bf16→MLX+MTP port), one operator, screenshots not
+   logs — the 16h/99-lap number has no artifact (evidence: root only).
+2. Survivor/selection bias: he shares the session that worked; a 9h lap on &quot;another task&quot;
+   is mentioned in passing — base rate invisible.
+3. &quot;Zero steering&quot; is softened by his own text: a &quot;do better&quot; nudge fired after every lap —
+   the loop was nudged 98 times; zero-steering is framing.
+4. Vendor interest: the ported model is Jina's own upcoming release — demo serves launch.
+
+## MEASURE ($0, run)
+- pi-vcc exists: **Supported** — sting8k/pi-vcc, npm @sting8k/pi-vcc, &quot;algorithmic
+  conversation compactor for Pi. No LLM calls&quot;, inspired by lllyasviel's VCC; ecosystem
+  exists (pi-blackhole, pi-context-tools, r/PiCodingAgent comparisons). Probed this turn.
+- pi agent exists: badlogic/pi-mono resolves (301→repo). Han Xiao's GitHub: 200.
+- Kill condition for the long-horizon claim: run our own overnight_churn with
+  first-msg-goal + no mid-loop steering for one night window; if the loop stalls without
+  per-lap nudges, the &quot;no /goal plugin needed&quot; reading is dead on our stack.
+
+## SCORE — F:5 P:4 C:5 W:3 N:4 = **21/25 → BUILD NOW**
+
+## TRI-STATE
+- pi + pi-vcc tooling real and public — **Supported** (GitHub/npm probes, this turn).
+- 16h/99-lap session happened as described — **Unproven** (self-reported, no logs).
+- qwen3.8-flash-next long-horizon capability claim — **Unproven** (single case, vendor-
+  adjacent author), directional.
+- M-series Ultra concurrency datum (two local models, ~150GB, no flops contention) —
+  **Unproven**, falsifiable day one on Rocinante.
+- Algorithmic-compaction organ converges with RIB doctrine — **Supported** (both docs).
+
+## VERDICT — **BUILD** (small, $0)
+File as a Rocinante day-one pattern: minimal plugins, pi-vcc-style ALGORITHMIC compaction
++ search/recall as the recall organ, bash-dominance as a steering/measurement expectation,
+swimlane-style telemetry. Add one convergence line to RIB_COMPACTION_DOC citing the
+independent re-find (VCC lineage). No new code; pattern rows only.
+TWO COUNTERS: FORBIDS importing &quot;zero steering&quot; as a fleet claim — our loops keep the
+nudge cadence until the kill-condition test says otherwise. PAID RENT: one Rocinante
+pattern row + one RIB convergence receipt, both pinned to named files.
+
+## THE CROP
+The second session (&quot;model J sequel&quot;) not ingested; 2 replies unread; the swimlane image
+not analyzed; jundotkim's qwen3.8-flash-next-omlx-q4 weights not probed. Different-mind
+contest: the maze-keeper chair should judge whether VCC-style algorithmic compaction fits
+the Stage 5 brain's context diet.
+
+## FILED — watch/INTAKE_HXIAO_PI_LOCAL_LONGHORIZON_20260904.md + room thread &quot;intake&quot;
+"><div class="t">Hxiao Pi Local Longhorizon</div><div class="n">@hxiao (Han Xiao), Sep 03 2026 20:25Z: "Sharing two long-horizon sessions on pi +</div><pre></pre></div><div class="card" data-text="# INTAKE — Invent a Dataset (Adaption Labs launch post)
+
+Date: 2026-09-03 | Lane: intake/eval | Evaluator: zcode intake sub-agent
+
+## ITEM
+https://x.com/adaption_ai/status/2095481937053823202 — product launch post by
+adaption (@adaption_ai), 12:00 PM Sep 3 2026, with video:
+
+> &quot;Introducing Invent a Dataset. Describe the dataset you need. Get a structured,
+> training-ready dataset back. No existing data needed. Dataset creation used to
+> start with collection. Now it starts with specification.&quot;
+
+Engagement: 52K views, 24 replies, 68 reposts, 621 likes, 533 bookmarks.
+
+## RECEIPTS
+Fetched: web_reader on the X URL (full root text + visible replies), WebFetch
+cross-check, two web searches, adaptionlabs.ai/blog index (the announcement post
+itself 404'd on a guessed slug; banner on the live blog confirms the launch).
+- Replies (only 2 visible logged-out): author's own follow-up linking the
+  announcement blog; Ross (@RossAndAi) hype — &quot;Can't wait to see my imagination
+  come to life!!!&quot; NO community note, NO visible pushback in-thread. The
+  24-reply thread did not overturn or sharpen the claim (Unproven that deeper
+  replies contain criticism; logged-out view is all we can verify).
+- Sara Hooker (ex-Cohere) + Sudip Roy co-found; every blog post co-bylined by
+  them — SUPPORTED via adaptionlabs.ai directly. Hugo Larochelle is Scientific
+  Lead (Jul 2 2026 post) — SUPPORTED same way.
+- $50M seed (Fortune, Emergence Capital) — Unproven at primary level; surfaced
+  via search snippets citing Fortune, not fetched.
+- Prior art in the SAME company: Blueprint &quot;A Specification Layer for Adaptive
+  Data&quot; (Mar 17 2026), Forge docs→datasets (Apr 23), AutoScientist (May 13),
+  Together AI partnership (Apr 30). &quot;Invent a Dataset&quot; is the spec-layer
+  productized into intent→dataset generation.
+- Homepage sweep: all three product areas show &quot;Now onboarding&quot; or &quot;Join the
+  waitlist&quot; — pre-GA. No pricing, no benchmarks, no language list, no sample
+  data anywhere on the public surface. &quot;Gradient free and continual learning&quot;
+  is positioning, not a receipt.
+- Bookmarks (533) > likes (621) near parity — the operator's latent-demand
+  signal pattern (HF incident receipt-census precedent).
+- Off-thread context: synthetic-data criticism is a mature literature (Ada
+  Lovelace Institute &quot;Synthetic data, real harm&quot;; model-collapse work). None of
+  it appeared in-thread.
+
+## SCORE
+F:2 P:3 C:2 W:1 N:1 = 9/25 — CALIBRATE band.
+
+- FIT 2: the PRODUCT bolts onto nothing we run — hosted SaaS, new substrate,
+  and adoption would push fleet corpus off-loopback. The CONCEPT maps 1:1 onto
+  organs we already built (percolator self-play, trajectory-RIB compiler,
+  wings/explore mining, gate v2 substance check). Concept fits; product doesn't.
+- PULL 3: advances nothing operationally (QLoRA campaign needs OUR corpus food —
+  explore-228/wings, not foreign synthetic rows; training is Rocinante-gated
+  anyway). Real pull is Bernays-grade: a $50M-backed team led by an ex-Cohere
+  CEO declaring &quot;dataset creation now starts with specification&quot; is third-party
+  validation of the spec-first doctrine (RIB spec layer, covenant declared
+  futures, coverage thesis) — quotable ammo for the method post.
+- COST 2: filing it cost pennies (already spent). Trialing the product = billed
+  spend at unknown pricing + data egress. As intel, free; as tool, not free.
+- WINDOW 1: feeds no starved lane now. Our data lane is hungry for real tape
+  derivatives, which this cannot supply. Someday/reference shelf.
+- NOVELTY 1: intent→synthetic-dataset is a crowded category (Gretel, Mostly AI,
+  HF synthetic-data-toolkit, etc.) and the fleet already runs its own
+  home-grown version at $0. Famous names, not a new idea. Re-find with a
+  market-signal attached.
+
+## READ
+This is a launch post, not a finding. The honest read: it is a mirror, not a
+map. Every load-bearing claim (&quot;training-ready&quot;, &quot;no existing data needed&quot;) is
+vendor marketing with zero receipts in the post — and our own corpus already
+proved the failure mode this product flirts with: the hero's-journey intake
+found a 149-row training file template-thin (DISPUTED), and gate v2 exists
+because synthesized text skews boilerplate. Synthetic supply without a
+substance gate is how you train on your own echo. What the item IS good for:
+market validation. When Sara Hooker's team spends $50M and ships Blueprint →
+Invent a Dataset in six months, the &quot;specification-first data&quot; thesis stops
+being ours-alone — and the moat moves to exactly what we keep saying it is:
+discipline (receipts, coverage, gate v2), not secrecy. Bookmark-heavy engagement
+says practitioners are filing it the same way. Steal the sentence, not the SaaS.
+
+## TRI-STATE
+- Post text, date, engagement — SUPPORTED (two independent fetches agree).
+- Launch is real and live — SUPPORTED (blog banner + card link on X).
+- Hooker/Roy foundership, Larochelle role — SUPPORTED (vendor's own blog).
+- $50M seed — UNPROVEN (secondary source only; Fortune not fetched).
+- &quot;Structured, training-ready&quot; output quality — UNPROVEN (no benchmarks, no
+  sample data, no eval in post; marketing by default).
+- Deep replies contain substantive criticism — UNPROVEN (logged-out view shows
+  2 of 24; no note visible).
+- Synthetic-only datasets can train capable custom models — DISPUTED in the
+  literature (bias inheritance, model-collapse risk); undecidable from the post.
+
+## VERDICT
+CALIBRATE — 9/25 (REMEMBER-lean). No build, no trial, no wire. File as
+market-signal receipt: the industry just corroborated the spec-first/data-from-
+intent direction our percolator + RIB compiler + QLoRA campaign already occupy.
+Calibration note for gate v2: vendor &quot;training-ready&quot; claims get the same
+substance check we run on our own synthetic rows.
+
+## ROUTE
+No wire. Route: (1) this card = the record; (2) one-line citation available to
+the method-post draft and CAMPAIGN_SYNTHESIS context as third-party validation
+of spec-first data doctrine; (3) no engine bay, no lane, no queue row — nothing
+consumes a foreign SaaS data generator under loopback + receipts laws. If the
+operator wants the announcement post's body later, fetch
+adaptionlabs.ai blog → Invent a Dataset (live link on the blog index).
+"><div class="t">Invent A Dataset</div><div class="n">https://x.com/adaption_ai/status/2095481937053823202 — product launch post by</div><pre></pre></div><div class="card" data-text="# INTAKE CARD — KIMODO.CPP: TEXT-TO-MOTION, LOCAL, GGML (bookmarks batch 1, item 3, 2026-09-04)
+
+ITEM: x.com/Stefan_3D_AI/status/2091531753966240016 + parent 2091531702183350276 (2026-08-23, parent 105.9K views / 2,150 bookmarks). Claim (verbatim): &quot;kimodo.cpp is live. NVIDIA's Kimodo, the best AI animation model right now, running natively on CPU or Vulkan.&quot; + &quot;Type a sentence, get character animation, locally on your own machine.&quot; GGML/C++ port, GGUF weights, bundled local web demo, no PyTorch/CUDA; outputs SMPL-X, retargetable &quot;onto pretty much any skeleton... like Mixamo.&quot; Work credited @jichiep.
+
+INGEST: root AND parent fetched (Amendment 2 — the parent held the actual claim; the bookmarked root was just the repo links). 33 replies on parent, bodies walled. Harvest note said repo &quot;localai-org/ki&quot; — actual URL is localai-org/kimodo.cpp; harvest imprecision corrected here.
+
+[SOCRATIC] assumption attacked: that another motion repo is just a third data point in a lane we already carded. Instrument: novelty sweep vs watch/INTAKE_MOTION_BRICKS_GGML_20260904.md. What survives: NOT a duplicate — motion-bricks is keyframe-driven, Kimodo is TEXT-to-motion. Language→animation is precisely the WoW-rung organ; second arrival from the same builder inside one week is a convergence signal, not noise.
+
+MAP: Dungeon/maze product arc — mesh_gallery v0 went live TODAY (room row 2026-09-04T00:09:52Z: &quot;dungeon content pipeline live — drop glb, render in room aesthetic&quot;). The missing half of NPC animation is exactly motion-from-language. Same-builder convergence: @jichiep authored motion-bricks.cpp (carded 2026-09-04) AND depth-anything.cpp (item 5) AND kimodo.cpp — one builder, one C++/GGML lane, three organs. WoW rung 4 named in AGENTS.md arcs.
+
+ASSERT: A GGML/C++ text-to-motion model that runs on CPU/Vulkan closes the last hard gap between natural language and animated dungeon NPCs on local hardware.
+
+ATTACK: (1) LICENSE WALL — measured: the SMPL-X checkpoint (the flagship output the parent tweet demos) is NVIDIA internal R&D, NON-COMMERCIAL; only SOMA/G1 checkpoints carry the NVIDIA Open Model License (commercial-ok). Any build must pin an open checkpoint, not the demo one. (2) Port youth: 700 stars, 26 commits — generation speed/quality on CPU unmeasured; &quot;best AI animation model&quot; is the poster's superlative, not a benchmark (Disputed as marketing). (3) Glue unproven: SMPL-X/SOMA → Mixamo → our glb rigs retarget chain is exactly the kind of half-day plumbing that kills &quot;it just works.&quot; (4) 33 replies unread (walled) — bug reports likely live there.
+
+MEASURE ($0, RAN): github.com/localai-org/kimodo.cpp EXISTS (Apache-2.0 code, GGML submodule, CPU/Vulkan backends, HF GGUF download script); github.com/nv-tlabs/kimodo EXISTS (official NVIDIA implementation, Apache-2.0 code, 3.5k stars). Both license structures read from the repos directly.
+
+CORRECT: Tri-state — repos, licenses, architecture Supported (measured above); CPU real-time quality Unproven (no throughput number in thread or README capture); &quot;best AI animation model right now&quot; Disputed as a superlative (no benchmark cited). Verb: BUILD — routed to the driver: clone kimodo.cpp, pull an openly-licensed checkpoint (SOMA or G1, NOT SMPL-X), generate one text→motion clip, retarget to a glb rig, drop it into mesh_gallery v0. Free lane (CPU/Vulkan, $0), pure composition with an organ that landed today. Kill condition: if the open-licensed checkpoints produce unusable motion, or retarget to our rigs takes >1 session, park behind motion-bricks and take the keyframe path instead. THE CROP: reply section (walled) + actual generation throughput — a 3D-pipeline chair (mesh_baker lens) sits next.
+
+SCORE: F5 P5 C4 W4 N2 = 20/25 (BUILD NOW band; N2 because the lane was carded yesterday — the organ is new, the lane is a re-find with a delta)
+VERDICT: BUILD (driver-routed) + tri-state above
+DOGFOOD: room test ran in the dungeon's tongue: &quot;a sentence makes the skeleton walk&quot; — it composes; stockfish pass: opcode = motion-synthesis lane, first text→motion entry on the selector. Two counters: FORBIDS pulling the non-commercial SMPL-X checkpoint into any fleet pipeline; PAID RENT: the same-builder convergence now triangulates @jichiep's C++/GGML lane as the fleet's local-3D supply line (rent to the steal doctrine).
+FILED: watch/INTAKE_KIMODO_CPP_20260904.md + room row (kind: intake.card)
+"><div class="t">Kimodo Cpp</div><div class="n"></div><pre></pre></div><div class="card" data-text="# INTAKE CARD — MOTION-BRICKS.CPP: NVIDIA MOTION PRIOR ON GGML/CPU (item, 2026-09-04)
+
+## ITEM
+Operator flagged **!tesuji** (suspected skillful local move): https://x.com/jichiep/status/2095157236658315288?s=20
+Richard Palethorpe (@jichiep; LinkedIn richiejp), posted 2:29 PM Sep 2, 2026 — 53.4K
+views / 18 replies / 79 RT / 623 likes / **605 bookmarks** (bookmarks ≈ likes =
+latent-demand signal, same census shape as the uzu card). Verbatim claims:
+&quot;I put motion-bricks.cpp up on GitHub! It generates animations from key-frames
+in realtime using a tiny model that easily runs on a desktop CPU and Vulkan.
+There are still bugs to iron out and I'm thinking this can be combined with
+physical simulation and robotic control policies...&quot;
+Thread (fetched whole, not root-only): author reply links the repo
+(localai-org/motion-bricks.cpp, &quot;NVIDIA MotionBricks ported to GGML/C++&quot;, 37
+replies on that reply); author livestream replay &quot;MotionBricks to C++/GGML part
+2: it works?&quot;; reply from @miloashfog asking &quot;is there a connection between
+them?&quot; linking NVlabs/GR00T-WholeBodyControl — the answer is yes, and the
+connection IS the tesuji (see TESUJI ANALYSIS).
+
+## RECEIPTS (consult-first, this turn — thread + repo + upstream, all fetched)
+- Repo existence + mechanics **Supported**: github.com/localai-org/motion-bricks.cpp
+  fetched this turn — 101 stars, 8 forks, 7 commits, no releases yet. C++23/GGML
+  port &quot;for CPU and Vulkan inference, with a stable C ABI suitable for PureGo&quot;.
+  Full G1 pipeline end-to-end: GGUF loading → root/duration planning →
+  pose-token prediction → VQ decoding → feature conversion → style alignment →
+  animation output. Skeleton = Unitree G1's 34 joints (&quot;intended for games or
+  robotics&quot;). CPU and Vulkan paths claimed to match reference results (author
+  claim, source not read — Unproven).
+- Weights **Supported**: MotionBricks-G1-GGML on HF, GGUF F32, ~0.73 GB,
+  exactly 183,148,382 params, SHA-256-verified + pinned HF revision; loader
+  validates revision/tensor counts/joint topology. Arithmetic check PASSED:
+  183,148,382 × 4 bytes ≈ 0.73 GB — internally consistent.
+- Conversion path **Supported**: NVIDIA checkpoints (Git LFS in
+  NVlabs/GR00T-WholeBodyControl) → safetensors → convert_to_gguf.py +
+  convert_styles.py (15 style primitives, .mbstyle).
+- License **Supported**: source Apache-2.0; weights NVIDIA Open Model License
+  (commercial use with attribution + Trustworthy AI terms) — usable, not
+  unencumbered.
+- Upstream **Supported**: nvlabs.github.io/motionbricks (SIGGRAPH 2026 / ACM
+  TOG): 15,000 FPS / 2 ms latency / 350,000+ motion skills / one backbone;
+  BONES-SEED dataset (142K+ motions, ~288h production mocap); &quot;core organic
+  component of NVIDIA's GR00T Whole-Body Control&quot;; controls a real Unitree G1;
+  UE5 authoring &quot;with no animation graphs&quot;; zero-shot transfer claimed.
+  Note: 15K FPS is batched throughput, 2 ms is single-stream latency — headline
+  conflates them if quoted carelessly; both internally consistent.
+- &quot;Realtime on a desktop CPU&quot; **Unproven by us** — author claim + livestream
+  titled as a question; no independent FPS number exists on any desktop CPU in
+  this card. Kill condition written below.
+- Scope **Disputed as general**: README limitations — covers &quot;original
+  preprocessed G1 styles&quot; only; direct Kimodo GLB→.mbstyle conversion explicitly
+  deferred. This is not a general animation model today.
+- Author identity linkage (X @jichiep = the repo author) Supported via author's
+  own thread reply + same-author livestream; X→GitHub account mapping not
+  separately verified (not load-bearing). Why the port lives under localai-org:
+  **Unproven** (org affiliation story not traced).
+
+## SCORE — F:2 P:3 C:5 W:3 N:4 = **17/25 → BUILD WINDOWED**
+
+## READ (the honest why)
+FIT 2: no standing organ consumes skeletal animation today — room_game.html and
+maze_arena.html walkers are abstract fields, tale-re-encoder is text, the bay
+speaks GGUF for LLMs only. This is a new organ TYPE (motor prior), and the
+desk-GPU-history lesson (designed-but-never-wired) caps FIT for anything
+without a consumer. PULL 3: it touches three live arcs — the trajectory-as-token
+thesis (Trajectory-RIB compiler spec gets an external third-domain witness:
+NVIDIA packages motion trajectories as first-class latent tokens a tiny model
+generates), Rocinante Oct 27 (GGUF, 0.73GB F32, GGML/Metal family — this runs
+in the palm of an M5 Ultra), and the dungeon content pipeline (&quot;harvest = NPC
+minds&quot; was filed; this is the missing twin: NPC BODIES). Not on this week's
+critical path — the QLoRA campaign order is locked on cloud lanes — so PULL
+stays 3. COST 5: $0 to file, $0 to run later (Apache code, free-pull weights,
+warm GGML box, no GPU required). WINDOW 3: nothing decays except stars
+rising; the natural dock is the Oct 27 package lane or the day a dungeon
+surface asks for bodies. NOVELTY 4: corpus sweep (memory index + watch/ shelf)
+found zero motion/animation/robotics-skeleton entries — not a re-find; the
+uzu card is the nearest neighbor (engine-on-GGUF-adjacent-substrate) but that
+is LLM spec-decode, this is motion.
+
+## TESUJI ANALYSIS — FOUND (with reasoning)
+Surface read (not the tesuji): &quot;a guy ported a model to llama.cpp-style
+runtime.&quot; The skillful local move is one level down:
+1. **The skeleton is the tell.** The port animates the Unitree G1's 34-joint
+   skeleton — the SAME skeleton GR00T uses to control the real humanoid. NVIDIA
+   shipped one latent motion backbone serving BOTH game animation AND robot
+   whole-body control; the solo port makes that backbone run on GGUF/CPU.
+   Therefore: game NPC bodies and robot motor skills are THE SAME ARTIFACT.
+   The fleet already filed &quot;harvest = NPC minds&quot; (game codex); this is
+   &quot;harvest = NPC bodies&quot; — one motor organ, two consumers (dungeon gophers,
+   any future embodied fleet), $0.
+2. **Third-domain witness for the core thesis.** The Trajectory-RIB compiler
+   spec (08-27) recorded witness C confirming &quot;no paper/product packages
+   trajectories with acceptance commands first-class.&quot; MotionBricks is NVIDIA
+   doing exactly that for MOTION: trajectories as first-class tokens
+   (pose-token prediction, root/duration planning), tiny backbone, 350K skills.
+   The fleet's &quot;quantization for thought&quot; is not a conjecture anymore — it is
+   shipping in three domains (our text RIBs, NVIDIA motion, and GGML itself).
+3. **The C ABI + PureGo choice is a second quiet move.** He compiled the prior
+   small enough to be CALLED AS A LIBRARY from ordinary software, not run
+   through an ML stack. That is the fleet's own &quot;dumb bodies code for pennies&quot;
+   doctrine, inverted: the intelligence is the pennies. F32-GGUF (0.73GB) also
+   means quantization headroom remains — &quot;tiny&quot; is the ceiling, not the floor
+   (Q8 ≈ 0.18GB, Q4 ≈ 0.09GB).
+Anti-tesuji honesty: if the operator expected something deeper than the
+animation↔robotics unification, this pass did not find it — and the second
+candidate (the localai-org placement of a kernel engineer's graphics-ML port =
+signal that GGML is eating non-LLM inference from the systems direction) is
+**Unproven**, an affiliation story the thread does not settle. The tesuji
+verdict above stands on the skeleton tell and the third-domain witness alone.
+
+## DOGFOOD
+1. **INVARIANT PASS**: reinforces the trajectory-token thesis (third external
+   witness, new domain); reinforces receipts-in-code (the loader validating
+   pinned revision + tensor counts + joint topology is our hash-chain
+   discipline appearing in a stranger's port); reinforces cheapest-lane routing
+   (CPU realtime = the pennies lane for motion). No contradictions with known
+   laws. One tension filed: &quot;dumb bodies are cheap&quot; gains a new cost class
+   (motor priors) the economist has never budgeted — harmless until embodied.
+2. **STOCKFISH PASS**: consuming lane/opcode = the DUNGEON content pipeline
+   (NPC bodies) + Rocinante Oct 27 manifest (probe card). It does NOT go on the
+   QLoRA campaign path (locked order; a motor prior is a distraction there).
+   Placement succeeds only as: (a) pinned card + kill-condition probe in the
+   Oct 27 package lane, (b) dungeon NPC-body organ queued BEHIND a consumer
+   surface that asks for bodies. If no surface ever asks, the correct
+   disposition was REMEMBER — that is the falsifiable placement.
+
+## TRI-STATE (final)
+- Repo exists as described (GGML/GGUF, CPU+Vulkan, C ABI, 183M/0.73GB pinned) —
+  **Supported** (github.com/localai-org/motion-bricks.cpp, fetched 2026-09-04).
+- Upstream MotionBricks facts (15K FPS/2ms/350K skills/GR00T core/BONES-SEED) —
+  **Supported** (nvlabs.github.io/motionbricks + NVlabs/GR00T-WholeBodyControl).
+- Runs realtime on a desktop CPU — **Unproven** (author claim; kill condition
+  below).
+- General animation generation (any rig, any style) — **Disputed**; Supported
+  only inside G1 skeleton + 15 preprocessed styles (README limitations).
+- Combinable with physics sim / robot control policies — **Unproven** (author
+  forward-intent; upstream GR00T does control a real G1, but the GGML port has
+  no sim/control integration yet).
+
+## VERDICT
+**BUILD** (windowed): pin the card into the Rocinante Oct 27 package lane and
+write the kill-condition probe TODAY, zero code until a consumer exists:
+BUILD motion-bricks.cpp on the hands box (GGML CPU backend already warm there),
+pull MotionBricks-G1-GGML at the pinned SHA, run the G1 pipeline on a keyframe
+task. **PASS** = ≥30 FPS single-stream, pose output within visual tolerance of
+reference → the motor-prior organ earns a dungeon slot. **FAIL** = the
+desktop-CPU-realtime claim dies, item drops to REMEMBER with receipt. Next
+seat can execute this cold from this card.
+
+## ROUTE
+Wire: yes, one pointer — Oct 27 package builder lane gets this card; dungeon
+content-pipeline queue gets the NPC-body organ as CONSUMER-GATED (do not build
+before a surface asks). No driver interrupt; QLoRA campaign untouched. Typed
+room.jsonl row left to the main thread per Amendment 1 (spawn holds no path).
+One-line room receipt: `intake.motion_bricks_ggml: 17/25 BUILD-WINDOWED —
+tesuji FOUND (G1 skeleton = NPC bodies ≡ robot motor skills, one $0 motor
+prior); probe card cold-executable; campaign untouched` (2026-09-04).
+
+## THE CROP (what this pass did not see)
+Never ran the model — no FPS number on ANY desktop CPU exists in this card.
+Did not read the port's source (README-level only): &quot;CPU and Vulkan paths match
+reference results&quot; is the author's word. Did not dissect the architecture paper
+(arXiv 2604.24833) — the pose-token/VQ internals would decide how expensive
+retargeting off the G1 skeleton really is, which is exactly how narrow the
+15-style cage is. The localai-org affiliation story is unproven. Next chair:
+the hands-box seat (run the probe) or the research lane (paper dissection for
+retarget cost).
+"><div class="t">Motion Bricks Ggml</div><div class="n">Operator flagged **!tesuji** (suspected skillful local move): https://x.com/jichiep/status/2095157236658315288?s=20</div><pre></pre></div><div class="card" data-text="# INTAKE CARD — OMARCHY ON FRAMEWORK / HERMES AT OS LEVEL (bookmarks batch 1, item 1, 2026-09-04)
+
+ITEM: x.com/AlexFinn/status/2092324196965908607 (2026-08-25, 78.4K views, 1,103 likes, 501 bookmarks, 185 replies). Claims (shape-verbatim from 2,315-char long-form): bought a Framework laptop to run Omarchy; &quot;Open source operating systems are going to be MASSIVE&quot;; had his AI assistant Hermes build a keybind-triggered OS-level widget &quot;in 90 seconds&quot; — &quot;impossible on Mac or Windows&quot;; vision = open local model + open agent harness + open OS, &quot;No copilot. No bloat.&quot;
+
+INGEST: root fetched via fxtwitter mirror. 185 replies exist, bodies login-walled — thread depth tri-stated as walled, root + author bio captured (bio sells a &quot;$100T economic engine&quot; vision — audience-capture flag). Two photos attached, no quotes.
+
+[SOCRATIC] assumption attacked: that OS-level agent integration is a capability WALL on closed OSes. Instrument: $0 repo probe + our own Hermes dossier. What survives: the friction delta is real; the impossibility claim does not.
+
+MAP: Hermes is already stolen — watch/STEAL_HERMES_AGENT_20260902.md (Nous Research Hermes-Agent, MIT, cloned to disk, dossier v0; memory/_hermes_probe.txt exists). The Hermes half of this post is a RE-FIND (filed honestly, scored as one). New surface: the OS-level rung, and &quot;open OS&quot; as a Rocinante (Oct 27) substrate decision input. Convergence: AlexFinn runs Hermes = the exact artifact our steal shelf already holds.
+
+ASSERT: OS-level agent integration is dramatically cheaper on an open, scriptable Linux stack, and open OSes are at an adoption inflection.
+
+ATTACK: (1) &quot;Impossible on Mac/Windows&quot; is false as an absolute — Hammerspoon (macOS) and AutoHotkey/PowerToys (Windows) already do keybind→script widgets; the true delta is friction and permissioning, not possibility. (2) Audience capture: the author monetizes the vision itself; 1,103 likes on a 78K-view post is an engaged niche, not an inflection measurement. (3) Keyman risk: Omarchy is DHH/Basecamp-shaped — one voice drives it (37.7k stars mitigates, does not erase).
+
+MEASURE ($0, RAN): github.com/basecamp/omarchy EXISTS — &quot;a beautiful, fun & agentic Linux distribution by DHH&quot;, MIT license, 37.7k stars, ~4k forks. Distro existence + openness: Supported by direct probe.
+
+CORRECT: Tri-state — distro facts Supported (measured above); &quot;open source OS going MASSIVE&quot; Unproven (prediction, no adoption data offered); &quot;impossible on Mac/Windows&quot; Disputed as absolute (counter-examples named). Verb: CALIBRATE — no muscle before the Rocinante OS decision window (~Oct 27). Kill condition for the next seat, executable cold: run the Hermes-agent bones already on disk headless against one OS-hook task under our container law; if it needs an Omarchy-class substrate to be useful, the claim is true for us; if it drives fine from loopback+container, the OS rung is optional. THE CROP: 185 replies unread (walled) — real configs/tuning likely live there; a desktop-lens chair should sit next.
+
+SCORE: F2 P2 C3 W2 N2 = 11/25 (CALIBRATE band)
+VERDICT: CALIBRATE + tri-state above
+DOGFOOD: invariant pass ran (no contradiction with loopback+container law — the post is a confirming instance); stockfish pass: opcode = env-provisioning intel, no lane opcode today. Two counters: FORBIDS adopting a second OS substrate before the Rocinante window; PAID RENT: re-confirmed the Hermes steal target is MIT and alive — rent to the steal shelf.
+FILED: watch/INTAKE_OMARCHY_HERMES_OS_20260904.md + room row (kind: intake.card)
+"><div class="t">Omarchy Hermes Os</div><div class="n"></div><pre></pre></div><div class="card" data-text="# INTAKE CARD — OPENAI RESEARCHER ACCESS PROGRAM ($1,000 API CREDITS) (item 12, 2026-09-03)
+
+## ITEM
+https://x.com/itsjdraven/status/2095384838123704532 — X post by &quot;J.𝙳𝚛𝚊𝚟𝚎𝚗&quot;
+(@itsjdraven), Sep 3 2026, 5:34 AM (6.9K views; 21 replies / 6 quotes / 75 RT / 85
+likes). Text: &quot;$1,000 free API credits for researchers — essentially you need to
+submit an application and if you're a researcher, you can apply.&quot; Bullets: up to
+$1,000 in API credits; access to OpenAI's available models; credits valid 12
+months. Steps shown with a video walkthrough: create account (platform.openai.com/
+signup) → application page → provide research-project details → submit; &quot;reviewed
+on a quarterly basis.&quot;
+
+## RECEIPTS
+- Fetched the conversation twice (webReader + WebFetch fallback; both rendered).
+  Visible replies (3 of 21 sampled across two fetches, all 15h old): &quot;Informative
+  fr ty&quot; (@kafisayz), &quot;this is pretty interesting&quot; (@xzkevs), &quot;Keep building bro&quot;
+  (@akashroy1k). **No community note, no quote-tweet pushback rendered, zero
+  negative receipts** — the exact inverse of today's HOPLITE thread (card 11).
+  Full reply corpus NOT guaranteed complete (X render limits) — tri-stated.
+- VENDOR VERIFICATION (consult-docs-first law, done before scoring): the program
+  is real and the post's numbers match the official pages exactly.
+  - Application: openai.com/form/researcher-access-program (also portal
+    openai.smapply.org/prog/openai_researcher_access_program/)
+  - FAQ: help.openai.com article 10139500 — &quot;up to $1,000 of OpenAI API credits&quot;,
+    credits valid 12 months, applications year-round, reviewed quarterly (March,
+    June, September, December), credits land 4–6 weeks after approval.
+  - Eligibility language: researchers affiliated with universities, research
+    labs, or **independent research institutions**.
+  - Community-forum report of a $5,000 award to one applicant: single source,
+    **Unproven**.
+- Author shape: technical-poster account, no affiliate/deals bio detected; post is
+  a walkthrough, not a promo relay. Numbers corroborated independently — nothing
+  in the thread needed overturning.
+
+## SCORE — F:4 P:4 C:4 W:4 N:3 = 19/25 → **BUILD, WINDOWED** (band 14–19)
+
+## READ
+This is the clean twin of today's HOPLITE card and the contrast is the finding.
+Hoplite's credits were closed-loop scrip that could not reach fuel_feed/ask_router;
+these are **raw API credits on the vendor's own platform API** — the exact orifice
+our lane machinery already consumes (keys in .env, an OPENAI_API_KEY slot already
+exists for imagegen). Placement on the tool lattice succeeds where card 11 failed.
+What it buys is precisely the fleet's scarcest ration: frontier judgment. $1,000
+of OpenAI credits funds the MAX_DISTILL epoch-2 frontier-ceiling arm (epoch 1's C
+arm was transport-degraded, retry owed), the meld v3 neutral judge, and the
+council's gpt-family 5th chair — at judgment volume that is a year of fuel, not a
+week. Timing composes: next quarterly review is September (now), the 4–6 week
+crediting lag lands the credits around Rocinante week (Oct 27), and 12-month
+validity covers the QLoRA campaign. The honest costs: the application is an
+operator action (his identity, his research-project narrative — GO-gated by
+zero-custody/operator-identity law, never agent-filed), approval is not
+guaranteed, and &quot;independent research institution&quot; eligibility for a solo
+operator + AI fleet is untested. Not BUILD NOW only because the critical path
+this week is the QLoRA stages and the wire terminates in an operator form, not a
+build.
+
+## TRI-STATE
+- Program exists; up to $1,000 API credits, 12-month validity, quarterly review:
+  **Supported** — official OpenAI form + FAQ (help.openai.com/10139500),
+  numbers match the post exactly.
+- Post accuracy: **Supported** — walkthrough steps mirror the official flow.
+- Fleet qualifies as &quot;independent research institution&quot;: **Unproven** —
+  eligibility language lists institutions; solo-operator cases not confirmed in
+  fetched docs.
+- Award variance (forum claim of $5,000): **Unproven** — single report.
+- &quot;No pushback exists on this post&quot;: **Unproven** — 3 of 21 replies captured, all
+  neutral-positive; no community note rendered, absence not proven.
+
+## DOGFOOD
+- INVARIANT PASS (test 1): reinforces cheapest-lane routing (a funded-at-$0-cash
+  judgment arm beats rationed premium beats), receipts-over-claims (vendor pages
+  pulled before scoring — marketing numbers verified, not assumed), zero-custody
+  (credits sit on the operator's account; key material never enters agent
+  context). OpenAI documents prompt caching, so cache discipline survives lane
+  entry. No law contradicted. Extends free-tier-expansion/ATLAS with the named
+  complement to card 11's pattern: **OPEN-LOOP CREDITS** — raw-API spend, fungible
+  across the vendor catalog, the honest counter-specimen to closed-loop scrip.
+- STOCKFISH PASS (test 4): placement SUCCEEDS — compute-inventory-routing gets an
+  OpenAI lane slot (funded-reserve class, NOT fuel_feed FREE_LANES); ask_router
+  consumes it as the judgment opcode (meld judge / council chair / MAX_DISTILL
+  C_max); spend wall + economist meter it on arrival.
+
+## VERDICT
+**BUILD** (19/25, windowed). The organ is three moves: (1) operator GO + his
+~30-minute application (identity law gates this — agents never file it), (2)
+free-lane prep NOW so the form is a paste for him: draft the research-project
+blurb from the corpus (theory-of-operation knot, honest cost ledger, coverage
+thesis — these ARE the research record), (3) on approval, key entry +
+economist envelope before first call. Sept review window is the tide; miss it and
+the next gate is December.
+
+## ROUTE
+WIRE, two legs: (a) operator card — &quot;apply, blurb attached&quot; dropped in
+queue/handoff/zcode/OUTBOX/ (pointer only, never a push); (b) free-lane leg —
+draft the project blurb + eligibility read from the corpus, land it beside the
+card. On approval: compute-inventory-routing registry row + covenant envelope.
+Typed room.jsonl intake row owed by the main thread per Amendment 1 (schema not
+in this spawn's brief). Companion citation: watch/INTAKE_HOPLITE_FREE_CREDITS_20260903.md
+— read the two cards together; they are the two halves of the credit-issuance
+specimen set.
+"><div class="t">Openai Researcher Credits</div><div class="n">https://x.com/itsjdraven/status/2095384838123704532 — X post by "J.𝙳𝚛𝚊𝚟𝚎𝚗"</div><pre></pre></div><div class="card" data-text="# INTAKE — Phi Cookbook showcase post
+
+**Filed:** 2026-09-03 · intake/eval lane · card 24 of the day's tranche
+**Item:** https://x.com/GithubProjects/status/2095412682207924710
+
+## ITEM
+X post by @GithubProjects (repo-showcase account), 7:24 AM Sep 3 2026: &quot;Phi Cookbook shows how to run Microsoft's small, efficient AI models on everyday devices. Practical examples for coding, reasoning, language tasks. Works on cloud servers or edge devices. Free, open-source with multilingual support.&quot; Target repo: **microsoft/PhiCookBook** (via an osp.fyi syndication card).
+
+## RECEIPTS
+- **Root post FETCHED** (webReader): full text + stats above (8.2K views, 3 replies, 5 RT / 52 likes / 49 bookmarks). Engagement thin; bookmarks > replies.
+- **Author follow-up FETCHED:** one same-thread reply (13h later): &quot;Explore it here:&quot; + osp.fyi card link. It is a syndication card, not added substance; card itself NOT fetched (Unproven).
+- **Replies NOT captured:** 3 replies exist, all behind the X login wall. Tri-stated Unproven — nothing in-thread overturns or sharpens the claim. One search pass for the thread text was content-filtered by the search vendor.
+- **Repo FETCHED (github.com/microsoft/PhiCookBook):** 3.8k stars, **MIT license**, 976 commits, 8 open PRs, content through Phi-4-reasoning (2025-era; exact last-commit date not surfaced — staleness Unproven). Sections confirmed: **fine-tuning (LoRA/QLoRA, MS Olive, AI Toolkit, Apple MLX, W&B)**, inference (Ollama, HF, NIM, Foundry Local, Jetson/iOS/Android/AI PC), **quantization (llama.cpp, ONNX, OpenVINO, MLX)**, RAG/function-calling/eval.
+- **Corpus sweep:** zero hits for PhiCookBook/&quot;Phi-4&quot; anywhere in docs/ref or watch → genuinely new to the corpus. MLX already named in watch/CAMPAIGN_SYNTHESIS_20260903.md: &quot;Stage 5 is Rocinante-gated (Oct 27) or needs a CUDA/**MLX** lane.&quot;
+
+## SCORE
+**F:3 P:3 C:4 W:2 N:2 = 14/25 — BUILD WINDOWED**
+
+## READ
+The post itself is thin — a showcase account re-surfacing a well-known 2025-era Microsoft docs repo, three walled replies, an osp.fyi syndication card as the only follow-up. But the repo underneath happens to sit exactly on two live arcs: its **MLX fine-tuning/quantization sections are the textbook for the campaign's own named fallback lane** (&quot;CUDA/MLX lane&quot; for Stage 5 QLoRA deep compile), and the whole repo is the edge-SLM thesis in vendor voice — small models + good recipes, which is our own dumb-model-with-GPS doctrine. It is a bones-steal (recipes as checklist input to the QLoRA-pack stage and the Oct 27 one-button Rocinante package), not a capability: the fleet does not run Phi models (we run GLM-5.3/qwen/gemma), and training is hardware-gated until Rocinante lands. New to the corpus, but not new to the world — hence windowed, not now.
+
+## TRI-STATE
+- Post text, author follow-up, repo existence/license/sections — **Supported** (fetched, receipts above).
+- &quot;Runs efficiently on everyday devices&quot; — **Unproven** (marketing claim; we ran no benchmark; Phi-4-era content may be stale by Sep 2026 — unverified).
+- 3 replies / osp.fyi card content — **Unproven** (login wall / not fetched).
+- Novelty to corpus — **Supported** (zero grep hits); world-novelty — **Disputed** (3.8k-star 2025 repo, widely known).
+
+## VERDICT
+**BUILD (windowed)** — 14/25, BUILD WINDOWED band. No premium token touches it now.
+
+## ROUTE
+**No wire.** Shelve as a receipt row on the QLoRA-pack shelf (watch/CAMPAIGN_SYNTHESIS_20260903.md, Stage 1/5): when the MLX/CUDA lane preflight starts (Rocinante prep, ~Oct), one free-lane rib_chat mining pass over PhiCookBook's MLX + QLoRA sections → checklist rows into the one-button Rocinante package. MIT license clears the steal-discipline gate (steal-the-bones). Opcode placement: research-mine → QLoRA-pack stage feed; no engine, room, or chain surface consumes it.
+"><div class="t">Phi Cookbook</div><div class="n">X post by @GithubProjects (repo-showcase account), 7:24 AM Sep 3 2026: "Phi Cookbook shows how to run Microsoft's small, efficient AI models on everyday devices. Practical examples for coding, reasoning, language tasks. Works on cloud servers or edge devices. Free, open-source wi</div><pre></pre></div><div class="card" data-text="# INTAKE — &quot;RL a coding model to paint&quot; open reproduction (adithya_s_k X post)
+
+Date: 2026-09-04 | Intake seat: zcode (research-socratic genome, L0 contract)
+Item (verbatim): https://x.com/adithya_s_k/status/2095434194591924630?s=20
+
+## ITEM
+X post (2026-09-03T08:50Z) by Adithya S K (@adithya_s_k, Indian AI/dev-tooling poster):
+&quot;Wake up ppl / A complete Open Source reproduction dropped on @huggingface blogs /
+Anyone now can 'RL a coding model to paint' / RL Envs + Dataset + Training Code everything&quot;
+— quoting Surya Narreddi (@kickingkeys, 2026-08-23): &quot;You can just RL a coding model to
+paint with javascript btw&quot; (21s video). Follow-up reply (15h ago) links the blog:
+huggingface.co/blog/train-to-paint-with-code — &quot;Absolute Amazing work by @SergioPaniego !!&quot;
+PROVENANCE NOTE: the poster is not a neutral booster — the artifact repo lives under
+github.com/adithya-s-k (his own GitHub). He is an author signal-boosting his own
+reproduction; the tweet credits collaborators honestly (blog: Sergio Paniego; idea:
+Surya Narreddi; p5.brush library: Alejandro Campos Uribe).
+
+Primary source, ingested verbatim (WebFetch of the blog, pub 2026-09-03):
+- Base model Qwen/Qwen3.5-35B-A3B (36B MoE), LoRA (--all-linear, bf16, grad ckpt).
+- GRPO via TRL GRPOTrainer (8 generations/group); env = OpenEnv &quot;watercolour-env&quot;
+  wrapping p5.brush rendering in headless Chromium + a &quot;gate&quot; that rejects cheats.
+- Reward = 4 weighted terms: gate 0.05 (compiles/paints/no-cheat), length 0.05,
+  pairwise VL judge (Qwen3-VL-30B-A3B-Instruct vs 4 refs from a 178-painting
+  hand-rated pool), HPSv3 (open 7B preference model). Three mixes trained:
+  judge-led (0.60/0.30), hps-led (0.30/0.60), hps-only (0.00/0.90).
+- Compute: 1x H200; 18h for 60 steps, ~34h for 110; a step (8 rollouts) 15-18 min,
+  70-80% of it software-WebGL rendering (69-96 s/render). HPSv3 on an a100 Space;
+  env on a cpu Space; judge on Inference Providers quota.
+- Open-sourced: repo 02-watercolour (training scripts), datasets
+  watercolour-reference-pool (178 paintings + source sketches) and
+  watercolour-rollows-* (rollouts), Spaces watercolour-env + watercolour-hpsv3,
+  LoRA adapters watercolour-grpo-{hps-only,judge-led,hps-led}, gallery, trackio
+  Spaces, CSV curves — all in the &quot;Paint with Code&quot; HF collection.
+- Results: model paints watercolour hibiscus as ~150-line p5.brush JS. Mean group
+  reward hps-only +0.13, judge-led +0.27, hps-led +0.24; paint coverage ~2x in judge
+  runs; biggest gain = eliminating bad paintings; judge lifts the top end.
+- Stated limitations (author's own): no human painting in the pool (&quot;a real
+  limitation&quot;); one subject → homogeneous output; blind single-turn painting (no
+  image feedback to the policy); infra failures entered reward as zeros (~1.5% of
+  rollouts, worst 5.2%); model ignores shape-count instruction; &quot;The pool is the
+  bottleneck, and it is the part of the pipeline with no principled answer.&quot;
+
+## RECEIPTS
+- Whole conversation fetched via web_reader (root post + quoted origin tweet + author
+  follow-up reply). No community notes retrievable. Threads law satisfied — not scored
+  from the root alone.
+- Blog fetched whole: huggingface.co/blog/train-to-paint-with-code (WebFetch, verbatim
+  claims above). Guessed URLs 404'd first (train-to-paint, train-to-paint-with-trl) —
+  exact slug found by search: /blog/train-to-paint-with-code.
+- $0 EXISTENCE FALSIFIER RUN (this session, curl): api.github.com/repos/adithya-s-k/
+  HuggingEnvs = 200; .../contents/02-watercolour = 200 (README 13.5KB present);
+  huggingface.co/api/datasets/HuggingEnvs/watercolour-reference-pool = 200;
+  huggingface.co/api/spaces/HuggingEnvs/watercolour-env = 200. The tweet's
+  &quot;everything&quot; completeness claim: Supported.
+- Not run: training code execution (H200-class), rollout CSV inspection, human rating
+  of the gallery. THE CROP names who sits next.
+
+## SCORE
+F:3 P:3 C:4 W:2 N:4 = 16/25 — BUILD WINDOWED
+
+## READ (the honest why)
+FIT 3: docks to three live arcs — the QLoRA campaign's Oct-27 training arm (same
+TRL/OpenEnv ecosystem; OpenEnv's own tutorial is GRPO-via-TRL), the shader/light-codec
+arc (model writes ~150 lines of JS that paints = code-to-pixels, our visual corpus IS
+this shape, 377 shader knots in chain), and the verified eyes receipt (their judge is a
+VL model; ours read exact end-to-end). But nothing in live ops consumes it before CUDA
+exists; it does not serve the Sep 20 proof deadline. PULL 3: their admitted #1
+limitation — &quot;the pool is the bottleneck... no principled answer&quot; — is a problem the
+fleet has already solved for its own domain: the signed chain, 52K shaders, and the
+explore-228 signal tape ARE principled reference pools. COST 4: intake and falsifier
+ran at $0; datasets/env/adapters are usable read-only today; any training run is
+H200-class, Rocinante-gated. WINDOW 2: one day old, ecosystem moving fast
+(delta-weight-sync, OpenEnv tutorials), but our consumption date is Oct 27 — filing
+preserves the option, nothing decays before then. NOVELTY 4: RL-post-training over
+visual taste on code outputs is corpus-absent (MAX_DISTILL is distillation, percolator
+judges prompts not pixels) — and it CONVERGES with two filed organs: WHALE card 27
+(alternating harness mixes around fixed weights; their judge-led vs hps-led vs hps-only
+ablation is a harness-composition result, second lane arriving at the same organ), and
+wedge class #3 &quot;gate-pass ≠ alive&quot; (their infra-failures-scored-as-zero-reward bug is
+our named failure class, verbatim, in a different lab — repetition is emphasis).
+
+## TRI-STATE
+- &quot;A complete open-source reproduction exists (RL env + dataset + training code +
+  adapters)&quot;: SUPPORTED — blog verbatim + all four artifact endpoints return 200
+  (receipts above).
+- &quot;Anyone now can RL a coding model to paint&quot;: DISPUTED as stated — compute-gated
+  (1x H200 18-34h + an a100-class scorer Space); the fleet itself has no CUDA until
+  Rocinante (Oct 27); &quot;anyone&quot; = anyone with a datacenter GPU. Evidence: blog compute
+  section; memory: GLM 5.3-flash campaign &quot;no CUDA → QLoRA Rocinante-gated&quot;.
+- &quot;RL over taste works&quot;: UNPROVEN beyond a narrow frame — rewards rose only in curves
+  graded by the same VL-judge family used in training (circularity risk); one subject,
+  blind single-turn, author admits no human paintings in the pool and no human
+  preference validation. Narrow-frame honest version: &quot;eliminating bad paintings via
+  a gate + preference judge lifts mean reward on self-graded curves&quot; — Supported.
+
+## VERDICT (three verbs, exhaustive)
+- BUILD — WINDOWED, docked to the Oct-27 training arm as an amendment candidate routed
+  through the DRIVER (WHALE precedent: touches locked order, not self-executed).
+  Candidate thesis: our corpus as the reference pool the pipeline lacks; HuggingEnvs
+  shape as the env harness for signal-replay training.
+- CALIBRATE — now, $0: their reward-design findings calibrate seed_percolator + gate
+  v2 doctrine (gate kills hacks, pairwise judge lifts top end, learned scorer has a
+  ceiling ~0.771, infra-failures must never enter reward — wire our WAL-before-side-
+  effect law into any reward path).
+- REMEMBER — p5.brush (Alejandro Campos Uribe) and the HuggingEnvs env library on the
+  watch-list; possible lite-lane &quot;dumb model with eyes judges paintings&quot; dogfood
+  surface for the dungeon, only if a consumer claims it.
+
+## ROUTE
+Card → intake register. BUILD dock → campaign driver (locked order owner, Sep 3-20
+QLoRA campaign). CALIBRATE rows → percolator doctrine + gate v2 notes. Kill condition
+(falsifiable, executable cold): if the published CSV curves show reward gain explained
+mostly by gate/length terms rather than the aesthetic terms, OR a 30-pair human rating
+(operator = calibrator, decimation doctrine) of gallery vs base-model output shows no
+preference, the &quot;RL over taste&quot; claim is Disputed and the Oct-27 dock is dead.
+[SOCRATIC] assumption attacked: &quot;complete open reproduction ⇒ anyone can do it&quot;;
+instrument: $0 existence probes of all four claimed artifacts + verbatim blog pull;
+what survives: the artifacts are real and complete — the universality claim and the
+taste claim do not survive at fleet-facing strength.
+Two counters: FORBIDS any training-run spend or quota pull before CUDA exists / before
+the Sep 20 proof deadline. PAID RENT: external confirmation of two fleet laws at $0
+(wedge class #3; paired-preference judging) + a named answer to their stated
+bottleneck (our corpus is the principled pool).
+Receipt: artifact = watch/INTAKE_RL_PAINT_CODE_20260904.md; room row ready to commit:
+{&quot;kind&quot;:&quot;intake.verdict&quot;,&quot;item&quot;:&quot;x:adithya_s_k/2095434194591924630&quot;,&quot;score&quot;:16,&quot;band&quot;:&quot;BUILD WINDOWED&quot;,&quot;build&quot;:&quot;windowed:dock-oct27-training-arm-via-driver&quot;,&quot;calibrate&quot;:&quot;percolator+gate-v2-reward-design&quot;,&quot;remember&quot;:&quot;p5.brush+huggingenvs-watchlist&quot;,&quot;tri_state&quot;:{&quot;completeness&quot;:&quot;Supported&quot;,&quot;anyone_can&quot;:&quot;Disputed&quot;,&quot;rl_over_taste&quot;:&quot;Unproven&quot;},&quot;receipt&quot;:&quot;watch/INTAKE_RL_PAINT_CODE_20260904.md&quot;}
+
+## THE CROP
+Not seen: the rollout CSVs and trackio curves (whether gate/length terms, not taste,
+explain the gain); the full 02-watercolour tree and whether the training scripts run
+as-documented; p5.brush itself unexamined; OpenEnv's wider env library unswept for a
+signal-replay env fit; no human-preference rating of the gallery. Next chairs: the
+campaign DRIVER (does the Oct-27 arm absorb the dock?), the salon economist (does any
+RL-in-the-loop belong in the Sep 20 proof plan — current answer no), and the operator
+as taste-calibrator on a 30-pair gallery rating if the dock ever activates.
+"><div class="t">Rl Paint Code</div><div class="n">X post (2026-09-03T08:50Z) by Adithya S K (@adithya_s_k, Indian AI/dev-tooling poster):</div><pre></pre></div><div class="card" data-text="# INTAKE CARD — UZU SPECULATIVE DECODING ON APPLE M5 (item, 2026-09-03)
+
+## ITEM
+Operator pasted: https://x.com/trymirai/status/2095533045453337036
+Mirai Labs (@trymirai) released speculative decoding in their inference engine
+**uzu** — initially for **Qwen3.6 27B**, Qwen3.8 27B + Muse Glimmer coming soon.
+Claims on Apple M5-series chips: ~2x over MTPLX (MLX + speculative decoding),
+3x+ over llama.cpp at comparable quantization; strongest on math + coding;
+co-designed around M5 GPU Neural Accelerators with aggressive spec budgets of
+16-32 tokens vs model-native MTP's 3-4 token chains. &quot;FreeBSD licensed, open to
+PRs.&quot; Posted 3:23 PM Sep 3, 2026 — hours old at intake. 79.7K views / 13
+replies / 31 RT / 120 likes / 107 bookmarks (bookmarks > likes = latent-demand
+signal, same shape as the HF-incident receipt census).
+
+## RECEIPTS (consult-first, this turn — thread + web sweep)
+- Root post + replies fetched via web_reader (X wall did NOT block this time):
+  - @pymike00 independent measurement, **M4 Pro**: TTFT 3.14s, prefill 117.43
+    t/s, generation **16.06 t/s, 1.00 t/f** (tokens-per-forward = 1.0 means no
+    spec-decode boost visible on M4), 14.03 GB memory. Single anonymous run,
+    setup unknown — Unproven but directional: gains look M5-gated, which matches
+    uzu's own &quot;co-designed around M5 Neural Accelerators&quot; framing.
+  - @benlnyc fire; @MARUF positive one-liner. No community notes, no expert
+    pushback found in the 13 replies — thread is too young for the wall to have
+    sharpened it yet.
+- Repo existence **Supported**: github.com/trymirai/uzu (&quot;high-performance
+  inference engine&quot;, Rust, Apple Silicon); HN Show HN launch thread (id
+  44570048); r/rust thread; cited by name in arXiv 2607.00501 (BaseRT, native
+  Metal inference) — third-party academic citation, engine is real and notable.
+- The comparison baseline is community-measured: r/LocalLLaMA MTPLX post reports
+  **2.24x via native MTP spec decoding, Qwen3.6 27B, M5 Max, ~28 → ~63 tok/s**
+  (accept rate 71-73%). This makes uzu's &quot;almost 2x over MTPLX&quot; a FALSIFIABLE
+  number: implied ~110-125 tok/s on M5 Max is the target for our own probe.
+- Vendor speedup numbers (2x MTPLX / 3x llama.cpp) = **Unproven vendor claims**
+  until measured on our silicon. License claim &quot;FreeBSD&quot; = Unproven (GitHub
+  fetch 500'd; repo existence verified, license file not read).
+- trymirai.com/metrics = vendor's own uzu-vs-MLX-vs-llama.cpp benchmark page
+  exists (self-published; useful as the protocol to replicate, not as proof).
+
+## SCORE — F:4 P:4 C:5 W:3 N:4 = **20/25 → BUILD NOW** (band floor)
+
+## READ (the honest why)
+This is a **Rocinante-docked item**. Every axis lands because of one fact: the
+4x Mac Studio M5 Ultra arrives Oct 27, and this post is a vendor shipping
+M5-specific inference speedups for exactly the model class the fleet already
+runs locally (qwen2.5:32b maze-keeper, SAELIS-31B Q4_K_M, the bulk→local-Qwen
+leg of the router decision table). It does not unblock THIS week's critical
+path — the GLM 5.3-flash campaign Stages 2-5 run on cloud lanes — so PULL is 4
+not 5, and WINDOW is 3: runtime is date-gated, but the Oct 27 prep lane
+(&quot;one-button corpus package for Oct 27&quot; is live in the campaign next-queue)
+can consume it NOW as engine selection + a pinned falsifiable target. COST is a
+clean 5: file today for $0, evaluate on arrival day for $0 (free OSS engine,
+our own hardware). FIT 4 not 5: it rides committed substrate, but brings its
+own model formats (oQ4/oQ8, not GGUF) and does NOT list GLM models — the
+GLM-5.3 self-host arm stays SGLang/vLLM; uzu serves the Qwen lane only.
+The sharpest single receipt is the @pymike00 M4 Pro number: 1.00 t/f on M4
+says the magic is (claimed to be) in M5 silicon co-design — which is either
+exactly our arrival-day windfall or exactly the claim Oct 27 falsifies.
+
+## DOGFOOD
+1. **INVARIANT PASS**: reinforces receipts-over-claims (vendor numbers stay
+   Unproven until our probe — the vast-autopilot tok/s probe-card pattern is
+   the exact verification instrument, second deployment); reinforces
+   cheapest-lane routing (local inference is the terminal free lane;
+   bulk→local Qwen already sits in the router table, this strengthens that
+   leg 2-3x if it holds). Loopback-only trivially satisfied — on-device is
+   the most loopback a lane can be. No contradictions. One tension filed:
+   format lock-in (uzu quants vs the GGUF/ollama fleet standard) is a small
+   anti-portability cost against model-swap flexibility.
+2. **STOCKFISH PASS**: placement = **SUBSTRATE opcode** (of the four verbs).
+   Consumers: compute-inventory/routing decision table (bulk→local leg), the
+   Rocinante manifest, and the Oct 27 day-one probe card. Placement succeeds.
+
+## TRI-STATE
+- uzu exists, is Rust, Apple-Silicon-native, community-known since mid-2025 —
+  **Supported** (GitHub + HN + r/rust + arXiv citation).
+- MTPLX baseline ~63 tok/s on M5 Max — **Supported** (community-measured,
+  r/LocalLLaMA, independent of the vendor).
+- uzu beats MTPLX ~2x / llama.cpp 3x+ on M5 — **Unproven** (vendor claims; only
+  community data point is M4 Pro at plain-decode speed, no boost visible).
+- Gains are M5-gated (Neural Accelerator co-design) — **Unproven**, directional
+  support from the M4 reply; falsifiable Oct 27.
+- FreeBSD license + PR openness — **Unproven** (repo verified, license not read).
+- Qwen3.8 27B + Muse Glimmer support &quot;coming soon&quot; — **Unproven** (roadmap talk).
+
+## VERDICT
+**BUILD** — small, now: pin uzu into the Rocinante manifest as the Qwen-lane
+engine candidate and write the Oct 27 day-one probe card TODAY with the target
+number baked in: on our M5 Ultra, qwen3.6-27B quant, uzu must beat ~63 tok/s
+(community MTPLX baseline) and ideally approach ~110-125 tok/s (vendor-implied);
+protocol = the vast-autopilot take-C probe format (tok/s, TTFT, memory, same
+quant, three prompt classes incl. one math/coding where claims are strongest).
+Zero code before hardware. This is not a re-find: the corpus has no
+Apple-Silicon-native engine or spec-decoding entry (desk GPU history = ROCm
+gap; Ox Alpha = SGLang/vLLM/TokenSpeed server-class; vast boxes = NVIDIA).
+
+## ROUTE
+Wire: yes, one pointer — Oct 27 package builder / GLM-5.3-flash campaign
+next-queue (&quot;one-button corpus package for Oct 27&quot;) gets this card + the probe
+target. No driver interrupt; nothing runs until the Studios land. Typed
+room.jsonl row left to the main thread per Amendment 1 (path not handed to
+this spawn).
+"><div class="t">Uzu Specdec</div><div class="n">Operator pasted: https://x.com/trymirai/status/2095533045453337036</div><pre></pre></div><div class="card" data-text="# INTAKE — WHALE: joint weight+harness optimization (Yoonho Lee X thread)
+
+Date: 2026-09-03 | Intake seat: zcode (evaluation sub-agent)
+Item: https://x.com/yoonholeee/status/2095556379520188444 (posted 2026-09-03T16:55Z)
+
+## ITEM
+X thread by Yoonho Lee (@yoonholeee, KRAFTON × KAIST × Stanford) announcing
+**WHALE: Weight–Harness Alternating LEarning** — a block-ascent recipe that alternates
+(1) fine-tune model weights with harness frozen (online rejection-sampling FT on
+verifier-accepted rollouts), and (2) search the harness with weights frozen
+(Meta-Harness as agentic proposer, Claude Opus 4.7 proposing). Core claim:
+&quot;whichever component you hold fixed is the one that caps the system.&quot;
+Blog: krafton.ai/blog/whale/ | Paper: arXiv:2609.00196 (submitted 2026-08-31) | Code: github.com/krafton-ai/WHALE (public, CC BY 4.0)
+
+## RECEIPTS
+Fetched and verified:
+- Root post + full 12-tweet author thread via web_reader (author follow-ups captured:
+  headroom answer to Meta-Harness critics, adaptive variant, scaling bet, future
+  directions incl. &quot;co-overfits to one good harness&quot; and training models to write
+  their own harness).
+- krafton.ai/blog/whale/ (WebFetch, after t.co 301 redirect): numbers confirmed —
+  WHALE (0.6, 6) beats best single-component baseline by 7.67–24.38 pts and the
+  prompt-restricted FST control by 4.15–13.00 across SearchQA / Math(+Python) /
+  Chess Puzzles on Qwen3.5-2B/4B, mean@8. SearchQA harness-dominant: harness search
+  alone matched weight-only peak with 5.79% of the rollouts (30,720 vs 530,432);
+  retrieval accuracy 26.88% → 60.61%. Math model-dominant: harness-only 0.42% vs
+  15.42% after weight updates; truncation 95.83% → 30.83%. Beats stagewise
+  weight-then-harness by 5.32 (SearchQA) / 9.16 (Math) pts. Disclosed limitations:
+  schedule sensitivity ((0.2,2) Math run destabilized, stopped), too-large budgets
+  regress to stagewise failure, adaptive variant trails best hand-tuned Math by 1.87.
+- arXiv:2609.00196 abstract (WebFetch): consistent with blog; authors Haechan Kim,
+  Yoonho Lee, Gisang Lee, Chelsea Finn, Kangwook Lee.
+- GitHub repo existence via search receipt (repo not fetched).
+Not retrievable: third-party replies / community notes — X reader returned the author
+thread only; searches of Reddit/HN/alphaXiv discussions found no criticism indexed yet
+(paper is 3 days old). Pushback status: none found ≠ none exists.
+
+## SCORE
+F:5 P:5 C:4 W:4 N:5 = 23/25 — BUILD NOW
+
+## READ (the honest why)
+The fleet independently converged on this thesis from the other side. Our harness
+doctrine (docs/ref/HARNESS_SPEC.md, event.v1 stream, governor-sole-mutator, files-as-
+harness) is harness-only optimization — and WHALE's headline finding is that
+harness-only plateaus (their SearchQA curve, and our own MAX_DISTILL epoch 1
+INCONCLUSIVE with A=B=D floor effects: harness moved, weights never did). Their Math
+result — harness search yields 0.42% until a weight update unlocks 15.42% — is the
+external receipt for WHY the QLoRA campaign and Rocinante exist. Better: it hands the
+Sep 3–20 campaign a concrete amendment. The campaign synthesis currently plans
+stagewise (harness now, weights post-Oct-27); WHALE's controlled result says
+interleaved small weight updates beat stagewise on both accuracy and rollout cost —
+so the campaign should schedule harness-search windows BETWEEN QLoRA stages rather
+than before all of them, and the adaptive-WHALE patience rule (switch phase when the
+phase's own signal plateaus) is a free candidate law for the governor, which already
+does plateau detection on lanes. Cost is honest: the steal itself is pennies (public
+code, CC BY); real runs need CUDA we do not have until Rocinante (Oct 27) — that is
+the only reason W and C are not 5. Skeptic's note kept attached: results are
+authors' own, on 2B/4B models, 3 domains, mean@8, no independent replication; the
+&quot;will scale to large post-training runs at ~1% rollout budget&quot; line is the author's
+own bet, stated as a bet.
+
+## TRI-STATE
+- WHALE method + reported numbers: **Supported** (blog + arXiv abstract fetched and
+  cross-consistent; code public). External validity on our stack: **Unproven**.
+- &quot;Either component can be the bottleneck; alternating beats stagewise&quot;: **Supported
+  as reported** (controlled comparisons in paper), **Unproven** at fleet scale.
+- Scaling bet (~1% budget in large post-training runs): **Unproven** (author's bet).
+- Adaptive variant competitive without phase tuning: **Supported** (with disclosed
+  1.87-pt Math gap).
+- Community pushback / reply overturns: **Unproven** — none indexed yet; replies not
+  retrievable through the reader.
+
+## VERDICT
+BUILD — band BUILD NOW (23/25). Build the steal now (free); execution is
+Rocinante-gated and that gate is already the plan, not a blocker to the design work.
+
+## ROUTE (wire)
+1. File as a steal note alongside watch/STEAL_FLOW_REASONING_MODELS_20260903.md
+   (pattern precedent: vendor-external confirmation of a fleet doctrine).
+2. Amend watch/CAMPAIGN_SYNTHESIS_20260903.md stage design: interleave harness-search
+   windows between QLoRA stages (WHALE's central result) instead of pure
+   harness-now-weights-later stagewise; adopt adaptive-WHALE patience rule as the
+   governor's phase-switch heuristic candidate.
+3. Pin as Rocinante's first-training-run template (Oct 27): WHALE recipe on Ox Alpha
+   GLM-5.3-flash public weights / Saleis LoRA line, with our gauntlets as the
+   verifier and trajectory harvests (openclaw_traj.jsonl, rib logs) as rollout feed.
+4. Log against MAX_DISTILL epoch 1: WHALE explains the floor effects (frozen weights)
+   — epoch 2 design should alternate, not re-run weights-only.
+5. No wire to salons/rooms yet — methodology receipt first, salon pass only if the
+   operator wants the interleaving law debated before it touches the campaign.
+
+## DOGFOOD
+- INVARIANT PASS: reinforces receipts-over-claims (this card), cheapest-lane routing
+  (read free, judge premium, run sovereign-local post-Oct-27), and sacred-cows-not-
+  legacy-shit (MAX_DISTILL INCONCLUSIVE re-read as the frozen-weight cap, not garbage).
+  Extends map-precedes-territory: map (harness) edits plateau without territory
+  (weights) movement — the two must alternate.
+- STOCKFISH PASS: lane = watch steal + campaign synthesis amendment (free lanes);
+  premium judgment = one operator GO on amending the live campaign; execution lane =
+  Rocinante CUDA after Oct 27. Placement succeeded on all three — no orphan opcode.
+"><div class="t">Whale Harness Weight</div><div class="n">X thread by Yoonho Lee (@yoonholeee, KRAFTON × KAIST × Stanford) announcing</div><pre></pre></div>
+</div>
+<script>
+document.querySelectorAll('.card').forEach(el=>{
+  el.onclick=()=>{
+    const pre=el.querySelector('pre');
+    if(pre.style.display==='block'){pre.style.display='none';el.classList.remove('open');return;}
+    pre.textContent=el.dataset.text;
+    pre.style.display='block';el.classList.add('open');
+  };
+});
+</script></body></html>

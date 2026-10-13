@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  autoclaw:
+    build: ./docker/autoclaw
+    container_name: autoclaw
+    environment:
+      - ZAI_CODING_KEY_1=${ZAI_CODING_KEY_1}
+      - ZAI_CODING_KEY_2=${ZAI_CODING_KEY_2}
+    volumes:
+      - ./board:/board
+      - ./workspace:/workspace
+    restart: unless-stopped
+    # Do not autostart with the fleet — run manually to avoid CPU spin
+    profiles:
+      - manual

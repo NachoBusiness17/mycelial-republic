@@ -1,0 +1,209 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DECKS — the pro surface</title>
+<style>
+:root{--bg:#0a0a0a;--panel:#111114;--line:#232328;--ink:#d8d8dc;--mut:#8a8a92;--gold:#e8b64a;--accent:#7cf5ff;--red:#ff6b6b}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-monospace,Consolas,monospace}
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;border-bottom:1px solid var(--line)}
+header h1{font-size:.85rem;letter-spacing:.14em;margin:0;color:var(--ink)}
+header .btns{display:flex;gap:8px}
+button{background:#141418;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 14px;font-family:inherit;font-size:.75rem;cursor:pointer}
+button:hover{border-color:var(--accent)}
+#grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;padding:22px;max-width:1180px;margin:0 auto}
+.deck{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 16px;cursor:pointer;position:relative;min-height:96px}
+.deck:hover{border-color:rgba(124,245,255,.45)}
+.deck .name{font-size:.92rem;font-weight:bold;margin-bottom:6px}
+.deck .count{font-size:.68rem;color:var(--mut)}
+.deck .glyph{font-size:1.1rem}
+.deck .bell{position:absolute;top:10px;right:12px;font-size:.7rem;color:var(--mut)}
+.deck .bell.on{color:var(--gold)}
+.dialog{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-start;justify-content:center;padding-top:60px;z-index:10}
+.dialog.open{display:flex}
+.sheet{background:#0c0c0e;border:1px solid var(--line);border-radius:12px;width:560px;max-width:94vw;padding:18px 20px 24px}
+.sheet h2{font-size:.85rem;letter-spacing:.1em;margin:0 0 14px;text-align:center;color:var(--ink)}
+.sheet .row{display:flex;align-items:center;gap:10px;padding:10px 6px;border-bottom:1px solid #1a1a1f;cursor:grab}
+.sheet .row.dragging{opacity:.35}
+.sheet .row .grip{color:#3a3a42;cursor:grab}
+.sheet .row .nm{flex:1;font-size:.85rem}
+.sheet .row .ic{cursor:pointer;color:var(--mut);width:22px;text-align:center;user-select:none}
+.sheet .row .ic.star.on{color:var(--gold)}
+.sheet .row .ic.bell.on{color:var(--gold)}
+.sheet .row.hidden-deck{opacity:.35}
+.sheet .done{margin-top:16px;text-align:center}
+.sheet .done button{background:#f5f5f0;color:#111;font-weight:bold;border:none;padding:8px 26px}
+#view{display:none;padding:26px;max-width:900px;margin:0 auto}
+#view h2{font-size:1rem;color:var(--accent)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:12px 0}
+.card .t{font-weight:bold;font-size:.85rem;color:var(--ink);margin-bottom:6px}
+.card .n{font-size:.75rem;color:var(--mut);margin-bottom:8px;line-height:1.5}
+.card pre{display:none;white-space:pre-wrap;font-size:.72rem;color:#b8b8c0;background:#0d0d10;border:1px solid #1c1c22;border-radius:8px;padding:12px;max-height:420px;overflow:auto}
+.card.open pre{display:block}
+.card .file{font-size:.65rem;color:#55555e;margin-top:8px}
+.magrow{display:flex;justify-content:space-between;font-size:.75rem;padding:6px 4px;border-bottom:1px solid #1a1a1f}
+.mut{color:var(--mut);font-size:.7rem}
+</style></head><body>
+<header>
+  <h1>DECKS</h1>
+  <div class="btns">
+    <button id="manage">Manage Decks</button>
+    <button id="refresh">Resnapshot</button>
+  </div>
+</header>
+<div id="grid"></div>
+<div id="view"></div>
+<div class="dialog" id="dlg"><div class="sheet">
+  <h2>Manage Decks</h2>
+  <div id="rows"></div>
+  <div class="done"><button id="done">Done</button></div>
+</div></div>
+<script>
+"use strict";
+// ---- data: live snapshot (served via safe_file memory/ path), embedded fallback ----
+let SNAP = null;
+const FALLBACK = {schema:"decks_snapshot.v1",built:"offline",decks:[],cards:[]};
+const LSK = "decks_state_v1";
+let state = {order:["mesh3d","rocinante","personal","glmwatch","legions","gamebuild","cacheecon","mag"],stars:{},bells:{},hidden:{}};
+try{const s=JSON.parse(localStorage.getItem(LSK));if(s&&s.order)state=Object.assign(state,s);}catch(e){}
+function save(){localStorage.setItem(LSK,JSON.stringify(state));}
+
+async function loadSnap(){
+  // door 1: /files/ maps to memory/ (verified 200); door 2: literal memory path
+  for(const u of ["/files/working/decks_snapshot.json","/memory/working/decks_snapshot.json"]){
+    try{
+      const r = await fetch(u+"?v="+Date.now());
+      if(r.ok){SNAP = await r.json(); return;}
+    }catch(e){}
+  }
+  SNAP = FALLBACK;
+}
+
+function deckById(id){return SNAP.decks.find(d=>d.id===id)||{id:id,name:id,eyes:false};}
+function cardsFor(id){return (SNAP.cards||[]).filter(c=>(c.decks||[]).includes(id));}
+function visibleDecks(){return state.order.filter(id=>!state.hidden[id]).map(deckById);}
+
+// ---- grid ----
+function drawGrid(){
+  const g=document.getElementById('grid');g.innerHTML='';
+  const decks=visibleDecks();
+  if(!decks.length){
+    g.innerHTML='<div class="mut" style="padding:30px">SNAPSHOT OFFLINE — server restart needed or /files/working/decks_snapshot.json unreachable. The intake seat knows.</div>';
+    return;
+  }
+  for(const d of decks){
+    const el=document.createElement('div');el.className='deck';
+    const n=cardsFor(d.id).length;
+    el.innerHTML='<div class="glyph">'+(d.eyes?'👀':'')+'</div><div class="name">'+d.name+'</div><div class="count">'+n+' cards</div>'+
+      (state.bells[d.id]?'<div class="bell on">🔔</div>':'');
+    el.onclick=()=>{window.location.href='/static/decks/'+d.id+'.html';};
+    g.appendChild(el);
+  }
+}
+
+// ---- deck view ----
+let magStream=null;
+function openDeck(id){
+  const d=deckById(id);
+  const v=document.getElementById('view');
+  document.getElementById('grid').style.display='none';
+  v.style.display='block';
+  let html='<button onclick="backToGrid()">← decks</button><h2>'+d.name+'</h2>';
+  if(d.eyes){ html+='<div class="mut">the watcher — live fleet rows</div><div id="maglive"><div class="mut">connecting…</div></div>'; }
+  const cards=cardsFor(id);
+  for(const c of cards){
+    html+='<div class="card" data-slug="'+c.slug+'"><div class="t">'+c.title+'</div>'+
+      (c.note?'<div class="n">'+c.note.replace(/</g,'&lt;')+'</div>':'')+
+      '<pre></pre><div class="file">'+c.file+'</div></div>';
+  }
+  if(!cards.length) html+='<div class="mut" style="padding:20px">no cards assigned to this deck yet</div>';
+  v.innerHTML=html;
+  document.querySelectorAll('#view .card').forEach(el=>{
+    el.onclick=()=>{
+      const c=(SNAP.cards||[]).find(x=>x.slug===el.dataset.slug);
+      const pre=el.querySelector('pre');
+      if(pre.style.display==='block'){pre.style.display='none';el.classList.remove('open');return;}
+      pre.textContent=c?c.text:'(text not in snapshot — resnapshot)';
+      pre.style.display='block';el.classList.add('open');
+    };
+  });
+  if(d.eyes) startMag();
+}
+function backToGrid(){
+  document.getElementById('view').style.display='none';
+  document.getElementById('grid').style.display='grid';
+  if(magStream){magStream.close();magStream=null;}
+  drawGrid();
+}
+function startMag(){
+  const box=()=>document.getElementById('maglive');
+  fetch('/api/v1/cost').then(r=>r.json()).then(c=>{
+    if(!box())return;
+    const p=c.payload||c;
+    box().innerHTML='<div class="magrow"><span>cost surface</span><span>'+(p.week_used!=null?('used '+p.week_used):JSON.stringify(p).slice(0,60))+'</span></div>';
+  }).catch(()=>{});
+  try{
+    const es=new EventSource('/api/v1/stream');
+    let n=0;magStream=es;
+    es.onmessage=()=>{n++;const b=box();if(b){let r=b.querySelector('.stream-count');if(!r){r=document.createElement('div');r.className='magrow stream-count';r.innerHTML='<span>fleet stream</span><span>0 events</span>';b.appendChild(r);}r.children[1].textContent=n+' events';}};
+    es.onerror=()=>{es.close();};
+  }catch(e){}
+}
+
+// ---- manage dialog ----
+let dragEl=null;
+function drawRows(){
+  const rows=document.getElementById('rows');rows.innerHTML='';
+  for(const id of state.order){
+    const d=deckById(id);
+    const r=document.createElement('div');r.className='row'+(state.hidden[id]?' hidden-deck':'');r.draggable=true;r.dataset.id=id;
+    r.innerHTML='<span class="grip">≡</span>'+
+      '<span class="ic eyes">'+(d.eyes?'👀':'★')+'</span>'+
+      '<span class="ic star'+(state.stars[id]?' on':'')+'">'+(state.stars[id]?'★':'☆')+'</span>'+
+      '<span class="nm">'+d.name+'</span>'+
+      '<span class="ic bell'+(state.bells[id]?' on':'')+'">'+(state.bells[id]?'🔔':'🔕')+'</span>'+
+      '<span class="ic del" title="hide">🗑</span>';
+    r.querySelector('.star').onclick=()=>{state.stars[id]=!state.stars[id];save();drawRows();};
+    r.querySelector('.bell').onclick=()=>{state.bells[id]=!state.bells[id];save();drawRows();};
+    r.querySelector('.del').onclick=()=>{state.hidden[id]=true;save();drawRows();};
+    r.addEventListener('dragstart',()=>{dragEl=r;});
+    r.addEventListener('dragover',e=>{
+      e.preventDefault();
+      if(!dragEl||dragEl===r)return;
+      const rect=r.getBoundingClientRect();
+      const after=(e.clientY-rect.top)>rect.height/2;
+      r.parentNode.insertBefore(dragEl,after?r.nextSibling:r);
+    });
+    r.addEventListener('dragend',()=>{
+      state.order=[...document.querySelectorAll('#rows .row')].map(x=>x.dataset.id);
+      save();dragEl=null;
+    });
+    rows.appendChild(r);
+  }
+}
+document.getElementById('manage').onclick=()=>{drawRows();document.getElementById('dlg').classList.add('open');};
+document.getElementById('done').onclick=()=>{
+  // starred decks that are still hidden get unhidden on Done (star reclaims)
+  for(const id in state.stars) if(state.stars[id]) state.hidden[id]=false;
+  save();document.getElementById('dlg').classList.remove('open');drawGrid();
+};
+
+// ---- resnapshot button: re-fetch + hint ----
+document.getElementById('refresh').onclick=async()=>{
+  await loadSnap();drawGrid();
+  alert('snapshot re-fetched: '+((SNAP.cards||[]).length)+' cards, built '+(SNAP.built||'?')+
+    '\n\nif stale: re-run the inline snapshot build (scripts session note, INTAKE shelf) or ask the intake seat.');
+};
+
+// ---- boot ----
+(async function(){
+  await loadSnap();
+  // first-boot ordering: follow snapshot deck order
+  if(!localStorage.getItem(LSK)){
+    state.order=SNAP.decks.map(d=>d.id);
+    save();
+  }
+  // keep snapshot-only decks in order
+  for(const d of SNAP.decks) if(!state.order.includes(d.id)) state.order.push(d.id);
+  drawGrid();
+})();
+function drawGridGuard(){}
+</script><script src="/static/nav.js"></script></body></html>

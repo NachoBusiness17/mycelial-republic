@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>County Bond Conflict Audit — {{PROJECT}} ({{SERIES}})</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="masthead">
+  <div class="wrap">
+    <p class="kicker">Civic record · identity-agnostic · no private-holder data</p>
+    <h1>County Bond Conflict Audit</h1>
+    <p class="subtitle"><span data-field="project">{{PROJECT}}</span> (<span data-field="series">{{SERIES}})</span></p>
+    <p class="scoreline">Every field on this page carries a score:
+      <span class="chip rec">we-have-a-record</span>
+      <span class="chip np">not-proven</span>
+      <span class="chip dis">people-disagree</span>
+      — blank is allowed; invented complete is not.</p>
+    <nav class="jump">
+      <a href="#s1">1 · Decision file</a>
+      <a href="#s2">2 · Conflict check</a>
+      <a href="#s3">3 · Fund-level sunlight</a>
+      <a href="#s4">4 · Method statement</a>
+      <a href="#" id="explain-toggle">Explain this page</a>
+    </nav>
+  </div>
+</header>
+
+<aside id="explain" class="drawer" hidden>
+  <h2>Explain this page</h2>
+  <ol>
+    <li><b>Anchor.</b> “This fund pays about <span data-field="debt_service_y1">{{DEBT_SERVICE_Y1}}</span> a year for <span data-field="project">{{PROJECT}}</span>. Who collects that interest?”</li>
+    <li><b>Structure, not villain.</b> “Not a conspiracy. Book-entry. Munis live at DTC under Cede &amp; Co. The county cannot see beneficial owners because the system was built for settlement speed.”</li>
+    <li><b>Priority.</b> “The first question is what we can see at the speed of the vote — the roll call, the contract, the yearly hit, what else that fund pays.”</li>
+    <li><b>Influence.</b> “Local capture shows up in campaign checks, vendor contracts, advisor fees, ethics filings. The threshold rule catches the rare case where a local actor holds the paper.”</li>
+    <li><b>Privacy.</b> “No public list of every private holder. European courts already blocked open natural-person ownership registers. Fund-level is allowed. Private names are not, unless they are covered persons who must self-disclose.”</li>
+    <li><b>Close.</b> “Borrowed in public, paid in public, lenders behind a 1980s–90s market. Demand the conflict file and the budget line first, a targeted disclosure rule second.”</li>
+  </ol>
+  <button id="explain-close">Close</button>
+</aside>
+
+<main class="wrap">
+
+<!-- ============ SECTION 1 ============ -->
+<section id="s1">
+  <h2><span class="n">1</span>Decision file — the vote, the cost, the parties</h2>
+  <p class="lede">Disclosed at the speed of the decision, or assembled from the public record immediately after.</p>
+
+  <h3>The borrowing</h3>
+  <table class="grid">
+    <tr><th>Issuer</th><td><span data-field="county">{{COUNTY}}</span></td></tr>
+    <tr><th>Project</th><td><span data-field="project">{{PROJECT}}</span></td></tr>
+    <tr><th>Series</th><td><span data-field="series">{{SERIES}}</span> · <span data-field="year">{{YEAR}}</span></td></tr>
+    <tr><th>Project cost</th><td><span data-field="project_cost">{{PROJECT_COST}}</span></td></tr>
+    <tr><th>Bonded amount</th><td><span data-field="issue_size">{{ISSUE_SIZE}}</span></td></tr>
+    <tr><th>First-year debt service</th><td><span data-field="debt_service_y1">{{DEBT_SERVICE_Y1}}</span></td></tr>
+    <tr><th>Payment source</th><td><span data-field="payment_source">General Fund</span></td></tr>
+    <tr><th>Vote date / roll call / instrument</th><td>
+      <span data-field="vote_date">{{vote.date}}</span>
+      <span data-field="vote_instrument">{{vote.instrument}}</span>
+      <div data-field="vote_roll_call" class="rollcall">{{vote.roll_call}}</div>
+    </td></tr>
+  </table>
+
+  <h3>What else that fund pays</h3>
+  <p class="note">Opportunity-cost note: the General Fund line that carries this debt service also carries
+     other obligations. Where the budget page is known, it is linked below; where it is not known, it is
+     scored <span class="chip np">not-proven</span> — blank is allowed, invented complete is not.</p>
+  <p class="links">
+    <a data-field="budget_url" href="">{{budget_url}}</a>
+  </p>
+
+  <h3>The paper trail</h3>
+  <ul class="links">
+    <li>Official statement (EMMA): <a data-field="emma_os_url" href="">{{emma_os_url}}</a></li>
+    <li>Latest audit: <a data-field="audit_url" href="">{{audit_url}}</a></li>
+    <li>Budget page: <a data-field="budget_url" href="">{{budget_url}}</a></li>
+  </ul>
+
+  <h3>Transaction parties</h3>
+  <table class="grid">
+    <tr><th>Underwriter</th><td><span data-field="underwriter">{{parties.underwriter}}</span></td></tr>
+    <tr><th>Municipal advisor</th><td><span data-field="municipal_advisor">{{parties.municipal_advisor}}</span></td></tr>
+    <tr><th>Bond counsel</th><td><span data-field="bond_counsel">{{parties.bond_counsel}}</span></td></tr>
+    <tr><th>Paying agent / trustee</th><td><span data-field="paying_agent">{{parties.paying_agent}}</span></td></tr>
+  </table>
+
+  <h3>Conflicts already disclosed (G-17 / official statement excerpts)</h3>
+  <div data-field="conflict_excerpts" class="excerpts">
+    <p class="note">Quoted, sourced excerpts will appear here once the official statement is bound.
+       Until then: <span class="chip np">not-proven</span> — no excerpt is on file.</p>
+  </div>
+
+  <h3>Officials who voted — public filings</h3>
+  <p class="note">Campaign finance, procurement, and ethics filings for each covering official are linked
+     from the county clerk and ethics commission registries at bind time. Roles are public; this page
+     never publishes home addresses or personal financial detail beyond a covered-person threshold filing.</p>
+
+  <div class="door"><a href="#s2">NEXT — 2 · Conflict check ↓</a></div>
+</section>
+
+<!-- ============ SECTION 2 ============ -->
+<section id="s2">
+  <h2><span class="n">2</span>Conflict check — threshold self-disclosure</h2>
+  <p class="lede">The rule that has not been run as a standing local practice: covered persons swear to
+     whether they hold the paper they voted on. Yes/No + amount band. Nothing else is collected.</p>
+
+  <h3>The threshold, in plain words</h3>
+  <p class="threshold">Disclose if you received more than <b>$5,000 of interest in a fiscal year</b> from
+     this issuer's bonds, <b>or</b> if you (or your spouse or dependent children) hold <b>5% or more of an
+     entity</b> that holds them. Disclosure is a short sworn statement to the clerk: Yes / No + amount band.
+     Non-response is published as “no response received,” with the date.</p>
+
+  <h3>Covered persons</h3>
+  <ul>
+    <li>Elected officials who vote on the borrowing</li>
+    <li>County manager and finance director</li>
+    <li>Project vendors and their principals</li>
+    <li>Spouses and dependent children of the above</li>
+  </ul>
+
+  <h3>Responses</h3>
+  <table class="responses">
+    <thead><tr><th>Role</th><th>Name or seat</th><th>Response</th><th>Amount band</th><th>Date</th><th>Source</th></tr></thead>
+    <tbody>
+      <tr><td colspan="6" class="note">No request has been sent yet — this page ships before the local bind.
+        At bind time, each covered person gets one row. Non-response publishes as its own row.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>The sworn statement</h3>
+  <p>Copy-ready template: <a href="forms/self-disclosure.md">forms/self-disclosure.md</a> (one page, clerk-files it).</p>
+
+  <h3>Enforcement</h3>
+  <p class="note">Existing ethics-commission penalties apply. If a covered person fails to disclose and is
+     later shown to hold the bonds, that is an ethics violation — not a missing owner registry.</p>
+
+  <div class="door"><a class="back" href="#s1">↑ Decision file</a><a href="#s3">NEXT — 3 · Fund-level sunlight ↓</a></div>
+</section>
+
+<!-- ============ SECTION 3 ============ -->
+<section id="s3">
+  <h2><span class="n">3</span>Fund-level sunlight — without naming private people</h2>
+  <p class="lede">Publish what the market already publishes. Refuse what privacy law refuses.</p>
+
+  <h3>Securities</h3>
+  <table class="grid">
+    <tr><th>CUSIPs</th><td><span data-field="cusips">{{cusips}}</span></td></tr>
+    <tr><th>Registered owner</th><td><span data-field="registered_owner">Cede &amp; Co., nominee of DTC</span></td></tr>
+    <tr><th>EMMA trade snapshot</th><td><span class="chip np">not-proven</span> — no live pull in this build; EMMA is queried at bind time (volume, price range, last trade date)</td></tr>
+    <tr><th>Public fund filings</th><td><span class="chip np">not-proven</span> — no public 13F / N-PORT filing names these CUSIPs as of <span data-field="retrieve_date">{{retrieve_date}}</span></td></tr>
+  </table>
+
+  <h3>What this page refuses to do</h3>
+  <ul class="refuse">
+    <li>It does not request or display DTC participant beneficial-owner files.</li>
+    <li>It does not build a live public list of natural-person bondholders.</li>
+    <li>“Fund-level” means “Fund Family X reports a muni sleeve.” It never means “Resident Y holds $50,000.”</li>
+  </ul>
+  <p class="note">European courts have already blocked open natural-person ownership registers as a
+     disproportionate privacy interference (CJEU, joined cases C-37/20 and C-601/20, 22 November 2022).
+     Legitimate-interest access — press, research, oversight with a stated purpose — remains the lawful road.</p>
+
+  <div class="door"><a class="back" href="#s2">↑ Conflict check</a><a href="#s4">NEXT — 4 · Method statement ↓</a></div>
+</section>
+
+<!-- ============ SECTION 4 ============ -->
+<section id="s4">
+  <h2><span class="n">4</span>Method statement</h2>
+  <blockquote>The county borrowed in public and pays from the General Fund in public. Current lenders sit
+  behind a book-entry market built in the 1980s and 1990s. Sunlight that matches the speed of county
+  government is the vote, the yearly payment, the advisor file, and a targeted conflict rule — not a claim
+  that nothing is known until every bond fund is named.</blockquote>
+
+  <h3>Boundaries this method stands inside</h3>
+  <ul class="bounds">
+    <li><b>Privacy boundary.</b> CJEU, joined cases C-37/20 and C-601/20 (22 Nov 2022): no general-public
+        natural-person holder list. <span class="chip rec">we-have-a-record</span></li>
+    <li><b>Federal-filing boundary.</b> Tower Amendment (Exchange Act §15B(d)) bars SEC/MSRB from forcing
+        issuer filings. It does not bar a county from an ethics rule for its own officials and vendors.
+        <span class="chip rec">we-have-a-record</span></li>
+    <li><b>Enforcement line.</b> If a covered person fails to disclose and is later shown to hold the bonds,
+        that is an ethics violation, not a missing owner registry. <span class="chip rec">we-have-a-record</span></li>
+  </ul>
+
+  <p class="note">Forecasts (for example, what a refinancing might save) are labeled
+     <b>Forecast</b>, never Record. Software never auto-truths. Primary record beats commentary.
+     Sources for every bound above: <a href="data/sources.json">data/sources.json</a>.</p>
+
+  <div class="door"><a class="back" href="#s3">↑ Fund-level sunlight</a><span></span></div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Integrity kernel: every field carries <b>we-have-a-record / not-proven / people-disagree</b> and a
+       basis of <b>Evidence / Inference / Assumption</b>. Primary record beats commentary. Incomplete beats
+       fake-complete. Human final call.</p>
+    <p>Public copy — placeholders only. Local names and figures bind on the host at run time and are not
+       published until the operator says yes after a passing review lock.</p>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,158 @@
+﻿# Resource harness lanes — janitor local first; specialist remote scarce; Hermes parked.
+
+default_lane: L0
+
+# L0 = local Ollama (janitor) · L1 = free remote · L2 = specialist · L3 = human
+# Doctrine: gemma:2b = scut; gemma4 = short worker bursts; specialist = judgment.
+lanes:
+  L0:
+    name: local
+    backend: ollama
+    roles: [clerk, orchestrator, worker, critic, biographer]
+  L1:
+    name: free_remote
+    backend: openrouter
+    enabled: true   # requires OPENROUTER_API_KEY; probe with: python main.py probe-lanes
+    never_tiers: [T0, T1]
+    model_env: OPENROUTER_MODEL
+    default_model: openrouter/auto
+  L2:
+    name: specialist
+    backend: grok_harness
+    require_priority: true
+  L3:
+    name: human
+    backend: wait
+
+local_models:
+  # Home PC envelope 2026-08-06 — RX 5600 XT ~6GB VRAM · 64GB RAM · AMD (no CUDA)
+  # Doctrine: scut=2b · desk/voice=qwen-desk · coding worker=qwen2.5-coder:7b
+  # Never stack two 7B/8B models. OLLAMA_MAX_LOADED_MODELS=1 · CONTEXT=8k (not 65k)
+  clerk: gemma:2b
+  router: gemma:2b                   # keep tiny for routing scut (not coder)
+  orchestrator: gemma:2b             # repack / scut
+  desk_orchestrator: qwen-desk:latest  # 69 t/s probe winner on this GPU
+  desk_conductor: qwen-desk:latest
+  voice: gemma:2b                    # Mag Voice; override MAG_VOICE_LOCAL_MODEL
+  worker: qwen2.5-coder:7b           # primary L0 coding worker (local Continue twin)
+  critic: qwen-desk:latest           # sequential — do not dual-resident with worker
+  biographer: qwen-desk:latest       # /api/v1/ask memory chat (not code complete)
+  embed: nomic-embed-text
+
+# Prefer clerk/desk hot; never keep worker+biographer both resident on 6GB
+load_policy:
+  mode: sequential
+  prefer_keep_worker_hot: false
+  max_resident: 1
+  note: "Unload 8B when switching to voice/desk; prefer qwen-desk resident"
+
+# Hermes: CODE TEAM tool-loop (not router). GLM Lite when GLM_API_KEY; else local custom.
+hermes:
+  parked: false
+  role: code_team_tools
+  not_router: true
+  note: "Coding tool loop only. Residual never. Unparked 2026-08-14 rightsizing."
+
+# Hardware envelope (home) — skills/models operate inside this, not Vast 70B map
+hardware_envelope:
+  as_of: "2026-08-06"
+  system_ram_gb: 64
+  gpu: "AMD Radeon RX 5600 XT"
+  vram_gb_approx: 6
+  cuda: false
+  ollama_context: 8192
+  ollama_max_loaded: 1
+  voice_model: gemma:2b
+  desk_model: qwen-desk:latest
+  worker_model: qwen2.5-coder:7b
+  escalate: [deepseek, grok_tui]
+  never_local: ["35b+", "70b", "full 65k context on 8B"]
+
+grok_budget:
+  max_escalations_per_day: 2
+  require_priority: true   # need [priority] / [L2] / high critic
+  attach_brief: true       # handoff carries brief, not full chat
+
+priority_markers:
+  - "[priority]"
+  - "[grok]"
+  - "[L2]"
+
+local_markers:
+  - "[mag]"
+  - "[assign]"
+  - "[local]"
+  - "[L0]"
+
+cursor_markers:
+  - "[cursor]"
+  - "[composer]"
+  - "via cursor"
+  - "seat cursor"
+
+usage_log: logs/usage.jsonl
+briefs_dir: memory/briefs
+
+# Effort tiers for lane fan-outs (mag/lane_effort.py, schema lane_effort.v1).
+# Defaults are Anthropic's three effort tiers, verbatim (fold row
+# corpus/steal/MASTER_MICKEY17_V2_20260924.md #6):
+#   fact_finding: 1 lane, 3-10 calls total | comparison: 2-4 lanes, 10-15 calls each
+#   complex: >10 lanes (call ceiling gate-governed; source gives no count)
+# This block only carries OPERATOR DIALS; leave it absent to use the verbatim
+# defaults. Multi-lane fan-outs must clear premium x baseline value per 1k
+# tokens or the value-per-token admission gate rejects the spend.
+# effort_tiers:
+#   baseline_vpt: 1.0          # value units per 1k tokens, single-lane bar
+#   multiagent_premium: 15.0   # ~15x token premium, gated on task value
+#   tiers:
+#     comparison: {max_calls: 15}   # example: tighten a measured band
+
+# GATE_VERDICT_V2 -- two-band judge cascade, frozen at registration 2026-09-26
+# (burn lane B2-32). Owning docs, read before changing anything in this block:
+#   V1 schema + governor-only law: watch/inbox/BURN_JUDGE_LANE_BUILD_20260925.md
+#   V2 two-band increment: watch/inbox/burn_wave_20260926/B2_08_judge_lane_20260926.md
+# The judge never moves its own gate (judge-lane-spec burn): thresholds live in
+# THIS block and are writable by the governor only. WIRED 2026-09-26 (burn lane
+# B2-111): mag/lane_runner.py load_gate_block reads THIS block on every verdict
+# (no code-side fallback tau); the scalar GATE_VERDICT row (gate_drop) remains
+# the pure schema/ttl/anchor check, GATE_VERDICT_V2 rows carry the nested
+# three-axis verdict + cascade decision.
+gate_verdict_v2:
+  schema: gate_verdict.v2        # three-axis JSON contract, build doc section 1
+  judge_seats: [local, flash, frontier]
+  axes: [brief_fidelity, build_quality, receipt_completeness]
+  scores_range: "0.0 to 1.0"
+  evidence_quote_law: "every non-1.0 score carries a verbatim evidence quote"
+  cascade:
+    band_routine:
+      axes: [brief_fidelity, build_quality, receipt_completeness]
+      tau: 0.90
+      # JEV frozen fallback tau=0.90: accepts ~53.7% of contested pairs, retains
+      # ~99% of comparator accuracy at ~57% blended fee (arxiv 2609.26550).
+      on_pass: accept
+      on_fail: escalate
+    band_derivation:
+      axes_class: "axes whose verdict requires checking a derivation (math, protocol proofs, security claims)"
+      policy: always_escalate
+      # JudgeBench 78.6 vs 93.1; JEV wrong on a third of pairs scored in
+      # [0.9,0.95), so no confidence threshold is safe on this band (B2_08).
+    invalid_output: defer        # invalid first-stage outputs always defer
+    no_referent: unjudgeable     # UNJUDGEABLE axis: never escalated, never accepted
+    contested_merit_only:
+      both_orders_debias: true   # p_bar = 1/2 [p1(A,B) + 1 - p1(B,A)]
+      ties: half_credit
+      rationed: true
+    cascade_exempt_seats: [rule] # deterministic rule backend (mag/desk_conductor.py:319) has no confidence to threshold
+  # V1-TRIGGERS RESOLUTION (governor write 2026-09-26, lane B2-112): the V1
+  # escalation triggers frozen at BURN_JUDGE_LANE_BUILD_20260925.md:29
+  # ((a) any axis confidence < 0.7; (b) any axis score < 0.5 AND confidence
+  # > 0.7) were never registered in this block. Resolution: SUPERSEDED, not
+  # pre-filters. The V2 two-band cascade replaces confidence thresholds on the
+  # routine band (band_routine tau 0.90 passes/escalates on score alone) and
+  # B2_08's JudgeBench evidence bars any confidence threshold on the derivation
+  # band ("no confidence threshold is safe on this band"), so a V1 confidence
+  # pre-filter would re-admit exactly the pairs band_derivation always
+  # escalates. Trigger (c) (derivation checking) survives verbatim as
+  # band_derivation.policy: always_escalate. No code reads these keys yet, so
+  # nothing else changes behavior.
+  writable_by: governor

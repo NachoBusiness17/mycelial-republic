@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WIPEOUT // LIGHT MAZE — the song is the level</title>
+<style>
+  html,body{margin:0;background:#070b10;color:#c9d3e0;font:13px/1.4 ui-monospace,Consolas,monospace;overflow:hidden}
+  #c{display:block;width:100vw;height:100vh}
+  #ui{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#070b10f0;z-index:4}
+  #ui h1{color:#e8b45a;letter-spacing:3px;font-size:16px;margin:0 0 4px}
+  #ui .sub{color:#66738a;font-size:11px;margin-bottom:26px}
+  .track{width:420px;padding:12px 16px;margin:5px;background:#0d141d;border:1px solid #1b2532;border-radius:10px;cursor:pointer}
+  .track:hover{border-color:#7cf5ff;background:#101a26}
+  .track b{color:#7cf5ff;font-size:13px}
+  .track div{color:#66738a;font-size:10px;margin-top:2px}
+  #status{margin-top:20px;color:#e8b45a;font-size:12px;min-height:18px}
+  #hud{position:fixed;top:0;left:0;right:0;padding:8px 12px;display:flex;gap:16px;align-items:center;
+       background:linear-gradient(#070b10ee,#070b1000);pointer-events:none;font-size:11px;z-index:3}
+  #flash{position:fixed;inset:0;background:#ff2b4d;opacity:0;pointer-events:none;z-index:2}
+  #beat{position:fixed;bottom:8px;left:12px;color:#66738a;font-size:10px;z-index:3}
+  .home{position:fixed;bottom:10px;right:12px;z-index:7}
+  .home a{color:#66738a;text-decoration:none}
+  #end{position:fixed;inset:0;display:none;background:#070b10f0;z-index:5;text-align:center;padding-top:20vh}
+  #end h1{color:#e8b45a}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="flash"></div>
+<div id="hud" style="display:none">
+  <b style="color:#e8b45a" id="songname"></b>
+  <span>SPEED <b id="spd" style="color:#7cf5ff">100%</b></span>
+  <span>HULL <b id="hull" style="color:#7cf5ff">■■■</b></span>
+  <span>COMBO <b id="combo" style="color:#e8b45a">×1</b></span>
+  <span id="dist">0%</span>
+  <span style="color:#66738a">←/→ or A/D steer — the walls are the song</span>
+</div>
+<div id="beat">beat —</div>
+<div id="end"><h1 id="egrade"></h1><div id="estats" style="margin:14px 0;font-size:14px"></div><p style="color:#66738a">reload to run another song</p></div>
+<div class="home"><a href="/">⌂ home</a></div>
+<div id="ui">
+  <h1>WIPEOUT // LIGHT MAZE</h1>
+  <div class="sub">the song is the level — obstacles grow from the beat, drops open the boosts. hull 3. solve the maze before wipeout.</div>
+  <div class="track" data-f="suno/genesis.mp3"><b>GENESIS — Justice</b><div>french touch · the style-spec ancestor · 4:54</div></div>
+  <div class="track" data-f="suno/aerodynamic.mp3"><b>AERODYNAMIC (Daft Punk Remix)</b><div>the solo that becomes a wall of sound · 4:49</div></div>
+  <div class="track" data-f="suno/flat_beat.mp3"><b>FLAT BEAT — Mr. Oizo</b><div>the wobble that launched a thousand flats · 3:49</div></div>
+  <div class="track" data-f="suno/dance.mp3"><b>D.A.N.C.E. (MSTRKRFT Remix)</b><div>under the pallid glow · 4:32</div></div>
+  <div id="status"></div>
+</div>
+<script>
+const cv=document.getElementById('c'),cx=cv.getContext('2d');
+addEventListener('error',e=>{document.title='ERR: '+e.message+' @ line '+(e.lineno||'?');});
+function fit(){cv.width=innerWidth;cv.height=innerHeight}fit();addEventListener('resize',fit);
+const $=id=>document.getElementById(id);
+let AC=null,analyzer=null,audioBuf=null,srcNode=null,songT=0,playing=false;
+let LEVEL=[],songDur=0,songName='';
+let hull=3,combo=1,speedMult=1,boostT=0,shipX=0,crashes=0,topCombo=1,dist=0,bass=0,lastBeatT=-9,finished=false;
+
+/* deterministic rng from song name — same song, same maze */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function strSeed(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+
+document.querySelectorAll('.track').forEach(el=>{
+  el.onclick=async()=>{
+    document.querySelectorAll('.track').forEach(x=>x.onclick=null);
+    const f=el.dataset.f; songName=f.split('/').pop().replace('.mp3','');
+    $('status').textContent='decoding '+songName+' …';
+    AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    const buf=await (await fetch(f)).arrayBuffer();
+    audioBuf=await AC.decodeAudioData(buf);
+    songDur=audioBuf.duration;
+    $('status').textContent='generating the maze from the waveform …';
+    await new Promise(r=>setTimeout(r,30));
+    genLevel();
+    srcNode=AC.createBufferSource();srcNode.buffer=audioBuf;
+    analyzer=AC.createAnalyser();analyzer.fftSize=512;
+    srcNode.connect(analyzer);analyzer.connect(AC.destination);
+    $('ui').style.display='none';$('hud').style.display='flex';
+    srcNode.start();playing=true;last=performance.now();
+    requestAnimationFrame(frame);
+  };
+});
+
+/* ---------- THE SONG IS THE LEVEL: waveform → track ---------- */
+function genLevel(){
+  const n=audioBuf.length,ch=audioBuf.getChannelData(0),sr=audioBuf.sampleRate;
+  const win=2048,nw=Math.floor(n/win),env=new Float32Array(nw);
+  for(let i=0;i<nw;i++){let s=0;const o=i*win;for(let j=0;j<win;j+=4){const v=ch[o+j]||0;s+=v*v;}env[i]=Math.sqrt(s/(win/4));}
+  // beat period: autocorrelation of the envelope, 0.3-1.1s
+  let best=.5,bestV=-1;const minL=Math.floor(sr*.3/win),maxL=Math.min(Math.floor(sr*1.1/win),nw-1);
+  for(let L=minL;L<=maxL;L++){let v=0;for(let i=L;i<nw;i++)v+=env[i]*env[i-L];if(v>bestV){bestV=v;best=L;}}
+  const beatSec=best*win/sr;
+  // beat grid
+  const beats=[];for(let t=beatSec;t<songDur-2;t+=beatSec)beats.push(t);
+  const es=[];const rng=mulberry32(strSeed(songName)+Math.round(songDur));
+  // energy percentile per beat
+  const be=beats.map(t=>{const i0=Math.floor(t*sr/win);let s=0,c=0;for(let k=0;k<4;k++){if(i0+k<nw){s+=env[i0+k];c++;}}return s/Math.max(c,1);});
+  const sorted=be.slice().sort((a,b)=>a-b);
+  const pct=v=>sorted.findIndex(x=>x>=v)/Math.max(sorted.length,1);
+  beats.forEach((t,i)=>{
+    const p=pct(be[i]);const r=rng();
+    if(p>.85){ // wall cluster: the drop slams — gap on a deterministic side
+      const side=r<.5?-1:1,w=.55+r*.3;
+      es.push({t,type:'wall',x:side<0?w/2-.15:1-w/2+.15,w,done:false});
+      es.push({t:t+beatSec/2,type:'wall',x:side<0?w/2-.1:1-w/2+.1,w:w*.9,done:false});
+    }else if(p>.62){es.push({t,type:'block',x:(r*1.6-0.8),w:.34+r*.2,done:false});}
+    else if(p>.4){es.push({t,type:'gate',x:(r*1.4-0.7),w:.5,done:false});}
+    else{if(r<.5)es.push({t,type:'boost',x:r*1.6-.8,done:false});}
+    // onset spike = boost (the drop opens the lane)
+    if(i>2&&be[i]>be[i-1]*1.8)es.push({t,type:'boost',x:rng()*1.6-.8,done:false});
+  });
+  LEVEL=es.sort((a,b)=>a.t-b.t);
+}
+
+/* ---------- race ---------- */
+addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;});
+addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false;});
+const keys={};
+let freq=null,last=0,hidePause=false;
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&playing&&!finished){hidePause=true;playing=false;if(AC)AC.suspend();}});
+cv.addEventListener('click',()=>{if(hidePause&&!finished){hidePause=false;playing=true;if(AC)AC.resume();last=performance.now();requestAnimationFrame(frame);}});
+
+function crash(){
+  hull--;crashes++;combo=1;boostT=0;
+  $('flash').style.opacity=.5;setTimeout(()=>$('flash').style.opacity=0,120);
+  shake=14;
+  if(hull<=0&&!finished){finished=true;endRun();}
+}
+function endRun(){
+  playing=false;
+  const pct=Math.round(dist/songDur*100);
+  const grade=pct>85?'S — THE MAZE SOLVED ITSELF':pct>60?'A — LIGHT RUNNER':pct>35?'B — WIPEOUT SURVIVOR':'C — THE SONG WON';
+  $('egrade').textContent=grade;
+  $('estats').innerHTML=Math.round(dist)+'s of '+Math.round(songDur)+'s · top combo ×'+topCombo+' · '+crashes+' wipeouts';
+  $('end').style.display='block';
+  try{srcNode.stop();}catch(e){}
+}
+
+function frame(now){
+  if(!playing){
+    cx.fillStyle='#0a0d12';cx.fillRect(0,0,cv.width,cv.height);
+    if(hidePause){cx.fillStyle='#e8b45a';cx.font='14px monospace';cx.fillText('PAUSED — the song waits. click to resume.',cv.width/2-180,cv.height/2);}
+    return;
+  }
+  const dt=Math.min((now-last)/1000,.06);last=now;
+  songT+=dt;
+  dist=songT;
+  // live bass → beat pulse
+  if(analyzer){
+    if(!freq)freq=new Uint8Array(analyzer.frequencyBinCount);
+    analyzer.getByteFrequencyData(freq);
+    let s=0;for(let i=0;i<8;i++)s+=freq[i];bass=bass*.7+(s/8/255)*.3;
+    const bt=Math.floor(songT/ .5);if(bass>.55&&lastBeatT!==bt){lastBeatT=bt;$('beat').textContent='beat ♦ '+Math.round(bass*100);}
+  }
+  if(boostT>0)boostT-=dt;
+  speedMult=1+(boostT>0?.5:0)+bass*.25;
+
+  // steering
+  const L=keys['a']||keys['arrowleft'],R=keys['d']||keys['arrowright'];
+  shipX+=(R?1:0)*(1.6*dt)*(1+(boostT>0?.2:0))-(L?1:0)*(1.6*dt)*(1+(boostT>0?.2:0));
+  shipX=Math.max(-1.05,Math.min(1.05,shipX));
+
+  // level events near songT
+  const look=2.2;
+  for(const ev of LEVEL){
+    if(ev.done)continue;
+    const dz=ev.t-songT;
+    if(dz>0&&dz<look*speedMult){/* approaching — collision checked at pass */}
+    if(dz<=0&&dz>-.14&&!ev.done){
+      ev.done=true;
+      if(ev.type==='wall'){
+        if(Math.abs(shipX-ev.x)<ev.w/2+.06){crash();}
+      }else if(ev.type==='block'){
+        if(Math.abs(shipX-ev.x)<ev.w/2+.06){crash();}
+      }else if(ev.type==='gate'){
+        if(Math.abs(shipX-ev.x)<ev.w/2){combo++;topCombo=Math.max(topCombo,combo);}
+      }else if(ev.type==='boost'){boostT=2.5;}
+    }
+  }
+
+  render(dt);
+  $('spd').textContent=Math.round(speedMult*100)+'%';
+  $('hull').textContent='■'.repeat(Math.max(0,hull))+'□'.repeat(3-Math.max(0,hull));
+  $('combo').textContent='×'+combo;
+  $('dist').textContent=Math.round(dist/songDur*100)+'%';
+  if(songT>=songDur&&!finished){finished=true;endRun();}
+  requestAnimationFrame(frame);
+}
+let shake=0;
+function render(dt){
+  const w=cv.width,h=cv.height;
+  shake*=.86;const shx=(Math.random()-.5)*shake,shy=(Math.random()-.5)*shake;
+  cx.fillStyle='#0a0d12';cx.fillRect(0,0,w,h);
+  const horizon=h*.38,cxp=w/2+shx;
+  // beat pulse glow
+  cx.fillStyle=`rgba(124,245,255,${.02+bass*.06})`;cx.fillRect(0,0,w,h);
+  // tunnel streaks
+  cx.strokeStyle='rgba(124,245,255,.14)';
+  for(let i=0;i<14;i++){const fx=(i/13-.5)*2;
+    cx.beginPath();cx.moveTo(cxp+fx*w*.06,horizon);cx.lineTo(cxp+fx*w*1.5,h+40);cx.stroke();}
+  // events as neon quads scaled by z
+  const order=[];
+  for(const ev of LEVEL){
+    const dz=ev.t-songT;
+    if(dz<-0.2||dz>4.5)continue;
+    order.push({ev,dz});
+  }
+  order.sort((a,b)=>b.dz-a.dz);
+  for(const {ev,dz} of order){
+    const z=Math.max(dz,.02);
+    const scale=.35/z;
+    const ex=w/2+shx+ev.x*w*.55*scale+(ev.x)*w*.06;
+    const ew=ev.w*w*.55*scale;
+    const ey=horizon+(h-horizon)*scale*.9;
+    const eh=h*.34*scale;
+    let col='#7cf5ff',alpha=Math.min(.9,(4.5-dz)/4.5);
+    if(ev.type==='wall')col='#e8b45a';
+    if(ev.type==='boost')col='#7dff9e';
+    if(ev.type==='gate')col='#ff6bd6';
+    if(ev.done&&ev.type!=='boost')alpha*=.35;
+    cx.globalAlpha=alpha;
+    cx.shadowColor=col;cx.shadowBlur=12+bass*18;
+    cx.strokeStyle=col;cx.lineWidth=2;
+    if(ev.type==='gate'){cx.beginPath();cx.arc(ex,ey,Math.max(4,ew*.7),0,7);cx.stroke();}
+    else{cx.strokeRect(ex-ew/2,ey-eh/2,ew,eh);
+      if(ev.type==='wall'&&alpha>.5){cx.globalAlpha=alpha*.25;cx.fillStyle=col;cx.fillRect(ex-ew/2,ey-eh/2,ew,eh);}}
+    cx.shadowBlur=0;cx.globalAlpha=1;
+  }
+  // the ship
+  const sx=w/2+shx+shipX*w*.10,sy=h*.82;
+  cx.save();cx.translate(sx,sy);
+  cx.fillStyle='#e8b45a';cx.shadowColor='#e8b45a';cx.shadowBlur=14;
+  cx.beginPath();cx.moveTo(0,-12);cx.lineTo(9,8);cx.lineTo(0,4);cx.lineTo(-9,8);cx.closePath();cx.fill();
+  if(boostT>0){cx.fillStyle='#7dff9e';cx.fillRect(-3,6,6,8+Math.random()*8);}
+  cx.shadowBlur=0;cx.restore();
+}
+</script>
+</body>
+</html>

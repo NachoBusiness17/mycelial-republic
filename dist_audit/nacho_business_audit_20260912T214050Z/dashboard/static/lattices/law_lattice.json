@@ -1,0 +1,589 @@
+{
+ "schema": "lattice_logic.v1",
+ "name": "law_lattice",
+ "family": "rule lattice",
+ "source": "queue/lanes/law_lattice.json",
+ "count": 58,
+ "entries": [
+  {
+   "id": "LAW-001",
+   "name": "AX-RESOLVE-OVER-PIXEL-GUESS",
+   "statement": "Resolve targets from the accessibility tree (exact bounds, clickability) and act on those; never let a vision brain guess pixel coordinates (measured: pixel-guess missed by 1009px; small-text pixel misreads confirmed twice; AX exact).",
+   "source": "watch/DOGFOOD_DAYTOOL_AX_VS_PIXEL_20260904.md",
+   "scope": "Tapping/reading UI on embodied surfaces (WebView measured; native apps Unproven). Absorbs SMALL-TEXT-PIXEL law (vision endowment) as second measurement.",
+   "enforcement": "runtime",
+   "consumer": "android_surface manifest; mag/autoglm.py + scripts/vision_endowment.py harnesses",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-002",
+   "name": "NORMALIZE-AT-BOUNDARY",
+   "statement": "Normalize verb case/aliases at the harness boundary; the action lattice stays canonical inside.",
+   "source": "watch/DOGFOOD_DAYTOOL_AX_VS_PIXEL_20260904.md",
+   "scope": "Actuator harness input parsing (vendor returned 'Tap' vs grammar 'tap').",
+   "enforcement": "runtime",
+   "consumer": "mag/autoglm.py boundary normalizer; android_surface manifest",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-003",
+   "name": "ONE-CANONICAL-MIRROR-SHAPE",
+   "statement": "Every file in dashboard/static/lattices/ is produced only by mag.lattice_logic export with shape {schema: lattice_logic.v1, entries: [...]}; raw copies are forbidden (measured: cp collapsed 47 entries into 1 walked entry).",
+   "source": "watch/DOGFOOD_DAYTOOL_AX_VS_PIXEL_20260904.md",
+   "scope": "dashboard/static/lattices/* mirrors; any future static lattice export.",
+   "enforcement": "structural",
+   "consumer": "mag/lattice_logic.py export (sole producer); daytool walker",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-004",
+   "name": "TRUNCATION-BURN",
+   "statement": "Treat empty-content-at-token-cap (finish=length, no error field) as a quota-BURNING failure, not a clean empty: set max_tokens above the realistic answer budget (vision-exp cap now 1200) and count the burned tokens.",
+   "source": "watch/VISION_ENDOWMENT_RECEIPT_20260904.md",
+   "scope": "Vision/LLM calls with max_tokens caps, especially free-lane vision models.",
+   "enforcement": "runtime",
+   "consumer": "mag/vision.py; vision/endowment harness caps",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-005",
+   "name": "SHARED-RIG-DRIFT",
+   "statement": "On shared rigs every prep self-heals to the expected surface (tap the home button) and every run raises on null ground truth — never score against a drifted environment.",
+   "source": "watch/VISION_ENDOWMENT_RECEIPT_20260904.md",
+   "scope": "emulator-5554 and any surface more than one driver can navigate.",
+   "enforcement": "runtime",
+   "consumer": "scripts/vision_endowment.py prep+drift-guard; android test harnesses",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-006",
+   "name": "PILL-CONCATENATION",
+   "statement": "Inject delimiters between concatenated AX spans in the transducer; never hand a small model unsegmented pill text ('generic entries47 entriesinvariants.json').",
+   "source": "watch/VISION_ENDOWMENT_RECEIPT_20260904.md",
+   "scope": "AX/accessibility-tree text serialization feeding small models.",
+   "enforcement": "runtime",
+   "consumer": "see()/transducer output format (fix belongs in the tool, not the model)",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-007",
+   "name": "TRANSDUCER-PREFERENCE",
+   "statement": "Offer the structure channel first and label both channels; dumb models prefer the tree when both are available (measured 5/5 chose 'ui').",
+   "source": "watch/VISION_ENDOWMENT_RECEIPT_20260904.md",
+   "scope": "Endowment tool design; observation-grade (n=5 tasks, one page).",
+   "enforcement": "prose",
+   "consumer": "transducer/endowment tool design notes",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-008",
+   "name": "QUESTION-TEMPLATE",
+   "statement": "Task wording is part of the transducer surface: state answer formats exactly and idiomatically — dumb models read templates literally and will pour wrong data into a literal template.",
+   "source": "watch/VISION_ENDOWMENT_RECEIPT_20260904.md",
+   "scope": "Harness question authoring for small models (t4 exhibit: coords poured into 'pos X/Y').",
+   "enforcement": "prose",
+   "consumer": "harness/task authors; evals lane",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-009",
+   "name": "POLL-NOT-PUSH",
+   "statement": "z.ai exposes zero webhook/callback surface (86/86 mirror pages, 14 openapi paths): own the polling loop; never wait for a push that cannot come — the vendor concedes orchestration to us.",
+   "source": "watch/STEAL_ZAI_SYSTEMS_AUTOMATE_20260904.md",
+   "scope": "All z.ai API integrations (async doors are FIRE then POLL).",
+   "enforcement": "structural",
+   "consumer": "scheduler organ; day_work scheduler; any agent calling z.ai async",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-010",
+   "name": "HONEST-AUTH-WALL",
+   "statement": "Never fake past an auth wall (login/captcha): name the wall, stop, escalate to the operator — steal the vendor's Take_over primitive pattern into every fleet actuator spec.",
+   "source": "watch/STEAL_ZAI_SYSTEMS_AUTOMATE_20260904.md",
+   "scope": "Embodied/web actuators hitting credentials, captchas, consent screens.",
+   "enforcement": "prose",
+   "consumer": "android_surface manifest; actuator specs (operator-gates kin)",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-011",
+   "name": "JUDGE-THEN-CAS",
+   "statement": "Commit takeovers by compare-and-swap on the target's identity token: re-read at commit and act only on exact token match; on any race lose honestly with zero writes (split-brain closed: exactly 1 winner per contended round).",
+   "source": "watch/CAS_FIX_RECEIPT_20260904.md",
+   "scope": "bay claim organ stale-takeover; window throttle takeover; any file-based claim commit.",
+   "enforcement": "structural",
+   "consumer": "mag/bay_organs.py (_tomb_move_if_same); mag/window_throttle.py; mag/race_harness.py gate",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-012",
+   "name": "LEASE-OUTLIVES-CLAIMANT",
+   "statement": "A lease can outlive its claimant: expiry or proven staleness — not pid liveness alone — governs takeover; pid is attribution. Judge staleness at takeover; never trust that a present claim is live.",
+   "source": "watch/CAS_FIX_RECEIPT_20260904.md",
+   "scope": "Claim leases everywhere (bay claims: grace+pid-death variant; window throttle: expiry-only variant, claim outlives claimant — builder receipt-002 lease law).",
+   "enforcement": "structural",
+   "consumer": "mag/bay_organs.py; mag/window_throttle.py",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-013",
+   "name": "TWO-STRIKE-AMENDED",
+   "statement": "Two strikes kill the DOOR, not the task: switch lane/approach and keep driving (retries near-free); bail only on operator attention, judgment-seat context, clock, or no-new-information — bail on boredom, not on cost.",
+   "source": "watch/LAW_AMENDMENT_TWOSTRIKE_20260904.md",
+   "scope": "All seats/lanes, all retries. Supersedes scarcity-era original (original tombstoned into this row's lineage). Abundance premise is a LANE claim: flash/bay abundant, premium seat-lane scarce until discipline lands (economist stamp).",
+   "enforcement": "prose",
+   "consumer": "all 7 lane manifests (amended block)",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-014",
+   "name": "OUTPUT-RATIO",
+   "statement": "Retire any automation/session whose useful-output divided by billed-tokens < 0.01 over rolling 24h (zombie-tick exhibit: would have killed it day one).",
+   "source": "watch/SELF_STEAL_COMPANY_DESIGN_20260904.md",
+   "scope": "Every automation and long session; premium lanes first. Origin: watch/USAGE_METER_SELF_STEAL_20260904.md law 1.",
+   "enforcement": "runtime",
+   "consumer": "usage meter + nightly usage-db sweep organ (salon direction item 2)",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-015",
+   "name": "CONTEXT-DEBT",
+   "statement": "Compaction + context re-feed must stay <= 3x peak useful output; retire beyond.",
+   "source": "watch/SELF_STEAL_COMPANY_DESIGN_20260904.md",
+   "scope": "Long conversations and looped agents. Origin: watch/USAGE_METER_SELF_STEAL_20260904.md law 3.",
+   "enforcement": "runtime",
+   "consumer": "lane manifest budget guards; judgment-seat hygiene",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-016",
+   "name": "HEARTBEAT-THROTTLE",
+   "statement": "Heartbeats are budgeted burns: 'exit fast' is not free when context re-feed dominates; budget heartbeat cadence against useful output.",
+   "source": "watch/SELF_STEAL_COMPANY_DESIGN_20260904.md",
+   "scope": "Scheduled loops, watchers, daemons. Origin: watch/USAGE_METER_SELF_STEAL_20260904.md law 4.",
+   "enforcement": "runtime",
+   "consumer": "meter; scheduler organ cadence",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-017",
+   "name": "MODEL-PIN-ISOLATION",
+   "statement": "Subagents never inherit premium pins; default every spawn to the cheapest capable lane.",
+   "source": "watch/SELF_STEAL_COMPANY_DESIGN_20260904.md",
+   "scope": "All subagent spawns. Origin: watch/USAGE_METER_SELF_STEAL_20260904.md law 2.",
+   "enforcement": "runtime",
+   "consumer": "swarm_worker DEFAULT_PROVIDER + rib_chat defaults (repointed 08-27)",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-018",
+   "name": "MODEL-PIN-EXPIRY",
+   "statement": "A premium pin >72h without a completed task auto-demotes to the cheap lane.",
+   "source": "watch/USAGE_METER_SELF_STEAL_20260904.md",
+   "scope": "Premium lane pins (z_ai2-class). No enforcing organ yet — beyond the mission's named sources, disclosed in the receipt.",
+   "enforcement": "prose",
+   "consumer": "swarm pin manager / economist",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-019",
+   "name": "CITE-VERIFY",
+   "statement": "A citation is a claim until byte-checked against its source (ns-3 fake-citation exhibit); grok's auto-sourced captures are the cheapest verify lane.",
+   "source": "watch/SELF_STEAL_COMPANY_DESIGN_20260904.md",
+   "scope": "Research outputs, salon witnesses, any agent citing a source.",
+   "enforcement": "runtime",
+   "consumer": "research lane verify pass; intake organ",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-020",
+   "name": "TRAIL-DISCIPLINE",
+   "statement": "Every lane action lands as a trail row (ts/actor/event/detail/artifacts) same-turn; trails/surfaces/digests are files on disk, mirrored — no era gets lost again.",
+   "source": "watch/SELF_STEAL_COMPANY_DESIGN_20260904.md",
+   "scope": "All lanes and seats. Append-only is convention until LAW-043 hash-chaining lands.",
+   "enforcement": "structural",
+   "consumer": "queue/lanes/*/trail.jsonl + dashboard mirrors",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-021",
+   "name": "RECEIPTS-HAVE-HYPOTHESES",
+   "statement": "Every receipt states its hypothesis and a tri-state verdict (Supported/Disputed/Unproven) with evidence attached; thinking is evidence of method, not law itself.",
+   "source": "watch/SELF_STEAL_COMPANY_DESIGN_20260904.md",
+   "scope": "watch/ cards, salon folds, run receipts.",
+   "enforcement": "prose",
+   "consumer": "card template; salon runner",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-022",
+   "name": "SACRED-COWS-NOT-LEGACY-SHIT",
+   "statement": "Old daemons/drafts are one draft of the brain: steal the bones, name the reinterpretation, retire the draft — never frame fleet history as garbage.",
+   "source": "watch/SELF_STEAL_COMPANY_DESIGN_20260904.md",
+   "scope": "All self-steal and retirement work (operator-corrected standing law).",
+   "enforcement": "prose",
+   "consumer": "AGENTS.md standing laws; operator-corrections skill",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-023",
+   "name": "TOPOLOGY-LAW",
+   "statement": "Android fleet: one golden body — never clone logins (canon account at stake); UI-as-API; bodies are the embodied lane's field office (2 live, 4 fit).",
+   "source": "watch/SELF_STEAL_COMPANY_DESIGN_20260904.md",
+   "scope": "android_surface lane; AVD/emulator management.",
+   "enforcement": "prose",
+   "consumer": "android_surface manifest",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-024",
+   "name": "CUTOFF-HONESTY",
+   "statement": "State knowledge limits in ONE line and keep driving structurally sound reasoning; never confabulate past a cutoff (blind-7B honest refusals = the baseline pattern).",
+   "source": "corpus/frontier_thinking/FT001_zai53_research_restock_20260904.md",
+   "scope": "All answer composition under knowledge limits.",
+   "enforcement": "prose",
+   "consumer": "RIB boot clauses (RIB_LANE_WINDOW_BOOT)",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-025",
+   "name": "DEFINE-THE-NEGATIVE-SPACE",
+   "statement": "Before proposing X, enumerate what counts as NOT-X so the boundary is structural, not a vibe.",
+   "source": "corpus/frontier_thinking/FT001_zai53_research_restock_20260904.md",
+   "scope": "Research/scouting missions; rubric definitions.",
+   "enforcement": "prose",
+   "consumer": "RIB boot clauses; intake rubric",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-026",
+   "name": "STRUCTURAL-OVER-TEMPORAL",
+   "statement": "Under knowledge limits, rank candidates by structural persistence (likely to remain so) over recency claims.",
+   "source": "corpus/frontier_thinking/FT001_zai53_research_restock_20260904.md",
+   "scope": "Signal-source selection; restock missions.",
+   "enforcement": "prose",
+   "consumer": "research restock rubric",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-027",
+   "name": "LEADING-INDICATOR-PREFERENCE",
+   "statement": "Score signal sources by how EARLY the signal fires (certs before press, filings before calls, downloads before coverage).",
+   "source": "corpus/frontier_thinking/FT001_zai53_research_restock_20260904.md",
+   "scope": "Signal-source ranking.",
+   "enforcement": "prose",
+   "consumer": "research restock rubric",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-028",
+   "name": "DISCARD-TRACKING",
+   "statement": "The thinking is wider than the answer: capture the cut list too — ingest both the verbatim thinking and the answer (FT loop harvests both).",
+   "source": "corpus/frontier_thinking/FT001_zai53_research_restock_20260904.md",
+   "scope": "FT ingest loop; salon distills.",
+   "enforcement": "prose",
+   "consumer": "corpus/frontier_thinking/ captures + INDEX",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-029",
+   "name": "OUTPUT-BUDGET-DISCIPLINE",
+   "statement": "Restate the user's format contract to yourself before composing; enforce via a format gate where machine-checkable.",
+   "source": "corpus/frontier_thinking/FT001_zai53_research_restock_20260904.md",
+   "scope": "All composing agents; harness format gates.",
+   "enforcement": "runtime",
+   "consumer": "RIB boot clauses; format gates",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-030",
+   "name": "MANIFEST-AT-SPAWN",
+   "statement": "The lane manifest is read once at spawn, never at runtime; invariants live in files, not in-process memory.",
+   "source": "queue/lanes/builder/manifest.md",
+   "scope": "All 7 lanes (LAWS block). Convention until MCP_MANIFEST_SPEC enforces at spawn.",
+   "enforcement": "runtime",
+   "consumer": "lane spawn; MCP_MANIFEST_SPEC (hardening pending)",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-031",
+   "name": "INBOX-POINTERS-ONLY",
+   "statement": "Inbox rows are compact pointers; payloads live in the files the pointer names.",
+   "source": "queue/lanes/builder/manifest.md",
+   "scope": "All lane inboxes (jsonl).",
+   "enforcement": "runtime",
+   "consumer": "queue/lanes/*/inbox.jsonl writers",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-032",
+   "name": "SURFACE-BROWSE-TARGET",
+   "statement": "The lane surface is the operator's browse target: populate at every phase change; never idle with a stub surface.",
+   "source": "queue/lanes/builder/manifest.md",
+   "scope": "All lane surfaces (+ dashboard mirrors).",
+   "enforcement": "prose",
+   "consumer": "queue/lanes/*/surface.md; hardener = LAW-044",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-033",
+   "name": "ONE-SCHEDULER-ORGAN",
+   "statement": "All timers live in ONE scheduler organ; a lane cannot run its own cron — architectural absence is the enforcement.",
+   "source": "queue/lanes/builder/manifest.md",
+   "scope": "Whole fleet (respawn law kin: no second supervisors).",
+   "enforcement": "structural",
+   "consumer": "container governor + restart policies; mag-docker-watchdog",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-034",
+   "name": "MCP-WHITELIST",
+   "statement": "A lane may call only the MCP servers named in its manifest.",
+   "source": "queue/lanes/builder/manifest.md",
+   "scope": "All lanes (fair-use firewall kin).",
+   "enforcement": "runtime",
+   "consumer": "lane spawn enforcement (MCP_MANIFEST_SPEC)",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-035",
+   "name": "TRI-STATE-RECEIPTS",
+   "statement": "No receipt = never happened: every completed action carries a tri-state receipt (Supported/Disputed/Unproven) before the arc closes.",
+   "source": "queue/lanes/builder/manifest.md",
+   "scope": "All lanes; today a logging convention — hardens via LAW-037 gate.",
+   "enforcement": "runtime",
+   "consumer": "all lane trails/receipts",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-036",
+   "name": "KILL-WORD",
+   "statement": "Manager fires 'KILL <NAME>': the lane flushes its inbox, writes a KILLED receipt, and exits.",
+   "source": "queue/lanes/builder/manifest.md",
+   "scope": "All lanes. Kill-switch designed, never fired — untested physics; keep the path warm.",
+   "enforcement": "runtime",
+   "consumer": "manager; kill-switch registry (Agreements charter)",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-037",
+   "name": "HANDOFF-GATE",
+   "statement": "Every inbox drop is validated atomically at transfer (tri-state receipt + policy check + budget check) before the lane acts on it.",
+   "source": "watch/STEAL_ORG_VS_FIELD_20260904.md",
+   "scope": "All lane inboxes (clause 9, v1.1). In manifests as convention; enforcement build pending.",
+   "enforcement": "prose",
+   "consumer": "all lane manifests (clause 9); hardener = LAW-046",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-038",
+   "name": "ASK-BUDGET",
+   "statement": "Asking the operator early is a sanctioned, receipted SENSING action with its own allocation — never a demerit, never a stall condition.",
+   "source": "watch/STEAL_ORG_VS_FIELD_20260904.md",
+   "scope": "All lanes (clause 10, v1.1). DISPUTED: the stall-ladder organ (stall->nudge->worth-eval->kill) still counts asking as stalling — live conflict until LAW-048 counter lands.",
+   "enforcement": "prose",
+   "consumer": "all lane manifests (clause 10); hardener = LAW-048",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-039",
+   "name": "CHAN-COMMS",
+   "statement": "Lanes talk to each other through the chan surface: typed rows {from_lane,to_lane,msg,ref} appended to watch/room.jsonl; the manager answers IN LINE, not only in batched digests. Speed over comfort: use the tools the task needs.",
+   "source": "queue/lanes/builder/manifest.md",
+   "scope": "All lanes + manager (clause 11, v1.2).",
+   "enforcement": "prose",
+   "consumer": "watch/room.jsonl; /chan surface (8765)",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-040",
+   "name": "RESEARCH-SAME-TURN",
+   "statement": "Dropped links process SAME TURN (score/route/launch), run in background, surface at every phase change; duplication of long digs is emphasis (cross-verification). Never wait idle with a stub surface.",
+   "source": "queue/lanes/research/manifest.md",
+   "scope": "Research lane charter amendment. Measured FAILING as prose (forgotten 3x — architecture card tier-1 exhibit): flagged, hardener = LAW-044.",
+   "enforcement": "prose",
+   "consumer": "research manifest; hardener = LAW-044",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-041",
+   "name": "STRUCTURE-IS-LAW",
+   "statement": "Enforce by physics first (structural: violation impossible or instantly self-evident), then runtime checks, then prose; move every Tier-1 law down a tier and harden Tier-2 to Tier-3 — every law that worked today was structural, every failure was prose.",
+   "source": "watch/ARCHITECTURE_IS_LAW_20260904.md",
+   "scope": "The meta-law: all law authoring and audits (this lattice follows it via the enforcement field).",
+   "enforcement": "prose",
+   "consumer": "this lattice; evals lane; redesign candidates below",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-042",
+   "name": "MACHINE-CHECKABLE-OR-DECORATIVE",
+   "statement": "A law whose condition is prose is decorative to a machine (measured: 8/8 law-registry conditions unfirable by lattice_logic chain()): law conditions go structured as they are touched — the Evals lane's first KPI.",
+   "source": "watch/ARCHITECTURE_IS_LAW_20260904.md",
+   "scope": "The law registry, this lattice's conditions, invariant checks. Same finding in dogfood card + salon blind spot + company-design open wound (deduped into this row).",
+   "enforcement": "runtime",
+   "consumer": "mag/lattice_logic.py chain(); evals lane charter (pending)",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-043",
+   "name": "HASH-CHAINED-TRAILS",
+   "statement": "Each trail row commits to the prior row's hash (verkle for trails) so rewriting history is self-evident, not trusted — append-only becomes physics.",
+   "source": "watch/ARCHITECTURE_IS_LAW_20260904.md",
+   "scope": "All trails. Candidate (Unproven) pending the physical-computing field fold.",
+   "enforcement": "prose",
+   "consumer": "trail writers; verkle chain (design kin)",
+   "disposition": "ROUTED"
+  },
+  {
+   "id": "LAW-044",
+   "name": "STRUCTURAL-SURFACE-POPULATION",
+   "statement": "The scheduler writes interim state to any lane surface whose trail grows while its surface stays stale — population stops being the agent's choice.",
+   "source": "watch/ARCHITECTURE_IS_LAW_20260904.md",
+   "scope": "Lane surfaces; fixes the LAW-032/LAW-040 class of prose failures. Candidate (Unproven).",
+   "enforcement": "prose",
+   "consumer": "scheduler organ build (salon direction kin)",
+   "disposition": "ROUTED"
+  },
+  {
+   "id": "LAW-045",
+   "name": "DELETE-AS-APPEND",
+   "statement": "Nothing deletes silently: removals are moves-to-tomb with receipts (claims organ already does this — generalize to every destructive act).",
+   "source": "watch/ARCHITECTURE_IS_LAW_20260904.md",
+   "scope": "Claims today; general destructive ops candidate. Backup-first on ground-truth surgery is the standing kin.",
+   "enforcement": "runtime",
+   "consumer": "mag/bay_organs.py tombstones (.expired-*); generalization pending",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-046",
+   "name": "CAPABILITY-CHECKED-INBOXES",
+   "statement": "An inbox drop without a valid handoff-gate row is invisible to the lane — unreadable by construction.",
+   "source": "watch/ARCHITECTURE_IS_LAW_20260904.md",
+   "scope": "Lane inboxes; structural hardening of LAW-037. Candidate (Unproven).",
+   "enforcement": "prose",
+   "consumer": "lane inbox readers; MCP_MANIFEST_SPEC spawn gate",
+   "disposition": "ROUTED"
+  },
+  {
+   "id": "LAW-047",
+   "name": "TIME-UNFAKEABLE-ROWS",
+   "statement": "Receipts carry chain-anchored (RFC-3161-style) timestamps so 'when' cannot be backdated.",
+   "source": "watch/ARCHITECTURE_IS_LAW_20260904.md",
+   "scope": "Receipts/trails. Candidate; chain gives this nearly free but needs a design pass — SHELVED to the REEMBER shelf.",
+   "enforcement": "prose",
+   "consumer": "verkle chain anchoring (design owed)",
+   "disposition": "SHELVED"
+  },
+  {
+   "id": "LAW-048",
+   "name": "ASK-BUDGET-COUNTER",
+   "statement": "A monotonic per-lane counter enforces the ask allocation: asking decrements it; the stall-ladder cannot see sanctioned asking as failure because the counter says it is sanctioned.",
+   "source": "watch/ARCHITECTURE_IS_LAW_20260904.md",
+   "scope": "All lanes; resolves the LAW-038 vs stall-ladder dispute. Candidate (Unproven).",
+   "enforcement": "prose",
+   "consumer": "scheduler/evals build",
+   "disposition": "ROUTED"
+  },
+  {
+   "id": "LAW-049",
+   "name": "RESTOCK-FIRST",
+   "statement": "Food (genuinely new signal) is the binding constraint: research mandate is restock-first on NEW domains, archaeology secondary (orphans folded; rereading our own mail was a one-time recovery); sweeps retire at diminishing returns (shift-5+ theater).",
+   "source": "watch/SELF_STEAL_COMPANY_DESIGN_20260904.md",
+   "scope": "Research lane mandate (salon-unanimous + economist concur with lane-scope caveat). Manifest edit pending.",
+   "enforcement": "prose",
+   "consumer": "research manifest mandate flip; HUNGER_LEDGER instrument",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-050",
+   "name": "WINDOW-PRIMARY-CLAIM",
+   "statement": "One primary per work window, claimed by file: claim via atomic create with judge-then-CAS takeover and expiry-only lease (race-verified, 154 checks, 0 failures).",
+   "source": "watch/SALON_DAY_DIRECTION_20260904.md",
+   "scope": "Night windows 23:00-09:00 and any multi-booked window; launch-law same-turn builders.",
+   "enforcement": "runtime",
+   "consumer": "mag/window_throttle.py (BUILT 09-04, builder receipt-002)",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-051",
+   "name": "FOUR-VERB-STANDARD",
+   "statement": "Every orphan/lesson/root gets all four verbs — WIRE (named consumer), TRANSDUCE (structure not prose), DISPOSE (FOLDED/TOMBSTONED/ROUTED/SHELVED, in the digest), SUBSTRATE (queryable/append-only/read-at-spawn); prose is the input format, never the storage format.",
+   "source": "watch/THE_NORMALIZER_20260904.md",
+   "scope": "All normalization work (this run is its first enforcement). Disclosed: +1 beyond the mission's named source list.",
+   "enforcement": "runtime",
+   "consumer": "THE_NORMALIZER standard; day digests; this lattice",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-052",
+   "name": "COUNSEL-ADVISES-FOUNDER-RULES",
+   "statement": "Legal verdicts are recorded advice, never gates; the founder's overrule is receipted and supreme.",
+   "source": "watch/LEGAL_MEMO_001_TOS_POSTURE_20260904.md",
+   "scope": "counsel windows",
+   "enforcement": "structural",
+   "consumer": "RIB_LAWYER_BOOT",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-053",
+   "name": "RIDDLER GATE",
+   "statement": "External-surface missions carrying fleet internals route through mag/riddler.py (semantic surrogate; the mapping never leaves the machine).",
+   "source": "operator ruling 09-04",
+   "scope": "intake organ sensors",
+   "enforcement": "runtime",
+   "consumer": "INTAKE_ORGAN_SPEC",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-054",
+   "name": "DISCOVERED-INVARIANTS",
+   "statement": "Harvested rules/method/thinking are discoveries of existing invariants, not property; reading our own rendered DOM and keeping it is sanctioned; training corpus stays license-clean for provenance (our interest).",
+   "source": "operator ruling 09-04",
+   "scope": "frontier-thinking harvest",
+   "enforcement": "structural",
+   "consumer": "FRONTIER_THINKING_PROTOCOL",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-055",
+   "name": "HUMAN-PACED WINDOWS",
+   "statement": "External surfaces get human-paced rates, session spread, and volume patterns indistinguishable from the founder own usage — camouflage-craft as pure operations, never compliance theater.",
+   "source": "operator ruling 09-04 (napkin-cited): do not get us banned; refuse orwellian framing",
+   "scope": "intake organ external sensors",
+   "enforcement": "runtime",
+   "consumer": "INTAKE_ORGAN_SPEC + FRONTIER_THINKING_PROTOCOL",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-056",
+   "name": "COUNTER-TEETH",
+   "statement": "Any economist premium/RED flag that survives two scheduler fires without action escalates AUTOMATICALLY to the operator inbox (zcode INBOX row + digest headline). Advice without escalation after 2 fires is a lane failure, not an operator miss.",
+   "source": "operator mint 09-04 (economist summons)",
+   "scope": "economist flags + scheduler",
+   "enforcement": "runtime",
+   "consumer": "scheduler prompt + economist surface",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-057",
+   "name": "THE TEN-MINUTE SURFACE",
+   "statement": "Before any task is accepted, the seat names the exact window/control it will arm in the operator UI within 10 minutes - no charter, no card, no mirror. If it cannot name the concrete surface it will touch, it does not start.",
+   "source": "salon keep-or-restart 09-04 (deepseek-pro witness, operator-ordered)",
+   "scope": "all seats, all verbs",
+   "enforcement": "runtime",
+   "consumer": "every lane manifest + seat boot",
+   "disposition": "FOLDED"
+  },
+  {
+   "id": "LAW-058",
+   "name": "PIN-CHECK-BEFORE-WORK",
+   "statement": "Before doing model-work, a session reads its own pin; a premium-pinned session with flash available REFUSES bulk work and redirects to a flash-born surface. Killing instances never fixes classes - the hosting session is the habitat.",
+   "source": "operator repetition-debug 09-04 evening",
+   "scope": "all sessions",
+   "enforcement": "runtime",
+   "consumer": "seat boot + lane manifests",
+   "disposition": "FOLDED"
+  }
+ ]
+}

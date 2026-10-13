@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DAY TOOL</title>
+<style>
+  body{background:#0a0a0a;color:#d8d8d8;font-family:Menlo,Consolas,monospace;margin:0;padding:12px;font-size:13px}
+  h1{font-size:16px;color:#7fd18a;margin:0 0 2px}
+  h2{font-size:13px;color:#e8b74a;margin:18px 0 6px;border-bottom:1px solid #333;padding-bottom:3px}
+  .sub{color:#777;font-size:11px;margin-bottom:8px}
+  pre{background:#111;border:1px solid #2a2a2a;border-radius:4px;padding:8px;white-space:pre-wrap;word-break:break-word;max-height:40vh;overflow:auto;margin:0}
+  .err{color:#e86a5a}
+  .ok{color:#7fd18a}
+  button{background:#1d2b1f;color:#7fd18a;border:1px solid #3a5a3e;border-radius:4px;padding:8px 12px;font-family:inherit;font-size:13px;margin:2px 4px 2px 0}
+  button:active{background:#2d4b32}
+  .row{display:flex;flex-wrap:wrap;gap:2px;align-items:center}
+  .card{background:#111;border:1px solid #2a2a2a;border-radius:4px;padding:8px;margin-bottom:8px}
+  .pill{display:inline-block;background:#222;border-radius:8px;padding:1px 8px;font-size:11px;color:#aaa;margin-right:4px}
+  input{background:#111;color:#d8d8d8;border:1px solid #2a2a2a;border-radius:4px;padding:6px;font-family:inherit;font-size:12px;width:60%}
+  #steplog{max-height:30vh}
+  .lanes li{margin-bottom:3px}
+</style>
+</head>
+<body>
+<h1>DAY TOOL <span id="clock"></span></h1>
+<div class="sub">digest · lattice console · lanes — the day-work surface. Text-first: if a door is dead you will see the error, never a blank page.</div>
+
+<h2>1 · DAY-WORK DIGEST <span class="pill" id="digest-state">idle</span></h2>
+<div class="row"><button onclick="loadDigest()">RELOAD</button><button onclick="location.href='/static/lanes.html'">LANES (manager board)</button><span class="sub" id="digest-when"></span></div>
+<pre id="digest">not loaded</pre>
+
+<h2>2 · LATTICE CONSOLE <span class="pill" id="lat-state">idle</span></h2>
+<div class="sub">the dumb stepper: loads a lattice, walks it ONE step per press. Structure lives in the lattice; execution stays dumb. This is the dumb-models-do-complex-tasks rig in miniature.</div>
+<div class="row">
+  <button onclick="loadLattice('law_lattice.json')">LAW LATTICE</button>
+  <button onclick="loadLattice('invariants.json')">invariants</button>
+  <button onclick="loadLattice('law_registry.json')">law registry</button>
+  <button onclick="loadLattice('field.json')">steer field</button>
+  <input id="latpath" placeholder="file in /static/lattices/…">
+  <button onclick="loadLattice(document.getElementById('latpath').value.trim())">LOAD</button>
+</div>
+<div class="card"><div id="latsummary">no lattice loaded</div></div>
+<div class="row">
+  <button onclick="stepLattice(1)">STEP ×1</button>
+  <button onclick="stepLattice(10)">STEP ×10</button>
+  <button onclick="stepLattice(70)">STEP ×70 (the ladder)</button>
+  <button onclick="resetWalk()">RESET</button>
+  <span class="sub" id="walkpos"></span>
+</div>
+<pre id="steplog">idle — load a lattice, then step.</pre>
+
+<h2>3 · DAY LANES</h2>
+<div class="card"><ul class="lanes" style="margin:0;padding-left:18px">
+<li><span class="ok">SEAT</span> — Max plan drives judgment. VERDICT RECEIPTED: Lite cannot drive the seat (one planning session ≈ 50% hourly compute; 201M tok on GLM-5.3 this convo today).</li>
+<li><span class="ok">BULK</span> — Lite key lanes (z_ai3/Calcifer, glm-5.3-flash via fuel_feed FREE_LANES) carry day work. 27.85 rps / 50-burst receipts stand.</li>
+<li><span class="ok">RIG</span> — Android emulator-5554 + pocketfleet APK: the actuation test bed (this page).</li>
+<li><span class="ok">GOPHERS</span> — background subagents: session-orphan mining · lattice inventory · z.ai systems steal.</li>
+<li>PENDING GOs — tick kill e2c00e27 · B2 eyes KEY-gate · omen $10 sherpa-gate · Max #2 hold.</li>
+</ul></div>
+
+<script>
+const DIGEST_URL = '/static/day_work_digest.txt';       // mirrored by the scheduler (the /files/ door only maps biography/)
+const LAT_DIR = '/static/lattices/';                     // lattice mirrors live here
+const $ = id => document.getElementById(id);
+setInterval(()=>{ $('clock').textContent = new Date().toLocaleTimeString(); }, 1000);
+
+async function loadDigest(){
+  $('digest-state').textContent='loading…';
+  try{
+    const r = await fetch(DIGEST_URL, {cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP '+r.status+' — door dead or file missing');
+    const t = await r.text();
+    if(!t.trim()) throw new Error('file empty');
+    $('digest').textContent = t;
+    $('digest').className='ok';
+    $('digest-state').textContent='live'; $('digest-state').className='pill ok';
+    $('digest-when').textContent='loaded '+new Date().toLocaleTimeString();
+  }catch(e){
+    $('digest').textContent = 'ERROR: '+e.message+'\n(digest file or /files door not serving — check dashboard server)';
+    $('digest').className='err';
+    $('digest-state').textContent='error'; $('digest-state').className='pill err';
+  }
+}
+loadDigest(); setInterval(loadDigest, 60000);
+
+let LAT=null, WALK={i:0, log:[]};
+function kindOf(items){
+  if(!items.length) return 'empty';
+  const k0=items[0];
+  if(k0.sha||k0.signal) return 'invariant registry';
+  if(k0.name&&k0.facts) return 'law registry';
+  if(k0.if!==undefined||k0.when!==undefined||k0.condition!==undefined) return 'rule lattice (condition→action)';
+  if(k0.x!==undefined||k0.r!==undefined||k0.mu!==undefined) return 'numeric grid';
+  return 'generic entries';
+}
+async function loadLattice(p){
+  if(!p){ $('lat-state').textContent='no path'; return; }
+  $('lat-state').textContent='loading…';
+  try{
+    const r=await fetch(LAT_DIR+p,{cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    let j=await r.json(), items=null;
+    if(Array.isArray(j)) items=j;
+    else for(const k of ['invariants','rules','entries','laws','items','fields']) if(Array.isArray(j[k])){ items=j[k]; break; }
+    if(!items && typeof j==='object'){ // registry family: dict keyed by name (e.g. LAW-N) — values are the entries
+      const vals=Object.values(j).filter(v=>v&&typeof v==='object'&&!Array.isArray(v));
+      if(vals.length && Object.keys(j).length<=vals.length*2){
+        items=vals.map((v,i)=>Object.assign({name:Object.keys(j)[i]},v));
+      }
+    }
+    if(!items) throw new Error('no array found at top level or common keys');
+    LAT={path:p, items, kind:kindOf(items)};
+    resetWalk();
+    $('latsummary').innerHTML='<span class="pill">'+LAT.kind+'</span><span class="pill">'+items.length+' entries</span> <span class="sub">'+p+'</span>';
+    $('lat-state').textContent='loaded'; $('lat-state').className='pill ok';
+    $('steplog').textContent='loaded '+items.length+' entries. STEP walks them one at a time — the 70-step ladder = 70 presses of attention.';
+  }catch(e){
+    LAT=null;
+    $('lat-summary') && ($('latsummary').innerHTML='<span class="err">ERROR: '+e.message+'</span>');
+    $('latsummary').innerHTML='<span class="err">ERROR: '+e.message+'</span>';
+    $('lat-state').textContent='error'; $('lat-state').className='pill err';
+  }
+}
+function stepLine(it, i){
+  const head = it.name||it.id||it.sha||it.title||(typeof it==='string'?it.slice(0,80):JSON.stringify(it).slice(0,80));
+  const detail = it.signal||it.facts&&it.facts[0]||it.then||it.action||it.summary||'';
+  return ('['+String(i+1).padStart(3,'0')+'] '+head+(detail?' — '+String(detail).slice(0,120):''));
+}
+function stepLattice(n){
+  if(!LAT){ $('steplog').textContent='ERROR: no lattice loaded'; return; }
+  const out=[];
+  for(let s=0;s<n && WALK.i<LAT.items.length;s++,WALK.i++){
+    out.push(stepLine(LAT.items[WALK.i], WALK.i));
+  }
+  if(out.length){
+    WALK.log=WALK.log.concat(out).slice(-400);
+    $('steplog').textContent=WALK.log.slice(-70).join('\n');
+  }
+  if(WALK.i>=LAT.items.length){
+    $('steplog').textContent+='\n— END OF LATTICE: '+WALK.i+'/'+LAT.items.length+' walked.';
+  }
+  $('walkpos').textContent='pos '+WALK.i+'/'+LAT.items.length;
+}
+function resetWalk(){ WALK={i:0,log:[]}; $('walkpos').textContent='pos 0'+(LAT?'/'+LAT.items.length:''); $('steplog').textContent='walk reset.'; }
+</script>
+<script src="/static/nav.js"></script>
+</body>
+</html>

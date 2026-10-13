@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>THE INDEX — estate map (open-rib spine v0)</title>
+<style>
+  :root { --bg:#0a0a0f; --fg:#e8e6e3; --amber:#f59e0b; --dim:#8a8578; --hot:#ef4444; --warm:#f59e0b; --cold:#3b82f6; --frozen:#4b5563; }
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:var(--fg); font:14px/1.45 Consolas,monospace; margin:0; padding:16px; }
+  h1 { font-size:16px; color:var(--amber); letter-spacing:2px; margin:0 0 4px; }
+  .sub { color:var(--dim); font-size:12px; margin-bottom:12px; }
+  .bar { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; align-items:center; }
+  input, select { background:#14141c; color:var(--fg); border:1px solid #2a2a38; border-radius:4px; padding:6px 10px; font:inherit; }
+  #q { flex:1 1 260px; min-width:200px; }
+  .stat { color:var(--dim); font-size:12px; }
+  table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  th { text-align:left; color:var(--dim); border-bottom:1px solid #2a2a38; padding:4px 6px; position:sticky; top:0; background:var(--bg); }
+  td { padding:3px 6px; border-bottom:1px solid #17171f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:520px; }
+  tr:hover td { background:#14141c; }
+  .HOT{color:var(--hot)} .WARM{color:var(--warm)} .COLD{color:var(--cold)} .FROZEN{color:var(--frozen)}
+  .cards { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+  .card { border:1px solid #2a2a38; border-radius:6px; padding:6px 10px; font-size:12px; cursor:pointer; }
+  .card:hover { border-color:var(--amber); }
+  .card b { color:var(--amber); }
+  .err { color:var(--hot); padding:12px; }
+</style>
+</head>
+<body>
+<h1>THE INDEX // ESTATE MAP</h1>
+<div class="sub" id="sub">open-rib spine v0 — every file under projects/, mapped: last touched · what it is · how it relates to us</div>
+<div class="bar">
+  <input id="q" type="search" placeholder="grep the estate… (substring, e.g. tavern, shadowbonk, OPENCLAW)">
+  <select id="proj"><option value="">all projects</option></select>
+  <select id="rel"><option value="">all relations</option></select>
+  <select id="temp">
+    <option value="">all temps</option><option>HOT</option><option>WARM</option><option>COLD</option><option>FROZEN</option>
+  </select>
+  <span class="stat" id="stat"></span>
+</div>
+<div class="cards" id="cards"></div>
+<table id="tbl">
+  <thead><tr><th>temperature</th><th>last touched (UTC)</th><th>size</th><th>path</th><th>relation</th></tr></thead>
+  <tbody id="rows"></tbody>
+</table>
+<div class="err" id="err" hidden></div>
+<script>
+(function () {
+  var ROWS = []; // retired: rows now stream from /api/v1/estate/query (server-side skip list)
+  var q = document.getElementById("q"), proj = document.getElementById("proj"),
+      rel = document.getElementById("rel"), temp = document.getElementById("temp"),
+      stat = document.getElementById("stat"), rowsEl = document.getElementById("rows"),
+      cardsEl = document.getElementById("cards"), errEl = document.getElementById("err");
+  function el(id) { var e = document.getElementById(id); return e || { textContent: "" }; } // fleetbar-injection null guard
+  function fmtSize(n) {
+    if (n > 1048576) return (n / 1048576).toFixed(1) + "M";
+    if (n > 1024) return (n / 1024).toFixed(0) + "K";
+    return n + "";
+  }
+  function fill(sel, values) {
+    values.forEach(function (v) {
+      var o = document.createElement("option"); o.value = v; o.textContent = v; sel.appendChild(o);
+    });
+  }
+  var aborter = null;
+  function runQuery() {
+    var params = new URLSearchParams();
+    var needle = q.value.trim();
+    if (needle) params.set("q", needle);
+    if (proj.value) params.set("proj", proj.value);
+    if (rel.value) params.set("rel", rel.value);
+    if (temp.value) params.set("temp", temp.value);
+    params.set("limit", "250");
+    if (aborter) aborter.abort();
+    aborter = new AbortController();
+    // the query door (server.py /api/v1/estate/query): bounded response, the
+    // .mimosa hook-state skip list honored server-side — this page used to
+    // download /data/ESTATE_INDEX.jsonl whole (4.15 GB) per load
+    fetch("/api/v1/estate/query?" + params.toString(), { cache: "no-store", signal: aborter.signal })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.error) throw new Error(d.error);
+        var cur = rel.value;
+        rel.innerHTML = "<option value=''>all relations</option>";
+        fill(rel, d.rels || []);
+        if (cur && (d.rels || []).indexOf(cur) >= 0) rel.value = cur;
+        var html = "";
+        (d.rows || []).forEach(function (r2) {
+          html += "<tr><td class='" + r2.temp + "'>" + r2.temp + "</td><td>" + r2.mtime +
+                  "</td><td>" + fmtSize(r2.size) + "</td><td>" + r2.path +
+                  "</td><td style='color:var(--dim)'>" + r2.rel + "</td></tr>";
+        });
+        rowsEl.innerHTML = html;
+        el("stat").textContent = d.matched + (d.truncated ? "+" : "") + " of " +
+          d.total_kept + " files (skipped " + d.skipped_mimosa + " hook-state rows, " +
+          d.seconds + "s)";
+      })
+      .catch(function (e) {
+        if (e && e.name === "AbortError") return;
+        errEl.hidden = false;
+        errEl.textContent = "Estate query door failed — " + e + ". See watch/inbox/night_shift_20261004/estate_index_compaction_design.md (P5).";
+      });
+  }
+  fetch("./index_data/last_run.json", { cache: "no-store" })
+    .then(function (r) { return r.json(); })
+    .then(function (lr) {
+      el("sub").textContent = "indexed " + lr.ts + " — " + lr.total_files + " files / " +
+        Object.keys(lr.projects || {}).length + " projects / " + (lr.total_bytes / 1048576).toFixed(0) +
+        " MB in " + lr.seconds + "s (skipped " + lr.skipped + ")";
+    })
+    .catch(function () {});
+  fetch("./index_data/rollup.json", { cache: "no-store" })
+    .then(function (r) { return r.json(); })
+    .then(function (ru) {
+      var names = Object.keys(ru).sort(function (a, b) { return ru[b].files - ru[a].files; });
+      var html = "";
+      names.forEach(function (n) {
+        var v = ru[n];
+        html += "<div class='card' data-p='" + n + "'><b>" + n + "</b> " + v.files +
+                " files · " + (v.bytes / 1048576).toFixed(1) + "M · newest " + String(v.newest).slice(0, 10) + "</div>";
+      });
+      cardsEl.innerHTML = html;
+      fill(proj, names);
+      Array.prototype.forEach.call(cardsEl.children, function (c) {
+        c.addEventListener("click", function () {
+          proj.value = (proj.value === c.getAttribute("data-p")) ? "" : c.getAttribute("data-p");
+          runQuery();
+        });
+      });
+    })
+    .catch(function (e) {
+      errEl.hidden = false;
+      errEl.textContent = "No rollup data — the spine hasn't run yet. See watch/OPEN_RIB_SPINE_20260909.md (promote, run once, refresh).";
+    });
+  var debounce = null;
+  q.addEventListener("input", function () { clearTimeout(debounce); debounce = setTimeout(runQuery, 900); });
+  q.addEventListener("keydown", function (e) { if (e.key === "Enter") { clearTimeout(debounce); runQuery(); } });
+  proj.addEventListener("change", runQuery);
+  rel.addEventListener("change", runQuery);
+  temp.addEventListener("change", runQuery);
+  runQuery();
+})();
+</script>
+</body>
+</html>

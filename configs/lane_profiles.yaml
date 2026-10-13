@@ -1,0 +1,32 @@
+# Lane profiles — RX 5600 XT actor pool (6 GB VRAM, AMD, no CUDA)
+# Config for the self-play orchestrator local actor pool.
+# See mag/lane_profiles.yaml schema: actor pools map model → hardware spec.
+
+profiles:
+  rx5600xt_actor:
+    gpu: "AMD Radeon RX 5600 XT"
+    vram_gb: 6
+    cuda: false
+    backend: llama_cpp
+    quant: Q4_K_M
+    max_model_params_b: 7
+    context: 2048
+    n_parallel: 1
+    load_policy: sequential
+    models:
+      - name: qwen2.5-math-7b-instruct-q4_k_m.gguf
+        role: actor
+        vram_fit: true
+      - name: qwen2.5-coder-7b-instruct-q4_k_m.gguf
+        role: fallback_actor
+        vram_fit: true
+    never_colocate_with:
+      - critic
+      - biographer
+    note: >
+      Single 7B Q4 model fits in 6 GB VRAM.
+      Never stack two 7B/8B models on this GPU.
+      OLLAMA_MAX_LOADED_MODELS=1 · context 2048 (not 65k).
+
+  # Reference: existing L0 local lane uses Ollama;
+  # this profile is the dedicated actor pool for self-play.

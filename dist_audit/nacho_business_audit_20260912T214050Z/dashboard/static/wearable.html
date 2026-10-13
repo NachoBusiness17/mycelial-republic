@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Swarm HUD — Wearable</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui,sans-serif; background:#0a0e14; color:#e6edf3;
+         min-height:100vh; padding:16px; }
+  h1 { font-size:1.3rem; margin:0 0 4px; }
+  .sub { color:#8b949e; font-size:0.85rem; margin-bottom:12px; }
+  .card { background:#121722; border:1px solid #21262d; border-radius:12px; padding:12px; margin-bottom:12px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:8px; }
+  .stat { text-align:center; }
+  .stat b { display:block; font-size:1.8rem; }
+  .stat span { font-size:0.72rem; color:#8b949e; text-transform:uppercase; letter-spacing:.04em; }
+  button { font-size:1.05rem; padding:12px 10px; border:0; border-radius:10px; cursor:pointer;
+           background:#1f6feb; color:#fff; }
+  button.secondary { background:#21262d; color:#e6edf3; border:1px solid #30363d; }
+  button.big { padding:16px; font-size:1.15rem; }
+  .skills { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:8px; }
+  input[type=text] { width:100%; padding:12px; font-size:1.05rem; border-radius:10px; border:1px solid #30363d;
+                     background:#0d1117; color:#e6edf3; }
+  .row { display:flex; gap:8px; margin-top:8px; }
+  .row input { flex:1; }
+  pre { font-size:0.78rem; white-space:pre-wrap; color:#9ecbff; }
+  #mic { background:#238636; }
+  #mic.listening { background:#d29922; }
+  .pill { display:inline-block; padding:2px 8px; border-radius:999px; font-size:0.72rem; margin-left:6px;
+          background:#1f6feb33; color:#9ecbff; }
+</style>
+</head>
+<body>
+  <h1>Swarm HUD <span class="pill">wearable</span></h1>
+  <div class="sub">Baymax-lite: speak or tap a swarm skill. Voice routes to local faster-whisper → our queue.</div>
+
+  <div class="card">
+    <div class="grid">
+      <div class="stat"><b id="inbox">–</b><span>inbox</span></div>
+      <div class="stat"><b id="queue">–</b><span>queue</span></div>
+      <div class="stat"><b id="inv">–</b><span>invariants</span></div>
+      <div class="stat"><b id="fp">–</b><span>false pos</span></div>
+      <div class="stat"><b id="explore">–</b><span>explore</span></div>
+      <div class="stat"><b id="intake">–</b><span>intake</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="sub">Swarm skills (tap → dry plan / routes to queue)</div>
+    <div class="skills" id="skills"></div>
+  </div>
+
+  <div class="card">
+    <div class="sub">Command line</div>
+    <div class="row">
+      <input id="cmd" type="text" placeholder="e.g. research flocking on k8s" />
+      <button id="send" class="secondary">Send</button>
+      <button id="mic">🎤 Speak</button>
+    </div>
+    <pre id="out"></pre>
+  </div>
+
+<script>
+const $ = (s) => document.getElementById(s);
+const HUD_URL = "/api/v1/wearable/surface";
+
+async function refresh() {
+  try {
+    const r = await fetch(HUD_URL);
+    const d = await r.json();
+    const s = d.swarm || {}, p = d.percolator || {};
+    $("inbox").textContent = s.inbox_pending ?? "–";
+    $("queue").textContent = (d.queue && d.queue.depth) ?? "–";
+    $("inv").textContent = p.n_invariants ?? "–";
+    $("fp").textContent = p.false_positives ?? "–";
+    $("explore").textContent = p.explore ?? "–";
+    $("intake").textContent = p.intake_open ?? "–";
+  } catch (e) { $("out").textContent = "HUD fetch failed: " + e; }
+}
+
+function renderSkills(skills) {
+  $("skills").innerHTML = "";
+  for (const s of skills) {
+    const b = document.createElement("button");
+    b.className = "secondary";
+    b.textContent = s.name;
+    b.title = s.desc;
+    b.onclick = () => runCommand(s.name + " " + (s.say || "").replace(/<.*?>.*?<\/.*?>/g, "").trim());
+    $("skills").appendChild(b);
+  }
+}
+
+async function runCommand(text) {
+  text = (text || "").trim();
+  if (!text) return;
+  $("out").textContent = "→ " + text + "\n" + $("out").textContent;
+  try {
+    const r = await fetch("/api/v1/wearable/command?text=" + encodeURIComponent(text) + "&dry=true");
+    const d = await r.json();
+    $("out").textContent = JSON.stringify(d, null, 2).slice(0, 2000) + "\n" + $("out").textContent;
+  } catch (e) {
+    $("out").textContent = "command failed: " + e + "\n" + $("out").textContent;
+  }
+}
+
+$("send").onclick = () => runCommand($("cmd").value);
+
+// Voice: MediaRecorder -> local faster-whisper (/api/v1/voice/stt) -> auto-run the text.
+let rec = null, chunks = [], stream = null, talking = false;
+$("mic").onclick = async () => {
+  if (talking) { rec && rec.stop(); return; }
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1,
+      echoCancellation: true, noiseSuppression: true, autoGainControl: true } });
+    chunks = [];
+    const types = ["audio/webm;codecs=opus","audio/webm","audio/ogg;codecs=opus","audio/mp4"];
+    const mime = types.find((t) => MediaRecorder.isTypeSupported(t)) || "";
+    rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+    rec.ondataavailable = (e) => { if (e.data && e.data.size) chunks.push(e.data); };
+    rec.onstop = async () => {
+      talking = false; $("mic").textContent = "🎤 Speak"; $("mic").classList.remove("listening");
+      const blob = new Blob(chunks, { type: rec.mimeType || "audio/webm" });
+      const fd = new FormData(); fd.append("audio", blob, "voice.webm");
+      $("out").textContent = "transcribing…\n" + $("out").textContent;
+      const r = await fetch("/api/v1/voice/stt", { method: "POST", body: fd });
+      const d = await r.json();
+      const text = (d && d.text) || "";
+      $("cmd").value = text;
+      if (text) runCommand(text);
+    };
+    rec.start(); talking = true;
+    $("mic").textContent = "⏺ listening…"; $("mic").classList.add("listening");
+    setTimeout(() => rec && rec.stop(), 6000);
+  } catch (e) { $("out").textContent = "mic failed: " + e; }
+};
+
+(async () => {
+  refresh();
+  setInterval(refresh, 8000);
+  try { const r = await fetch(HUD_URL); const d = await r.json(); renderSkills(d.skills || []); }
+  catch (e) {}
+})();
+</script>
+<script src="/static/nav.js"></script></body>
+</html>

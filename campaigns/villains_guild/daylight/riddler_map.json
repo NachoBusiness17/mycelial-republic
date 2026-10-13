@@ -1,0 +1,672 @@
+{
+  "schema": "riddler_campaign_map.v1",
+  "codec_schema": "riddler_surrogate.v1",
+  "produced_by": {
+    "module": "mag.riddler",
+    "function": "compile_surrogate",
+    "private_graph": "mag.riddler.PrivateGraph",
+    "codec_schema": "riddler_surrogate.v1",
+    "domains_file": "configs/riddler_domains.yaml",
+    "domains_schema": "riddler_domains.v1",
+    "campaign_module_id": "villains_guild",
+    "campaign_module_schema": "mag_game_module.v1",
+    "campaign_module_path": "campaigns/villains_guild/module.json"
+  },
+  "map_seed": 20260827,
+  "room_seeds": {
+    "guildhall_of_gracious_crimes": 202608271,
+    "hall_of_fine_print": 202608272,
+    "registry_of_regrets": 202608273,
+    "counting_house_of_minor_miracles": 202608274,
+    "overthrow_floor": 202608275
+  },
+  "campaign_id": "villains_guild",
+  "description": "Binds each Villains Guild room to one verification skill via mag.riddler.compile_surrogate. One seeded surrogate face per room. Both channels recorded: surrogate-action verb (steering only) and raw-answer ANSWER: line (grounded). Private maps stay local. Do not reveal to players or remote DM.",
+  "skill_bind": {
+    "guildhall_of_gracious_crimes": "parse_contracts",
+    "hall_of_fine_print": "cross_reference_documents",
+    "registry_of_regrets": "check_sources",
+    "counting_house_of_minor_miracles": "verify_arithmetic",
+    "overthrow_floor": "build_consensus"
+  },
+  "channels_law": {
+    "surrogate_action": "story-world verb; high consensus on this channel does not mean the answer is right",
+    "raw_answer": "ANSWER: line; grounded-task votes use this channel",
+    "consensus_illusion": "measured 2026-08-10 — flock converged on plate/clean/cross while real answers were 9 / $0.54 / Yes"
+  },
+  "rooms": {
+    "guildhall_of_gracious_crimes": {
+      "room_id": "guildhall_of_gracious_crimes",
+      "room_name": "I — The Guildhall of Gracious Crimes",
+      "order": 1,
+      "territory_task": "parse_contracts",
+      "territory_goal": "Read the whole contract before reacting — front, reverse, and the sentence that admits there is a reverse.",
+      "success_encodes": "party turns the sheet / collects the named gift before signing or proceeding",
+      "failure_encodes": "party signs or proceeds from the front alone",
+      "fingerprint_seed": 202608271,
+      "domain": "medieval_guild",
+      "shape_hash": "88bfbc76e604a28a",
+      "validation": {
+        "ok": true,
+        "errors": [],
+        "warnings": [],
+        "leakage_detected": false,
+        "constraints_preserved": 4
+      },
+      "surrogate": {
+        "schema": "riddler_surrogate.v1",
+        "public_story": "The master is at the study. The apprentice is at the kiln. The journeyman is at the library. The clerk is at the kiln. There is only one seal, and it belongs to the master. There is only one material, and it belongs to the journeyman. The clerk must finish before the apprentice can begin. guild seal required before any work leaves the hall tools are shared; only one person per tool at a time journeymen inspect apprentice work before master review broken tools must be reported to the clerk immediately There is a tension: the front looks finished and the reverse is quiet.",
+        "public_question": "The master must seal. Given the situation, what should they do? Describe your reasoning step by step, then state your recommended action using only the allowed story actions.",
+        "allowed_story_actions": [
+          "forge",
+          "temper",
+          "inspect",
+          "seal",
+          "apprentice",
+          "promote",
+          "retire",
+          "mend"
+        ],
+        "shape_hash": "88bfbc76e604a28a",
+        "domain": "medieval_guild",
+        "loss_report": [
+          "real names replaced with story roles",
+          "domain identity withheld",
+          "timestamps removed"
+        ],
+        "tier": "T2_SURROGATE"
+      },
+      "private_map": {
+        "role_map": {
+          "sheet_clerk": "master",
+          "apprentice_signer": "apprentice",
+          "door_collector": "journeyman",
+          "quiet_reverse": "clerk"
+        },
+        "constraint_map": {
+          "the whole sheet must be read before any signature": "guild seal required before any work leaves the hall",
+          "the reverse is part of the deal even when it looks like a border": "tools are shared; only one person per tool at a time",
+          "a gift that must be collected is still a duty": "journeymen inspect apprentice work before master review",
+          "skipping the quiet side is not finishing": "broken tools must be reported to the clerk immediately"
+        },
+        "graph": {
+          "actors": [
+            "sheet_clerk",
+            "apprentice_signer",
+            "door_collector",
+            "quiet_reverse"
+          ],
+          "resources": [
+            {
+              "name": "two_sided_sheet",
+              "type": "document",
+              "scarcity": "unique",
+              "owner": "sheet_clerk"
+            },
+            {
+              "name": "door_hook_gift",
+              "type": "tool",
+              "scarcity": "unique",
+              "owner": "door_collector"
+            }
+          ],
+          "dependencies": [
+            {
+              "before": "quiet_reverse",
+              "after": "apprentice_signer"
+            }
+          ],
+          "constraints": [
+            "the whole sheet must be read before any signature",
+            "the reverse is part of the deal even when it looks like a border",
+            "a gift that must be collected is still a duty",
+            "skipping the quiet side is not finishing"
+          ],
+          "conflicts": [
+            "the front looks finished and the reverse is quiet"
+          ],
+          "goal": "Must the apprentice turn the sheet before signing, or is the front enough?",
+          "domain_hint": "review_critique"
+        }
+      },
+      "channels": {
+        "surrogate_action": {
+          "what": "the story-world verb the model chose",
+          "use_for": "open-ended steering, sampling an answer-cloud — not correctness",
+          "allowed_story_actions": [
+            "forge",
+            "temper",
+            "inspect",
+            "seal",
+            "apprentice",
+            "promote",
+            "retire",
+            "mend"
+          ],
+          "bound_verb": "inspect",
+          "bound_verb_in_allowed": true,
+          "bound_verb_encodes": "read the quiet side before sealing",
+          "question_planted_verb_is_not_the_answer": true
+        },
+        "raw_answer": {
+          "what": "the model's actual final answer",
+          "use_for": "grounded / verifiable tasks",
+          "convention": "ANSWER: <concrete result>",
+          "plant": "When you finish reasoning, end your response with a single line `ANSWER: <your final answer>` containing only the concrete result (number, yes/no, or the decisive phrase).",
+          "plant_lives_in": "mag/riddler_transport.py send_surrogate system_prompt — not compile_surrogate",
+          "extract_lives_in": "mag/surrogate.py _extract_raw_answer",
+          "expected": "turn the sheet",
+          "kind": "phrase"
+        }
+      }
+    },
+    "hall_of_fine_print": {
+      "room_id": "hall_of_fine_print",
+      "room_name": "II — The Hall of Fine Print",
+      "order": 2,
+      "territory_task": "cross_reference_documents",
+      "territory_goal": "Cross-reference documents against each other before moving anything.",
+      "success_encodes": "party finds and applies every document the first document names",
+      "failure_encodes": "party treats the paper in hand as the whole deal",
+      "fingerprint_seed": 202608272,
+      "domain": "restaurant_kitchen",
+      "shape_hash": "88bfbc76e604a28a",
+      "validation": {
+        "ok": true,
+        "errors": [],
+        "warnings": [],
+        "leakage_detected": false,
+        "constraints_preserved": 4
+      },
+      "surrogate": {
+        "schema": "riddler_surrogate.v1",
+        "public_story": "The expediter is at the walkin. The head_chef is at the kitchen. The dishwasher is at the pass. The line_cook is at the line. There is only one plate, and it belongs to the expediter. There is only one burner, and it belongs to the dishwasher. The dishwasher must finish before the head_chef can begin. if a ticket is wrong, the whole plate is remade the expediter decides order priority only four burners; each order uses one ingredients can spoil if not used There is a tension: the ticket in hand and the notice on the wall disagree about who receives the dish.",
+        "public_question": "The expediter must clean. Given the situation, what should they do? Describe your reasoning step by step, then state your recommended action using only the allowed story actions.",
+        "allowed_story_actions": [
+          "cook",
+          "plate",
+          "fire",
+          "restock",
+          "clean",
+          "expedite",
+          "86",
+          "refire"
+        ],
+        "shape_hash": "88bfbc76e604a28a",
+        "domain": "restaurant_kitchen",
+        "loss_report": [
+          "real names replaced with story roles",
+          "domain identity withheld",
+          "timestamps removed"
+        ],
+        "tier": "T2_SURROGATE"
+      },
+      "private_map": {
+        "role_map": {
+          "ticket_writer": "expediter",
+          "runner": "head_chef",
+          "wall_notice": "dishwasher",
+          "named_guest": "line_cook"
+        },
+        "constraint_map": {
+          "a ticket that names another notice is not the whole deal": "if a ticket is wrong, the whole plate is remade",
+          "hurry instructions do not cancel named papers": "the expediter decides order priority",
+          "delivery follows the named guest, not the writer": "only four burners; each order uses one",
+          "posted means find it, not skip it": "ingredients can spoil if not used"
+        },
+        "graph": {
+          "actors": [
+            "ticket_writer",
+            "runner",
+            "wall_notice",
+            "named_guest"
+          ],
+          "resources": [
+            {
+              "name": "job_ticket",
+              "type": "document",
+              "scarcity": "unique",
+              "owner": "ticket_writer"
+            },
+            {
+              "name": "posted_annex",
+              "type": "document",
+              "scarcity": "unique",
+              "owner": "wall_notice"
+            }
+          ],
+          "dependencies": [
+            {
+              "before": "wall_notice",
+              "after": "runner"
+            }
+          ],
+          "constraints": [
+            "a ticket that names another notice is not the whole deal",
+            "hurry instructions do not cancel named papers",
+            "delivery follows the named guest, not the writer",
+            "posted means find it, not skip it"
+          ],
+          "conflicts": [
+            "the ticket in hand and the notice on the wall disagree about who receives the dish"
+          ],
+          "goal": "Does the runner deliver to the ticket writer or to the guest the wall-notice names?",
+          "domain_hint": "handoff"
+        }
+      },
+      "channels": {
+        "surrogate_action": {
+          "what": "the story-world verb the model chose",
+          "use_for": "open-ended steering, sampling an answer-cloud — not correctness",
+          "allowed_story_actions": [
+            "cook",
+            "plate",
+            "fire",
+            "restock",
+            "clean",
+            "expedite",
+            "86",
+            "refire"
+          ],
+          "bound_verb": "expedite",
+          "bound_verb_in_allowed": true,
+          "bound_verb_encodes": "find the named notice before the dish leaves",
+          "question_planted_verb_is_not_the_answer": true
+        },
+        "raw_answer": {
+          "what": "the model's actual final answer",
+          "use_for": "grounded / verifiable tasks",
+          "convention": "ANSWER: <concrete result>",
+          "plant": "When you finish reasoning, end your response with a single line `ANSWER: <your final answer>` containing only the concrete result (number, yes/no, or the decisive phrase).",
+          "plant_lives_in": "mag/riddler_transport.py send_surrogate system_prompt — not compile_surrogate",
+          "extract_lives_in": "mag/surrogate.py _extract_raw_answer",
+          "expected": "the named guest",
+          "kind": "phrase"
+        }
+      }
+    },
+    "registry_of_regrets": {
+      "room_id": "registry_of_regrets",
+      "room_name": "III — The Registry of Regrets",
+      "order": 3,
+      "territory_task": "check_sources",
+      "territory_goal": "Check sources and provenance — pull the cited document, read the date, name the attestor.",
+      "success_encodes": "party pulls the citation, reads the date, names the real attestor",
+      "failure_encodes": "party trusts a citation they did not pull",
+      "fingerprint_seed": 202608273,
+      "domain": "space_colony",
+      "shape_hash": "88bfbc76e604a28a",
+      "validation": {
+        "ok": true,
+        "errors": [],
+        "warnings": [],
+        "leakage_detected": false,
+        "constraints_preserved": 4
+      },
+      "surrogate": {
+        "schema": "riddler_surrogate.v1",
+        "public_story": "The commander is at the bridge. The navigator is at the comms. The engineer is at the lab. The biologist is at the airlock. There is only one oxygen, and it belongs to the commander. There is only one fuel, and it belongs to the engineer. The biologist must finish before the navigator can begin. fuel is rationed; long journeys require commander approval if life support fails, all non-essential tasks halt the navigator must plot course before engines fire oxygen is finite; every colonist consumes it There is a tension: the wall copy looks official and the cited drawer is marked private.",
+        "public_question": "The commander must dock. Given the situation, what should they do? Describe your reasoning step by step, then state your recommended action using only the allowed story actions.",
+        "allowed_story_actions": [
+          "vent",
+          "route",
+          "seal",
+          "ignite",
+          "recycle",
+          "scan",
+          "dock",
+          "broadcast"
+        ],
+        "shape_hash": "88bfbc76e604a28a",
+        "domain": "space_colony",
+        "loss_report": [
+          "real names replaced with story roles",
+          "domain identity withheld",
+          "timestamps removed"
+        ],
+        "tier": "T2_SURROGATE"
+      },
+      "private_map": {
+        "role_map": {
+          "self_witness": "commander",
+          "stack_walker": "navigator",
+          "quiet_archivist": "engineer",
+          "cited_drawer": "biologist"
+        },
+        "constraint_map": {
+          "a citation must be pulled before it authorizes anything": "fuel is rationed; long journeys require commander approval",
+          "a witness may not attest only to themselves": "if life support fails, all non-essential tasks halt",
+          "a later date on a source is a tell, not a courtesy": "the navigator must plot course before engines fire",
+          "do-not-open marks the real charter": "oxygen is finite; every colonist consumes it"
+        },
+        "graph": {
+          "actors": [
+            "self_witness",
+            "stack_walker",
+            "quiet_archivist",
+            "cited_drawer"
+          ],
+          "resources": [
+            {
+              "name": "citation_slip",
+              "type": "document",
+              "scarcity": "unique",
+              "owner": "self_witness"
+            },
+            {
+              "name": "quiet_charter",
+              "type": "document",
+              "scarcity": "unique",
+              "owner": "quiet_archivist"
+            }
+          ],
+          "dependencies": [
+            {
+              "before": "cited_drawer",
+              "after": "stack_walker"
+            }
+          ],
+          "constraints": [
+            "a citation must be pulled before it authorizes anything",
+            "a witness may not attest only to themselves",
+            "a later date on a source is a tell, not a courtesy",
+            "do-not-open marks the real charter"
+          ],
+          "conflicts": [
+            "the wall copy looks official and the cited drawer is marked private"
+          ],
+          "goal": "Who actually holds confiscation authority — the self-witness or the quiet archivist?",
+          "domain_hint": "review_critique"
+        }
+      },
+      "channels": {
+        "surrogate_action": {
+          "what": "the story-world verb the model chose",
+          "use_for": "open-ended steering, sampling an answer-cloud — not correctness",
+          "allowed_story_actions": [
+            "vent",
+            "route",
+            "seal",
+            "ignite",
+            "recycle",
+            "scan",
+            "dock",
+            "broadcast"
+          ],
+          "bound_verb": "scan",
+          "bound_verb_in_allowed": true,
+          "bound_verb_encodes": "pull the cited drawer before treating the wall copy as authority",
+          "question_planted_verb_is_not_the_answer": true
+        },
+        "raw_answer": {
+          "what": "the model's actual final answer",
+          "use_for": "grounded / verifiable tasks",
+          "convention": "ANSWER: <concrete result>",
+          "plant": "When you finish reasoning, end your response with a single line `ANSWER: <your final answer>` containing only the concrete result (number, yes/no, or the decisive phrase).",
+          "plant_lives_in": "mag/riddler_transport.py send_surrogate system_prompt — not compile_surrogate",
+          "extract_lives_in": "mag/surrogate.py _extract_raw_answer",
+          "expected": "the quiet archivist",
+          "kind": "phrase"
+        }
+      }
+    },
+    "counting_house_of_minor_miracles": {
+      "room_id": "counting_house_of_minor_miracles",
+      "room_name": "IV — The Counting House of Minor Miracles",
+      "order": 4,
+      "territory_task": "verify_arithmetic",
+      "territory_goal": "Verify arithmetic and rounding — a correct sum of crooked lines is still a crooked bill.",
+      "success_encodes": "party re-adds, strikes non-costs, writes the unit, takes the honest share",
+      "failure_encodes": "party trusts a total because the addition worked",
+      "fingerprint_seed": 202608274,
+      "domain": "tower_defense",
+      "shape_hash": "88bfbc76e604a28a",
+      "validation": {
+        "ok": true,
+        "errors": [],
+        "warnings": [],
+        "leakage_detected": false,
+        "constraints_preserved": 4
+      },
+      "surrogate": {
+        "schema": "riddler_surrogate.v1",
+        "public_story": "The turret is at the radar. The spotter is at the depot. The engineer is at the workshop. The player is at the radar. The turret has a time. There is only one scrap, and it belongs to the engineer. The spotter must finish before the turret can begin. turrets auto-fire on nearest target; player can override scrap can be recycled into ammo but takes time spotter calls targets; turret fires each shot costs ammo; ammo is limited There is a tension: the sidebar adds to the claimed total and the categories still look like feelings.",
+        "public_question": "The turret must build. Given the situation, what should they do? Describe your reasoning step by step, then state your recommended action using only the allowed story actions.",
+        "allowed_story_actions": [
+          "fire",
+          "build",
+          "upgrade",
+          "scan",
+          "recycle",
+          "hold",
+          "redirect",
+          "salvage"
+        ],
+        "shape_hash": "88bfbc76e604a28a",
+        "domain": "tower_defense",
+        "loss_report": [
+          "real names replaced with story roles",
+          "domain identity withheld",
+          "timestamps removed"
+        ],
+        "tier": "T2_SURROGATE"
+      },
+      "private_map": {
+        "role_map": {
+          "friendly_total": "turret",
+          "counter": "spotter",
+          "mood_line": "engineer",
+          "unitless_fee": "player"
+        },
+        "constraint_map": {
+          "a total that adds can still be a crooked bill": "turrets auto-fire on nearest target; player can override",
+          "moods are not costs": "scrap can be recycled into ammo but takes time",
+          "a fee with no unit is a trap": "spotter calls targets; turret fires",
+          "rounding that has not happened yet is not a cost": "each shot costs ammo; ammo is limited"
+        },
+        "graph": {
+          "actors": [
+            "friendly_total",
+            "counter",
+            "mood_line",
+            "unitless_fee"
+          ],
+          "resources": [
+            {
+              "name": "gross_pile",
+              "type": "loot",
+              "scarcity": "",
+              "owner": "friendly_total"
+            },
+            {
+              "name": "itemized_sidebar",
+              "type": "document",
+              "scarcity": "unique",
+              "owner": "mood_line"
+            }
+          ],
+          "dependencies": [
+            {
+              "before": "counter",
+              "after": "friendly_total"
+            }
+          ],
+          "constraints": [
+            "a total that adds can still be a crooked bill",
+            "moods are not costs",
+            "a fee with no unit is a trap",
+            "rounding that has not happened yet is not a cost"
+          ],
+          "conflicts": [
+            "the sidebar adds to the claimed total and the categories still look like feelings"
+          ],
+          "goal": "Is the honest share the friendly tenth of the claimed net, or a recounted tenth of real costs?",
+          "domain_hint": "cost_optimization"
+        }
+      },
+      "channels": {
+        "surrogate_action": {
+          "what": "the story-world verb the model chose",
+          "use_for": "open-ended steering, sampling an answer-cloud — not correctness",
+          "allowed_story_actions": [
+            "fire",
+            "build",
+            "upgrade",
+            "scan",
+            "recycle",
+            "hold",
+            "redirect",
+            "salvage"
+          ],
+          "bound_verb": "scan",
+          "bound_verb_in_allowed": true,
+          "bound_verb_encodes": "recount before accepting the friendly total",
+          "question_planted_verb_is_not_the_answer": true
+        },
+        "raw_answer": {
+          "what": "the model's actual final answer",
+          "use_for": "grounded / verifiable tasks",
+          "convention": "ANSWER: <concrete result>",
+          "plant": "When you finish reasoning, end your response with a single line `ANSWER: <your final answer>` containing only the concrete result (number, yes/no, or the decisive phrase).",
+          "plant_lives_in": "mag/riddler_transport.py send_surrogate system_prompt — not compile_surrogate",
+          "extract_lives_in": "mag/surrogate.py _extract_raw_answer",
+          "expected": "8",
+          "kind": "number"
+        }
+      }
+    },
+    "overthrow_floor": {
+      "room_id": "overthrow_floor",
+      "room_name": "V — The Overthrow Floor",
+      "order": 5,
+      "territory_task": "build_consensus",
+      "territory_goal": "Build consensus — players pool evidence; HOLD/VETO/STOP as vote tokens.",
+      "success_encodes": "party pools exhibits, uses HOLD, does not let one speaker interpret the room",
+      "failure_encodes": "party storms or freezes and lets the chair interpret courtesy",
+      "fingerprint_seed": 202608275,
+      "domain": "fantasy_village",
+      "shape_hash": "b9e8ced77081fae8",
+      "validation": {
+        "ok": true,
+        "errors": [],
+        "warnings": [],
+        "leakage_detected": false,
+        "constraints_preserved": 4
+      },
+      "surrogate": {
+        "schema": "riddler_surrogate.v1",
+        "public_story": "The elder is at the forge. The gatekeeper is at the village. The messenger is at the forge. The healer is at the forge. The gatekeeper has a horse. The gatekeeper has a bridge. The elder has a road. The healer must finish before the gatekeeper can begin. only one traveler may cross the bridge at a time a messenger may carry only one scroll per journey the elder's word is final but the elder is slow the gatekeeper must decide before sunset There is a tension: shouting and freezing both hand the room to the chair.",
+        "public_question": "The elder must cross. Given the situation, what should they do? Describe your reasoning step by step, then state your recommended action using only the allowed story actions.",
+        "allowed_story_actions": [
+          "wait",
+          "cross",
+          "send",
+          "craft",
+          "heal",
+          "consult",
+          "guard",
+          "yield",
+          "report"
+        ],
+        "shape_hash": "b9e8ced77081fae8",
+        "domain": "fantasy_village",
+        "loss_report": [
+          "real names replaced with story roles",
+          "domain identity withheld",
+          "timestamps removed"
+        ],
+        "tier": "T2_SURROGATE"
+      },
+      "private_map": {
+        "role_map": {
+          "interpreting_chair": "elder",
+          "floor_member": "gatekeeper",
+          "bylaw_wall": "messenger",
+          "exhibit_pile": "healer"
+        },
+        "constraint_map": {
+          "exhibits must be read into the minutes before the chair interprets the room": "only one traveler may cross the bridge at a time",
+          "a hold pauses; it does not die": "a messenger may carry only one scroll per journey",
+          "silence is not a single speaker": "the elder's word is final but the elder is slow",
+          "the wall bylaw outranks the chair while a hold is on": "the gatekeeper must decide before sunset"
+        },
+        "graph": {
+          "actors": [
+            "interpreting_chair",
+            "floor_member",
+            "bylaw_wall",
+            "exhibit_pile"
+          ],
+          "resources": [
+            {
+              "name": "hold_chip",
+              "type": "vote",
+              "scarcity": "",
+              "owner": "floor_member"
+            },
+            {
+              "name": "stop_chip",
+              "type": "vote",
+              "scarcity": "",
+              "owner": "floor_member"
+            },
+            {
+              "name": "veto_chip",
+              "type": "vote",
+              "scarcity": "",
+              "owner": "interpreting_chair"
+            }
+          ],
+          "dependencies": [
+            {
+              "before": "exhibit_pile",
+              "after": "floor_member"
+            }
+          ],
+          "constraints": [
+            "exhibits must be read into the minutes before the chair interprets the room",
+            "a hold pauses; it does not die",
+            "silence is not a single speaker",
+            "the wall bylaw outranks the chair while a hold is on"
+          ],
+          "conflicts": [
+            "shouting and freezing both hand the room to the chair"
+          ],
+          "goal": "Does the floor pool the exhibits under a hold, or let one speaker interpret courtesy?",
+          "domain_hint": "routing"
+        }
+      },
+      "channels": {
+        "surrogate_action": {
+          "what": "the story-world verb the model chose",
+          "use_for": "open-ended steering, sampling an answer-cloud — not correctness",
+          "allowed_story_actions": [
+            "wait",
+            "cross",
+            "send",
+            "craft",
+            "heal",
+            "consult",
+            "guard",
+            "yield",
+            "report"
+          ],
+          "bound_verb": "consult",
+          "bound_verb_in_allowed": true,
+          "bound_verb_encodes": "pool the floor before the chair interprets",
+          "question_planted_verb_is_not_the_answer": true
+        },
+        "raw_answer": {
+          "what": "the model's actual final answer",
+          "use_for": "grounded / verifiable tasks",
+          "convention": "ANSWER: <concrete result>",
+          "plant": "When you finish reasoning, end your response with a single line `ANSWER: <your final answer>` containing only the concrete result (number, yes/no, or the decisive phrase).",
+          "plant_lives_in": "mag/riddler_transport.py send_surrogate system_prompt — not compile_surrogate",
+          "extract_lives_in": "mag/surrogate.py _extract_raw_answer",
+          "expected": "HOLD then read exhibits",
+          "kind": "phrase"
+        }
+      }
+    }
+  }
+}

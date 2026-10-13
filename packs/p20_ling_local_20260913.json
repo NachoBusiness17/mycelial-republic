@@ -1,0 +1,110 @@
+{
+ "model": "deepseek-chat",
+ "max_tokens": 4096,
+ "width": 8,
+ "key_env": "DEEPSEEK_API_KEY",
+ "base": "https://api.deepseek.com/chat/completions",
+ "shared_head": "You are one lane in a 20-wide engineering wave. THE PROBLEM: run InclusionAI's Ling-3.0-flash (124B total / 5.1B active MoE) and Ling-3.0-tiny (7.9B total / 1.3B active) LOCALLY on consumer hardware — a Windows PC with unknown RAM (likely 32-64GB) and a coming 512GB M5 Ultra. The weights are on HuggingFace at inclusionAI/Ling-3.0-flash and inclusionAI/Ling-3.0-tiny. No Ollama community build exists yet. No GGUF exists yet. We must BUILD the pipeline ourselves.\n\nARCHITECTURE: MoE (Mixture of Experts) — 124B total but only 5.1B active per token. This means the full model needs all weights in memory but only computes with 5.1B per token. The tiny variant is 7.9B/1.3B — much easier.\n\nTHE HARDWARE: current PC (likely 32-64GB RAM, unknown GPU). Target: 4x Apple M5 Ultra with 512GB unified memory (Rocinante, Oct 27). The PC is the proving ground; Rocinante is the production machine.\n\nTHE PRIZE: if we can run Ling locally, the fleet's free lane becomes sovereign — no API, no rate limit, no dependency. And the PROCESS (convert → quantize → serve) applies to ANY open-weights model, making the fleet model-independent forever.\n\nOUTPUT CONTRACT (markdown, under 400 words, exactly these headers):\n## The path — the exact steps to run Ling locally\n## The hardware gap — what fits on 32-64GB vs what needs 512GB\n## The tool — the exact tool/command/conversion script\n## Falsifier — how we know it works (what test to run)\n\nYOUR LENS: ",
+ "lanes": [
+  {
+   "id": "L01_llama_cpp",
+   "context": "LLAMA.CPP PATH: convert HuggingFace safetensors to GGUF via convert_hf_to_gguf.py, then quantize with llama-quantize. Does llama.cpp support Ling-3.0's MoE architecture? If not, what PR is needed? What quant level fits 32GB RAM?",
+   "task": "Give the exact llama.cpp conversion pipeline for Ling-3.0-tiny (7.9B) first, then flash (124B)."
+  },
+  {
+   "id": "L02_ollama_modelfile",
+   "context": "OLLAMA MODELFILE PATH: create an Ollama Modelfile FROM the converted GGUF. What does the Modelfile look like for a MoE model? What parameters (num-experts, active-params) need setting?",
+   "task": "Write the exact Modelfile for Ling-3.0-tiny and Ling-3.0-flash."
+  },
+  {
+   "id": "L03_vllm",
+   "context": "VLLM PATH: vLLM supports MoE models natively and can load HuggingFace safetensors directly. Can vLLM serve Ling-3.0 on Windows? What are the VRAM requirements for the 124B MoE?",
+   "task": "Give the vLLM serving pipeline for Ling-3.0-flash. What quantization options does vLLM support?"
+  },
+  {
+   "id": "L04_transformers",
+   "context": "TRANSFORMERS PATH: the simplest pipeline — load via HuggingFace transformers with device_map='auto'. What are the memory requirements? Can it CPU-offload? What dtype (fp16, bf16, int8)?",
+   "task": "Give the transformers pipeline for Ling-3.0-tiny on 32GB RAM. What works TODAY without conversion?"
+  },
+  {
+   "id": "L05_exllamav2",
+   "context": "EXLLAMAV2 PATH: ExLlamaV2 supports MoE models with aggressive quantization (EXL2 format). Can it run Ling-3.0? What VRAM is needed for Q4 EXL2 of the 124B MoE?",
+   "task": "Give the ExLlamaV2 pipeline for Ling-3.0-flash. What quantization fits 24GB VRAM?"
+  },
+  {
+   "id": "L06_gguf_conversion",
+   "context": "GGUF CONVERSION DEEP DIVE: the convert_hf_to_gguf.py script in llama.cpp — does it handle MoE architectures? What MoE-specific parameters need mapping (expert count, shared expert, routing)? What breaks?",
+   "task": "Detail the GGUF conversion for MoE: what fields in config.json map to GGUF metadata? What are the known MoE conversion failures?"
+  },
+  {
+   "id": "L07_apple_silicon",
+   "context": "APPLE SILICON PATH (Rocinante target): 4x M5 Ultra 512GB unified memory. MLX (Apple's ML framework) supports MoE natively on Apple Silicon. Can MLX run Ling-3.0-flash at full precision on 512GB? What about llama.cpp on Metal?",
+   "task": "Give the MLX pipeline for Ling-3.0-flash on M5 Ultra. What quantization for production throughput? What tokens/sec can 512GB unified memory deliver?"
+  },
+  {
+   "id": "L08_tiny_first",
+   "context": "TINY FIRST STRATEGY: Ling-3.0-tiny (7.9B/1.3B) fits in 8GB RAM easily. Prove the pipeline with tiny, then scale to flash. What is the EXACT command sequence to get tiny running in under 10 minutes?",
+   "task": "Write the 10-minute quickstart: from HuggingFace URL to running inference for Ling-3.0-tiny. Every command, every step."
+  },
+  {
+   "id": "L09_quantization_ladder",
+   "context": "QUANTIZATION LADDER: what quant levels work for Ling-3.0-flash at different RAM budgets? Q8 (~130GB), Q6 (~100GB), Q5 (~80GB), Q4 (~65GB), Q3 (~50GB), Q2 (~35GB). What is the quality loss at each level for MoE vs dense?",
+   "task": "Build the quantization ladder table: RAM needed vs quality loss per level, MoE-specific."
+  },
+  {
+   "id": "L10_cpu_inference",
+   "context": "CPU INFERENCE: llama.cpp runs on CPU. Can Ling-3.0-flash run CPU-only on 64GB RAM? What tokens/sec on a consumer CPU (likely Ryzen or i9)? Is MoE faster on CPU than dense because only 5.1B fires?",
+   "task": "Give the CPU-only inference pipeline for Ling-3.0-flash. Realistic tokens/sec estimate on consumer hardware."
+  },
+  {
+   "id": "L11_huggingface_direct",
+   "context": "HUGGINGFACE PIPELINE: AutoModelForCausalLM.from_pretrained('inclusionAI/Ling-3.0-flash', device_map='auto', torch_dtype=torch.bfloat16). Does this work out of the box? What trust_remote_code is needed? What dependencies?",
+   "task": "Give the exact Python code to load and run Ling-3.0-flash via transformers. What are the known issues?"
+  },
+  {
+   "id": "L12_sovereign_pipeline",
+   "context": "SOVEREIGN PIPELINE: the goal is model-independence — a repeatable process for running ANY open-weights model locally. Design the pipeline: HuggingFace download → convert → quantize → serve → verify. What is the universal script?",
+   "task": "Design the universal local-deployment pipeline that works for any open-weights model, not just Ling."
+  },
+  {
+   "id": "L13_fish_pond",
+   "context": "THE FISH POND: if Ling runs locally, the fish (XP) become training data for the local model. Fine-tune Ling-3.0-tiny on the fleet's sealed ore. What LoRA rank, what training data format, what hardware for training?",
+   "task": "Design the fine-tune pipeline: Ling-3.0-tiny + LoRA + the fleet's sealed ore. What hardware, what time, what quality?"
+  },
+  {
+   "id": "L14_ollama_custom",
+   "context": "OLLAMA CUSTOM MODEL: Ollama supports importing custom GGUF files via Modelfile FROM ./model.gguf. After converting Ling to GGUF, create the Ollama model. What are the MoE-specific Modelfile parameters?",
+   "task": "Write the exact Ollama import commands and Modelfile for converted Ling GGUF."
+  },
+  {
+   "id": "L15_ram_math",
+   "context": "RAM MATH: the PC has unknown RAM (32-64GB likely). Ling-3.0-flash needs all 124B weights in memory (MoE routes to different experts per token). At Q4 that's ~65GB. At Q2 that's ~35GB. Does MoE actually need ALL experts loaded, or only active ones? This changes everything.",
+   "task": "Answer the critical question: does MoE inference require ALL expert weights in RAM, or only the active 5.1B? If only active, the RAM requirement drops to ~4GB and the model runs on anything."
+  },
+  {
+   "id": "L16_windows_pain",
+   "context": "WINDOWS PAIN: llama.cpp, vLLM, and MLX are Linux-first. What works on Windows natively? WSL2? Docker? What is the path of least resistance for a Windows PC with no Linux experience?",
+   "task": "Give the Windows-native pipeline for Ling-3.0-tiny. What works, what needs WSL2, what is the pain point?"
+  },
+  {
+   "id": "L17_rocinante_thermo",
+   "context": "ROCINANTE THERMAL: 4x M5 Ultra in a cluster. Does Ling-3.0-flash distribute across multiple Apple Silicon nodes? What is the interconnect requirement? Can 4 nodes each hold 1/4 of the MoE and route activations?",
+   "task": "Design the multi-node Ling deployment on 4x M5 Ultra. What is the communication overhead? What is the realistic tokens/sec?"
+  },
+  {
+   "id": "L18_sovereign_test",
+   "context": "THE SOVEREIGN TEST: once Ling runs locally, it runs OFFLINE. Design the offline verification: can the local Ling answer the fleet's canon questions (the parable, the constitution, the decoder ring) without internet? This is the 72h drill's language model test.",
+   "task": "Design the offline sovereignty test: what questions does local Ling need to answer, what quality bar, and what failure means the sovereignty claim is false?"
+  },
+  {
+   "id": "L19_ecu",
+   "context": "THE ECOnomy: local Ling costs electricity. What is the power draw of running Ling-3.0-tiny (1.3B active) vs Ling-3.0-flash (5.1B active) on CPU vs GPU? What is the cost per 1M tokens at your local electricity rate vs the API's $0?",
+   "task": "Build the cost comparison table: local Ling electricity cost vs API free tier. When does local become more expensive than free? (Answer: probably never, but do the math.)"
+  },
+  {
+   "id": "L20_the_spore_model",
+   "context": "THE SPORE MODEL: Ling-3.0-tiny (1.3B active, 4GB) is small enough to embed IN the succession kit. The heir's first model runs on a phone. Design the sovereign-seed: tiny Ling + the spore document + the parable + the falsifier ledger, packaged as a single artifact that IS the house's identity, portable to any device.",
+   "task": "Design the sovereign-seed package: what files, what model, what format, what size? The heir's first breath, portable."
+  }
+ ]
+}

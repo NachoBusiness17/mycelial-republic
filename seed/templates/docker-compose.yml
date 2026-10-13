@@ -1,0 +1,25 @@
+# The cage, in one file (STACK tier 4). Rebuilt from the source estate's compose shape.
+# Container boundary: the agent stack runs INSIDE; the host exposes ONLY loopback
+# ports; your record dirs are mounted, so your data never lives in the container.
+#
+#   docker compose up -d
+
+services:
+  estate:
+    image: python:3.12-slim-bookworm
+    container_name: my-estate
+    working_dir: /app
+    env_file:
+      - .env
+    environment:
+      PYTHONUTF8: "1"
+      PYTHONUNBUFFERED: "1"
+    ports:
+      - "127.0.0.1:8765:8765"   # local meters API — loopback ONLY, never 0.0.0.0
+    volumes:
+      - .:/app                  # your records, laws, engines: on YOUR disk
+    command: sleep infinity     # or your long-running lane command
+
+# tier 2: local models for T1 data (private stays on-box). Ollama runs on the HOST
+# at 127.0.0.1:11434; containers reach it via host.docker.internal:11434 —
+# no model traffic ever leaves the machine.

@@ -1,0 +1,540 @@
+<!doctype html>
+<!--
+  CHAIN CHECK v1 — verkle knot link verifier, fleet build 2026-09-04
+  Provenance: salon_launch_law_20260904 falsifier #2 ("chain hash integrity").
+  Python twin: mag/verkle_knot.py (_h / _leaf_hash / _merkle_root /
+  _merkle_prefix_roots) + mag/verkle_artifact.py verify_leaf. Live chain:
+  memory/biography/verkle_chain.jsonl (7,159 leaves, tip verified 2026-09-04).
+  THE ACTUAL FLEET FORMULAS, mirrored byte-for-byte in JS:
+    leaf_hash       = sha256("leaf:" + json.dumps(payload, sort_keys=True))
+    node(left,right)= sha256("node:" + left + ":" + right)     [hex strings]
+    empty root      = sha256("empty")
+    verkle_root(i)  = merkle root over leaf_hash[0..i]  (odd node duplicated)
+    parent_root(0)  = sha256("empty");  parent_root(i) = verkle_root(i-1)
+  verify_leaf excludes exactly {leaf_hash, filename, pdf_path} from the payload
+  (mag/verkle_artifact.py:64). This page also excludes chain bookkeeping
+  (ts/index/n_leaves/verkle_root/parent_verkle_root) when present.
+  Honest boundary: JSON.parse loses Python's int/float distinction, so a
+  payload literal like 3.0 re-canonicalizes as 3; real chain payloads (theme
+  vectors, tension indices) are unaffected. Non-ASCII + control chars are
+  ensure_ascii-escaped exactly like Python. Float repr follows Python's rule.
+  ZERO-FETCH: no network resource, no CDN, no libraries. crypto.subtle is
+  browser-native; an inline FIPS 180-4 sha-256 is the fallback (engine parity
+  is self-tested on load and shown in the engine badge).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MAG · Chain Check — verkle knot link verifier v1</title>
+<style>
+:root{--bg:#030806;--ink:#c8e6d9;--accent:#7cf5ff;--gold:#e8c96a;--mut:#8ab8a4;--bad:#ff9d5c;--ok:#7dfab0}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-monospace,Consolas,monospace}
+header{text-align:center;margin:14px 0 4px}
+h1{font-size:.95rem;letter-spacing:.12em;color:var(--accent);margin:0}
+.mut{color:var(--mut);font-size:.72rem;margin:4px auto 0;max-width:880px;line-height:1.5}
+a{color:var(--accent)}
+main{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;align-items:flex-start;padding:10px}
+#panel{width:430px;max-width:96vw;font-size:.72rem;line-height:1.6}
+#panel h2{font-size:.72rem;letter-spacing:.14em;color:var(--gold);margin:14px 0 6px}
+#panel h2:first-child{margin-top:0}
+textarea{width:100%;box-sizing:border-box;min-height:140px;background:#07130f;color:var(--ink);
+  border:1px solid rgba(124,245,255,.3);border-radius:6px;font:inherit;padding:8px;resize:vertical}
+textarea:focus{outline:1px solid var(--accent)}
+input[type=text]{width:100%;box-sizing:border-box;background:#07130f;color:var(--gold);
+  border:1px solid rgba(232,201,106,.4);border-radius:6px;font:inherit;padding:4px 8px;margin:3px 0}
+input[type=text]:focus{outline:1px solid var(--accent)}
+button{background:none;border:1px solid rgba(124,245,255,.3);border-radius:8px;color:var(--ink);
+  font:inherit;font-size:.68rem;padding:4px 12px;cursor:pointer;margin-top:8px;margin-right:6px}
+button:hover{color:var(--accent);border-color:var(--accent)}
+#out{width:430px;max-width:96vw;font-size:.72rem;line-height:1.7}
+.row{padding:4px 8px;border-bottom:1px dotted rgba(124,245,255,.12)}
+.row .why{color:var(--mut);display:block;font-size:.66rem}
+.firstbreak{background:rgba(255,157,92,.12);border:1px solid rgba(255,157,92,.45);border-radius:4px}
+.verdict-ok{color:var(--ok)}
+.verdict-bad{color:var(--bad)}
+.verdict-off{color:var(--gold)}
+#summary{padding:8px 10px;border:1px solid rgba(124,245,255,.25);border-radius:6px;margin-bottom:10px}
+#summary.bad{border-color:rgba(255,157,92,.5);color:var(--bad)}
+#summary.good{border-color:rgba(125,250,176,.4);color:var(--ok)}
+#engine{color:var(--mut);font-size:.66rem;margin-top:6px}
+#knotout{margin-top:8px;white-space:pre-wrap;word-break:break-all}
+.law{margin:10px 0 0;padding:8px 10px;border:1px solid rgba(232,201,106,.35);border-radius:6px;color:var(--gold);line-height:1.5}
+details{margin-top:6px}
+details summary{cursor:pointer;color:var(--mut)}
+</style>
+</head>
+<body>
+<header>
+  <h1>MAG · CHAIN CHECK — VERKLE KNOT LINK VERIFIER</h1>
+  <p class="mut">Recomputes the fleet's actual hash chain: <span style="color:var(--accent)">leaf = sha256("leaf:"+canonical json)</span> ·
+  <span style="color:var(--accent)">node = sha256("node:"+L+":"+R)</span> · <span style="color:var(--accent)">genesis = sha256("empty")</span>.
+  Mirrors mag/verkle_knot.py + mag/verkle_artifact.verify_leaf. Paste rows from
+  memory/biography/verkle_chain.jsonl, raw knot leaves, or any JSONL payload.
+  Falsifier #2 (salon_launch_law_20260904) · index: <a href="falsifiers.html">falsifiers.html</a></p>
+</header>
+<main>
+  <div id="panel">
+    <h2>CHAIN LINK MODE — PASTE JSONL ROWS</h2>
+    <textarea id="chain" spellcheck="false" placeholder="# lines starting with # are skipped. One JSON row per line.
+# rows may carry: leaf_hash, verkle_root, parent_verkle_root, index, n_leaves, ts, ...
+# rows without a hash field get their leaf hash computed from the payload."></textarea>
+    <button id="go">VERIFY CHAIN</button>
+    <button id="demo-live">LOAD LIVE SLICE (5 rows)</button>
+    <button id="demo-genesis">LOAD GENESIS DEMO</button>
+    <button id="demo-tamper">LOAD TAMPERED</button>
+
+    <h2>SINGLE KNOT — PASTE PARENT + PAYLOAD + CLAIMED HASH</h2>
+    <textarea id="knot" style="min-height:90px" spellcheck="false" placeholder='{"session_id": "...", "dominant_theme": "...", ...}'></textarea>
+    <input id="kclaim" type="text" placeholder="claimed leaf hash (64 hex)">
+    <input id="kparent" type="text" placeholder="claimed parent root (optional — linkage is checked in CHAIN LINK mode)">
+    <button id="kgo">VERIFY KNOT</button>
+    <div id="knotout"></div>
+
+    <p class="law">Dungeon beat: the chain is a promise that no row was touched.
+    One flipped byte in one leaf and every root after it confesses.</p>
+  </div>
+  <div id="out">
+    <div id="summary">paste JSONL rows and hit VERIFY CHAIN</div>
+    <div id="rows"></div>
+    <div id="engine"></div>
+  </div>
+</main>
+<script>
+"use strict";
+/*__PASTE_FALSIFIER_LOGIC_START__*/
+// ── sha-256 (FIPS 180-4), compact inline implementation. Used directly as the
+// fallback and as the engine-parity reference for crypto.subtle.
+function rotr(x, n) { return ((x >>> n) | (x << (32 - n))) >>> 0; }
+var SHA_K = [
+  0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,
+  0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,
+  0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+  0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,
+  0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,
+  0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+  0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,
+  0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+var SHA_H0 = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+function utf8Bytes(str) {
+  if (typeof TextEncoder !== "undefined") {
+    return Array.prototype.slice.call(new TextEncoder().encode(str));
+  }
+  var out = [];
+  for (var i = 0; i < str.length; i++) {
+    var c = str.charCodeAt(i);
+    if (c < 0x80) out.push(c);
+    else if (c < 0x800) out.push(0xc0 | (c >> 6), 0x80 | (c & 63));
+    else if (c >= 0xd800 && c < 0xdc00 && i + 1 < str.length && str.charCodeAt(i + 1) >= 0xdc00 && str.charCodeAt(i + 1) < 0xe000) {
+      var cp = 0x10000 + ((c - 0xd800) << 10) + (str.charCodeAt(i + 1) - 0xdc00);
+      out.push(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 63), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));
+      i++;
+    } else if (c >= 0xd800 && c < 0xe000) { out.push(0xef, 0xbf, 0xbd); }
+    else out.push(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
+  }
+  return out;
+}
+function sha256Bytes(bytes) {
+  var H = SHA_H0.slice();
+  var l = bytes.length;
+  var bitLenHi = Math.floor(l / 0x20000000);
+  var bitLenLo = (l << 3) >>> 0;
+  var msg = bytes.slice();
+  msg.push(0x80);
+  while (msg.length % 64 !== 56) msg.push(0);
+  for (var i = 7; i >= 0; i--) {
+    msg.push(i >= 4 ? ((bitLenHi >>> ((i - 4) * 8)) & 0xff) : ((bitLenLo >>> (i * 8)) & 0xff));
+  }
+  var w = new Array(64);
+  for (var off = 0; off < msg.length; off += 64) {
+    for (var t = 0; t < 16; t++) {
+      w[t] = ((msg[off + 4 * t] << 24) | (msg[off + 4 * t + 1] << 16) | (msg[off + 4 * t + 2] << 8) | msg[off + 4 * t + 3]) >>> 0;
+    }
+    for (var t = 16; t < 64; t++) {
+      var x = w[t - 15], y = w[t - 2];
+      var s0 = rotr(x, 7) ^ rotr(x, 18) ^ (x >>> 3);
+      var s1 = rotr(y, 17) ^ rotr(y, 19) ^ (y >>> 10);
+      w[t] = (w[t - 16] + s0 + w[t - 7] + s1) >>> 0;
+    }
+    var a = H[0], b = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];
+    for (var t = 0; t < 64; t++) {
+      var S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+      var ch = (e & f) ^ (~e & g);
+      var t1 = (h + S1 + ch + SHA_K[t] + w[t]) >>> 0;
+      var S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+      var maj = (a & b) ^ (a & c) ^ (b & c);
+      var t2 = (S0 + maj) >>> 0;
+      h = g; g = f; f = e; e = (d + t1) >>> 0;
+      d = c; c = b; b = a; a = (t1 + t2) >>> 0;
+    }
+    H[0] = (H[0] + a) >>> 0; H[1] = (H[1] + b) >>> 0; H[2] = (H[2] + c) >>> 0; H[3] = (H[3] + d) >>> 0;
+    H[4] = (H[4] + e) >>> 0; H[5] = (H[5] + f) >>> 0; H[6] = (H[6] + g) >>> 0; H[7] = (H[7] + h) >>> 0;
+  }
+  var out = "";
+  for (var i = 0; i < 8; i++) out += ("00000000" + H[i].toString(16)).slice(-8);
+  return out;
+}
+var SUBTLE = (typeof crypto !== "undefined" && crypto && crypto.subtle && typeof crypto.subtle.digest === "function") ? crypto.subtle : null;
+async function sha256Hex(message) {
+  if (SUBTLE) {
+    try {
+      var u = new Uint8Array(await SUBTLE.digest("SHA-256", new Uint8Array(utf8Bytes(message))));
+      var out = "";
+      for (var i = 0; i < u.length; i++) out += ("0" + u[i].toString(16)).slice(-2);
+      return out;
+    } catch (e) { SUBTLE = null; }
+  }
+  return sha256Bytes(utf8Bytes(message));
+}
+// ── Python json.dumps(obj, sort_keys=True) canonical form: separators ", "/": ",
+// ensure_ascii=True. This is the exact byte form the fleet hashes.
+function pyStr(s) {
+  var out = '"';
+  for (var i = 0; i < s.length; i++) {
+    var c = s.charCodeAt(i), ch = s.charAt(i);
+    if (c === 0x22) out += '\\"';
+    else if (c === 0x5c) out += "\\\\";
+    else if (c === 10) out += "\\n";
+    else if (c === 13) out += "\\r";
+    else if (c === 9) out += "\\t";
+    else if (c === 8) out += "\\b";
+    else if (c === 12) out += "\\f";
+    else if (c < 0x20 || c > 0x7e) out += "\\u" + ("000" + c.toString(16)).slice(-4);
+    else out += ch;
+  }
+  return out + '"';
+}
+function pyFloatRepr(n) {
+  if (!isFinite(n)) return n > 0 ? "Infinity" : (n < 0 ? "-Infinity" : "NaN");
+  var neg = n < 0, a = Math.abs(n);
+  if (a === 0) return neg ? "-0.0" : "0.0";
+  var s = String(a), digits, exp10, ei = s.indexOf("e");
+  if (ei >= 0) {
+    var mant = s.slice(0, ei), e = parseInt(s.slice(ei + 1), 10), dot = mant.indexOf(".");
+    if (dot < 0) { digits = mant; exp10 = mant.length + e; }
+    else { digits = mant.slice(0, dot) + mant.slice(dot + 1); exp10 = dot + e; }
+  } else {
+    var dot = s.indexOf(".");
+    if (dot < 0) { digits = s; exp10 = s.length; }
+    else { digits = s.slice(0, dot) + s.slice(dot + 1); exp10 = dot; }
+  }
+  // value = 0.digits × 10^decpt (Python format_float_short repr mode switches
+  // to exponential at decpt > 16 or decpt <= -4, e.g. 1e15 stays fixed, 1e16
+  // and 1e-05 go exponential).
+  var L = 0;
+  while (L < digits.length - 1 && digits.charAt(L) === "0") L++;
+  digits = digits.slice(L);
+  var decpt = exp10 - L;
+  var T = digits.length;
+  while (T > 1 && digits.charAt(T - 1) === "0") T--;
+  digits = digits.slice(0, T);
+  var out;
+  if (decpt > 16 || decpt <= -4) {
+    var m = digits.charAt(0) + (digits.length > 1 ? "." + digits.slice(1) : "");
+    var ee = decpt - 1;
+    var abs = String(Math.abs(ee));
+    if (abs.length < 2) abs = "0" + abs;
+    out = m + "e" + (ee < 0 ? "-" : "+") + abs;
+  } else if (decpt <= 0) {
+    out = "0." + new Array(1 - decpt).join("0") + digits;
+  } else if (decpt >= digits.length) {
+    out = digits + new Array(1 + decpt - digits.length).join("0") + ".0";
+  } else {
+    out = digits.slice(0, decpt) + "." + digits.slice(decpt);
+  }
+  return (neg ? "-" : "") + out;
+}
+function pyNum(n) {
+  if (Object.is(n, -0)) return "-0.0";
+  if (Number.isInteger(n) && Math.abs(n) < 9007199254740991) return String(n);
+  return pyFloatRepr(n);
+}
+function pyCanon(v) {
+  if (v === null) return "null";
+  var t = typeof v;
+  if (t === "string") return pyStr(v);
+  if (t === "boolean") return v ? "true" : "false";
+  if (t === "number") return pyNum(v);
+  if (Array.isArray(v)) return "[" + v.map(pyCanon).join(", ") + "]";
+  if (t === "object") {
+    var keys = Object.keys(v).sort(); // ASCII keys sort identically to Python sorted()
+    return "{" + keys.map(function (k) { return pyStr(k) + ": " + pyCanon(v[k]); }).join(", ") + "}";
+  }
+  return pyStr(String(v));
+}
+// ── THE FLEET'S ACTUAL FORMULAS (mag/verkle_knot.py, mirrored)
+async function leafHashOf(payloadObj) { return sha256Hex("leaf:" + pyCanon(payloadObj)); }
+async function nodeHash(left, right) { return sha256Hex("node:" + left + ":" + right); }
+async function emptyRoot() { return sha256Hex("empty"); }
+async function merkleRoot(leafHashes) {
+  if (!leafHashes.length) return emptyRoot();
+  var layer = leafHashes.slice();
+  while (layer.length > 1) {
+    var nxt = [];
+    for (var i = 0; i < layer.length; i += 2) {
+      var left = layer[i], right = (i + 1 < layer.length) ? layer[i + 1] : layer[i];
+      nxt.push(await nodeHash(left, right));
+    }
+    layer = nxt;
+  }
+  return layer[0];
+}
+// Port of mag/verkle_knot._merkle_prefix_roots (forest fold; byte-for-byte
+// equal to _merkle_root over every prefix — see that docstring).
+async function merklePrefixRoots(leafHashes) {
+  if (!leafHashes.length) return [];
+  var forest = [], roots = [];
+  for (var i = 0; i < leafHashes.length; i++) {
+    forest.push({ root: leafHashes[i], height: 0 });
+    while (forest.length >= 2 && forest[forest.length - 1].height === forest[forest.length - 2].height) {
+      var right = forest.pop(), left = forest.pop();
+      forest.push({ root: await nodeHash(left.root, right.root), height: right.height + 1 });
+    }
+    var root = forest[forest.length - 1].root;
+    var height = forest[forest.length - 1].height;
+    for (var j = forest.length - 2; j >= 0; j--) {
+      for (var k = height; k < forest[j].height; k++) root = await nodeHash(root, root);
+      root = await nodeHash(forest[j].root, root);
+      height = forest[j].height + 1;
+    }
+    roots.push(root);
+  }
+  return roots;
+}
+function hex64(s) { return typeof s === "string" && /^[0-9a-f]{64}$/i.test(s); }
+function parseJsonl(text) {
+  var rows = [], badLines = [];
+  text.split(/\r?\n/).forEach(function (line, i) {
+    var s = line.trim();
+    if (!s || s.charAt(0) === "#") return;
+    try {
+      var v = JSON.parse(s);
+      if (v && typeof v === "object" && !Array.isArray(v)) rows.push(v);
+      else badLines.push(i + 1);
+    } catch (e) { badLines.push(i + 1); }
+  });
+  return { rows: rows, badLines: badLines };
+}
+var HASH_FIELDS = ["leaf_hash", "knot_hash", "hash", "root"];
+// verify_leaf (mag/verkle_artifact.py:64) excludes exactly leaf_hash/filename/
+// pdf_path; chain bookkeeping is excluded too when present (chain rows carry it).
+var EXCLUDE_KEYS = { leaf_hash: 1, knot_hash: 1, hash: 1, root: 1, verkle_root: 1, parent_verkle_root: 1, index: 1, n_leaves: 1, ts: 1, filename: 1, pdf_path: 1 };
+function payloadOf(row) {
+  var payload = {}, hasPayload = false;
+  for (var k in row) {
+    if (Object.prototype.hasOwnProperty.call(row, k) && !EXCLUDE_KEYS[k]) { payload[k] = row[k]; hasPayload = true; }
+  }
+  return { payload: payload, hasPayload: hasPayload };
+}
+async function analyzeChain(rows) {
+  var EMPTY = await emptyRoot();
+  var perRow = [], leafSeq = [];
+  for (var i = 0; i < rows.length; i++) {
+    var row = rows[i], claimed = null, hashField = null, computed = false;
+    for (var f = 0; f < HASH_FIELDS.length; f++) {
+      if (typeof row[HASH_FIELDS[f]] === "string") { claimed = row[HASH_FIELDS[f]]; hashField = HASH_FIELDS[f]; break; }
+    }
+    var pp = payloadOf(row);
+    if (hex64(claimed)) {
+      leafSeq.push(claimed.toLowerCase());
+    } else {
+      claimed = await leafHashOf(pp.payload); // no hash field: derive from payload
+      computed = true;
+      leafSeq.push(claimed);
+    }
+    perRow.push({
+      claimed: claimed, hashField: hashField, computed: computed,
+      index: (typeof row.index === "number") ? row.index : null,
+      nLeaves: (typeof row.n_leaves === "number") ? row.n_leaves : null,
+      parentRoot: (typeof row.parent_verkle_root === "string") ? row.parent_verkle_root.toLowerCase() : null,
+      verkleRoot: (typeof row.verkle_root === "string") ? row.verkle_root.toLowerCase() : null,
+      ts: (typeof row.ts === "string") ? row.ts : null,
+      payloadOk: null, reasons: [], bad: false
+    });
+  }
+  // leaf self-check: recompute verify_leaf over any carried payload
+  for (var i = 0; i < perRow.length; i++) {
+    if (perRow[i].computed) continue;
+    var pp = payloadOf(rows[i]);
+    if (pp.hasPayload) {
+      perRow[i].payloadOk = ((await leafHashOf(pp.payload)) === perRow[i].claimed);
+    }
+  }
+  var mode = (perRow.length && perRow[0].parentRoot && perRow[0].parentRoot !== EMPTY) ? "SLICE" : "GENESIS";
+  var prefixRoots = (mode === "GENESIS") ? await merklePrefixRoots(leafSeq) : null;
+  var localRoot = await merkleRoot(leafSeq);
+  var firstBroken = -1;
+  for (var i = 0; i < perRow.length; i++) {
+    var r = perRow[i];
+    if (r.computed) r.reasons.push({ text: "leaf hash computed from payload (row carried no hash field)", bad: false });
+    if (r.payloadOk === false) r.reasons.push({ text: "leaf_hash MISMATCH vs payload (verify_leaf formula)", bad: true });
+    if (mode === "GENESIS") {
+      if (r.verkleRoot && r.verkleRoot !== prefixRoots[i]) {
+        r.reasons.push({ text: "verkle_root " + r.verkleRoot.slice(0, 12) + "… ≠ recomputed prefix root " + prefixRoots[i].slice(0, 12) + "…", bad: true });
+      }
+      if (r.parentRoot && r.parentRoot !== (i === 0 ? EMPTY : prefixRoots[i - 1])) {
+        r.reasons.push({ text: "parent_verkle_root ≠ " + (i === 0 ? "sha256(\"empty\")" : "prefix root of row " + (i - 1)), bad: true });
+      }
+      if (r.index !== null && r.index !== i) r.reasons.push({ text: "index " + r.index + " ≠ position " + i, bad: true });
+      if (r.nLeaves !== null && r.nLeaves !== i + 1) r.reasons.push({ text: "n_leaves " + r.nLeaves + " ≠ " + (i + 1), bad: true });
+    } else if (i > 0) {
+      var prev = perRow[i - 1];
+      if (r.parentRoot && prev.verkleRoot && r.parentRoot !== prev.verkleRoot) {
+        r.reasons.push({ text: "parent_verkle_root ≠ previous row's verkle_root", bad: true });
+      }
+      if (r.index !== null && prev.index !== null && r.index !== prev.index + 1) {
+        r.reasons.push({ text: "index discontinuity " + prev.index + " → " + r.index, bad: true });
+      }
+      if (r.nLeaves !== null && prev.nLeaves !== null && r.nLeaves !== prev.nLeaves + 1) {
+        r.reasons.push({ text: "n_leaves discontinuity " + prev.nLeaves + " → " + r.nLeaves, bad: true });
+      }
+    }
+    for (var q = 0; q < r.reasons.length; q++) if (r.reasons[q].bad) { r.bad = true; break; }
+    if (r.bad && firstBroken < 0) firstBroken = i;
+  }
+  return { mode: mode, perRow: perRow, firstBroken: firstBroken, localRoot: localRoot, empty: EMPTY,
+           tip: prefixRoots ? prefixRoots[prefixRoots.length - 1] : null };
+}
+/*__PASTE_FALSIFIER_LOGIC_END__*/
+
+// ── DOM glue (not under test markers) ──────────────────────────────────────
+function esc(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+function short(h) { return h ? h.slice(0, 12) + "…" : "?"; }
+async function runChain() {
+  var parsed = parseJsonl(document.getElementById("chain").value);
+  var rowsEl = document.getElementById("rows");
+  var sumEl = document.getElementById("summary");
+  rowsEl.innerHTML = "";
+  if (!parsed.rows.length) {
+    sumEl.className = "bad";
+    sumEl.textContent = "no parsable rows" + (parsed.badLines.length ? " · malformed line(s): " + parsed.badLines.join(",") : "");
+    return;
+  }
+  var res = await analyzeChain(parsed.rows);
+  for (var i = 0; i < res.perRow.length; i++) {
+    var r = res.perRow[i];
+    var div = document.createElement("div");
+    div.className = "row" + (i === res.firstBroken ? " firstbreak" : "");
+    var badge = r.bad ? '<span class="verdict-bad">LINK-BROKEN</span>'
+      : '<span class="verdict-ok">PASS</span>';
+    var head = "#" + i + (r.ts ? " · " + esc(r.ts) : "") +
+      " · leaf " + short(r.claimed) + (r.computed ? " <span class='verdict-off'>(computed)</span>" : "") +
+      " · " + badge;
+    var why = "";
+    for (var q = 0; q < r.reasons.length; q++) {
+      why += '<span class="why">' + (r.reasons[q].bad ? "✗ " : "· ") + esc(r.reasons[q].text) + "</span>";
+    }
+    if (r.payloadOk === true) why += '<span class="why">· leaf_hash matches payload (verify_leaf)</span>';
+    div.innerHTML = head + why;
+    rowsEl.appendChild(div);
+  }
+  var note = res.perRow.length + " row" + (res.perRow.length === 1 ? "" : "s") + " · mode " + res.mode +
+    (res.mode === "SLICE" ? " (row 0 parent trusted as anchor)" : " (genesis)") +
+    (parsed.badLines.length ? " · skipped malformed line(s): " + parsed.badLines.join(",") : "");
+  if (res.firstBroken >= 0) {
+    sumEl.className = "bad";
+    sumEl.textContent = "CHAIN BROKEN — first bad link at row " + res.firstBroken +
+      ". " + (res.perRow.length - res.firstBroken - 1) + " downstream row(s) unverifiable against it. (" + note + ")";
+  } else {
+    sumEl.className = "good";
+    sumEl.textContent = "CHAIN VERIFIED — every link holds. local root " + short(res.localRoot) +
+      (res.mode === "GENESIS" && res.perRow.length ? " (tip " + short(res.tip) + ")" : "") + ". (" + note + ")";
+  }
+}
+async function runKnot() {
+  var out = document.getElementById("knotout");
+  var payloadText = document.getElementById("knot").value;
+  var claimed = document.getElementById("kclaim").value.trim().toLowerCase();
+  var parent = document.getElementById("kparent").value.trim().toLowerCase();
+  if (!payloadText.trim()) { out.textContent = "paste the knot payload JSON"; return; }
+  var obj;
+  try { obj = JSON.parse(payloadText); }
+  catch (e) { out.textContent = "payload is not valid JSON: " + e.message; return; }
+  var pp = payloadOf(obj && typeof obj === "object" && !Array.isArray(obj) ? obj : { value: obj });
+  var recomputed = await leafHashOf(pp.payload);
+  var canon = pyCanon(pp.payload);
+  var lines = [];
+  lines.push("recomputed leaf_hash = " + recomputed);
+  lines.push("formula: sha256(\"leaf:\" + canon_json(payload)) — payload excludes leaf_hash/filename/pdf_path" +
+    (pp.hasPayload ? "" : " (nothing but bookkeeping fields: hashing {})"));
+  lines.push("");
+  if (!hex64(claimed)) {
+    lines.push("claimed hash: " + (claimed ? "not 64-hex — cannot compare" : "(none given)"));
+    lines.push("verdict: <span class='verdict-off'>INCOMPLETE</span>");
+  } else if (claimed === recomputed) {
+    lines.push("claimed == recomputed → <span class='verdict-ok'>KNOT PASS</span>");
+  } else {
+    lines.push("claimed " + short(claimed) + " ≠ recomputed → <span class='verdict-bad'>KNOT MISMATCH</span>");
+    lines.push("most common cause: the payload was edited after commit, or a key/spacing/float differs.");
+  }
+  if (parent) {
+    lines.push("");
+    lines.push("parent " + short(parent) + " recorded — the fleet binds parents via merkle prefix roots");
+    lines.push("(parent_verkle_root[i] = verkle_root[i-1]); verify the LINK by pasting surrounding");
+    lines.push("chain rows into CHAIN LINK mode above.");
+  }
+  lines.push("");
+  lines.push("engine: " + (SUBTLE ? "crypto.subtle (WebCrypto)" : "inline FIPS 180-4 fallback"));
+  out.innerHTML = esc(lines.join("\n")).replace(/\n/g, "\n") // keep structure
+    .replace(/&lt;span class='verdict-ok'&gt;/g, "<span class='verdict-ok'>").replace(/&lt;span class='verdict-bad'&gt;/g, "<span class='verdict-bad'>").replace(/&lt;span class='verdict-off'&gt;/g, "<span class='verdict-off'>").replace(/&lt;\/span&gt;/g, "</span>");
+  var det = document.createElement("details");
+  det.innerHTML = "<summary>canonical bytes actually hashed (" + canon.length + " chars)</summary>";
+  var pre = document.createElement("div");
+  pre.style.cssText = "white-space:pre-wrap;word-break:break-all;color:var(--mut);font-size:.64rem";
+  pre.textContent = canon;
+  det.appendChild(pre);
+  out.appendChild(det);
+}
+async function selfTest() {
+  var a = await sha256Hex("abc");
+  var b = sha256Bytes(utf8Bytes("abc"));
+  var ok = (a === b) && (a === "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+  var long1 = await sha256Hex("leaf:" + pyCanon({ n: 0, note: "row 0" }));
+  var long2 = sha256Bytes(utf8Bytes("leaf:" + pyCanon({ n: 0, note: "row 0" })));
+  ok = ok && long1 === long2;
+  document.getElementById("engine").textContent = "engine self-test: " + (ok ? "PASS" : "FAIL") +
+    " — " + (SUBTLE ? "crypto.subtle vs inline fallback agree" : "inline FIPS 180-4 fallback (no secure context)") +
+    " · empty root " + (await emptyRoot()).slice(0, 16) + "…";
+}
+document.getElementById("go").addEventListener("click", runChain);
+document.getElementById("kgo").addEventListener("click", runKnot);
+document.getElementById("demo-live").addEventListener("click", function () {
+  document.getElementById("chain").value =
+'# last 5 rows of the live verkle chain (memory/biography/verkle_chain.jsonl), tip verified 2026-09-04\n' +
+'{"ts":"2026-09-04T12:27:12.228912Z","index":7154,"n_leaves":7155,"leaf_hash":"a93e079423279f737397f6b3645d3b9f7f50b3fc49a0f0b70ab0c99eec93ebed","parent_verkle_root":"4e07b6cbd9709a223bfd5ae3c437a95c5d16fe2a60b636bd51c7399c3d9a39b5","verkle_root":"0b8d722aca9b162134a41eb251a144294bc4acbe6d69aec8547bd8635acd0609","filename":"2026-09-04_1227_untagged_law-LAW-_a93e0794.knot.json"}\n' +
+'{"ts":"2026-09-04T12:27:12.578799Z","index":7155,"n_leaves":7156,"leaf_hash":"4432f1794118bc62b6a28d7dbe9643718e916f392ccaf51606b64e8d30429074","parent_verkle_root":"0b8d722aca9b162134a41eb251a144294bc4acbe6d69aec8547bd8635acd0609","verkle_root":"3cf611318f9178c36db3c4adac849e0e378ae8990b46cdcc90bd28698d399be2","filename":"2026-09-04_1227_untagged_law-LAW-_4432f179.knot.json"}\n' +
+'{"ts":"2026-09-04T12:27:12.905826Z","index":7156,"n_leaves":7157,"leaf_hash":"cb2fd1f4315958bf069cdd02b899cd8230edb47fe5c65383a0394677fd94f94f","parent_verkle_root":"3cf611318f9178c36db3c4adac849e0e378ae8990b46cdcc90bd28698d399be2","verkle_root":"12d55377ccc732e4d6375553cf269990c7a2f11bf40b6d029f3a7037d623f2ee","filename":"2026-09-04_1227_untagged_law-LAW-_cb2fd1f4.knot.json"}\n' +
+'{"ts":"2026-09-04T12:27:13.246710Z","index":7157,"n_leaves":7158,"leaf_hash":"3c2c669fd48ad7c57bdd18f828b168653ae1f3922fc7d8bb57c3c61d0b53eb43","parent_verkle_root":"12d55377ccc732e4d6375553cf269990c7a2f11bf40b6d029f3a7037d623f2ee","verkle_root":"d4c5339d3baa7204e8a0c4ae2b2f7d3b80a3f83d050e5697e91ff670cad780c1","filename":"2026-09-04_1227_untagged_law-LAW-_3c2c669f.knot.json"}\n' +
+'{"ts":"2026-09-04T12:27:13.623856Z","index":7158,"n_leaves":7159,"leaf_hash":"36399b43f609a023950953243dd7f7f71482a6b4a06299a6384116dcda95d720","parent_verkle_root":"d4c5339d3baa7204e8a0c4ae2b2f7d3b80a3f83d050e5697e91ff670cad780c1","verkle_root":"d1a94721ecdb7f7d29a1992e21f3e1ee9cab314268f572689005fd3c229ef9d9","filename":"2026-09-04_1227_untagged_law-LAW-_36399b43.knot.json"}';
+  runChain();
+});
+function loadGenesisDemo() {
+  document.getElementById("chain").value =
+'# a 5-leaf genesis chain — every hash below recomputed by this very page\n' +
+'{"ts":"2026-09-04T00:00:00Z","index":0,"n_leaves":1,"leaf_hash":"7251f3bd86cae9c8c50b70a72425afe8f5fe59ed8b84d25ba85a83afc482e412","parent_verkle_root":"2e1cfa82b035c26cbbbdae632cea070514eb8b773f616aaeaf668e2f0be8f10d","verkle_root":"7251f3bd86cae9c8c50b70a72425afe8f5fe59ed8b84d25ba85a83afc482e412"}\n' +
+'{"ts":"2026-09-04T00:00:01Z","index":1,"n_leaves":2,"leaf_hash":"de36ffa410aa14544c830c12408c71094df342aeec67e0546145ec8306ae6415","parent_verkle_root":"7251f3bd86cae9c8c50b70a72425afe8f5fe59ed8b84d25ba85a83afc482e412","verkle_root":"f9b0c1053f9d659dcf7cf0d1cea0912698264c7b55f4bfd8f2e95fb2efb8c5c2"}\n' +
+'{"ts":"2026-09-04T00:00:02Z","index":2,"n_leaves":3,"leaf_hash":"f2a43e646be3f69f16da1d961f83d68d43c4eec76b15fb785e8fc8282c14ae4e","parent_verkle_root":"f9b0c1053f9d659dcf7cf0d1cea0912698264c7b55f4bfd8f2e95fb2efb8c5c2","verkle_root":"fc2114a0d7c4351a3a553fa74c9e6c1c93e8c69a95e0f9a571274853fb622e5a"}\n' +
+'{"ts":"2026-09-04T00:00:03Z","index":3,"n_leaves":4,"leaf_hash":"28827d1cfca14cec6a59dbb35f80cbc63a479437fb26c8193bd1f716f29fd9ad","parent_verkle_root":"fc2114a0d7c4351a3a553fa74c9e6c1c93e8c69a95e0f9a571274853fb622e5a","verkle_root":"1d6bef0d28784d8823085f0e10dbb6d9cfb6aa356388885b53324a5a8f2e845a"}\n' +
+'{"ts":"2026-09-04T00:00:04Z","index":4,"n_leaves":5,"leaf_hash":"9b1fb2cf6dc09801e13cc5488de00616501bb7fe13de14e2116278220aad961e","parent_verkle_root":"1d6bef0d28784d8823085f0e10dbb6d9cfb6aa356388885b53324a5a8f2e845a","verkle_root":"4cf792200d52015d36ed041f553171928449cf526cf692575aac7c84aac30572"}';
+}
+document.getElementById("demo-genesis").addEventListener("click", function () {
+  loadGenesisDemo();
+  runChain();
+});
+document.getElementById("demo-tamper").addEventListener("click", function () {
+  loadGenesisDemo();
+  var ta = document.getElementById("chain");
+  // flip one byte in row 3's leaf hash — the chain must confess
+  ta.value = ta.value.replace("28827d1cfca14cec6a59dbb35f80cbc63a479437fb26c8193bd1f716f29fd9ad",
+                              "38827d1cfca14cec6a59dbb35f80cbc63a479437fb26c8193bd1f716f29fd9ad");
+  runChain();
+});
+document.getElementById("knot").value = '{\n  "session_id": "work:test:vectors",\n  "dominant_theme": "chain_check",\n  "tension_index": 0.42,\n  "items": [1, 2, 3],\n  "nested": {"b": true, "a": null}\n}';
+document.getElementById("kclaim").value = "51866522e615ed3b52a17976339600ff029744e512c60bdff7af965e60bb6308";
+document.getElementById("kparent").value = "";
+selfTest();
+</script>
+</body>
+</html>

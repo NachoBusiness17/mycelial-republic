@@ -1,0 +1,21 @@
+{
+  "schema": "seat_contract.v1",
+  "job_id": "room-artifact-links",
+  "goal": "Elder salon feature #2: thread-linked artifacts. In mag/api_gateway.py add: (1) a parse of `path:line` tokens (regex like [\\w./\\\\-]+\\.\\w+:\\d+) from room post text into an `artifacts` array on GET /room responses; (2) GET /room/artifacts?n=200 returning the newest artifact refs (path, line, seat, ts, thread) across posts. Files+code only.",
+  "invariants": [
+    "follow the existing gateway registry pattern (route decorator, _ok/_err); lazy imports inside handlers like the other room routes",
+    "repo-files law: use Edit tool for source edits, never Bash heredoc/appends to .py files",
+    "no new daemons, no docker (cage law), no model calls"
+  ],
+  "forbidden_moves": ["touching covenant.json", "spawning instances", "editing watch/ or docs/"],
+  "acceptance_commands": [
+    ".venv/Scripts/python.exe -c \"import sys; sys.path.insert(0,'.'); from mag import api_gateway as g; s,p = g.dispatch('GET','/room/artifacts',headers={'X-API-Key':'x'},body=None); assert s in (200,401), s; print('ARTIFACTS ROUTE OK', s)\"",
+    ".venv/Scripts/python.exe -c \"import sys; sys.path.insert(0,'.'); from mag import api_gateway as g; s,p = g.dispatch('GET','/room',headers={'X-API-Key':'x'},body=None); print('ROOM STILL OK', s)\""
+  ],
+  "checkpoint_schema": {"required": ["completed","artifacts","failures","budget_used_pct","next_action_one_line"]},
+  "handoff_schema": {"required": ["done","untested","blocked","resume_command"]},
+  "resume_command": "codex exec --skip-git-repo-check -C <repo> 'read jobs/room-artifact-links/seat_contract.json + latest trail_core, do next_action, run acceptance_commands, write trail_core_N'",
+  "driver": "codex-exec",
+  "opened": "2026-08-29",
+  "opened_by": "zcode dispatch (operator: burn gpt like grok, use our routing)"
+}

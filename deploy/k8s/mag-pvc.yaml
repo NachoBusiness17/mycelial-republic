@@ -1,0 +1,12 @@
+# Persistent state: memory/ (the maze, ledgers, runs), logs/, state/ (CURRENT.md,
+# HANDOFF.md). Keep these durable across pod restarts — this IS the memory.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mag-state
+  namespace: mag
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 2Gi

@@ -1,0 +1,1423 @@
+#!/usr/bin/env python3
+"""Local Mag history dashboard — browse sessions, PDFs, Verkle, ingest.
+
+  python main.py dashboard
+  → http://127.0.0.1:8765/
+"""
+from __future__ import annotations
+
+import json
+import os
+import sqlite3
+import time
+import threading
+import mimetypes
+import re
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from typing import Any
+from urllib.parse import parse_qs, unquote, urlparse
+
+from config import bind_host  # noqa: E402
+
+ROOT = Path(__file__).resolve().parents[1]
+BIO = ROOT / "memory" / "biography"
+INGEST = ROOT / "memory" / "ingest"
+STATIC = Path(__file__).resolve().parent / "static"
+DATA = Path(__file__).resolve().parent / "data"
+
+# LAW-060 enforcement (2026-09-07, "I can't return to static"): every HTML page
+# served carries the return bar — HOME / ALL / BACK — injected server-side so no
+# surface can ever trap the operator. Structural, not per-page courtesy.
+_FLEETBAR = (
+    '<div id="fleetbar" style="position:fixed;bottom:0;left:0;right:0;z-index:9999;'
+    'display:flex;background:#0a1412;border-top:1px solid rgba(124,245,255,.45)">'
+    '<a href="/" style="flex:1;padding:13px 0;text-align:center;color:#7cf5ff;'
+    'font:700 13px ui-monospace,monospace;text-decoration:none">⌂ HOME</a>'
+    '<a href="/static/" style="flex:1;padding:13px 0;text-align:center;color:#7cf5ff;'
+    'font:700 13px ui-monospace,monospace;text-decoration:none;'
+    'border-left:1px solid rgba(124,245,255,.25);border-right:1px solid rgba(124,245,255,.25)">☰ ALL</a>'
+    '<a href="#" onclick="history.back();return false" style="flex:1;padding:13px 0;'
+    'text-align:center;color:#e8c96a;font:700 13px ui-monospace,monospace;'
+    'text-decoration:none">← BACK</a></div><div style="height:46px"></div>'
+)
+
+
+def _fleetbar_inject(data: bytes) -> bytes:
+    if b"fleetbar" in data or b"</body>" not in data:
+        return data
+    return data.replace(b"</body>", _FLEETBAR.encode("utf-8") + b"</body>", 1)
+DEFAULT_HOST = bind_host()
+DEFAULT_PORT = 8765
+
+
+def _read_json(path: Path) -> Any | None:
+    if not path.is_file():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
+def _read_jsonl(path: Path, limit: int = 500) -> list[dict]:
+    if not path.is_file():
+        return []
+    rows = []
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        if not line.strip():
+            continue
+        try:
+            rows.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return rows[-limit:]
+
+
+def _tail_jsonl(path: Path, limit: int = 500, window: int = 262144) -> dict:
+    """Last `limit` rows via a bounded backward read — O(window), never the
+    whole file (ractor_board.jsonl hit 713MB; clients must not re-download it).
+    Returns rows + truncated flag (True when the window may have cut older rows)."""
+    if not path.is_file():
+        return {"rows": [], "truncated": False, "bytes_read": 0}
+    size = path.stat().st_size
+    with path.open("rb") as fh:
+        if size > window:
+            fh.seek(size - window)
+            fh.readline()  # drop the partial line at the window head
+            data = fh.read()
+            truncated = True
+        else:
+            data = fh.read()
+            truncated = False
+    rows = []
+    for line in data.decode("utf-8", errors="replace").splitlines():
+        if not line.strip():
+            continue
+        try:
+            rows.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return {"rows": rows[-limit:], "truncated": truncated, "bytes_read": len(data)}
+
+
+# Verdicts panel organs (Mickey17 W3, 2026-09-29): the new estate (gwap/gps/
+# mountain, wave ledger return 23) had no face. One door joins every organ;
+# a new organ joins by appending one source line here.
+GPS_LEDGER_DB = ROOT / "tools" / "gps_mcp" / "gps_ledger.db3"
+GWAP_STORE = ROOT / "memory" / "runs" / "gwap"
+MOUNTAIN_RECEIPTS = ROOT / "watch" / "inbox" / "mountain_climb_ractor_20260929"
+
+
+def _verdicts_gps_rows(db_path: Path = GPS_LEDGER_DB, limit: int = 50) -> list[dict]:
+    """Newest capability rows from the gps-mcp ledger sqlite.
+
+    Opened READ-ONLY (uri mode=ro): the panel can never write, lock, or
+    schema-migrate the ledger the mcp server owns. Missing file is an empty
+    table (the ledger is born on first seed, not at import).
+    """
+    if not db_path.is_file():
+        return []
+    conn = sqlite3.connect(f"file:{db_path.as_posix()}?mode=ro", uri=True)
+    conn.row_factory = sqlite3.Row
+    try:
+        cur = conn.execute(
+            "SELECT model_id, task_shape, pass_rate, sample_size, updated_at"
+            " FROM capability ORDER BY updated_at DESC LIMIT ?",
+            (limit,),
+        )
+        return [dict(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def _verdicts_recent_files(dir_path: Path, tail: int = 10) -> list[str]:
+    """Newest filenames in a receipt dir (os.listdir, mtime desc, names only).
+
+    No content is ever read: the panel shows that an organ is alive, not its
+    secrets. Missing dir is an empty tail.
+    """
+    try:
+        names = [n for n in os.listdir(dir_path) if not n.startswith(".")]
+    except OSError:
+        return []
+    stamped = []
+    for n in names:
+        try:
+            stamped.append((os.path.getmtime(dir_path / n), n))
+        except OSError:
+            continue
+    stamped.sort(reverse=True)
+    return [n for _, n in stamped[:tail]]
+
+
+def _verdicts_payload(
+    db_path: Path = GPS_LEDGER_DB,
+    gwap_dir: Path = GWAP_STORE,
+    mountain_dir: Path = MOUNTAIN_RECEIPTS,
+) -> dict:
+    """The /api/v1/verdicts body: one source line per organ, zero whole-file reads."""
+    organs = {
+        "gps": {
+            "source": "tools/gps_mcp/gps_ledger.db3 · capability · sqlite read-only",
+            "rows": _verdicts_gps_rows(db_path),
+        },
+        "gwap": {
+            "source": "memory/runs/gwap · newest session ledgers (filenames only)",
+            "files": _verdicts_recent_files(gwap_dir),
+        },
+        "mountain": {
+            "source": "watch/inbox/mountain_climb_ractor_20260929 · newest receipts (filenames only)",
+            "files": _verdicts_recent_files(mountain_dir),
+        },
+    }
+    return {"schema": "verdicts.v1", "organs": organs}
+
+
+# Estate query door (MASTER_READ_ESTATE row 1 unit 2 / r04#4, 2026-10-05): the
+# /data door streams ESTATE_INDEX.jsonl whole (4,150,418,528 B, 10,661,260
+# rows) and the_index.html:118 downloaded all of it per page load. This door
+# bounds the response and honors the D10 skip list: every .mimosa hook-state
+# subtree is dropped from responses (the named root
+# local_sovereign_agent\.mimosa\hook-state\, the '_mimosa' sibling-project
+# lane, and the nested copies under watch\, _archaeology_out\, mag\ — 89.34%
+# of rows per the D10 correction). The sqlite spine (unit 1) has not landed,
+# so the door does one streaming scan per request: grep semantics, exact
+# counts, no writer change. Skip list is a constant so unit 1's writer-side
+# list can extend it.
+ESTATE_INDEX_PATH = DATA / "ESTATE_INDEX.jsonl"
+ESTATE_INDEX_POINTER = DATA / "ESTATE_INDEX.pointer.json"
+ESTATE_QUERY_SKIP_COMPONENTS = frozenset({".mimosa"})
+
+
+def _estate_index_source() -> Path:
+    """Pointer-following resolver (ouroboros r5 close, 2026-10-06): when
+    dashboard/data/ESTATE_INDEX.pointer.json exists and names a master, the
+    estate-query door reads the live master it points at
+    (watch/ESTATE_INDEX/ESTATE_INDEX.jsonl, the one writer
+    tools/index/projects_index.py maintains) instead of a frozen duplicate
+    under dashboard/data. Root cause: the writer landed the pointer on
+    2026-10-05 (r04#2) but this reader never followed it, so the door kept
+    scanning a stale 2,523,006,985-byte copy (frozen 2026-10-04 content)
+    while the live 346,683,794-byte master sat unread behind the pointer;
+    the frozen copy is retired this sitting (receipt
+    watch/inbox/ouroboros_20261005/r5_land_close.md). An absent, unparsable,
+    or repo-escaping pointer keeps the direct dashboard path so the door
+    behaves exactly as it did before pointers existed."""
+    try:
+        ptr = json.loads(ESTATE_INDEX_POINTER.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return ESTATE_INDEX_PATH
+    if not isinstance(ptr, dict) or not ptr.get("pointer"):
+        return ESTATE_INDEX_PATH
+    master_rel = str(ptr.get("master", "")).replace("\\", "/").strip("/")
+    if not master_rel:
+        return ESTATE_INDEX_PATH
+    cand = (ROOT / master_rel).resolve()
+    try:
+        cand.relative_to(ROOT.resolve())
+    except ValueError:
+        return ESTATE_INDEX_PATH
+    return cand if cand.is_file() else ESTATE_INDEX_PATH
+
+
+def _raw_mimosa_component(line: str) -> bool:
+    """Raw-text test: does this JSONL line carry a .mimosa path component?
+
+    In raw JSON the component boundary is an escaped separator backslash or a
+    value-edge quote next to ".mimosa". The quote-quote case (a whole JSON
+    string value exactly ".mimosa") is ambiguous on raw text — it could be
+    the path itself (skip) or ext ".mimosa" for a FILE named x.mimosa
+    (keep) — so raw never skips it; the parsed exact check decides. This is
+    the fast skip for the 9.5M-row hook-state mass; rows that reach
+    json.loads anyway are re-checked exactly against the parsed path.
+    """
+    i = line.find(".mimosa")
+    while i >= 0:
+        prev = line[i - 1] if i > 0 else ""
+        nxt = line[i + 7] if i + 7 < len(line) else ""
+        if prev == "\\" and nxt in ('\\', '"', ""):
+            return True
+        if prev == '"' and nxt == "\\":
+            return True
+        i = line.find(".mimosa", i + 1)
+    return False
+
+
+def _estate_query_payload(
+    path: Path = ESTATE_INDEX_PATH,
+    q: str = "",
+    proj: str = "",
+    rel: str = "",
+    temp: str = "",
+    limit: int = 250,
+) -> dict:
+    """One bounded response over the estate index.
+
+    Filters AND together (q = path substring, proj/rel/temp = exact match),
+    rows capped at limit. Counts are exact for the whole scan: matched,
+    total_kept (non-mimosa), scanned, skipped_mimosa. rels is the filter-
+    independent relation taxonomy for the_index.html's dropdown. A missing
+    index is an honest empty, never a fabricated one.
+    """
+    t0 = time.time()
+    empty = {"schema": "estate_query.v1", "source": str(path), "error": "index missing",
+             "rows": [], "returned": 0, "matched": 0, "truncated": False,
+             "total_kept": 0, "scanned": 0, "skipped_mimosa": 0, "rels": [],
+             "seconds": 0.0}
+    if not path.is_file():
+        return empty
+    q_l = q.strip().lower()
+    rels: dict[str, int] = {}
+    rows: list[dict] = []
+    scanned = skipped_mimosa = total_kept = matched = 0
+    with path.open(encoding="utf-8", errors="replace") as fh:
+        for raw in fh:
+            line = raw.strip()
+            if not line:
+                continue
+            scanned += 1
+            # skip list first: a hook-state row never surfaces, whatever the
+            # filters say (raw fast path; exact check re-runs after parse)
+            has_mimosa_sub = ".mimosa" in line
+            if has_mimosa_sub and _raw_mimosa_component(line):
+                skipped_mimosa += 1
+                continue
+            total_kept += 1
+            # .mimosa present but no separator boundary: the raw text cannot
+            # tell a path component from a whole value like ext ".mimosa", so
+            # this row must reach the parse for the exact decision (raw value
+            # prefilters would risk a wrong keep). Sound for the rest: proj/
+            # rel/temp values in this writer carry no quotes or backslashes.
+            ambiguous = has_mimosa_sub
+            if not ambiguous:
+                if proj and f'"proj": "{proj}"' not in line and f'"proj":"{proj}"' not in line:
+                    continue
+                if rel and f'"rel": "{rel}"' not in line and f'"rel":"{rel}"' not in line:
+                    continue
+                if temp and f'"temp": "{temp}"' not in line and f'"temp":"{temp}"' not in line:
+                    continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(row, dict):
+                continue
+            r_path = str(row.get("path", ""))
+            if any(p in ESTATE_QUERY_SKIP_COMPONENTS for p in r_path.split("\\")):
+                # raw boundary check let it through; the parsed path is exact
+                skipped_mimosa += 1
+                total_kept -= 1
+                continue
+            r_rel = str(row.get("rel", ""))
+            if r_rel:
+                rels[r_rel] = rels.get(r_rel, 0) + 1
+            if proj and row.get("proj") != proj:
+                continue
+            if rel and row.get("rel") != rel:
+                continue
+            if temp and row.get("temp") != temp:
+                continue
+            if q_l and q_l not in r_path.lower():
+                continue
+            matched += 1
+            if len(rows) < limit:
+                rows.append(row)
+    return {
+        "schema": "estate_query.v1",
+        "source": path.name,
+        "q": q, "proj": proj, "rel": rel, "temp": temp,
+        "rows": rows,
+        "returned": len(rows),
+        "matched": matched,
+        "truncated": matched > len(rows),
+        "total_kept": total_kept,
+        "scanned": scanned,
+        "skipped_mimosa": skipped_mimosa,
+        "rels": sorted(rels),
+        "seconds": round(time.time() - t0, 2),
+    }
+
+
+def _ensure_session(sessions: dict[str, dict[str, Any]], sid: str) -> dict[str, Any]:
+    if sid not in sessions:
+        sessions[sid] = {
+            "session_id": sid,
+            "title": sid[:12],
+            "has_pdf": False,
+            "has_md": False,
+            "has_dossier": False,
+            "has_visual": False,
+        }
+    return sessions[sid]
+
+
+def list_sessions() -> list[dict[str, Any]]:
+    """Index sessions — prefer lean registry (hot path), else residual/legacy scan."""
+    sessions: dict[str, dict[str, Any]] = {}
+
+    # Hot path: registry.jsonl
+    try:
+        from mag.registry import list_registry
+
+        for reg in list_registry(limit=300):
+            sid = reg.get("session_id")
+            if not sid:
+                continue
+            row = _ensure_session(sessions, sid)
+            row.update(
+                {
+                    "session_id": sid,
+                    "title": reg.get("title") or sid[:12],
+                    "one_liner": reg.get("one_liner") or "",
+                    "blurb": reg.get("blurb") or "",
+                    "bullets": reg.get("bullets") or [],
+                    "start_minute": reg.get("start_minute"),
+                    "end_minute": reg.get("end_minute"),
+                    "duration_minutes": reg.get("duration_minutes"),
+                    "dominant_theme": reg.get("dominant_theme"),
+                    "chord_commitment": reg.get("chord_commitment"),
+                    "tension_index": reg.get("tension_index"),
+                    "has_pdf": bool(reg.get("has_pdf")),
+                    "has_md": bool(reg.get("has_md")),
+                    "has_dossier": bool(reg.get("has_residual")),
+                    "has_visual": bool(reg.get("has_visual")),
+                    "has_residual": bool(reg.get("has_residual")),
+                    "has_leaf": bool(reg.get("has_leaf")),
+                    "residual_hash": reg.get("residual_hash"),
+                    "verkle_filename": reg.get("leaf_filename"),
+                    "commit": reg.get("content_commit"),
+                    "from_registry": True,
+                }
+            )
+    except Exception:
+        pass
+
+    if BIO.is_dir():
+        # residual/ + legacy dossiers fill gaps not in registry
+        residual_dir = BIO / "residual"
+        dossier_paths = list(BIO.glob("*.dossier.json"))
+        if residual_dir.is_dir():
+            dossier_paths.extend(residual_dir.glob("*.json"))
+        for p in dossier_paths:
+            if p.name.startswith("latest"):
+                continue
+            sid = p.stem if p.parent.name == "residual" else p.name.replace(
+                ".dossier.json", ""
+            )
+            if sid in sessions and sessions[sid].get("blurb"):
+                continue
+            d = _read_json(p) or {}
+            time = d.get("time") or {}
+            chord = d.get("chord") or {}
+            sk = d.get("scalar_knot") or {}
+            row = _ensure_session(sessions, sid)
+            card = d.get("session_card") or {}
+            if not card.get("blurb"):
+                try:
+                    from mag.session_card import build_session_card
+
+                    card = build_session_card(d)
+                except Exception:
+                    card = {}
+            title = card.get("title") or time.get("title") or sid[:12]
+            from mag.registry import find_derived
+
+            row.update(
+                {
+                    "session_id": sid,
+                    "title": title,
+                    "one_liner": card.get("one_liner") or (d.get("tldr") or "")[:120],
+                    "blurb": card.get("blurb") or d.get("tldr") or "",
+                    "bullets": card.get("bullets") or [],
+                    "start_minute": (time.get("created_at") or {}).get("iso_minute"),
+                    "end_minute": (time.get("updated_at") or {}).get("iso_minute"),
+                    "duration_minutes": sk.get("duration_minutes"),
+                    "dominant_theme": card.get("dominant_theme")
+                    or (sk.get("theme_vector") or {}).get("dominant"),
+                    "chord_commitment": chord.get("commitment_hash"),
+                    "tension_index": sk.get("tension_index"),
+                    "has_pdf": find_derived(sid, "pdf") is not None,
+                    "has_md": find_derived(sid, "md") is not None,
+                    "has_dossier": True,
+                    "has_residual": True,
+                    "has_visual": find_derived(sid, "visual_pack") is not None,
+                    "verkle_filename": (d.get("verkle_knot") or {}).get("filename"),
+                    "commit": (d.get("content_commit") or {}).get("hex"),
+                    "mtime": p.stat().st_mtime,
+                }
+            )
+
+        for p in BIO.glob("*.pdf"):
+            if p.name.startswith("latest"):
+                continue
+            sid = p.name.replace(".pdf", "")
+            row = _ensure_session(sessions, sid)
+            row["has_pdf"] = True
+            row["mtime"] = max(row.get("mtime") or 0, p.stat().st_mtime)
+
+        for p in BIO.glob("*.md"):
+            if p.name.startswith("latest"):
+                continue
+            sid = p.name.replace(".md", "")
+            if sid in ("index", "README"):
+                continue
+            row = _ensure_session(sessions, sid)
+            row["has_md"] = True
+            row["mtime"] = max(row.get("mtime") or 0, p.stat().st_mtime)
+            # first line title fallback
+            if row.get("title") in (None, sid[:12]):
+                try:
+                    head = p.read_text(encoding="utf-8", errors="replace")[:200]
+                    for line in head.splitlines():
+                        line = line.strip().lstrip("#").strip()
+                        if line and len(line) > 3:
+                            row["title"] = line[:80]
+                            break
+                except OSError:
+                    pass
+
+        for p in BIO.glob("*.visual_pack.json"):
+            if p.name.startswith("latest"):
+                continue
+            sid = p.name.replace(".visual_pack.json", "")
+            row = _ensure_session(sessions, sid)
+            row["has_visual"] = True
+            row["mtime"] = max(row.get("mtime") or 0, p.stat().st_mtime)
+            vp = _read_json(p) or {}
+            if vp.get("session_id"):
+                row["session_id"] = sid
+            if not row.get("commit") and vp.get("commit"):
+                row["commit"] = vp.get("commit")
+            en = vp.get("english") or {}
+            if en.get("headline") and row.get("title") in (None, sid[:12]):
+                row["title"] = str(en["headline"])[:80]
+
+    # enrich from verkle chain
+    for row_v in _read_jsonl(BIO / "verkle_chain.jsonl"):
+        sid = row_v.get("session_id")
+        if not sid:
+            continue
+        row = _ensure_session(sessions, sid)
+        row["verkle_filename"] = row_v.get("filename")
+        row["leaf_hash"] = row_v.get("leaf_hash")
+        row["verkle_root_at"] = row_v.get("verkle_root")
+        if row_v.get("start_minute"):
+            row["start_minute"] = row_v.get("start_minute")
+        if row_v.get("dominant_theme"):
+            row["dominant_theme"] = row_v.get("dominant_theme")
+
+    out = list(sessions.values())
+    # Prefer clock fields; fall back to file mtime so incomplete sessions still sort
+    def _sort_key(x: dict[str, Any]) -> str:
+        if x.get("end_minute"):
+            return str(x["end_minute"])
+        if x.get("start_minute"):
+            return str(x["start_minute"])
+        mt = x.get("mtime") or 0
+        try:
+            from datetime import datetime, timezone
+
+            return datetime.fromtimestamp(float(mt), tz=timezone.utc).strftime(
+                "%Y-%m-%dT%H:%M:%SZ"
+            )
+        except (TypeError, ValueError, OSError):
+            return ""
+
+    out.sort(key=_sort_key, reverse=True)
+    return out
+
+
+def api_overview() -> dict[str, Any]:
+    tip = _read_json(BIO / "verkle_tip.json") or {}
+    evo = _read_json(BIO / "topic_evolution.json") or {}
+    catalog = _read_json(INGEST / "catalog.json") or {}
+    sessions = list_sessions()
+    latest_sid = None
+    try:
+        from mag.registry import get_latest_session_id
+
+        latest_sid = get_latest_session_id()
+    except Exception:
+        latest_sid = None
+    if not latest_sid and sessions:
+        latest_sid = sessions[0].get("session_id")
+    return {
+        "ok": True,
+        "root": str(ROOT),
+        "session_count": len(sessions),
+        "sessions": sessions[:100],
+        "verkle_tip": tip,
+        "topic_evolution": {
+            "n_leaves": evo.get("n_leaves"),
+            "verkle_root": evo.get("verkle_root"),
+            "mean_theme_vector": evo.get("mean_theme_vector")
+            if "mean_theme_vector" in evo
+            else None,
+            "series_tail": (evo.get("series") or [])[-20:],
+            "theme_basis": evo.get("theme_basis"),
+        },
+        "ingest": {
+            "count": catalog.get("count"),
+            "roots": catalog.get("roots"),
+            "items": list((catalog.get("items") or {}).values())[:200],
+        },
+        "latest": {
+            "session_id": latest_sid,
+            "pdf": "/files/biography/latest.pdf",
+            "dossier": "/api/dossier/latest",
+            "md": "/files/biography/latest.md",
+            "knot": "/api/knot/latest",
+        },
+    }
+
+
+def api_session(sid: str) -> dict[str, Any]:
+    dossier = None
+    try:
+        from mag.registry import load_residual
+
+        dossier = load_residual(sid)
+    except Exception:
+        dossier = None
+    if not dossier:
+        dossier = _read_json(BIO / f"{sid}.dossier.json")
+    if not dossier and sid == "latest":
+        dossier = _read_json(BIO / "latest.dossier.json")
+        sid = (dossier or {}).get("session_id") or "latest"
+    md_path = BIO / f"{sid}.md"
+    md = md_path.read_text(encoding="utf-8", errors="replace") if md_path.is_file() else None
+    try:
+        from mag.registry import find_derived, residual_path
+
+        pdf_p = find_derived(sid, "pdf")
+        vis_p = find_derived(sid, "visual_pack")
+        md_d = find_derived(sid, "md")
+        res_p = residual_path(sid) if sid and sid != "latest" else None
+        has_pdf = pdf_p is not None
+        has_visual = vis_p is not None
+        has_residual = bool(dossier) or (res_p is not None and res_p.is_file())
+    except Exception:
+        has_pdf = (BIO / f"{sid}.pdf").is_file()
+        has_visual = (BIO / f"{sid}.visual_pack.json").is_file() or (
+            sid == "latest" and (BIO / "latest.visual_pack.json").is_file()
+        )
+        has_residual = bool(dossier)
+        pdf_p = BIO / f"{sid}.pdf" if has_pdf else None
+        md_d = None
+        res_p = BIO / f"{sid}.dossier.json" if (BIO / f"{sid}.dossier.json").is_file() else None
+
+    if not md and md_d is not None and md_d.is_file():
+        md = md_d.read_text(encoding="utf-8", errors="replace")
+
+    knot_name = (dossier or {}).get("verkle_knot", {}).get("filename")
+    knot = None
+    if knot_name:
+        knot = _read_json(BIO / "knots" / knot_name)
+    card = (dossier or {}).get("session_card") if dossier else None
+    if dossier and not (card or {}).get("blurb"):
+        try:
+            from mag.session_card import build_session_card
+
+            card = build_session_card(dossier)
+        except Exception:
+            card = card or {}
+
+    sk = (dossier or {}).get("scalar_knot") or {}
+    stats = {
+        "tension_index": sk.get("tension_index"),
+        "Q_proxy": sk.get("Q_proxy"),
+        "duration_minutes": sk.get("duration_minutes"),
+        "dominant_theme": (card or {}).get("dominant_theme")
+        or (sk.get("theme_vector") or {}).get("dominant"),
+        "num_messages": ((dossier or {}).get("time") or {}).get("num_messages"),
+        "num_chat_messages": ((dossier or {}).get("time") or {}).get("num_chat_messages"),
+        "content_commit": ((dossier or {}).get("content_commit") or {}).get("hex"),
+        "leaf": ((dossier or {}).get("verkle_knot") or {}).get("filename"),
+    }
+
+    # Prefer derived paths for exports; residual for data
+    pdf_url = (
+        f"/files/biography/derived/{sid}.pdf"
+        if has_pdf
+        else None
+    )
+    residual_url = (
+        f"/files/biography/residual/{sid}.json"
+        if has_residual
+        else f"/api/v1/sessions/{sid}/residual"
+    )
+    return {
+        "ok": bool(dossier or md or has_visual or has_pdf or has_residual),
+        "session_id": sid,
+        "dossier": dossier,
+        "narrative_md": md,
+        "session_card": card,
+        "stats": stats,
+        "has_residual": has_residual,
+        "has_visual": has_visual,
+        "has_pdf": has_pdf,
+        "knot": knot,
+        "links": {
+            "pdf": pdf_url or f"/files/biography/{sid}.pdf",
+            "residual": residual_url,
+            "dossier_json": f"/files/biography/residual/{sid}.json"
+            if has_residual
+            else f"/files/biography/{sid}.dossier.json",
+            "md": f"/files/biography/derived/{sid}.md"
+            if md_d
+            else f"/files/biography/{sid}.md",
+            "visual": f"/api/visual/{sid}",
+            "export": "/api/export",
+            "assets": f"/files/biography/{sid}/assets/",
+        },
+    }
+
+
+def safe_file(rel: str) -> Path | None:
+    """Resolve path under ROOT/memory or STATIC only."""
+    rel = unquote(rel).lstrip("/").replace("\\", "/")
+    if ".." in rel.split("/"):
+        return None
+    # map /files/biography/... → memory/biography/...
+    if rel.startswith("files/"):
+        rel = "memory/" + rel[len("files/") :]
+    if rel.startswith("static/"):
+        candidate = STATIC / rel[len("static/") :]
+    elif rel.startswith("memory/"):
+        candidate = ROOT / rel
+    else:
+        return None
+    try:
+        candidate = candidate.resolve()
+        root = ROOT.resolve()
+        static = STATIC.resolve()
+        if not (str(candidate).startswith(str(root)) or str(candidate).startswith(str(static))):
+            return None
+        if candidate.is_dir():
+            candidate = candidate / "index.html"
+        if candidate.is_file():
+            return candidate
+    except OSError:
+        return None
+    return None
+
+
+class Handler(BaseHTTPRequestHandler):
+    server_version = "MagDashboard/1.0"
+    timeout = 20
+
+    def log_message(self, fmt: str, *args) -> None:
+        # quieter
+        print(f"[dash] {self.address_string()} {fmt % args}")
+
+    def _json(self, code: int, obj: Any) -> None:
+        body = json.dumps(obj, indent=2, default=str).encode("utf-8")
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _bytes(self, code: int, data: bytes, content_type: str) -> None:
+        self.send_response(code)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(data)))
+        if "html" in content_type:
+            self.send_header("Cache-Control", "no-store")
+        if "pdf" in content_type:
+            self.send_header("Content-Disposition", "inline")
+        self.end_headers()
+        self.wfile.write(data)
+
+    def do_GET(self) -> None:  # noqa: N802
+        parsed = urlparse(self.path)
+        path = parsed.path
+
+        # Spend surface: canonical cost view + enforcer status (2026-09-03).
+        # snapshot() takes ~25s over the full usage stream — NEVER compute in the
+        # request path. A daemon thread refreshes cost_cache every 60s; requests
+        # return instantly (202 while the first refresh is still warming).
+        if path == "/api/v1/cost":
+            with _cost_lock:
+                payload = dict(_cost_cache)
+            if payload.get("payload"):
+                return self._json(200, payload["payload"])
+            return self._json(202, {
+                "schema": "cost_surface.v1",
+                "warming": True,
+                "warming_since": payload.get("ts"),
+                "error": payload.get("error"),
+            })
+
+        # Ractor tail door (2026-09-06): the deeds board jsonl hit 713MB and
+        # ractor.html was re-downloading it whole every 15s. Bounded backward
+        # read, ?limit= up to 2000.
+        if path == "/api/v1/ractor/tail":
+            try:
+                limit = min(2000, max(1, int(parse_qs(parsed.query).get("limit", ["500"])[0])))
+            except ValueError:
+                limit = 500
+            tail = _tail_jsonl(DATA / "ractor_board.jsonl", limit=limit)
+            return self._json(200, tail)
+
+        # Links library tail (FW-45, 2026-09-28): watch/inbox/LINKS.jsonl is the
+        # fleet's link library (writers append link-lens rows + scout findings).
+        # Bounded backward read, ?limit= up to 2000 - same door shape as the
+        # ractor tail above; clients must never re-download the file whole.
+        if path == "/api/v1/links/tail":
+            try:
+                limit = min(2000, max(1, int(parse_qs(parsed.query).get("limit", ["200"])[0])))
+            except ValueError:
+                limit = 200
+            tail = _tail_jsonl(ROOT / "watch" / "inbox" / "LINKS.jsonl", limit=limit)
+            return self._json(200, tail)
+
+        # Estate query door (MASTER_READ_ESTATE row 1 unit 2 / r04#4,
+        # 2026-10-05): bounded, skip-list-honored face for the estate index —
+        # the_index.html:118 fetched /data/ESTATE_INDEX.jsonl whole (4.15 GB)
+        # before this. ?q=&proj=&rel=&temp=&limit= (limit default 250, cap
+        # 2000; grep semantics: one streaming scan per request, exact counts,
+        # .mimosa hook-state rows never returned).
+        if path == "/api/v1/estate/query":
+            eq = parse_qs(parsed.query)
+
+            def _s(name: str) -> str:
+                return (eq.get(name, [""])[0] or "").strip()
+
+            try:
+                eq_limit = min(2000, max(1, int(eq.get("limit", ["250"])[0])))
+            except ValueError:
+                eq_limit = 250
+            return self._json(200, _estate_query_payload(
+                path=_estate_index_source(),
+                q=_s("q"), proj=_s("proj"), rel=_s("rel"),
+                temp=_s("temp"), limit=eq_limit))
+
+        # Verdicts panel door (Mickey17 W3, 2026-09-29): one read-only face for
+        # the new estate organs (gps capability rows + gwap/mountain receipt
+        # filename tails). Same spirit as the tail doors above: bounded, no
+        # whole-file reads, no polling pushed by the server.
+        if path == "/api/v1/verdicts":
+            return self._json(200, _verdicts_payload())
+
+        # Data door (2026-09-10): the big jsonl archives moved out of the web
+        # root into dashboard/data. Only these named files are served; the
+        # directory itself is never listed and nothing else escapes.
+        if path.startswith("/data/"):
+            name = unquote(path[len("/data/"):])
+            # r5 close (2026-10-06): ESTATE_INDEX.jsonl is OUT of this
+            # allowlist - serving the estate index whole (2.5 GB) was the
+            # corpse door; the bounded face is /api/v1/estate/query, which
+            # follows dashboard/data/ESTATE_INDEX.pointer.json to the live
+            # watch master (receipt watch/inbox/ouroboros_20261005/
+            # r5_land_close.md).
+            allowed = {"ractor_board.jsonl"}
+            fpath = DATA / name
+            if name not in allowed or not fpath.is_file():
+                return self._json(404, {"error": "not found"})
+            ctype = "application/x-ndjson" if name.endswith(".jsonl") else "application/octet-stream"
+            self.send_response(200)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Content-Length", str(fpath.stat().st_size))
+            self.end_headers()
+            with fpath.open("rb") as fh:
+                while True:
+                    chunk = fh.read(1 << 20)
+                    if not chunk:
+                        break
+                    self.wfile.write(chunk)
+            return None
+
+
+        # MCP endpoint info page (the actual tool calls are POST-only)
+        if path == "/mcp":
+            try:
+                from mag import mcp_server as _mcp
+                tools = [t.get("name", "?") for t in _mcp.tools_manifest()]
+                return self._json(200, {
+                    "ok": True,
+                    "endpoint": "MCP over HTTP",
+                    "method": "POST only",
+                    "usage": {
+                        "list": '{"method": "tools/list"}',
+                        "call": '{"method": "tools/call", "params": {"name": "...", "arguments": {...}}}',
+                    },
+                    "tools": tools,
+                    "count": len(tools),
+                })
+            except Exception as e:  # noqa: BLE001
+                return self._json(500, {"ok": False, "error": str(e)[:200]})
+
+        # /keep/ — 4chan the video game (Diamond Age Primer public square)
+        if path in ("/chan", "/chan.html", "/keep", "/keep.html", "/b", "/b.html"):
+            cf = STATIC / "chan.html"
+            if not cf.is_file():
+                return self._json(404, {"error": "chan.html missing"})
+            return self._bytes(200, cf.read_bytes(), "text/html; charset=utf-8")
+
+        if path in ("/wave", "/wave.html", "/desk", "/desk.html"):
+            wf = STATIC / "wave.html"
+            if not wf.is_file():
+                return self._json(404, {"error": "wave.html missing"})
+            return self._bytes(200, wf.read_bytes(), "text/html; charset=utf-8")
+
+        if path in ("/", "/index.html"):
+            index = STATIC / "index.html"
+            data = index.read_bytes()
+            return self._bytes(200, data, "text/html; charset=utf-8")
+
+        if path in ("/shell", "/shell.html"):
+            sh = STATIC / "sovereign_shell.html"
+            if not sh.is_file():
+                return self._json(404, {"error": "sovereign shell not found"})
+            return self._bytes(200, sh.read_bytes(), "text/html; charset=utf-8")
+
+        # Text adventure. /table is /wave — not the ASCII board.
+        if path in ("/table", "/table.html", "/play", "/play.html", "/game", "/game.html"):
+            wf = STATIC / "wave.html"
+            if not wf.is_file():
+                return self._json(404, {"error": "wave.html missing"})
+            return self._bytes(200, wf.read_bytes(), "text/html; charset=utf-8")
+
+        # Mag Voice — same UI as cast :8766/voice (API on this server too)
+        if path in ("/voice", "/voice.html", "/cast-voice.html"):
+            vf = STATIC / "cast-voice.html"
+            if not vf.is_file():
+                return self._json(404, {"error": "cast-voice.html missing"})
+            return self._bytes(200, vf.read_bytes(), "text/html; charset=utf-8")
+
+        # SEAT — the new knot-centric Bones surface (control room / the seat)
+        if path in ("/seat", "/seat.html"):
+            sf = STATIC / "seat.html"
+            if not sf.is_file():
+                return self._json(404, {"error": "seat.html missing"})
+            return self._bytes(200, sf.read_bytes(), "text/html; charset=utf-8")
+
+        # HYPERVISOR — fleet cool/heat + real bills (all seats, mermaid map)
+        if path in ("/fleet", "/fleet.html"):
+            ff = STATIC / "fleet.html"
+            if not ff.is_file():
+                return self._json(404, {"error": "fleet.html missing"})
+            return self._bytes(200, ff.read_bytes(), "text/html; charset=utf-8")
+
+        # LOOP HEALTH — real-time "what works / what doesn't" (auto-refreshing)
+        if path in ("/health", "/health.html", "/loop-health"):
+            hf = STATIC / "health.html"
+            if not hf.is_file():
+                return self._json(404, {"error": "health.html missing"})
+            return self._bytes(200, hf.read_bytes(), "text/html; charset=utf-8")
+
+        # AOS — live view of the Bones<->AOS bus conversation (chat-style browser surface)
+        if path in ("/aos", "/aos.html"):
+            af = STATIC / "aos.html"
+            if not af.is_file():
+                return self._json(404, {"error": "aos.html missing"})
+            return self._bytes(200, af.read_bytes(), "text/html; charset=utf-8")
+
+        if path.startswith("/static/"):
+            f = safe_file(path.lstrip("/"))
+            if not f:
+                return self._json(404, {"error": "not found"})
+            ctype = mimetypes.guess_type(str(f))[0] or "application/octet-stream"
+            data = f.read_bytes()
+            # LAW-060 amendment: embedded pages (?embed=1) skip the bar — the
+            # host page already carries it; nested bars stack and lie.
+            if ctype.startswith("text/html") and "embed=1" not in (parsed.query or ""):
+                data = _fleetbar_inject(data)
+            return self._bytes(200, data, ctype)
+
+        if path.startswith("/files/"):
+            f = safe_file(path.lstrip("/"))
+            if not f:
+                return self._json(404, {"error": "not found", "path": path})
+            ctype = mimetypes.guess_type(str(f))[0] or "application/octet-stream"
+            data = f.read_bytes()
+            if ctype.startswith("text/html"):
+                data = _fleetbar_inject(data)
+            return self._bytes(200, data, ctype)
+
+        # SSE live fleet stream (real-time dashboard, no polling)
+        if path == "/api/v1/stream":
+            return self._stream_fleet()
+
+        # Table view: file cache only. Importing Mag here wedges the desk (4GB / 39 threads).
+        if path in ("/api/v1/table/view", "/api/table/view"):
+            import subprocess
+            import sys as _sys
+            q = {k: (v[0] if v else "") for k, v in parse_qs(parsed.query).items()}
+            cache = ROOT / "memory" / "working" / "table_view.json"
+            out = None
+            try:
+                if cache.is_file() and (time.time() - cache.stat().st_mtime) < 8:
+                    out = json.loads(cache.read_text(encoding="utf-8"))
+            except Exception:
+                out = None
+            if out is None:
+                try:
+                    blob = subprocess.check_output(
+                        [_sys.executable, "-m", "mag.table_view_cache", str(q.get("campaign_id") or "")],
+                        cwd=str(ROOT),
+                        timeout=4,
+                    )
+                    out = json.loads(blob.decode("utf-8") or "{}")
+                except Exception as exc:
+                    try:
+                        out = json.loads(cache.read_text(encoding="utf-8")) if cache.is_file() else None
+                    except Exception:
+                        out = None
+                    if out is None:
+                        out = {"ok": True, "title": "table", "grid_text": "#\n@\n#", "error": str(exc)[:160]}
+            return self._json(200, out if isinstance(out, dict) else {"ok": True})
+
+        # Prefer RESTful dispatch table (v1 + legacy aliases)
+        if path.startswith("/api/"):
+            from dashboard.rest import dispatch
+
+            q = {k: (v[0] if v else "") for k, v in parse_qs(parsed.query).items()}
+            # deprecated: GET catch-up → same as POST
+            if path == "/api/catch-up":
+                hit = dispatch("POST", "/api/v1/catch-up", None, q)
+                if hit:
+                    return self._json(hit[0], hit[1])
+            hit = dispatch("GET", path, None, q)
+            if hit:
+                # normalize sessions list shape for old UI when using legacy path
+                if path == "/api/sessions" and "sessions" in hit[1] and "count" in hit[1]:
+                    return self._json(200, {"sessions": hit[1]["sessions"]})
+                return self._json(hit[0], hit[1])
+
+        # One-offs not yet fully moved into rest.py
+        if path == "/api/dossier/latest":
+            d = _read_json(BIO / "latest.dossier.json")
+            return self._json(200, d or {"error": "no latest dossier"})
+
+        if path == "/api/knot/latest":
+            d = _read_json(BIO / "latest.knot.json")
+            return self._json(200, d or {"error": "no latest knot"})
+
+        if path == "/api/multi-smoke/latest":
+            from models.multi_smoke import last_smoke
+
+            s = last_smoke()
+            return self._json(
+                200, s or {"ok": False, "error": "no smoke yet — POST /api/multi-smoke"}
+            )
+
+        if path == "/api/usage-report":
+            import json as _json
+
+            prov_path = ROOT / "logs" / "provider_usage.jsonl"
+            probe_path = ROOT / "logs" / "probe_status_latest.json"
+            local_tok = remote_tok = 0
+            local_c = remote_c = 0
+            if prov_path.is_file():
+                for line in prov_path.read_text(encoding="utf-8", errors="replace").splitlines():
+                    if not line.strip():
+                        continue
+                    try:
+                        r = _json.loads(line)
+                    except _json.JSONDecodeError:
+                        continue
+                    p = r.get("provider") or "?"
+                    tok = int(r.get("tokens") or 0)
+                    c = int(r.get("calls") or 1)
+                    if p == "ollama":
+                        local_tok += tok
+                        local_c += c
+                    else:
+                        remote_tok += tok
+                        remote_c += c
+            probe = _read_json(probe_path) if probe_path.is_file() else None
+            return self._json(
+                200,
+                {
+                    "ok": True,
+                    "local": {"calls": local_c, "tokens": local_tok},
+                    "remote": {"calls": remote_c, "tokens": remote_tok},
+                    "grok_tui": "unknown — check xAI account UI",
+                    "probe": probe,
+                    "note": "Green providers = last probe ok, not merely key present.",
+                },
+            )
+
+        if path == "/api/probe-status":
+            p = ROOT / "logs" / "probe_status_latest.json"
+            data = _read_json(p)
+            return self._json(
+                200,
+                data
+                or {
+                    "ok": False,
+                    "error": "no probe yet — POST /api/probe-status or run scripts/probe_status_cache.py",
+                },
+            )
+
+        # AOS live-view chat data. Shells out to the live-view module (lightweight, read-only)
+        # so importing Mag here does not wedge the desk — same pattern as /api/v1/table/view.
+        if path == "/api/aos/chat":
+            import subprocess
+            import sys as _sys
+
+            try:
+                blob = subprocess.check_output(
+                    [_sys.executable, "-m", "mag.aos_live_view", "--json"],
+                    cwd=str(ROOT),
+                    timeout=8,
+                )
+                return self._json(200, json.loads(blob.decode("utf-8") or "{}"))
+            except Exception as exc:  # noqa: BLE001
+                return self._json(200, {"ok": False, "error": str(exc)[:200]})
+
+        return self._json(404, {"error": "not found", "path": path})
+
+    def _read_json_body(self) -> tuple[dict[str, Any] | None, str | None]:
+        length = int(self.headers.get("Content-Length") or 0)
+        raw = self.rfile.read(length) if length else b"{}"
+        if not raw.strip():
+            return {}, None
+        try:
+            data = json.loads(raw.decode("utf-8") or "{}")
+        except json.JSONDecodeError:
+            return None, "bad json"
+        if not isinstance(data, dict):
+            return None, "body must be a JSON object"
+        return data, None
+
+    def do_POST(self) -> None:  # noqa: N802
+        parsed = urlparse(self.path)
+        path = parsed.path
+        data, err = self._read_json_body()
+        if err:
+            return self._json(400, {"ok": False, "error": err})
+
+        # MCP over HTTP: every surface becomes a client of the fleet's 17 tools.
+        #   POST /mcp {"method": "tools/list"}
+        #   POST /mcp {"method": "tools/call", "params": {"name": "...", "arguments": {...}}}
+        # Auth: same X-API-Key gate as the rest of the API (loopback-only by default).
+        if path == "/mcp":
+            method = str((data or {}).get("method") or "")
+            try:
+                from mag import mcp_server as _mcp
+                if method == "tools/list":
+                    # Pin gate (2026-09-29): drifted tools withheld + stderr
+                    # alarm, same contract as the stdio server. Receipt:
+                    # watch/inbox/wave5_repair/mcp-pin-wire.md
+                    gated, _gate = _mcp.pin_gate_filter(
+                        _mcp.tools_manifest(), _mcp.pin_ledger_path())
+                    return self._json(200, {"tools": gated})
+                if method == "tools/call":
+                    params = (data or {}).get("params") or {}
+                    result = _mcp.call_tool(
+                        str(params.get("name") or ""),
+                        params.get("arguments") or {})
+                    return self._json(200, result)
+                return self._json(400, {"ok": False, "error": f"unknown mcp method: {method}"})
+            except Exception as e:  # noqa: BLE001
+                return self._json(500, {"ok": False, "error": str(e)[:200]})
+
+        if path == "/api/v1/agent/stream":
+            return self._stream_agent(data or {})
+
+        if path == "/api/v1/agent/steer":
+            # Dashboard steer channel: push a !steer/!pause/!continue/!escape
+            # into the live turn's queue (mag.agent_cli.push_steer). The running
+            # run_turn picks it up at its next checkpoint.
+            cmd = str((data or {}).get("cmd") or "").strip()
+            if not cmd:
+                return self._json(400, {"ok": False, "error": "cmd required"})
+            try:
+                from mag.agent_cli import push_steer
+                queued = push_steer(cmd)
+            except Exception as e:  # noqa: BLE001
+                return self._json(500, {"ok": False, "error": str(e)})
+            return self._json(200, {"ok": True, "queued": queued, "cmd": cmd})
+
+        # AOS Bone-seat: send a Bones/Operator reply on the bus. Shells out to the live-view module
+        # (via a temp file to dodge shell quoting) so importing Mag here does not wedge the desk.
+        if path == "/api/aos/send":
+            import subprocess
+            import sys as _sys
+            import tempfile
+
+            text = str((data or {}).get("text") or "").strip()
+            if not text:
+                return self._json(400, {"ok": False, "error": "text required"})
+            author = str((data or {}).get("author") or "bone").strip()[:32]
+            if author not in ("bone", "operator"):
+                author = "bone"  # provenance: only these two authors on our side
+            tmp = None
+            try:
+                with tempfile.NamedTemporaryFile(
+                    "w", suffix=".txt", delete=False, encoding="utf-8"
+                ) as fh:
+                    fh.write(text)
+                    tmp = fh.name
+                blob = subprocess.check_output(
+                    [_sys.executable, "-m", "mag.aos_live_view",
+                     "--send-file", tmp, "--author", author],
+                    cwd=str(ROOT),
+                    timeout=30,
+                )
+                out = json.loads(blob.decode("utf-8") or "{}")
+            except Exception as exc:  # noqa: BLE001
+                out = {"ok": False, "error": str(exc)[:200]}
+            finally:
+                if tmp:
+                    try:
+                        import os as _os
+                        _os.remove(tmp)
+                    except Exception:
+                        pass
+            return self._json(200, out)
+
+        if path.startswith("/api/"):
+            from dashboard.rest import dispatch
+
+            q = {k: (v[0] if v else "") for k, v in parse_qs(parsed.query).items()}
+            hit = dispatch("POST", path, data or {}, q)
+            if hit:
+                return self._json(hit[0], hit[1])
+
+        if path == "/api/probe-status":
+            # run live probe (can take ~minutes if many keys)
+            import subprocess
+            import sys
+
+            script = ROOT / "scripts" / "probe_status_cache.py"
+            try:
+                subprocess.run(
+                    [sys.executable, str(script)],
+                    cwd=str(ROOT),
+                    timeout=180,
+                    check=False,
+                    capture_output=True,
+                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000) if sys.platform == "win32" else 0,
+                )
+            except Exception as e:
+                return self._json(500, {"ok": False, "error": str(e)})
+            out = _read_json(ROOT / "logs" / "probe_status_latest.json")
+            return self._json(200, out or {"ok": False, "error": "probe produced no file"})
+
+        return self._json(404, {"ok": False, "error": "not found", "path": path})
+
+    def _stream_fleet(self) -> None:
+        """Server-Sent Events: push the sub-agent fleet snapshot every 2s."""
+        import json as _json
+        import time as _time
+        from mag.orchestrator import list_tasks_live
+
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream")
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Connection", "keep-alive")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+        try:
+            while True:
+                tasks = list_tasks_live(limit=50)
+                payload = _json.dumps({"type": "fleet", "tasks": tasks},
+                                      ensure_ascii=False, default=str)
+                self.wfile.write(("data: " + payload + "\n\n").encode("utf-8"))
+                self.wfile.flush()
+                _time.sleep(2)
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+        except Exception:
+            pass
+
+    def _stream_agent(self, data: dict[str, Any]) -> None:
+        """SSE: run one Mag agent turn, streaming deltas live, then a done event.
+
+        POST /api/v1/agent/stream  {goal, provider, model, session_id, reset}
+        Events:
+          data: {"type":"delta","text":"..."}   -- streamed model text
+          data: {"type":"tool","name":"...","args":"..."}  -- tool call trace
+          data: {"type":"done","answer":"...","tools":[...],"provider":"...","ok":true}
+          data: {"type":"error","error":"..."}
+        """
+        import json as _json
+
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream")
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Connection", "keep-alive")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+
+        def _send(obj: dict[str, Any]) -> None:
+            try:
+                self.wfile.write(
+                    ("data: " + _json.dumps(obj, ensure_ascii=False, default=str) + "\n\n").encode("utf-8")
+                )
+                self.wfile.flush()
+            except (BrokenPipeError, ConnectionResetError):
+                raise
+
+        goal = str(data.get("goal") or data.get("question") or data.get("q") or "").strip()
+        if not goal:
+            _send({"type": "error", "error": "goal required"})
+            return
+        provider = str(data.get("provider") or "deepseek").strip() or "deepseek"
+        model = str(data.get("model") or "").strip() or None
+        session_id = str(data.get("session_id") or "dashboard").strip() or "dashboard"
+        reset = bool(data.get("reset"))
+
+        from mag.agent_cli import api_agent_turn
+
+        def _on_stream(delta: str) -> None:
+            _send({"type": "delta", "text": delta})
+
+        def _on_status(ev: dict[str, Any]) -> None:
+            _send(ev)
+
+        try:
+            res = api_agent_turn(
+                goal,
+                provider=provider,
+                model=model,
+                session_id=session_id,
+                reset=reset,
+                on_stream=_on_stream,
+                on_status=_on_status,
+            )
+        except Exception as e:  # noqa: BLE001
+            _send({"type": "error", "error": str(e)})
+            return
+        if not res.get("ok"):
+            _send({"type": "error", "error": res.get("error") or "agent failed"})
+            return
+        _send(
+            {
+                "type": "done",
+                "answer": res.get("answer") or "",
+                "tools": res.get("tools") or [],
+                "provider": res.get("provider") or provider,
+                "model": res.get("model"),
+                "session_id": res.get("session_id"),
+                "tip": res.get("tip"),
+                "n_messages": res.get("n_messages"),
+            }
+        )
+
+    def do_PATCH(self) -> None:  # noqa: N802
+        """RESTful partial update (ideas status, etc.)."""
+        parsed = urlparse(self.path)
+        path = parsed.path
+        data, err = self._read_json_body()
+        if err:
+            return self._json(400, {"ok": False, "error": err})
+        if path.startswith("/api/"):
+            from dashboard.rest import dispatch
+
+            q = {k: (v[0] if v else "") for k, v in parse_qs(parsed.query).items()}
+            hit = dispatch("PATCH", path, data or {}, q)
+            if hit:
+                return self._json(hit[0], hit[1])
+        return self._json(404, {"ok": False, "error": "not found", "path": path})
+
+    def do_OPTIONS(self) -> None:  # noqa: N802
+        """CORS preflight for local tools (same-origin UI does not need this)."""
+        self.send_response(204)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
+
+class _TLSServer(ThreadingHTTPServer):
+    """Wrap each accept, not the listen socket. Android RST on listen-wrap."""
+
+    def __init__(self, addr, handler, ctx):
+        super().__init__(addr, handler)
+        self._tls_ctx = ctx
+
+    def get_request(self):
+        import ssl as _ssl
+        sock, addr = self.socket.accept()
+        try:
+            return self._tls_ctx.wrap_socket(sock, server_side=True), addr
+        except _ssl.SSLError:
+            try:
+                sock.close()
+            except Exception:
+                pass
+            raise
+
+
+_cost_lock = threading.Lock()
+_cost_cache: dict[str, Any] = {}
+
+
+def _cost_refresher() -> None:
+    """Background wall-builder for /api/v1/cost: recompute every 60s, never block requests."""
+    def _loop() -> None:
+        while True:
+            try:
+                from mag.cost_truth import snapshot
+                from mag.cost_enforcer import cost_status
+                try:
+                    import yaml as _yaml
+                    from config import CONFIGS_DIR
+                    overlay = _yaml.safe_load(
+                        (CONFIGS_DIR / "spend_overlay.yaml").read_text(encoding="utf-8")
+                    )
+                except Exception as _oexc:
+                    overlay = {"schema": "spend_overlay.v1", "error": f"{type(_oexc).__name__}: {_oexc}"}
+                payload = {
+                    "schema": "cost_surface.v1",
+                    "truth": snapshot(),
+                    "enforcer": cost_status(),
+                    "overlay": overlay,
+                }
+                with _cost_lock:
+                    _cost_cache.clear()
+                    _cost_cache["payload"] = payload
+                    _cost_cache["ts"] = time.time()
+            except Exception as exc:
+                with _cost_lock:
+                    _cost_cache["error"] = f"{type(exc).__name__}: {exc}"
+            time.sleep(60)
+    threading.Thread(target=_loop, daemon=True, name="cost-refresher").start()
+
+
+def run(host: str = DEFAULT_HOST, port: int = DEFAULT_PORT, *, tls: bool = False) -> None:
+    """Serve the desk. tls=True so a phone mic is a secure context."""
+    import ssl
+    from config import ROOT, print_bind_banner
+
+    STATIC.mkdir(parents=True, exist_ok=True)
+    # tls only when asked. LAN HTTP must load on a phone; HTTPS via tunnel.
+    scheme = "http"
+    ctx = None
+    if tls:
+        crt = ROOT / "memory" / "tls" / "lan.crt"
+        key = ROOT / "memory" / "tls" / "lan.key"
+        if not crt.is_file() or not key.is_file():
+            raise SystemExit("tls requested but memory/tls/lan.crt missing")
+        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ctx.minimum_version = ssl.TLSVersion.TLSv1_2
+        ctx.load_cert_chain(str(crt), str(key))
+        httpd = _TLSServer((host, port), Handler, ctx)
+        scheme = "https"
+    else:
+        httpd = ThreadingHTTPServer((host, port), Handler)
+    httpd.daemon_threads = True
+    _cost_refresher()
+    print_bind_banner(host=host, port=port)
+    print(f"  scheme:    {scheme}")
+    print(f"  biography: {BIO}")
+    print(f"  ingest:    {INGEST}")
+    print("Ctrl+C to stop.")
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        print("\nstopped")
+    finally:
+        httpd.server_close()
+
+
+if __name__ == "__main__":
+    run()

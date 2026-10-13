@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spore Form — the horse (reinterpreted)</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}html,body{height:100%;background:#0a0806;color:#efe3d0;font-family:Georgia,serif}
+  body{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+  canvas{background:#090808;border:1px solid #241a11;border-radius:12px}
+  .cap{color:#9c8570;font-size:.85rem;font-style:italic;max-width:560px;text-align:center;line-height:1.6;padding:0 20px}
+</style>
+</head>
+<body>
+  <canvas id="c" width="760" height="560"></canvas>
+  <div class="cap">the horse (spore reinterpreted)</div>
+<script>
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const W=760,H=560;
+let t=0;
+
+// ---- gallop phase model -------------------------------------------------
+// One stride = 2*PI. Rotary gallop: lead pair (front-left, hind-right) leads,
+// trailing pair (front-right, hind-left) follows by ~0.55 rad.
+// Body vertical bob: gather (coil) -> extend -> suspension (airborne).
+function stridePhase(t){ return t % (Math.PI*2); }
+
+// vertical body bob: two humps per stride (gather low, extend high, air high)
+function bodyBob(p){
+  return 0.55*Math.sin(p) + 0.35*Math.sin(2*p + 0.6);
+}
+// spine flex: extension (straight) <-> coil (arched). ~1 cycle per stride.
+function spineFlex(p){
+  return 0.5*Math.sin(p - 0.4) + 0.18*Math.sin(2*p);
+}
+
+// ---- leg kinematics -----------------------------------------------------
+// Each leg is a 2-segment limb (upper + lower) with a hoof point.
+// phase offset per leg (rotary gallop, asymmetric):
+//   front-left  : 0.00  (lead)
+//   front-right : 0.55  (trail)
+//   hind-right  : 0.15  (lead)
+//   hind-left   : 0.70  (trail)
+function legAngles(p, off, isFront){
+  const q = p - off;
+  // swing: forward reach at extension, tucked under at gather
+  const swing = Math.sin(q);
+  const lift  = Math.max(0, Math.sin(q + 1.2)); // hoof lifts during swing
+  // upper segment angle from vertical (radians)
+  const upper = (isFront ? 0.55 : -0.55) + 0.85*swing;
+  // lower segment folds more when lifted
+  const lower = upper + 0.9 - 1.4*lift;
+  return {upper, lower, lift};
+}
+
+// ---- draw helpers -------------------------------------------------------
+function px(x,y){ return [x, y]; }
+
+function drawPoint(x,y,a){
+  ctx.fillStyle = "rgba(127,178,255,"+a+")";
+  ctx.fillRect(x, y, 1, 1);
+}
+
+function drawLine(x1,y1,x2,y2,a,w){
+  ctx.strokeStyle = "rgba(127,178,255,"+a+")";
+  ctx.lineWidth = w;
+  ctx.beginPath();
+  ctx.moveTo(x1,y1);
+  ctx.lineTo(x2,y2);
+  ctx.stroke();
+}
+
+// ---- main loop ----------------------------------------------------------
+function step(){
+  t += Math.PI/90;
+  ctx.fillStyle = "#090808";
+  ctx.fillRect(0,0,W,H);
+
+  const p = stridePhase(t);
+  const bob = bodyBob(p);
+  const flex = spineFlex(p);
+
+  // body origin (center of barrel), in canvas coords
+  const cx = W*0.5;
+  const cy = H*0.52 + bob*22;
+
+  // body axis: slight pitch with the gallop
+  const pitch = 0.10*Math.sin(p - 0.3);
+
+  // ---- spine: parametric curve from tail to head ------------------------
+  // s in [0,1]: 0 = tail root, 1 = head. Body length ~ 300px.
+  const bodyLen = 300;
+  const spinePts = [];
+  const NSPINE = 90;
+  for(let i=0;i<=NSPINE;i++){
+    const s = i/NSPINE;
+    // local x along body (tail -> head)
+    const lx = (s - 0.5) * bodyLen;
+    // spine arch: coil raises the middle, extension flattens
+    const arch = flex * 26 * Math.sin(s*Math.PI);
+    // neck/head rise toward front
+    const neck = Math.pow(Math.max(0,(s-0.62)/0.38), 2) * 70;
+    // tail droop toward back
+    const tail = Math.pow(Math.max(0,(0.18-s)/0.18), 2) * 40;
+    // apply pitch rotation about body center
+    const rx = lx*Math.cos(pitch) - (arch - neck + tail)*Math.sin(pitch);
+    const ry = lx*Math.sin(pitch) + (arch - neck + tail)*Math.cos(pitch);
+    spinePts.push([cx + rx, cy + ry]);
+  }
+
+  // draw spine as luminous line
+  for(let i=0;i<spinePts.length-1;i++){
+    const a = 0.35 + 0.35*Math.sin(i*0.3 + t*2);
+    drawLine(spinePts[i][0], spinePts[i][1], spinePts[i+1][0], spinePts[i+1][1], a, 1.2);
+  }
+
+  // ---- body volume: point cloud around spine ----------------------------
+  // 10,000 points distributed along the spine with a barrel cross-section.
+  const NPTS = 10000;
+  for(let i=NPTS;i>=0;i--){
+    const u = i/NPTS;                 // 0..1 along body
+    const s = u;
+    // spine position (interpolate)
+    const si = Math.min(NSPINE, Math.floor(s*NSPINE));
+    const sx = spinePts[si][0];
+    const sy = spinePts[si][1];
+
+    // barrel radius: thick in middle, thin at neck and tail
+    const barrel = Math.sin(s*Math.PI);
+    const radius = 34*barrel + 6;
+
+    // cross-section angle from index
+    const ang = i*2.399963; // golden angle for even distribution
+    // slight breathing / muscle ripple
+    const ripple = 1 + 0.06*Math.sin(t*3 + s*8);
+    const r = radius * ripple;
+
+    // cross-section offset perpendicular to spine (approx vertical)
+    const ox = Math.cos(ang)*r*0.55;
+    const oy = Math.sin(ang)*r;
+
+    // subtle lateral sway
+    const sway = 6*Math.sin(t*2 + s*5);
+
+    const x = sx + ox + sway;
+    const y = sy + oy;
+
+    // brightness: brighter on the lit side (top), dimmer underneath
+    const lit = 0.5 + 0.5*Math.sin(ang);
+    const a = 0.10 + 0.45*lit*barrel;
+
+    drawPoint(x, y, a);
+  }
+
+  // ---- legs --------------------------------------------------------------
+  // shoulder and hip attachment points along the spine
+  function spineAt(s){
+    const si = Math.min(NSPINE, Math.max(0, Math.floor(s*NSPINE)));
+    return spinePts[si];
+  }
+
+  const shoulder = spineAt(0.72);
+  const hip      = spineAt(0.30);
+
+  const legs = [
+    {root: shoulder, off: 0.00, isFront: true,  len1: 62, len2: 58}, // front-left (lead)
+    {root: shoulder, off: 0.55, isFront: true,  len1: 62, len2: 58}, // front-right (trail)
+    {root: hip,      off: 0.15, isFront: false, len1: 70, len2: 66}, // hind-right (lead)
+    {root: hip,      off: 0.70, isFront: false, len1: 70, len2: 66}, // hind-left (trail)
+  ];
+
+  for(const leg of legs){
+    const {upper, lower, lift} = legAngles(p, leg.off, leg.isFront);
+    const [rx, ry] = leg.root;
+
+    // upper segment: from root, angle from vertical
+    const ux = rx + Math.sin(upper)*leg.len1;
+    const uy = ry + Math.cos(upper)*leg.len1;
+
+    // lower segment: from knee, angle from vertical
+    const lx = ux + Math.sin(lower)*leg.len2;
+    const ly = uy + Math.cos(lower)*leg.len2;
+
+    // draw limb as luminous line
+    drawLine(rx, ry, ux, uy, 0.55, 1.4);
+    drawLine(ux, uy, lx, ly, 0.45, 1.2);
+
+    // hoof: small bright cluster
+    for(let k=0;k<40;k++){
+      const a = k*2.399963;
+      const rr = 3.5*Math.sqrt(k/40);
+      drawPoint(lx + Math.cos(a)*rr, ly + Math.sin(a)*rr, 0.6);
+    }
+
+    // joint glow
+    for(let k=0;k<20;k++){
+      const a = k*2.399963;
+      const rr = 2.5*Math.sqrt(k/20);
+      drawPoint(ux + Math.cos(a)*rr, uy + Math.sin(a)*rr, 0.4);
+    }
+  }
+
+  // ---- neck and head -----------------------------------------------------
+  const neckBase = spineAt(0.80);
+  const headBase = spineAt(0.95);
+  const headTip  = spineAt(1.0);
+
+  // neck as a tapered line
+  drawLine(neckBase[0], neckBase[1], headBase[0], headBase[1], 0.6, 2.0);
+
+  // head: small elongated cluster
+  const hx = headTip[0] + 18*Math.cos(pitch);
+  const hy = headTip[1] + 18*Math.sin(pitch) - 6;
+  drawLine(headBase[0], headBase[1], hx, hy, 0.55, 1.6);
+
+  // muzzle glow
+  for(let k=0;k<60;k++){
+    const a = k*2.399963;
+    const rr = 5*Math.sqrt(k/60);
+    drawPoint(hx + Math.cos(a)*rr*1.4, hy + Math.sin(a)*rr*0.8, 0.5);
+  }
+
+  // ears
+  const earA = 0.5 + 0.3*Math.sin(t*4);
+  drawLine(headBase[0], headBase[1]-4, headBase[0]-6, headBase[1]-22, 0.4, 1.0);
+  drawLine(headBase[0]+4, headBase[1]-4, headBase[0]+2, headBase[1]-24, 0.4, 1.0);
+
+  // ---- mane: lagging the stride -----------------------------------------
+  // mane points along the neck, offset upward, with a phase lag
+  const maneLag = 0.6;
+  for(let i=0;i<70;i++){
+    const s = 0.78 + (i/70)*0.20;
+    const base = spineAt(s);
+    const lag = Math.sin(t - maneLag - s*4);
+    const mx = base[0] - 4 + lag*3;
+    const my = base[1] - 14 - i*0.35 + lag*4;
+    drawPoint(mx, my, 0.35 + 0.25*Math.abs(lag));
+  }
+
+  // ---- tail: lagging the stride -----------------------------------------
+  const tailRoot = spineAt(0.02);
+  const tailLag = 0.9;
+  for(let i=0;i<120;i++){
+    const s = i/120;
+    const lag = Math.sin(t - tailLag - s*3.5);
+    const tx = tailRoot[0] - s*70 + lag*6*s;
+    const ty = tailRoot[1] + s*40 + lag*10*s + s*s*30;
+    drawPoint(tx, ty, 0.30 + 0.30*(1-s));
+  }
+
+  // ---- ground shadow / dust ---------------------------------------------
+  const groundY = H*0.86;
+  for(let i=0;i<200;i++){
+    const gx = cx - 180 + (i/200)*360;
+    const gy = groundY + Math.sin(i*0.7 + t*3)*2;
+    const a = 0.05 + 0.05*Math.sin(i*0.3 + t*2);
+    drawPoint(gx, gy, a);
+  }
+
+  requestAnimationFrame(step);
+}
+step();
+</script>
+</body>
+</html>

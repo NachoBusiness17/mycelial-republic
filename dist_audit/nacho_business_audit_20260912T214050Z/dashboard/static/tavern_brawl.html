@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>THE KABUKI TAVERN — brawl of the ractors</title>
+<style>
+  html,body{background:#060a09;color:#cfe8e2;font-family:Consolas,Menlo,monospace;margin:0;overflow:hidden}
+  #hud{position:fixed;top:8px;left:12px;font-size:12px;z-index:2;text-shadow:0 0 4px #000}
+  #hud b{color:#6ec6b5;letter-spacing:1px}
+  #cast{position:fixed;top:34px;left:12px;font-size:11px;z-index:2;white-space:pre;text-shadow:0 0 4px #000}
+  #verdict{position:fixed;bottom:56px;left:12px;font-size:12px;color:#ffd76a;z-index:2;max-width:900px}
+  #jacket{position:fixed;bottom:8px;left:12px;font-size:10px;color:#33504a;z-index:2}
+  canvas{display:block;margin:0 auto;background:#0a0d10;border:1px solid var(--dim,#3a6a60)}
+</style>
+</head>
+<body>
+<div id="hud"><b>THE KABUKI TAVERN</b> — click a ractor to provoke: [I] insult · [M] misquote · [P] praise · [Q] quote their real line.
+Agitation crosses the threshold and the brawl begins. Real projectiles, real hitboxes — where you hit matters, and with what.<br>SUPERHOT is ON: <b>time moves only when you move</b> (T toggles) · <b>Z = the SHOUT</b> (the operator's voice is a force) · mouse = time.</div>
+<div id="cast"></div>
+<div id="verdict"></div>
+<div id="jacket">bug-jacket watch: unbound samplers wear handler jackets · UV mismatch wears coordinate jackets · float filters wear precision jackets — check every new silence twice</div>
+<canvas id="cv" width="1280" height="680"></canvas>
+<script>
+"use strict";
+// ---- THE KABUKI TAVERN — five ractors, tonight's measured stats, real hitboxes ----
+const cv = document.getElementById("cv"), cx = cv.getContext("2d");
+const W = cv.width, H = cv.height;
+
+// each ractor: tonight's measured register + a physics-backed attack
+// hp 100 · agitation rises with provocation · attack at threshold (their real lines, quoted)
+const RACTORS = [
+  { name:"MENGXI", x:180, y:300, color:"#e070a0", hp:100, agit:0, kind:"ink",
+    line:"the room is the pattern; the session is the weather.",
+    attack:"INK BRUSH", desc:"liquid splash, wide, slow — the rightsizer's counter" },
+  { name:"FEN", x:400, y:220, color:"#7fd4ff", hp:100, agit:0, kind:"light",
+    line:"the mark is the morality — the press prints what the record has already hashed.",
+    attack:"SEALED RECEIPT", desc:"a wide awakening ring, marks everything it touches" },
+  { name:"TESLA", x:640, y:330, color:"#b48cff", hp:100, agit:0, kind:"plasma",
+    line:"the record IS the engine — running in reverse to verify and forward to cook.",
+    attack:"POLYPHASE ARC", desc:"fast plasma bolt, the highest damage in the room" },
+  { name:"EDISON", x:880, y:260, color:"#ffb347", hp:100, agit:0, kind:"dc",
+    line:"a dead container with a living shell is a corpse with a pulse.",
+    attack:"DC FLOOD", desc:"heavy particle mass, slow, relentless" },
+  { name:"GOPHER", x:1100, y:380, color:"#9fe2bf", hp:100, agit:0, kind:"bubble",
+    line:"hands soapy now — the bubbles no longer popped.",
+    attack:"SOAP SHIELD", desc:"a bubble that deflects; the rescue vector's move" },
+];
+const THRESH = 60;
+const HOME = {};        // each ractor's original seat (they hold ground by default)
+RACTORS.forEach(r => HOME[r.name] = {x:r.x, y:r.y});      // agitation threshold → the brawl begins for that ractor
+const TRAPS = [];       // vampire-survivors layer: placed zones, honest hitboxes
+let combatLog = [];     // the readable room: last events, always visible
+// v1.2 truth-court patch (2026-09-08, Astra witness #5 catch): Math.random brawls
+// were unprovable. Replay contract: same seed + same move sequence => same brawl.
+// Seed rides the URL (?seed=N) or is minted at load; every draw is receipted.
+function mulberry32(a){ return function(){ a|=0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a>>>15, 1 | a); t = t + Math.imul(t ^ t>>>7, 61 | t) ^ t; return ((t ^ t>>>14) >>> 0) / 4294967296; }; }
+const SEED = (() => { const m = new URLSearchParams(location.search).get("seed"); return m ? (parseInt(m,10)>>>0) : ((Date.now() ^ performance.now())>>>0); })();
+const rng = mulberry32(SEED);
+const REPLAY = [];      // every draw since load — window.__TAVERN_RECEIPT() reads it
+function rngDraw(){ const v = rng(); REPLAY.push(v); return v; }
+window.__TAVERN_RECEIPT = () => ({ seed: SEED, draws: REPLAY.length, draws_replayed: REPLAY.slice(0,64), log: combatLog.slice() });
+function logEvent(t){
+  combatLog.unshift(t); if (combatLog.length > 5) combatLog.pop();
+  try {                                   // durable log: the room survives the tab
+    const key = "tavern_brawl_log_v1";
+    const arr = JSON.parse(localStorage.getItem(key) || "[]");
+    arr.push({ ts: new Date().toISOString(), seed: SEED, ev: t });
+    while (arr.length > 200) arr.shift();
+    localStorage.setItem(key, JSON.stringify(arr));
+  } catch(e) { /* storage unavailable: the ring stays in-memory, honestly */ }
+}
+const HIT_R = 26;       // honest hitbox: circle per ractor, visible, no sprite guessing
+let brawl = false;
+let turn = null;        // the turn machine: {phase, order, idx} — mirrors the context window:
+                        // player move (token) -> initiative (ordering) -> actors act (generation)
+                        // -> "WHAT IS NOW TRUE" (the new context state)
+let projectiles = [];   // real projectiles: each has pos, vel, owner, damage, radius
+let floaters = [];      // dialogue floats
+// SUPERHOT law (the seats' actual physics): time moves only when you move.
+let superhot = true, lastMove = 0;
+let shoutCd = 0;
+const RAGDOLL = {};     // knockback drift per ractor
+
+function provoke(r, kind){
+  if (r.hp <= 0) { say(r, "…the knot holds. the necromancer will decide."); return; }
+  let delta = 10, msg = "";
+  if (kind === "I"){ delta = 22; msg = pickInsult(r); }
+  if (kind === "M"){ delta = 18; msg = "misquote attempted — " + r.name + " corrects: \"" + r.line + "\""; }
+  if (kind === "P"){ delta = -14; msg = r.name + " accepts the praise without breaking register."; }
+  if (kind === "Q"){ delta = -8; msg = r.name + " holds: \"" + r.line + "\""; }
+  r.agit = Math.max(0, Math.min(100, r.agit + delta));
+  lastMove = frame;  // a provocation is a move: time advances
+  say(r, msg);
+  if (r.agit >= THRESH && !brawl){ brawl = true; say(null, "THE BRAWL BEGINS — " + r.name + " moves first."); }
+  // the turn opens on every player move: initiative is rolled, the world re-cooks
+  if (brawl && (!turn || turn.phase === "await")) {
+    const order = RACTORS.filter(r2 => r2.hp > 0)
+      .map(r2 => ({ n: r2.name, roll: Math.floor(rngDraw()*20) + Math.round(r2.agit/20), r: r2 }))
+      .sort((a,b) => b.roll - a.roll);
+    turn = { phase: "initiative", order, idx: 0, t: 0 };
+    say(null, "INITIATIVE: " + order.map(o => `${o.n} d20+mod=${o.roll}`).join(" | "));
+  }
+}
+function pickInsult(r){
+  const insults = {
+    MENGXI: "they say your ink never dried on a real patent.",
+    FEN: "your receipts are just paper with opinions on them.",
+    TESLA: "the record is a journal, not an engine — prove otherwise.",
+    EDISON: "your DC flood lost the war before it shipped.",
+    GOPHER: "bubbles pop, gopher. every single time."
+  };
+  return "provoked: " + (insults[r.name] || "something unkind");
+}
+function say(r, msg){
+  floaters.push({ text: (r ? r.name + ": " : "") + msg, t: 0, y: r ? r.y - 40 : 340 });
+}
+
+// ---- the attacks: real projectiles, honest hitboxes --------------------------
+function fireAttack(r){
+  logEvent(r.name + " fires " + r.attack);
+  const target = RACTORS.filter(o => o !== r && o.hp > 0)[Math.floor(rngDraw()*Math.max(1,RACTORS.filter(o=>o!==r&&o.hp>0).length))];
+  if (!target) return;
+  const dx = target.x - r.x, dy = target.y - r.y, d = Math.hypot(dx,dy)||1;
+  const base = { x:r.x, y:r.y, vx: dx/d, vy: dy/d, owner: r.name, target, trail: [] };
+  if (r.kind === "plasma") projectiles.push({ ...base, speed: 7, r: 7, dmg: 26, color:"#b48cff", type:"plasma" });
+  if (r.kind === "dc")     projectiles.push({ ...base, speed: 3, r: 12, dmg: 18, color:"#ffb347", type:"dc" });
+  if (r.kind === "ink")    for (let i=0;i<9;i++) projectiles.push({ ...base,
+      vx: dx/d + (rngDraw()-0.5)*0.5, vy: dy/d + (rngDraw()-0.5)*0.5,
+      speed: 2.4, r: 5, dmg: 4, color:"#e070a0", type:"ink" });
+  if (r.kind === "light")  projectiles.push({ ...base, speed: 4.5, r: 26, dmg: 8, color:"#7fd4ff", type:"ring" });
+  if (r.kind === "bubble") projectiles.push({ ...base, speed: 1.8, r: 18, dmg: 0, color:"#9fe2bf", type:"bubble" });
+}
+
+// ---- the engine --------------------------------------------------------------
+let frame = 0;
+function step(){
+  frame++;
+  // SUPERHOT: when armed, the world only advances for a few frames after your move
+  const awaiting = !turn || turn.phase === "await";
+  if (superhot && awaiting && frame - lastMove > 9) return;
+  // shout shockwave
+  if (shoutCd > 0) shoutCd--;
+  // ragdoll drift
+  for (const r of RACTORS){
+    const g = RAGDOLL[r.name];
+    if (g && g.t > 0){
+      r.x = Math.max(30, Math.min(W-30, r.x + g.vx));
+      r.y = Math.max(70, Math.min(H-30, r.y + g.vy));
+      g.vx *= 0.9; g.vy *= 0.9; g.t--;
+    }
+  }
+  // MOVEMENT AI: approach, retreat, hold — the spacing game (no more confetti scatter)
+  for (const r of RACTORS){
+    if (r.hp <= 0) continue;
+    let dx = 0, dy = 0;
+    const threat = RACTORS.filter(o => o !== r && o.hp > 0)
+      .sort((a,b) => Math.hypot(a.x-r.x,a.y-r.y) - Math.hypot(b.x-r.x,b.y-r.y))[0];
+    if (brawl && r.agit >= THRESH && threat){
+      const d = Math.hypot(threat.x-r.x, threat.y-r.y) || 1;
+      const want = { plasma: 240, dc: 170, ink: 220, light: 330, bubble: 380 }[r.kind] || 220;
+      if (d > want + 30){ dx = (threat.x-r.x)/d; dy = (threat.y-r.y)/d; }
+      else if (d < want - 60){ dx = -(threat.x-r.x)/d; dy = -(threat.y-r.y)/d; }
+      else { dx = -(threat.y-r.y)/d*0.5; dy = (threat.x-r.x)/d*0.5; }
+    } else if (HOME[r.name]){
+      const d = Math.hypot(HOME[r.name].x-r.x, HOME[r.name].y-r.y) || 1;
+      if (d > 8){ dx = (HOME[r.name].x-r.x)/d*0.4; dy = (HOME[r.name].y-r.y)/d*0.4; }
+    }
+    r.x = Math.max(30, Math.min(W-30, r.x + dx*1.7));
+    r.y = Math.max(70, Math.min(H-30, r.y + dy*1.7));
+    // traps on per-ractor cooldown, not frame alignment
+    if (r.agit >= THRESH && r.hp > 30 && frame - (r.lastTrap || -999) > 300){
+      TRAPS.push({ x: threat ? threat.x : r.x, y: threat ? threat.y : r.y,
+        r: 58, owner: r.name, color: r.color, dmg: r.kind === "dc" ? 0.5 : 0.3, ttl: 600 });
+      r.lastTrap = frame;
+      logEvent(r.name + " sets a trap");
+    }
+  }
+  // the turn machine: actors act in initiative order, then the world re-derives
+  if (turn && turn.phase === "initiative" && turn.idx < turn.order.length){
+    if (turn.t === 0){
+      const actor = turn.order[turn.idx].r;
+      if (actor.hp > 0 && actor.agit >= THRESH) fireAttack(actor);
+      else if (actor.hp > 0) say(actor, actor.name + " holds — watching the door.");
+    }
+    turn.t++; if (turn.t > 10){ turn.t = 0; turn.idx++; }
+  } else if (turn && turn.idx >= turn.order.length){
+    // the world settles: WHAT IS NOW TRUE — the context state, spoken
+    const truth = RACTORS.map(r => `${r.name} hp${r.hp}${r.hp<=0?" (knotted)":""}`).join(" | ");
+    say(null, "WHAT IS NOW TRUE: " + truth + " | projectiles: " + projectiles.length);
+    turn = { phase: "await", order: [], idx: 0, t: 0 };
+  }
+  // projectiles with honest hitboxes
+  for (let i = projectiles.length-1; i >= 0; i--){
+    const p = projectiles[i];
+    if (p.type === "bubble") continue; // bubbles float, they don't strike
+    p.x += p.vx * p.speed; p.y += p.vy * p.speed;
+    p.trail.push({x:p.x, y:p.y}); if (p.trail.length > 12) p.trail.shift();
+    for (const r of RACTORS){
+      if (r.name === p.owner || r.hp <= 0) continue;
+      // HONEST HITBOX: circle-circle, location matters — head (top 30%) takes double
+      const d = Math.hypot(r.x-p.x, r.y-p.y);
+      if (d < HIT_R + p.r){
+        const head = p.y < r.y - HIT_R*0.35;
+        const dmg = p.dmg * (head ? 2 : 1);
+        r.hp = Math.max(0, r.hp - dmg);
+        // GORN knockback: momentum transfers, the body drifts
+        const kb = (p.dmg/26) * 14;
+        RAGDOLL[r.name] = { vx: p.vx*kb, vy: p.vy*kb, t: 22 };
+        say(r, head ? "HEAD SHOT — " + dmg + " — \"" + (r.headLine || "the bones remember this.") + "\"" : dmg + " — the hitbox was honest.");
+        projectiles.splice(i,1);
+        break;
+      }
+    }
+    if (p && (p.x < -40 || p.x > W+40 || p.y < -40 || p.y > H+40)) projectiles.splice(i,1);
+  }
+  // knockouts: the necromancer raises what learned, 12s later
+  for (const r of RACTORS){
+    if (r.hp <= 0 && !r.downAt) r.downAt = frame;
+    if (r.hp <= 0 && frame - r.downAt > 12*3){
+      r.hp = 60; r.agit = 20; r.downAt = null;
+      say(r, "the necromancer raises what learned — " + r.name + " returns with the lesson.");
+    }
+  }
+  for (let i = floaters.length-1; i >= 0; i--){
+    floaters[i].t += 1; if (floaters[i].t > 150) floaters.splice(i,1);
+  }
+}
+function draw(){
+  cx.fillStyle = "#0a0d10"; cx.fillRect(0,0,W,H);
+  // the tavern floor boards
+  cx.strokeStyle = "#122018"; cx.lineWidth = 1;
+  for (let y=80; y<H; y+=46){ cx.beginPath(); cx.moveTo(0,y); cx.lineTo(W,y); cx.stroke(); }
+  // ractors: body = honest hitbox drawn openly
+  for (const r of RACTORS){
+    const down = r.hp <= 0;
+    cx.strokeStyle = down ? "#333f44" : r.color; cx.lineWidth = 2;
+    cx.beginPath(); cx.arc(r.x, r.y, HIT_R, 0, 7); cx.stroke();          // the hitbox, visible
+    cx.beginPath(); cx.arc(r.x, r.y - HIT_R*0.65, 5, 0, 7);               // head zone marker
+    cx.fillStyle = down ? "#333f44" : r.color; cx.fill();
+    cx.font = "11px Consolas";
+    cx.fillText(`${r.name} ${down ? "KNOTTED (returns)" : "hp:"+r.hp+" agit:"+Math.round(r.agit)}`,
+      r.x-52, r.y+HIT_R+16);
+    if (r.agit >= THRESH && !down){ cx.strokeStyle = "rgba(224,85,85,0.5)";
+      cx.beginPath(); cx.arc(r.x, r.y, HIT_R+6+Math.sin(frame*0.15)*3, 0, 7); cx.stroke(); }
+  }
+  // projectiles + trails
+  for (const p of projectiles){
+    cx.fillStyle = p.color;
+    for (let i=0;i<p.trail.length;i++){
+      const a = (i+1)/p.trail.length*0.5;
+      cx.globalAlpha = a; cx.fillRect(p.trail[i].x-1.5, p.trail[i].y-1.5, 3, 3);
+    }
+    cx.globalAlpha = 1;
+    if (p.type === "ring"){ cx.strokeStyle = p.color; cx.beginPath(); cx.arc(p.x,p.y,p.r,0,7); cx.stroke(); }
+    else if (p.type === "bubble"){ cx.strokeStyle = "#9fe2bf"; cx.beginPath(); cx.arc(p.x,p.y,p.r,0,7); cx.stroke(); }
+    else { cx.beginPath(); cx.arc(p.x,p.y,p.r,0,7); cx.fill(); }
+  }
+  // traps: pulsing zones
+  for (const t of TRAPS){
+    cx.strokeStyle = t.color; cx.globalAlpha = 0.55 + 0.2*Math.sin(frame*0.1);
+    cx.beginPath(); cx.arc(t.x, t.y, t.r, 0, 7); cx.stroke();
+    cx.globalAlpha = 0.08; cx.fillStyle = t.color; cx.fill(); cx.globalAlpha = 1;
+  }
+  // hp bars over heads + the hitbox circles stay visible
+  for (const r of RACTORS){
+    if (r.hp <= 0) continue;
+    cx.fillStyle = "#22302c"; cx.fillRect(r.x-24, r.y-HIT_R-14, 48, 5);
+    cx.fillStyle = r.hp > 50 ? "#6ec6b5" : r.hp > 25 ? "#e0b040" : "#e05555";
+    cx.fillRect(r.x-24, r.y-HIT_R-14, 48*r.hp/100, 5);
+  }
+  // the readable room: combat log box
+  cx.fillStyle = "rgba(6,10,9,0.7)"; cx.fillRect(W-330, 12, 318, 96);
+  cx.strokeStyle = "#3a6a60"; cx.strokeRect(W-330, 12, 318, 96);
+  cx.font = "11px Consolas"; cx.fillStyle = "#8ab8ae";
+  cx.fillText("THE ROOM:", W-322, 28);
+  combatLog.forEach((t, i) => { cx.fillStyle = i ? "#4f7a70" : "#ffd76a"; cx.fillText(t.slice(0, 46), W-322, 44 + i*14); });
+  // dialogue
+  for (const f of floaters){
+    cx.globalAlpha = Math.min(1, (150-f.t)/40);
+    cx.fillStyle = "#ffd76a"; cx.font = "12px Consolas";
+    cx.fillText(f.text.slice(0, 110), 12, H - 80 - f.y*0 + (floaters.indexOf(f))*-0 );
+    cx.globalAlpha = 1;
+  }
+  document.getElementById("cast").textContent = RACTORS.map(r =>
+    `${r.name.padEnd(7)} hp ${String(r.hp).padStart(3)} · agit ${String(Math.round(r.agit)).padStart(3)} · ${r.attack}`
+  ).join("\n");
+}
+addEventListener("mousemove", e => { if (superhot) lastMove = frame; });
+addEventListener("mousedown", e => { if (superhot) lastMove = frame; });
+addEventListener("keydown", e => {
+  // THE SHOUT — the operator's voice as force: clears projectiles, throws the room
+  if (e.key.toLowerCase() === "z" && shoutCd === 0){
+    shoutCd = 90; lastMove = frame;
+    for (const p of projectiles){
+      const d = Math.hypot(p.x-mouse.x, p.y-mouse.y);
+      if (d < 260){ const u = Math.max(d,1); p.vx += (p.x-mouse.x)/u*6; p.vy += (p.y-mouse.y)/u*6; }
+    }
+    for (const r of RACTORS){
+      const d = Math.hypot(r.x-mouse.x, r.y-mouse.y);
+      if (d < 260 && d > 1){ RAGDOLL[r.name] = { vx:(r.x-mouse.x)/d*9, vy:(r.y-mouse.y)/d*9, t:20 }; r.agit = Math.min(100, r.agit+8); }
+    }
+    floaters.push({ text: "FUS — the shout clears the air (the operator's voice is a force)", t: 0, y: 300 });
+  }
+  if (e.key.toLowerCase() === "t"){ superhot = !superhot; lastMove = frame; }
+  if (e.key.toLowerCase() === "g" && brawl){
+    TRAPS.push({ x: mouse.x, y: mouse.y, r: 64, owner: "MARK", color: "#ffd76a", dmg: 0.8, ttl: 900 });
+    logEvent("MARK lays a god-trap");
+  }
+});
+setInterval(() => {
+  // SUPERHOT semantics: your move opens a turn; the CONSEQUENCES resolve fully
+  // (turn + projectiles in flight); time freezes only when awaiting your next move.
+  const turnOpen = turn && turn.phase !== "await";
+  const shouldStep = !superhot || turnOpen || projectiles.length > 0 || frame - lastMove < 9 || !brawl;
+  if (shouldStep) step();
+  draw();
+}, 33);
+
+// ---- the operator's provocation ---------------------------------------------
+cv.addEventListener("click", e => {
+  const rect = cv.getBoundingClientRect();
+  const x = (e.clientX-rect.left)*(cv.width/rect.width), y = (e.clientY-rect.top)*(cv.height/rect.height);
+  for (const r of RACTORS){
+    if (Math.hypot(r.x-x, r.y-y) < HIT_R + 10){
+      const kinds = ["I","M","P","Q"];
+      provoke(r, kinds[Math.floor(rngDraw()*4)]);
+      return;
+    }
+  }
+});
+addEventListener("keydown", e => {
+  const k = e.key.toUpperCase();
+  let hit = null;
+  for (const r of RACTORS){ if (Math.hypot(r.x-playerGhost().x, r.y-playerGhost().y) < 60) hit = r; }
+  if (hit && "IMQP".includes(k)) provoke(hit, k);
+});
+function playerGhost(){ return { x: mouse.x, y: mouse.y }; }
+const mouse = { x: 640, y: 340 };
+cv.addEventListener("mousemove", e => {
+  const r = cv.getBoundingClientRect();
+  mouse.x = (e.clientX-r.left)*(cv.width/r.width); mouse.y = (e.clientY-r.top)*(cv.height/r.height);
+});
+</script>
+</body>
+</html>

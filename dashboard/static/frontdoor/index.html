@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>the republic — front door</title>
+<style>
+  :root { --bg:#0d0d0f; --fg:#e8e6e3; --dim:#8a8782; --line:#26262a; --accent:#961885; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--fg); font-family:ui-monospace, "Cascadia Mono", Consolas, monospace;
+         min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:14vh 24px 40px; }
+  .greet { font-size:clamp(22px, 4vw, 34px); font-weight:400; letter-spacing:-0.02em; }
+  .greet span { color:var(--dim); }
+  .box { width:100%; max-width:680px; margin:28px 0 10px; }
+  textarea { width:100%; height:88px; resize:none; background:#141416; color:var(--fg);
+             border:1px solid var(--line); border-radius:10px; padding:14px 16px;
+             font:inherit; font-size:15px; outline:none; }
+  textarea:focus { border-color:var(--accent); }
+  .hint { color:var(--dim); font-size:12px; margin:4px 2px 22px; }
+  .starters { width:100%; max-width:680px; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .starters a { display:block; border:1px solid var(--line); border-radius:8px; padding:10px 12px;
+                color:var(--fg); text-decoration:none; font-size:13px; background:#131315; }
+  .starters a:hover { border-color:var(--accent); }
+  .starters a b { color:var(--dim); font-weight:400; display:block; font-size:11px; margin-bottom:3px; }
+  .foot { margin-top:auto; padding-top:40px; color:var(--dim); font-size:11px; text-align:center; line-height:1.7; }
+  .foot a { color:var(--dim); }
+  @media (max-width:560px){ .starters { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+  <div class="greet">hi. <span>what's on your mind?</span></div>
+
+  <div class="box">
+    <textarea id="q" placeholder="ask the record anything…"></textarea>
+    <div class="hint">the chat lane is wired to a local model — not live yet. the starters below already work.</div>
+  </div>
+
+  <div class="starters">
+    <a href="/ESTATE_INDEX/rollup.json"><b>the record</b>what does the estate hold right now</a>
+    <a href="CORPUS_CATALOG.md"><b>the librarian</b>the shelves, counted and verified</a>
+    <a href="../watch/inbox/THE_UNDENIABLE_LEDGER_20260923.md"><b>the ledger</b>eleven families, hostile-passed</a>
+    <a href="../watch/inbox/RESET_EVIDENCE_SPEC_20260923.md"><b>the reset</b>certainty conditions, per claim</a>
+    <a href="../watch/inbox/X_ANCHOR_MAP_SD_SEAT_20260923.md"><b>the anchor map</b>posts that anchor the content</a>
+    <a href="../watch/inbox/WORLDVIEW_AUDIT_20260923.md"><b>the audit</b>every claim at its honest tier</a>
+  </div>
+
+  <div class="foot">
+    mycelial republic · no center · append-only · the record keeps itself<br>
+    the chat is not live yet — the record already answers
+  </div>
+
+  <script>
+    // enter in the box routes to the record search until the chat lane is wired
+    document.getElementById("q").addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        const q = this.value.trim();
+        if (q) { location.href = "../watch/ESTATE_INDEX/ESTATE_INDEX.jsonl"; }
+      }
+    });
+  </script>
+</body>
+</html>

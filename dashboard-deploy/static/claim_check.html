@@ -1,0 +1,277 @@
+<!doctype html>
+<!--
+  CLAIM CHECK v1 — launch-law intake card verifier, fleet build 2026-09-04
+  Provenance: salon_launch_law_20260904 convergent verdict + falsifier #5
+  ("claim semantics"). Python twin: none yet (this IS the reference impl; a
+  mag twin would be claim_check.py). Pair surface: watch/room.jsonl intake
+  cards, falsifiers.html index.
+  THE LAW (rubric amendment 5, launch law):
+    - a card scoring >=14/25 is launch-eligible iff it names a lane AND has
+      no unnamed gate;
+    - a card claiming BUILD WINDOWED / BUILD NOW must contain a launched-
+      builder marker ("builder spawned", "agent launched", room.jsonl / room
+      row / receipt reference) OR name an explicit operator gate (KEYS /
+      spend / ONE STOP / operator GO) — the gate defers, not the lane.
+  FLAGS: (a) BUILD claim with neither builder marker nor named gate ->
+         VIOLATION [launched law];
+         (b) REMEMBER/CALIBRATE card carrying a builder marker -> NOTE
+         (over-launch, informational);
+         (c) missing score band -> MALFORMED.
+  ZERO-FETCH: no network resource, no CDN, no libraries. Paste via textarea.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MAG · Claim Check — launch-law card verifier v1</title>
+<style>
+:root{--bg:#030806;--ink:#c8e6d9;--accent:#7cf5ff;--gold:#e8c96a;--mut:#8ab8a4;--bad:#ff9d5c;--ok:#7dfab0}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-monospace,Consolas,monospace}
+header{text-align:center;margin:14px 0 4px}
+h1{font-size:.95rem;letter-spacing:.12em;color:var(--accent);margin:0}
+.mut{color:var(--mut);font-size:.72rem;margin:4px auto 0;max-width:880px;line-height:1.5}
+a{color:var(--accent)}
+main{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;align-items:flex-start;padding:10px}
+#panel{width:430px;max-width:96vw;font-size:.72rem;line-height:1.6}
+#panel h2{font-size:.72rem;letter-spacing:.14em;color:var(--gold);margin:0 0 6px}
+textarea{width:100%;box-sizing:border-box;min-height:230px;background:#07130f;color:var(--ink);
+  border:1px solid rgba(124,245,255,.3);border-radius:6px;font:inherit;padding:8px;resize:vertical}
+textarea:focus{outline:1px solid var(--accent)}
+button{background:none;border:1px solid rgba(124,245,255,.3);border-radius:8px;color:var(--ink);
+  font:inherit;font-size:.68rem;padding:4px 12px;cursor:pointer;margin-top:8px;margin-right:6px}
+button:hover{color:var(--accent);border-color:var(--accent)}
+#out{width:430px;max-width:96vw;font-size:.72rem;line-height:1.7}
+#verdict{padding:8px 10px;border:1px solid rgba(124,245,255,.25);border-radius:6px;margin-bottom:10px}
+#verdict.ok{border-color:rgba(125,250,176,.4);color:var(--ok)}
+#verdict.bad{border-color:rgba(255,157,92,.5);color:var(--bad)}
+#verdict.off{border-color:rgba(232,201,106,.45);color:var(--gold)}
+.finding{padding:4px 8px;border-bottom:1px dotted rgba(124,245,255,.12)}
+.finding .rule{color:var(--accent)}
+.finding .sev-bad{color:var(--bad)}
+.finding .sev-note{color:var(--gold)}
+.finding .sev-ok{color:var(--ok)}
+.finding blockquote{margin:3px 0 0;padding:2px 8px;border-left:2px solid rgba(124,245,255,.3);color:var(--mut);white-space:pre-wrap}
+.law{margin:10px 0 0;padding:8px 10px;border:1px solid rgba(232,201,106,.35);border-radius:6px;color:var(--gold);line-height:1.5}
+</style>
+</head>
+<body>
+<header>
+  <h1>MAG · CLAIM CHECK — LAUNCH-LAW CARD VERIFIER</h1>
+  <p class="mut">Paste one intake card. The law: score ≥14/25 is launch-eligible iff it
+  <b>names a lane</b> and has <b>no unnamed gate</b>; a BUILD WINDOWED / BUILD NOW claim must carry a
+  launched-builder marker (<i>builder spawned / agent launched / room-row receipt</i>) or name an explicit
+  operator gate (<i>KEYS / spend / ONE STOP / operator GO</i>). The gate defers, not the lane.
+  Falsifier #5 (salon_launch_law_20260904) · index: <a href="falsifiers.html">falsifiers.html</a></p>
+</header>
+<main>
+  <div id="panel">
+    <h2>PASTE ONE INTAKE CARD (markdown)</h2>
+    <textarea id="card" spellcheck="false" placeholder="# INTAKE — ...
+score: 16/25
+verdict: BUILD WINDOWED
+lane: zai-pro
+..."></textarea>
+    <button id="go">CHECK CARD</button>
+    <button id="demo-ok">LOAD LAWFUL LAUNCH</button>
+    <button id="demo-bad">LOAD VIOLATION</button>
+    <button id="demo-over">LOAD OVER-LAUNCH</button>
+    <button id="demo-mal">LOAD MALFORMED</button>
+    <p class="law">Dungeon beat: the gate is a toll bridge, not a wall. Name the toll
+    or pay it — "blocked" with no toll named is just a locked door nobody admits to.</p>
+  </div>
+  <div id="out">
+    <div id="verdict">paste a card and hit CHECK CARD</div>
+    <div id="findings"></div>
+  </div>
+</main>
+<script>
+"use strict";
+/*__PASTE_FALSIFIER_LOGIC_START__*/
+function findLine(lines, re) {
+  for (var i = 0; i < lines.length; i++) if (re.test(lines[i])) return lines[i].trim();
+  return null;
+}
+var RE = {
+  score: /(\d{1,2})\s*\/\s*25(?!\d)/,
+  build: /\bBUILD[\s_-]?(WINDOWED|NOW)\b/i,
+  builder: /\bbuilder\s+spawned\b|\bagent\s+launched\b|\bbuilder\s+launched\b|\broom\.jsonl\b|\broom[-\s]row\b|\breceipt\b/i,
+  gate: /\bKEYS\b|\bspend\b|\bONE[\s_-]?STOP\b|\boperator'?s?\s+GO\b/i,
+  laneField: /\blane\s*[:=]\s*(.+)/i,
+  laneToken: /\b(z[_-]?ai(?:\s?(?:pro|3|full|flash))?|glm[-\s]?4(?:\.7)?(?:[-\s](?:flash|full))?|deepseek(?:[\s-]?(?:pro|chat|v3(?:\.2)?))?|xai|grok|groq|anthropic|haiku|hermes|cohere|kimi|qwen|gemini|rib[_-]?chat|autoclaw|free[\s-]lane|premium[\s-]lane)\b/i,
+  vagueGate: /\bgate\b|\bblocked\b|\bdeferred\b|\bheld\b|\bwaiting\s(?:on|for)\b|\bon\s+hold\b|\bpending\b/i,
+  remember: /\b(REMEMBER|CALIBRATE)\b/i
+};
+function analyzeCard(text) {
+  var lines = text.split(/\r?\n/);
+  var scoreM = text.match(RE.score);
+  var score = scoreM ? parseInt(scoreM[1], 10) : null;
+  var scoreLine = scoreM ? findLine(lines, RE.score) : null;
+  var scoreInRange = score !== null && score >= 0 && score <= 25;
+  var saysBuild = RE.build.test(text);
+  var buildLine = findLine(lines, RE.build);
+  var builderMarker = RE.builder.test(text);
+  var builderLine = builderMarker ? findLine(lines, RE.builder) : null;
+  var gateLine = null, gateKind = null;
+  var gM = text.match(RE.gate);
+  if (gM) { gateKind = gM[0]; gateLine = findLine(lines, RE.gate); }
+  var laneFieldM = text.match(RE.laneField);
+  var laneNamed = !!(laneFieldM || RE.laneToken.test(text));
+  var laneLine = laneFieldM ? laneFieldM[0].trim() : (laneNamed ? findLine(lines, RE.laneToken) : null);
+  var unnamedGate = RE.vagueGate.test(text) && !gM;
+  var vagueLine = unnamedGate ? findLine(lines, RE.vagueGate) : null;
+  var saysRemember = RE.remember.test(text);
+  var rememberLine = saysRemember ? findLine(lines, RE.remember) : null;
+
+  var findings = [];
+  function add(rule, sev, msg, line) {
+    findings.push({ rule: rule, sev: sev, msg: msg, line: line || null });
+  }
+  var verdict = null, verdictClass = "off", firedRule = null;
+
+  if (score === null || !scoreInRange) {
+    verdict = "MALFORMED" + (score !== null && !scoreInRange ? " (score out of range)" : "") + " — no score band";
+    verdictClass = "off";
+    firedRule = "RULE c: missing score band";
+    add("RULE c", "note", "no N/25 score band found — card cannot be gated on the 14/25 threshold.", scoreLine);
+  }
+  // (a) VIOLATION [launched law]
+  if (saysBuild && !builderMarker && !gM) {
+    if (!verdict) {
+      verdict = "VIOLATION [launched law]";
+      verdictClass = "bad";
+      firedRule = "RULE a: BUILD claim with neither builder marker nor named gate";
+    }
+    add("RULE a", "bad", "card claims " + (buildLine ? "\"" + buildLine + "\"" : "BUILD") +
+      " but contains no launched-builder marker and no explicit operator gate (KEYS / spend / ONE STOP / operator GO).", buildLine);
+  }
+  // (b) over-launch note
+  if (saysRemember && builderMarker) {
+    if (!verdict) {
+      verdict = "NOTE [over-launch]";
+      verdictClass = "off";
+      firedRule = "RULE b: REMEMBER/CALIBRATE card carries a builder marker";
+    }
+    add("RULE b", "note", "card says REMEMBER/CALIBRATE but carries a launched-builder marker — informational over-launch.", builderLine);
+  }
+  if (score !== null && scoreInRange && score >= 14) {
+    if (!laneNamed) {
+      if (!verdict) { verdict = "NOT LAUNCH-ELIGIBLE — no lane named"; verdictClass = "bad"; firedRule = "launch-eligible law: score ≥14 must name a lane"; }
+      add("LANE", "bad", "score ≥14/25 and no lane named — not launch-eligible (eligible iff lane named AND no unnamed gate).", scoreLine);
+    } else {
+      add("LANE", "ok", "lane named.", laneLine);
+    }
+    if (unnamedGate) {
+      if (!verdict) { verdict = "NOT LAUNCH-ELIGIBLE — unnamed gate"; verdictClass = "bad"; firedRule = "launch-eligible law: unnamed gate blocks eligibility"; }
+      add("GATE", "bad", "gate-ish language present but no named operator gate (KEYS / spend / ONE STOP / operator GO) — unnamed gate.", vagueLine);
+    }
+  }
+  // lawful-launch / gated / below-threshold resolution
+  if (!verdict) {
+    if (score !== null && scoreInRange && score >= 14) {
+      if (saysBuild && gM) {
+        verdict = "GATED DEFERRAL (legal) — names gate: " + gateKind;
+        verdictClass = "off";
+        firedRule = "launch law: the gate defers, not the lane";
+        add("GATE", "ok", "BUILD claim covered by explicit operator gate — legal deferral.", gateLine);
+      } else if (saysBuild && builderMarker) {
+        verdict = "LAUNCH LAWFUL — builder marker present";
+        verdictClass = "ok";
+        firedRule = "RULE a satisfied: launched-builder marker found";
+        add("BUILDER", "ok", "launched-builder marker found.", builderLine);
+      } else {
+        verdict = "NO LAUNCH CLAIM — informational card";
+        verdictClass = "ok";
+        firedRule = "threshold pass, no BUILD claim to police";
+      }
+      add("ELIGIBLE", laneNamed && !unnamedGate ? "ok" : "bad",
+        "launch-eligible: " + (laneNamed && !unnamedGate ? "YES" : "NO") +
+        " (lane named: " + (laneNamed ? "yes" : "NO") + " · unnamed gate: " + (unnamedGate ? "YES" : "no") + ").", null);
+    } else {
+      verdict = "BELOW THRESHOLD — launch law not applicable (" + score + "/25 < 14)";
+      verdictClass = "ok";
+      firedRule = "threshold: launch law binds at ≥14/25";
+    }
+  } else if (score !== null && scoreInRange && score >= 14) {
+    add("ELIGIBLE", "note", "launch-eligible: " + (laneNamed && !unnamedGate ? "YES" : "NO") +
+      " (lane named: " + (laneNamed ? "yes" : "NO") + " · unnamed gate: " + (unnamedGate ? "YES" : "no") + ").", null);
+  }
+  return {
+    verdict: verdict, verdictClass: verdictClass, firedRule: firedRule,
+    score: score, saysBuild: saysBuild, builderMarker: builderMarker,
+    gateKind: gateKind, laneNamed: laneNamed, unnamedGate: unnamedGate,
+    saysRemember: saysRemember, findings: findings
+  };
+}
+/*__PASTE_FALSIFIER_LOGIC_END__*/
+
+// ── DOM glue ───────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+function runCheck() {
+  var text = document.getElementById("card").value;
+  var res = analyzeCard(text);
+  var v = document.getElementById("verdict");
+  v.className = res.verdictClass;
+  v.textContent = "VERDICT: " + res.verdict + "  ·  " + res.firedRule +
+    (res.score !== null ? "  ·  score " + res.score + "/25" : "  ·  score ?");
+  var el = document.getElementById("findings");
+  el.innerHTML = "";
+  res.findings.forEach(function (f) {
+    var div = document.createElement("div");
+    div.className = "finding";
+    var sev = f.sev === "bad" ? "sev-bad" : (f.sev === "note" ? "sev-note" : "sev-ok");
+    div.innerHTML = '<span class="rule">[' + esc(f.rule) + ']</span> <span class="' + sev + '">' + esc(f.msg) + "</span>" +
+      (f.line ? "<blockquote>› " + esc(f.line) + "</blockquote>" : "");
+    el.appendChild(div);
+  });
+  if (!res.findings.length) {
+    var d = document.createElement("div");
+    d.className = "finding";
+    d.innerHTML = '<span class="sev-ok">no rule fired — card is quiet.</span>';
+    el.appendChild(d);
+  }
+}
+document.getElementById("go").addEventListener("click", runCheck);
+document.getElementById("demo-ok").addEventListener("click", function () {
+  document.getElementById("card").value =
+"# INTAKE — chain hash falsifier\n" +
+"score: 17/25 (impact 4, novelty 3, tractability 4, gate-risk 3, proof 3)\n" +
+"verdict: BUILD WINDOWED\n" +
+"lane: zai-pro (fold) + zcode (build)\n" +
+"plan: mirror mag/verkle_knot.py hash formulas into a zero-fetch browser surface.\n" +
+"builder spawned (zcode seat, same turn) — room.jsonl row written at close.\n" +
+"verification: sha256 vectors vs node; page 200.";
+  runCheck();
+});
+document.getElementById("demo-bad").addEventListener("click", function () {
+  document.getElementById("card").value =
+"# INTAKE — mass balance falsifier\n" +
+"score: 16/25 (impact 4, novelty 3, tractability 3, gate-risk 3, proof 3)\n" +
+"verdict: BUILD NOW\n" +
+"lane: zai3\n" +
+"plan: parse room.jsonl flows, check sum(in) == sum(out) + stored.\n" +
+"note: postponed until the accounting schema settles.";
+  runCheck();
+});
+document.getElementById("demo-over").addEventListener("click", function () {
+  document.getElementById("card").value =
+"# INTAKE — cache posture\n" +
+"score: 9/25 (impact 2, novelty 2, tractability 2, gate-risk 2, proof 1)\n" +
+"verdict: REMEMBER\n" +
+"lane: glm-4.7-flash\n" +
+"calibrate the free-lane saturation curve against this week's quota logs.\n" +
+"builder spawned anyway to draft the chart — over-launch, logged honestly.";
+  runCheck();
+});
+document.getElementById("demo-mal").addEventListener("click", function () {
+  document.getElementById("card").value =
+"# INTAKE — mystery card\n" +
+"verdict: BUILD WINDOWED (probably)\n" +
+"no rubric scored, no lane, vibes strong.\n" +
+"gate: blocked on something, nobody wrote what.";
+  runCheck();
+});
+</script>
+</body>
+</html>

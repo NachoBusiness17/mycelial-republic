@@ -1,0 +1,21 @@
+{
+  "schema": "seat_contract.v1",
+  "job_id": "stale-docs-cleanup",
+  "goal": "Clean the VERIFIED stale cursor-lane references: docs/COORDINATION.md (lines ~19-28, ~81: cursor_bridge / 'Cursor/Grok/Mag' activity claims) and docs/BEHAVIORAL_ROUTER_INTERFACE.md (lines ~16, ~55: Cursor/Codex seat claims). Cursor LAPSED (verdict on record 08-27). Do NOT delete files or history — SACRED COWS law: add a short deprecation banner at top of each file ('cursor lane lapsed 2026-08-27 — see docs/ref/ZAI_API_EXPERT_REFERENCE.md for current lanes') and rewrite only the stale claims to name current seats (codex, grok x2, deepseek).",
+  "invariants": [
+    "grep-verified targets only: COORDINATION.md and BEHAVIORAL_ROUTER_INTERFACE.md; if you find other cursor-active claims in THESE two files fix them too; touch NO other docs",
+    "preserve all history/method content that is not cursor-specific",
+    "banner names the reinterpretation (current seat roster), never calls the old work garbage"
+  ],
+  "forbidden_moves": ["deleting either file", "editing any other doc", "touching code or covenant"],
+  "acceptance_commands": [
+    "grep -n -i cursor docs/COORDINATION.md docs/BEHAVIORAL_ROUTER_INTERFACE.md | grep -v -i 'lapsed\\|deprecated\\|banner' | wc -l -> expect 0",
+    "head -5 docs/COORDINATION.md and docs/BEHAVIORAL_ROUTER_INTERFACE.md show the banner"
+  ],
+  "checkpoint_schema": {"required": ["completed","artifacts","failures","budget_used_pct","next_action_one_line"]},
+  "handoff_schema": {"required": ["done","untested","blocked","resume_command"]},
+  "resume_command": "grok#2: read jobs/stale-docs-cleanup/seat_contract.json + latest trail_core, do next_action, run acceptance, write trail_core_N",
+  "driver": "desktop:grok2",
+  "opened": "2026-08-29",
+  "opened_by": "zcode dispatch (operator: burn both grok seats + gpt via routing)"
+}

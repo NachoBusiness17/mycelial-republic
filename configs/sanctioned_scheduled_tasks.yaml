@@ -1,0 +1,69 @@
+# SANCTIONED SCHEDULED TASK SET (B2-396, 2026-09-26)
+#
+# Spec-first, per the B2-396 brief: scripts/lattice_check.py's mag-tasks-disabled
+# check flagged every live operator-registered Mag* task as a violator because its
+# whitelist held only mag-docker-watchdog, training readers to ignore the whole
+# lattice card. LAW-11 (corrections) bans a SECOND SUPERVISOR (seeker/blade_buyer
+# class); it never banned scheduled estate jobs. The operator-sanctioned set is
+# every task a register_*.ps1 script or a landed receipt installed, named here
+# with its source. scripts/lattice_check.py reads THIS FILE as the whitelist;
+# adding a task = add its register script + a row here. A Mag* task on the host
+# that is neither Disabled nor in this set is a real violator (retired
+# supervisor-era respawn class) and the check must scream again.
+#
+# Election rule for future lanes: a new Mag* task lands here in the same breath
+# as its schtasks /create (receipt pointer required), never after the first
+# false-positive complaint.
+tasks:
+  - name: mag-docker-watchdog
+    state_expected: ready
+    source: "AGENTS.md law (host-side watcher, corrections law 11 carve-out)"
+    bounded: null
+  - name: MagImproveDaily
+    state_expected: ready
+    source: "AGENTS.md daily task line; scripts/register_improve_task.ps1 (08:00)"
+    bounded: null
+  - name: MagCensusPatrolDaily
+    state_expected: ready
+    source: "B2-215/B2-246; scripts/register_census_patrol_task.ps1 (08:30, AGENTS.md census bullet)"
+    bounded: null
+  - name: MagEndpointNewsDaily
+    state_expected: ready
+    source: "scripts/register_endpoint_news_task.ps1 (B2-03/B2-64 lane family)"
+    bounded: null
+  - name: MagVisionNightly
+    state_expected: ready
+    source: "scripts/register_vision_nightly.ps1"
+    bounded: null
+  - name: MagCorpusRescanDaily
+    state_expected: ready
+    source: "scripts/register_corpus_rescan_task.ps1 (C1 rescan arm, salon C-series)"
+    bounded: null
+  - name: MagFtsIndexDaily
+    state_expected: ready
+    source: "B2-465; AGENTS.md corpus FTS bullet; scripts/register_fts_index_task.ps1 (09:00)"
+    bounded: null
+  - name: MagQCaptionVerifyDaily
+    state_expected: ready
+    source: "B2-271 (watch/inbox/burn_wave_20260926/B2_271_qcaption_verify_beat_20260926.md, 07:30)"
+    bounded: null
+  - name: MagSecretScanWeekly
+    state_expected: ready
+    source: "B2-351 (watch/inbox/burn_wave_20260926/B2_351_secret_scan_schedule_20260926.md, Mon 06:40)"
+    bounded: null
+  - name: MagMimoWatchHourly
+    state_expected: ready
+    source: "B2-261 (watch/inbox/burn_wave_20260926/B2_261_mimo_watch_arm_20260926.md, hourly)"
+    bounded: "dies at 2026-09-28T21:25Z via MagMimoWatchClose; remove this row at close"
+  - name: MagMimoWatchClose
+    state_expected: ready
+    source: "B2-261 paired delete-at-close task; removes itself and MagMimoWatchHourly"
+    bounded: "self-deleting at 2026-09-28T21:25Z; remove this row at close"
+  - name: MagLabKit8765
+    state_expected: disabled
+    source: "retired lab keeper (Disabled on host); kept listed so a re-arm is a conscious edit"
+    bounded: "disabled"
+  - name: MagPrivateOffice8765
+    state_expected: disabled
+    source: "retired office keeper (Disabled on host); kept listed so a re-arm is a conscious edit"
+    bounded: "disabled"

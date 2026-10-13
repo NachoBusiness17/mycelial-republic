@@ -1,0 +1,53 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Mag: route goal",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}\\main.py",
+      "console": "integratedTerminal",
+      "args": [
+        "route",
+        "--dry",
+        "${input:magGoal}"
+      ]
+    },
+    {
+      "name": "Mag: routing smoke",
+      "type": "python",
+      "request": "launch",
+      "module": "pytest",
+      "console": "integratedTerminal",
+      "args": [
+        "tests/test_routing_smoke.py",
+        "-q"
+      ]
+    },
+    {
+      "name": "Mag: routing smoke script",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}\\scripts\\routing_smoke.py",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "MAG Map (extension host)",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}\\vscode-mag-map"
+      ],
+      "outFiles": [
+        "${workspaceFolder}\\vscode-mag-map\\**\\*.js"
+      ]
+    }
+  ],
+  "inputs": [
+    {
+      "id": "magGoal",
+      "type": "promptString",
+      "description": "Goal or blocker for Mag route"
+    }
+  ]
+}

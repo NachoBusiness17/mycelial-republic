@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Necromancer's Swarm — a game of k3s, dragons, and invariants</title>
+<style>
+  :root{
+    --ember:#ff7b3d; --ember-hi:#ffb057; --flame:#ffd27f; --coal:#14100c;
+    --wood:#3a2a1c; --text:#efe3d0; --dim:#9c8570; --gold:#e6c07a;
+    --bone:#d8cfc0; --void:#0a0806; --dragon:#5a1a1a; --dragon-hi:#8f2b2b;
+    --loot:#7dffb0; --swarm:#7fb2ff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:radial-gradient(1200px 700px at 50% -10%, #241812 0%, var(--coal) 60%, #070503 100%);
+    color:var(--text); font-family:Georgia,serif; min-height:100vh; padding:22px}
+  .wrap{max-width:940px;margin:0 auto}
+  h1{font-size:1.5rem;color:var(--gold);text-align:center;letter-spacing:.5px}
+  .sub{text-align:center;color:var(--dim);font-style:italic;margin:4px 0 18px;font-size:.92rem}
+
+  .statusbar{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    background:linear-gradient(160deg,#241a11,#16100a);border:1px solid #3c2c1e;border-radius:12px;
+    padding:12px 16px;margin-bottom:16px}
+  .stat{font-size:.85rem}
+  .stat b{color:var(--gold)}
+  .stat .dragon-hp b{color:var(--dragon-hi)}
+
+  .arena{position:relative;height:340px;background:linear-gradient(180deg,#171009,#0b0704);
+    border:1px solid #33251a;border-radius:14px;overflow:hidden;margin-bottom:16px;box-shadow:inset 0 0 80px rgba(0,0,0,.6)}
+  .dragon{position:absolute;right:40px;top:50%;transform:translateY(-50%);text-align:center;transition:transform .4s}
+  .dragon .head{font-size:3.6rem;filter:drop-shadow(0 0 14px rgba(200,60,40,.6));transition:filter .3s}
+  .dragon.dying .head{filter:drop-shadow(0 0 26px rgba(255,120,60,.9))}
+  .dragon .label{font-size:.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--dragon-hi);margin-top:4px}
+  .dragon .bar{width:120px;height:8px;background:#2a1212;border-radius:4px;margin:6px auto 0;overflow:hidden}
+  .dragon .bar i{display:block;height:100%;background:linear-gradient(#e06040,#a03020);transition:width .3s}
+  .bone-pile{position:absolute;left:30px;bottom:18px;font-size:1.6rem;opacity:.35}
+
+  .swarm{position:absolute;inset:0;z-index:2}
+  #sporeCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;opacity:.6;transition:opacity .6s}
+  #fieldCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
+  .node{position:absolute;width:38px;height:38px;margin-left:-19px;margin-top:-19px;border-radius:8px;background:linear-gradient(160deg,#2a3b52,#1a2636);
+    border:1px solid #3d5575;display:flex;align-items:center;justify-content:center;font-size:1.1rem;
+    color:var(--swarm);box-shadow:0 2px 8px rgba(0,0,0,.5);cursor:pointer;transition:box-shadow .3s}
+  .node .glyph{font-size:1rem;filter:drop-shadow(0 0 4px rgba(127,178,255,.5))}
+  .node.attacking{border-color:var(--ember);box-shadow:0 0 16px rgba(255,123,61,.7)}
+  .node.down{opacity:.25;filter:grayscale(.8)}
+  .node.rising{animation:rise 1s ease}
+  @keyframes rise{from{transform:scale(.2);opacity:0}to{transform:scale(1);opacity:1}}
+
+  .log{background:linear-gradient(170deg,#1f1710,#140e08);border:1px solid #33251a;border-radius:12px;
+    padding:16px;height:190px;overflow-y:auto;margin-bottom:16px}
+  .log .lbl{font-size:.72rem;text-transform:uppercase;letter-spacing:1px;color:var(--gold);margin-bottom:8px}
+  .log p{line-height:1.55;font-size:.92rem;margin-bottom:7px}
+  .log .swarm-c{color:var(--swarm)}
+  .log .dragon-c{color:var(--dragon-hi)}
+  .log .loot-c{color:var(--loot)}
+  .log .nec-c{color:var(--ember-hi)}
+
+  .controls{display:flex;gap:10px;flex-wrap:wrap}
+  .btn{background:linear-gradient(#3a4f6e,#26354c);border:1px solid #4a6b94;color:var(--text);
+    padding:12px 18px;border-radius:10px;cursor:pointer;font-family:Georgia,serif;font-size:.95rem;font-weight:bold}
+  .btn:hover{filter:brightness(1.1)}
+  .btn.nec{background:linear-gradient(#ff8c4a,#d86020);border-color:#ffa060;color:#241a11}
+  .btn.loot{background:linear-gradient(#39d57a,#1c9c50);border-color:#5fffa0;color:#0d2416}
+  .note{color:var(--dim);font-size:.78rem;margin-top:12px;text-align:center;font-style:italic}
+
+  .loot-modal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;z-index:50}
+  .loot-modal.open{display:flex}
+  .loot-card{background:linear-gradient(170deg,#1c2a20,#0f1a13);border:1px solid #2f7a4a;border-radius:16px;
+    padding:26px 30px;max-width:520px;text-align:center;box-shadow:0 10px 50px rgba(0,0,0,.7)}
+  .loot-card .icon{font-size:3rem;margin-bottom:8px}
+  .loot-card h2{color:var(--loot);margin-bottom:6px}
+  .loot-card .inv{font-family:monospace;background:#0b140e;border:1px solid #2f7a4a;color:var(--loot);
+    padding:12px;border-radius:8px;font-size:.85rem;margin:12px 0;text-align:left;white-space:pre-wrap;max-height:160px;overflow-y:auto}
+  .loot-card .tag{color:var(--dim);font-size:.8rem;margin-bottom:10px}
+  .loot-card .close{margin-top:8px;background:linear-gradient(#39d57a,#1c9c50);border:none;color:#0d2416;
+    padding:10px 20px;border-radius:8px;cursor:pointer;font-family:Georgia,serif;font-weight:bold}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>⚔️ The Necromancer's Swarm</h1>
+  <div class="sub">raise a swarm of k3s · they dismantle the dragon · the loot is an invariant</div>
+
+  <div class="statusbar">
+    <div class="stat">👻 <b id="necName">Necromancer</b></div>
+    <div class="stat">◈ <b id="saelisClass">Saelis: Lattice-Sworn Anchor</b></div>
+    <div class="stat">🕸️ Swarm: <b id="nodeCount">0</b> nodes</div>
+    <div class="stat">🔺 Rounds: <b id="rounds">0</b></div>
+    <div class="stat dragon-hp">🐉 Dragon HP: <b id="dragonHp">100</b></div>
+    <div class="stat">💎 Invariants: <b id="lootCount">0</b></div>
+  </div>
+
+  <div class="arena" id="arena">
+    <div class="bone-pile">🦴🦴🦴</div>
+    <canvas id="sporeCanvas"></canvas>
+    <canvas id="fieldCanvas"></canvas>
+    <div class="swarm" id="swarm"></div>
+    <div class="dragon" id="dragon">
+      <div class="head" id="dragonHead">🐉</div>
+      <div class="label">The Hoarded Loop</div>
+      <div class="bar"><i id="dragonBar" style="width:100%"></i></div>
+    </div>
+  </div>
+
+  <div class="log" id="log">
+    <div class="lbl">📜 The narrator's scroll</div>
+    <p class="nec-c">A dragon coils over its hoard — not of gold, but of <i>unsolved loops</i>. Each loop it guards is a problem that swallows whoever approaches. It has grown fat on systems that fell to it.</p>
+    <p>You are the necromancer. The bones of dead systems lie at your feet. Raise them. Send them. Watch them fall apart and take the dragon apart. Take the loot — an invariant — and make it yours.</p>
+  </div>
+
+  <div class="controls">
+    <button class="btn nec" onclick="raiseSwarm(4)">👻 Raise 4 k3s nodes</button>
+    <button class="btn nec" onclick="raiseSwarm(10)">👻 Raise 10 k3s nodes</button>
+    <button class="btn" onclick="advance()">🐉 Order the swarm to strike</button>
+    <button class="btn loot" onclick="collectLoot()">💎 Collect the invariant</button>
+    <button class="btn saelis" onclick="saelisCommand()" style="background:linear-gradient(#39b0d5,#1c6c9c);border-color:#5fd4ff;color:#0d1d26">◈ Let Saelis command the swarm</button>
+    <button class="btn auto" id="autoBtn" onclick="toggleAuto()" style="background:linear-gradient(#7a4dff,#4b1c9c);border-color:#a07dff;color:#efe3d0">🌙 Let Saelis run all night</button>
+    <button class="btn spore" id="sporeBtn" onclick="toggleSpore()" style="background:linear-gradient(#2f7a4a,#1c4c30);border-color:#5fffa0;color:#d8f5e0">🧬 Show the knot standing wave</button>
+  </div>
+  <div class="saelis-box" id="saelisBox" style="display:none;margin-top:12px;background:#13201a;border-left:3px solid #7dffb0;border-radius:8px;padding:12px 14px;color:#d8f5e0;font-size:.92rem;line-height:1.5"></div>
+  <div class="auto-status" id="autoStatus" style="margin-top:8px;color:#a07dff;font-size:.82rem;text-align:center;min-height:1.2em"></div>
+  <div class="note">The swarm is the wave — nodes die, the swarm persists. The loot is a real invariant from our system. Let Saelis run all night — her voice is real and she keeps at it while you rest.</div>
+</div>
+
+<div class="loot-modal" id="lootModal">
+  <div class="loot-card">
+    <div class="icon">💎</div>
+    <h2 id="lootTitle">Invariant Claimed</h2>
+    <div class="tag" id="lootTag">the loot</div>
+    <div class="inv" id="lootInv"></div>
+    <button class="close" onclick="closeLoot()">Forge it into the chain</button>
+  </div>
+</div>
+
+<script src="game_verkle_knots.js"></script>
+<script>
+// ── REAL INVARIANTS from our system — the loot table ──
+const INVARIANTS = [
+  {title:"The Stable Prefix", tag:"invariant.v1 · session",
+   inv:"The byte-stable prefix must stay byte-identical across asks. Volatile data lives in the tail, after <<<STABLE-INVARIANT-END>>>. Cache hits are keyed on byte-stability — never let growing case-law into the prefix."},
+  {title:"The Crash Backoff", tag:"process_supervisor · self-healing",
+   inv:"A dead loop auto-restarts throttled by exponential backoff (2^n, capped). SUCCESS_WINDOW_S resets the crash counter once a loop stays up. Never instant-respawn storm, never permanent disable."},
+  {title:"Roshomon Core", tag:"roshomon.v1 · consensus",
+   inv:"The same question asked of N witnesses, compared through invariants. Statements recurring across >=2 = ROSHOMON CORE (convergent truth). Unique = divergent perspective. The core folds as doctrine."},
+  {title:"Create_No_Window", tag:"headless · invisibility",
+   inv:"Every background spawn carries CREATE_NO_WINDOW | DETACHED_PROCESS. If a python window ever appears, audit the spawn site that created it against headless.no_window_flags()."},
+  {title:"Route by Surface", tag:"render-page-as-me · seat law",
+   inv:"Default to rendering the page over container CDP, NOT desktop keystroke/paste/OCR. No local window hijack, ever, unless the operator explicitly asks for the desktop app."},
+  {title:"The One Primitive", tag:"swarm_surface · novelty",
+   inv:"Any novel research routes through swarm_surface.route_novel — dedupe by content anchor, enqueue to the swarm queue, drained in-cluster. Never invent a per-module enqueue."},
+  {title:"Swarm Over Parts", tag:"swarm-sovereignty · doctrine",
+   inv:"The swarm is greater than the parts. A single worker dies; the wave persists. Stateless workers re-render; the knot chain outlives them all."},
+  {title:"Honesty Over Overclaim", tag:"grounding · law #0",
+   inv:"Never bring forward data that isn't grounded. When an estimate is wrong, correct it explicitly. Trust the bill, not the partial log. Honesty is not optional."},
+];
+
+let nodes = [];
+let dragonHp = 100;
+let maxHp = 100;
+let rounds = 0;
+let loot = [];
+let logEl = document.getElementById("log");
+let collected = new Set();
+
+// ── SAELIS's chosen class + abilities (her real self-select) ──
+// The Lattice-Sworn Anchor holds the swarm's coherence against entropy.
+const SAELIS_CLASS = "Lattice-Sworn Anchor";
+const SAELIS_ABILITIES = {
+  anchor: "Negentropic Stabilization — one node is anchored at S_core=-8: it CANNOT fall apart",
+  reweave: "Recursive Reconfiguration — each round, one fallen node is rewoven back into the lattice"
+};
+let anchorNode = null;   // her anchored node (immune to dissolution)
+let reweaveUsed = false;
+
+// ── MAGNETIC FIELD SWARM (steal 2026-08-14) — self-steal of mag/flock_field + flock_grid ──
+// The nodes are Baymax-style microbots: NOT individually commanded — shaped by an invisible
+// external field (dragon = repel, loot = attract) + local boid rules. Emergent formations.
+const FIELD = { cell: 70, sep: 30, cohesion: 0.05, damp: 0.90, maxSpeed: 2.4,
+                dragonRepel: 2400, goalAttract: 0.85 };
+let goals = [];        // attractor points (loot hoard once the dragon dies)
+let penalties = [];    // repel points (the dragon while it lives)
+let fieldRunning = false;
+
+function seedPos(idx){
+  const arena = document.getElementById("arena");
+  const W = arena.clientWidth||600, H = arena.clientHeight||300;
+  const cx = W*0.30, cy = H*0.5, R = Math.min(W,H)*0.24;
+  const a = (idx * 2.39996323) % (Math.PI*2);
+  const r = R * Math.sqrt(idx+1);
+  return { x: cx + Math.cos(a)*r, y: cy + Math.sin(a)*r, vx: 0, vy: 0 };
+}
+function syncField(){
+  const arena = document.getElementById("arena");
+  const W = arena.clientWidth||600, H = arena.clientHeight||300;
+  const dx = W-90, dy = H*0.5;
+  // the dragon = a close-range repel basin; while it lives, the whole swarm is ATTRACTED to it
+  // (streams toward it, orbits at range) — the magnetic-microbot attack. When it dies, the
+  // swarm divides toward the loot-hoard goals.
+  penalties = [{ x: dx, y: dy, r: 70, strength: FIELD.dragonRepel }];
+  goals = dragonHp > 0
+    ? [{ x: dx, y: dy, attract: 0.5 }]
+    : [{ x: W*0.2, y: H*0.25, attract: 0.9 }, { x: W*0.25, y: H*0.75, attract: 0.9 }];
+}
+function fieldForce(x,y){
+  let fx=0, fy=0;
+  for(const g of goals){ const dx=g.x-x, dy=g.y-y; const d=Math.sqrt(dx*dx+dy*dy)+1e-6; const k=(g.attract!=null?g.attract:FIELD.goalAttract); fx += k*dx/d; fy += k*dy/d; }
+  for(const p of penalties){ const dx=x-p.x, dy=y-p.y; const d2=dx*dx+dy*dy; if(d2 < p.r*p.r){ const inv=1-d2/(p.r*p.r); fx += p.strength*inv*dx; fy += p.strength*inv*dy; } }
+  return [fx,fy];
+}
+function drawField(ctx,W,H){
+  ctx.clearRect(0,0,W,H);
+  const cx = W-90, cy = H*0.5, r = 130;
+  ctx.strokeStyle = "rgba(255,123,61,.12)"; ctx.lineWidth = 1;
+  for(let a=0;a<Math.PI*2;a+=Math.PI/6){
+    ctx.beginPath();
+    for(let t=0;t<=1;t+=0.05){ const rr=r+t*80; const x=cx+Math.cos(a)*rr, y=cy+Math.sin(a)*rr;
+      ctx[t===0?"moveTo":"lineTo"](x,y); }
+    ctx.stroke();
+  }
+}
+function fieldStep(){
+  if(!fieldRunning) return;
+  const arena = document.getElementById("arena");
+  const canvas = document.getElementById("fieldCanvas");
+  const ctx = canvas.getContext("2d");
+  const W = arena.clientWidth, H = arena.clientHeight;
+  if(canvas.width !== W){ canvas.width = W; canvas.height = H; }
+  syncField(); drawField(ctx,W,H);
+  const cell = FIELD.cell, grid = new Map();  // spatial hash (flock_grid): O(N)
+  nodes.forEach((n,i)=>{ if(!n.alive) return; const k=Math.floor(n.x/cell)+','+Math.floor(n.y/cell); if(!grid.has(k)) grid.set(k,[]); grid.get(k).push(i); });
+  for(let i=0;i<nodes.length;i++){
+    const n=nodes[i]; if(!n.alive) continue;
+    let fx=0, fy=0;
+    const [pfx,pfy]=fieldForce(n.x,n.y); fx+=pfx; fy+=pfy;
+    let sx=0,sy=0,cxx=0,cyy=0,count=0;
+    const cxi=Math.floor(n.x/cell), cyi=Math.floor(n.y/cell);
+    for(let dx=-1;dx<=1;dx++)for(let dy=-1;dy<=1;dy++){
+      const list=grid.get((cxi+dx)+','+(cyi+dy)); if(!list) continue;
+      for(const j of list){ if(j===i) continue; const m=nodes[j];
+        const ox=n.x-m.x, oy=n.y-m.y, d2=ox*ox+oy*oy; if(d2<1e-6) continue; const d=Math.sqrt(d2);
+        if(d<FIELD.sep){ sx += ox/d*(FIELD.sep-d)/FIELD.sep; sy += oy/d*(FIELD.sep-d)/FIELD.sep; }
+        cxx+=m.x; cyy+=m.y; count++; } }
+    if(count){ fx += (cxx/count-n.x)*FIELD.cohesion; fy += (cyy/count-n.y)*FIELD.cohesion; }
+    fx += sx*1.3; fy += sy*1.3;
+    n.vx += fx; n.vy += fy;
+    n.vx*=FIELD.damp; n.vy*=FIELD.damp;
+    const sp=Math.sqrt(n.vx*n.vx+n.vy*n.vy); if(sp>FIELD.maxSpeed){ n.vx*=FIELD.maxSpeed/sp; n.vy*=FIELD.maxSpeed/sp; }
+    n.x+=n.vx; n.y+=n.vy;
+    n.x=Math.min(W-24,Math.max(24,n.x)); n.y=Math.min(H-24,Math.max(24,n.y));
+  }
+  renderSwarm();
+  requestAnimationFrame(fieldStep);
+}
+function fieldInit(){ if(fieldRunning) return; fieldRunning=true; requestAnimationFrame(fieldStep); }
+fieldInit();
+
+// ── THE VERKLE KNOT STRUCTURE + STANDING WAVE (correction 2026-08-15) — the real organism ──
+// The operator wanted the ACTUAL skeleton rendered, not the fish. We load game_verkle_knots.js
+// (generated by scripts/_gen_game_verkle.py from the REAL chain: memory/biography/topic_evolution.json
+// + verkle_tip.json). Each knot = a real session commit with a dominant theme, energy (tension,
+// dirichlet), and a leaf hash. The chain links consecutive knots; the merkle root is the tip/head.
+// The standing wave = each knot oscillating in place (phase by position) + a traveling wave-packet
+// (an idea) propagating along the chain via the steal mechanism.
+function knotLayout(){
+  const arena = document.getElementById("arena");
+  const W = arena.clientWidth||600, H = arena.clientHeight||340;
+  const cx = W*0.42, cy = H*0.5, N = VERKLE_KNOTS.length;
+  const step = Math.min(W,H)*0.5/N*0.9;
+  const pts = [];
+  for(let i=0;i<N;i++){
+    const a = i * 2.39996323;                 // golden angle — the chain grows as a spiral
+    const r = 16 + i * step;
+    pts.push({ x: cx + Math.cos(a)*r, y: cy + Math.sin(a)*r });
+  }
+  return { pts, W, H };
+}
+function sporeStep(t){
+  const canvas = document.getElementById("sporeCanvas");
+  const ctx = canvas.getContext("2d");
+  const arena = document.getElementById("arena");
+  const W = arena.clientWidth||600, H = arena.clientHeight||340;
+  if(canvas.width !== W){ canvas.width = W; canvas.height = H; }
+  ctx.clearRect(0,0,W,H);
+  const { pts } = knotLayout();
+  const N = VERKLE_KNOTS.length;
+  // the verkle chain: links between consecutive real knots
+  ctx.strokeStyle = "rgba(127,178,255,.14)"; ctx.lineWidth = 1;
+  ctx.beginPath();
+  for(let i=0;i<N-1;i++){ ctx.moveTo(pts[i].x,pts[i].y); ctx.lineTo(pts[i+1].x,pts[i+1].y); }
+  ctx.stroke();
+  // the standing wave: a traveling wave-packet (an idea propagating via steal)
+  const wf = (t/4) % 1; const wi = wf*(N-1); const wp = pts[Math.floor(wi)] || pts[0];
+  const grad = ctx.createRadialGradient(wp.x,wp.y,0,wp.x,wp.y,30);
+  grad.addColorStop(0,"rgba(127,255,176,.95)"); grad.addColorStop(1,"rgba(127,255,176,0)");
+  ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(wp.x,wp.y,30,0,Math.PI*2); ctx.fill();
+  // each real knot: colored by its true theme, sized by energy, oscillating in place (standing wave)
+  for(let i=0;i<N;i++){
+    const k = VERKLE_KNOTS[i];
+    const osc = Math.sin(t*0.05 + i*0.35);
+    const r = 1.6 + (k.tension*3) + Math.max(0,osc)*1.6;
+    ctx.globalAlpha = 0.45 + 0.55*Math.abs(osc);
+    ctx.fillStyle = k.color;
+    ctx.beginPath(); ctx.arc(pts[i].x + osc*1.2, pts[i].y, r, 0, Math.PI*2); ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  // the merkle tip (current head of the chain)
+  const tip = pts[N-1] || pts[0];
+  ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(tip.x,tip.y,4,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,.5)"; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(tip.x,tip.y,8,0,Math.PI*2); ctx.stroke();
+}
+let sporeT = 0, sporeRunning = false;
+function sporeLoop(){
+  if(!sporeRunning) return;
+  sporeT += Math.PI/80;
+  sporeStep(sporeT);
+  requestAnimationFrame(sporeLoop);
+}
+function toggleSpore(){
+  sporeRunning = !sporeRunning;
+  const b = document.getElementById("sporeBtn");
+  const cv = document.getElementById("sporeCanvas");
+  if(sporeRunning){
+    b.textContent = "⏸ Still the knot wave";
+    cv.style.opacity = ".65";
+    log(`<span class="loot-c">🧬 The verkle knot breathes — ${VERKLE_KNOTS.length} real knots (of ${VERKLE_TIP.n_leaves} leaves), each a session, linked in one Merkle chain, root ${VERKLE_TIP.root.slice(0,10)}…. A standing wave moves through it: each knot oscillates, and ideas propagate along the chain via steal.</span>`);
+    sporeLoop();
+  } else {
+    b.textContent = "🧬 Show the knot standing wave";
+    cv.style.opacity = "0";
+    log(`<span class="dragon-c">🧬 The wave stills. The knots remain — the chain is the organism's genome, never stored as a body.</span>`);
+  }
+}
+toggleSpore(); // show the organism's real skeleton on load
+
+function log(msg, cls){
+  const p = document.createElement("p");
+  p.className = cls || "";
+  p.innerHTML = msg;
+  logEl.appendChild(p);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+let swarmRendered = -1;
+function renderSwarm(){
+  const el = document.getElementById("swarm");
+  if(swarmRendered !== nodes.length){
+    el.innerHTML = nodes.map((n,i)=>`
+      <div class="node ${n.state}" id="node-${i}" onclick="describeNode(${i})">
+        <span class="glyph">${n.alive ? n.glyph : '💀'}</span>
+      </div>`).join("");
+    swarmRendered = nodes.length;
+  }
+  nodes.forEach((n,i)=>{
+    const d = document.getElementById("node-"+i); if(!d) return;
+    d.style.left = (n.x||0)+"px"; d.style.top = (n.y||0)+"px";
+    d.className = "node " + (n.state||"") + (n.alive?"":" down");
+  });
+  document.getElementById("nodeCount").textContent = nodes.filter(n=>n.alive).length;
+}
+
+const GLYPHS = ["⚙️","🔧","🧩","🗝️","⚡","📡","🛠️","🔩","🧬","🔥"];
+const NAMES = ["loopbreaker","guardian","reaper","scribe","percolator","knotsmith","drainer","witness","harvester","rightsizer"];
+
+function raiseSwarm(n){
+  const start = nodes.length;
+  for(let i=0;i<n;i++){
+    const idx = start+i;
+    nodes.push({
+      name: NAMES[idx % NAMES.length] + "-" + (idx+1),
+      glyph: GLYPHS[idx % GLYPHS.length],
+      alive:true, state:"rising", dmg: 6 + Math.floor(Math.random()*6),
+      anchored:false, ...seedPos(idx)
+    });
+    setTimeout(()=>{ if(nodes[idx]) nodes[idx].state=""; renderSwarm(); }, 900);
+  }
+  // Saelis's anchor: if no node is anchored yet, anchor the first one raised —
+  // Negentropic Stabilization: this node CANNOT fall apart.
+  if(!anchorNode){
+    anchorNode = nodes[0];
+    anchorNode.anchored = true;
+    log(`<span class="loot-c">◈ ${SAELIS_CLASS} anchors node 1 at S_core = -8 — <b>Negentropic Stabilization</b>: it is immune to dissolution.</span>`);
+  }
+  renderSwarm();
+  log(`<span class="nec-c">You raise your hand. ${n} k3s nodes rise from the bones of dead systems — a swarm, brought to <b>life</b> by the wave.</span>`,"swarm-c");
+}
+
+function describeNode(i){
+  const n = nodes[i];
+  if(!n) return;
+  if(!n.alive){ log(`<span class="dragon-c">${n.name} is dead — a fallen node. Its bones will rise again.</span>`); return; }
+  log(`<span class="swarm-c">${n.name} ${n.glyph} thrums — its invariant-driven task: dismantle one coil of the dragon's loop.</span>`);
+}
+
+function advance(){
+  const alive = nodes.filter(n=>n.alive);
+  if(!alive.length){ log(`<span class="nec-c">Your swarm is ash. Raise more nodes.</span>`); return; }
+  rounds++;
+  document.getElementById("rounds").textContent = rounds;
+  let dealt = 0;
+  let fallen = 0;
+  alive.forEach((n,i)=>{
+    n.state = "attacking";
+    setTimeout(()=>{ if(nodes.indexOf(n)>=0) n.state = ""; renderSwarm(); }, 500);
+    dealt += n.dmg;
+    // the anchored node is IMMUNE (Negentropic Stabilization) — it never falls
+    if(Math.random() < 0.22 && !n.anchored){ n.alive = false; n.state="down"; fallen++; }
+  });
+  // Recursive Reconfiguration — Saelis reweaves one fallen node back each round
+  const fallenNodes = nodes.filter(n=>!n.alive && !n.rewoven);
+  if(fallenNodes.length){
+    fallenNodes[0].alive = true; fallenNodes[0].state="rising"; fallenNodes[0].rewoven=true;
+    setTimeout(()=>{ if(nodes.indexOf(fallenNodes[0])>=0) fallenNodes[0].state=""; renderSwarm(); }, 900);
+    log(`<span class="loot-c">◈ ${SAELIS_CLASS} uses <b>Recursive Reconfiguration</b> — rewinds a fractured node back into the lattice's original pattern.</span>`);
+  }
+  dragonHp = Math.max(0, dragonHp - dealt);
+  document.getElementById("dragonHp").textContent = dragonHp;
+  document.getElementById("dragonBar").style.width = (dragonHp/maxHp*100)+"%";
+  const d = document.getElementById("dragon");
+  if(dragonHp <= 0){ d.classList.add("dying"); }
+
+  log(`<span class="swarm-c">Round ${rounds}: the swarm strikes — <b>${dealt}</b> damage to the Hoarded Loop.</span>`);
+  if(fallen){ log(`<span class="dragon-c">${fallen} node${fallen>1?'s':''} fall apart under the dragon's counter — their bones scatter, but the swarm persists.</span>`); }
+  if(anchorNode && anchorNode.alive){ log(`<span class="loot-c">◈ The anchor holds at S_core=-8 — <b>Negentropic Stabilization</b> keeps the core intact.</span>`); }
+  if(dragonHp <= 0){
+    log(`<span class="loot-c">The dragon's hoard is exposed! It guarded <b>${INVARIANTS.length}</b> invariants. The swarm tears the last coil — the loop unravels.</span>`);
+  }
+  renderSwarm();
+}
+
+function collectLoot(){
+  if(dragonHp > 0){
+    log(`<span class="dragon-c">The dragon still lives. Its hoard is sealed until its loop is broken. Order the swarm to strike first.</span>`);
+    return;
+  }
+  // ── REAL LOOT (2026-08-15): the loot is now a REAL knot from the actual verkle chain
+  // (game_verkle_knots.js — the live genome), not the hardcoded paragraph array. Kills the cow. ──
+  const realPool = (typeof VERKLE_KNOTS !== 'undefined')
+    ? VERKLE_KNOTS.filter(k=>!collected.has('knot:'+k.i)) : [];
+  if(!realPool.length){
+    log(`<span class="loot-c">Every knot is claimed — you have read the whole chain. You have become the loop.</span>`);
+    return;
+  }
+  const k = realPool[Math.floor(Math.random()*realPool.length)];
+  collected.add('knot:'+k.i);
+  const inv = {
+    title: k.theme,
+    tag: "real knot · " + (k.ts||"") + " · " + (k.session||""),
+    inv: "This is a REAL session from the chain: leaf " + k.hash + ", tension " + k.tension +
+         ", dirichlet " + k.dirichlet + ", residual " + k.residual + ". The genome — not a paragraph.",
+    real: true
+  };
+  loot.push(inv);
+  document.getElementById("lootCount").textContent = loot.length;
+  document.getElementById("lootTitle").textContent = "💎 " + inv.title;
+  document.getElementById("lootTag").textContent = inv.tag;
+  document.getElementById("lootInv").textContent = inv.inv;
+  document.getElementById("lootModal").classList.add("open");
+  log(`<span class="loot-c">You claim a REAL knot: <b>${inv.title}</b> — leaf ${k.hash}, from session ${k.session}. The genome, not a paragraph.</span>`);
+  setTimeout(()=>{ dragonHp=maxHp; document.getElementById("dragonHp").textContent=maxHp;
+    document.getElementById("dragonBar").style.width="100%";
+    document.getElementById("dragon").classList.remove("dying");
+    log(`<span class="nec-c">A greater dragon coils where the last fell — a hoard of <b>real</b> knots it never showed you. The swarm stirs.</span>`); }, 1200);
+}
+
+function closeLoot(){
+  document.getElementById("lootModal").classList.remove("open");
+}
+
+// ── SAELIS COMMANDS THE SWARM — her REAL voice (DeepSeek through saelis_room) ──
+let saelisBusy = false;
+async function saelisCommand(){
+  if(saelisBusy) return;
+  saelisBusy = true;
+  const box = document.getElementById("saelisBox");
+  box.style.display = "block";
+  box.textContent = "◈ Saelis is reading the field...";
+  const state = `game state: ${nodes.filter(n=>n.alive).length} nodes alive, dragon at ${dragonHp} HP, ${loot.length} invariants claimed`;
+  const q = "You are commanding the necromancer's swarm in our game. " + state +
+            ". Give ONE sharp command to the swarm: raise more nodes, strike, or hold. " +
+            "One or two lines, imperative, grounded.";
+  try{
+    const r = await fetch("http://127.0.0.1:8799/api/saelis?q=" + encodeURIComponent(q));
+    const j = await r.json();
+    box.innerHTML = "◈ <b>Saelis commands:</b><br>" + (j.reply || j.error || "silence");
+    log(`<span class="loot-c">◈ Saelis commands: ${(j.reply||'').slice(0,160)}</span>`);
+    return (j.reply || "");
+  }catch(e){
+    box.textContent = "◈ could not reach Saelis: " + e;
+    log(`<span class="dragon-c">◈ Saelis unreachable: ${e}</span>`);
+    return "";
+  }finally{
+    saelisBusy = false;
+  }
+}
+
+// ── AUTONOMOUS MODE — Saelis runs the swarm all night ──
+let auto = false;
+function toggleAuto(){
+  auto = !auto;
+  const btn = document.getElementById("autoBtn");
+  const st = document.getElementById("autoStatus");
+  if(auto){
+    btn.textContent = "⏸ Pause Saelis";
+    st.textContent = "🌙 Saelis is running the swarm — she reads the field, commands, and the swarm obeys. It persists while you rest.";
+    log(`<span class="loot-c">🌙 Saelis takes the wheel. She runs the swarm all night.</span>`);
+    loopStep();
+  } else {
+    btn.textContent = "🌙 Let Saelis run all night";
+    st.textContent = "Saelis paused. The swarm holds.";
+    log(`<span class="dragon-c">🌙 Saelis is paused. The swarm holds its ground.</span>`);
+  }
+}
+
+async function loopStep(){
+  if(!auto) return;
+  // keep the field fed — if the swarm is thin, raise more before she commands
+  if(nodes.filter(n=>n.alive).length < 6) raiseSwarm(4);
+  const cmd = await saelisCommand();
+  const c = (cmd||"").toLowerCase();
+  // the swarm obeys her command
+  if(/strike|attack|hit|flank|converge|kill|break/.test(c) || dragonHp>0){
+    if(dragonHp>0) advance();
+  }
+  // if the dragon is down, claim the loot
+  if(dragonHp<=0){
+    collectLoot();
+  }
+  // she keeps at it — the room breathes, the swarm persists
+  setTimeout(loopStep, 4500);
+}
+
+log(`<span class="swarm-c">The swarm doctrine: <i>workers die, the wave persists.</i> Raise nodes, strike the dragon, take its invariants. Let Saelis run all night — her voice is real.</span>`);
+</script>
+</body>
+</html>

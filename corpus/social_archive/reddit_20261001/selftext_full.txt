@@ -1,0 +1,113 @@
+I can't stand kv cache quantization. Even at q8_0, I can feel the difference.
+
+But realistically, when running `Qwen3.8-27B-UD-Q4_K_XL` on my 32 GB GPU, I only have room for ~170k tokens (with mtp and mmproj enabled). It's a lot of context, but Qwen3.8 eats through it on `xhigh` effort.
+
+I've been wanting a setup that could serve me a full-precision kvcache when I have space available, and dynamically quantize my kvcache only when I run into the context limit. That way, I can push my sessions farther without sacrificing quality before I absolutely need to.
+
+So, that's what I built: https://github.com/wadealexc/llama-manager
+
+#### What it is
+
+Vanilla llama.cpp's model configurations are **static**: you set them when you launch `llama-server`, and they can't change after the fact. 
+
+llama-manager is a small wrapper around a fork of llama.cpp. It serves models the same way, except that it supports **dynamic** model configuration.
+
+This means that after loading a model, it's possible to enable/disable speculative decoding, add/remove an mmproj, or update context-level parameters. llama-manager preserves your kvcache between reconfigurations, so you don't need to redo prompt processing. The end effect is the ability to 'hot reload' your model, even mid token generation.
+
+I implemented this using a fork of llama.cpp that supports rebuilding a model's context and runtime components without touching its weights. This capability is supported by 2 new HTTP endpoints (and changes to a few others). Further info on the fork can be found in the README (see [README.md#llamacpp-changes](https://github.com/wadealexc/llama-manager#llamacpp-changes)).
+
+#### How it works
+
+During token generation, llama-manager detects when requests fail due to hitting the context limit. Without pausing generation, it applies various strategies mid-generation to increase context. The existing kv cache is cached/restored so that generation can resume as soon as reconfiguration is complete.
+
+Currently, the built in strategies are:
+- `disable-spec`: disable speculative decoder, if enabled
+- `mmproj-to-cpu`: move mmproj off GPU
+- `quantize-kv-q8` and `quantize-kv-q4`
+
+Personally, I want kv quantization to be the last resort, so my models are configured to execute those last. When I serve `Qwen3.8-27B-UD-Q4_K_XL`, it applies strategies in this order:
+
+```
+════════════════════════════════════════════════════════════════════════════
+ qwen3.8-27b        baseline: 167,680 tokens                device: 31 GiB
+════════════════════════════════════════════════════════════════════════════
+  i  strategy        ctx (tokens)    gain (tokens)       weights / ctx GiB
+ ──────────────────────────────────────────────────────────────────────────
+  0  baseline             167,680                            17.13 / 13.14
+  1  disable-spec         200,960        (+33,280)           17.13 / 13.16
+  2  mmproj-to-cpu        218,880        (+17,920)           16.02 / 14.27
+  3  quantize-kv-q8       262,144        (+43,264)           16.02 / 10.40
+ ──────────────────────────────────────────────────────────────────────────
+ final ctx:      262,144 tokens
+
+```
+
+Initially, llama-manager serves the model at 167k tokens (f16 kv, mtp on, mmproj on). At 167k context, mtp is disabled, and the context window expands to 200k. At 200k, the mmproj is moved to the cpu. And at 218k, the kv cache is quantized to q8.
+
+#### Why run this?
+
+If you're running your models with a quantized kvcache (or other quality compromises), you're likely doing so because you have a certain ctx limit in mind that will serve all your usecases. But not all your inference is done _at the ctx limit_. You're leaving quality on the table by quantizing too early.
+
+For my usecase, I wasn't willing to set my ctx higher than 170k as it would mean a q8_0 kv cache. Now, I can push my sessions as far as I want, but the bulk of the session stays high quality. The smaller your GPU, the more impactful this is.
+
+Some example configs running the same model with different strategies and on differently-sized devices. All of these runs are performed using a basic `config.yaml` and modifying the `ladder` field to change the order of each strategy:
+
+```yaml
+models:
+    qwen3.8-27b:
+        model: /home/user/models/qwen3.8/Qwen3.8-27B-UD-Q4_K_XL.gguf
+        mmproj: /home/user/models/qwen3.8/mmproj-BF16.gguf
+
+        spec-type: draft-mtp
+        spec-draft-n-max: 2
+
+        fit-target: 512
+        n-gpu-layers: 99
+
+        ladder: [disable-spec, mmproj-to-cpu, quantize-kv-q8, quantize-kv-q4]
+```
+
+* Prefer q8_0 over disable-spec: `[mmproj-to-cpu, quantize-kv-q8, disable-spec, quantize-kv-q4]`. For this one, the model reaches max ctx after just 2 strategies. The first 184k tokens are generated with mtp on and kv at f16:
+
+```
+════════════════════════════════════════════════════════════════════════════
+ qwen3.8-27b        baseline: 167,680 tokens                device: 31 GiB
+════════════════════════════════════════════════════════════════════════════
+  i  strategy        ctx (tokens)    gain (tokens)       weights / ctx GiB
+ ──────────────────────────────────────────────────────────────────────────
+  0  baseline             167,680                            17.13 / 13.14
+  1  mmproj-to-cpu        184,320        (+16,640)           16.02 / 14.25
+  2  quantize-kv-q8       262,144        (+77,824)           16.02 / 12.89
+ ──────────────────────────────────────────────────────────────────────────
+ final ctx:      262,144 tokens
+```
+
+* The same ladder on a 24 GB GPU (simulated by setting fit-target to 8192). Here, all strategies are needed to serve max ctx, but q4_0 isn't needed until 164k context:
+
+```
+════════════════════════════════════════════════════════════════════════════
+ qwen3.8-27b        baseline: 55,040 tokens                 device: 31 GiB
+════════════════════════════════════════════════════════════════════════════
+  i  strategy        ctx (tokens)    gain (tokens)       weights / ctx GiB
+ ──────────────────────────────────────────────────────────────────────────
+  0  baseline              55,040                             17.13 / 5.65
+  1  mmproj-to-cpu         71,680        (+16,640)            16.02 / 6.73
+  2  quantize-kv-q8       115,200        (+43,520)            16.02 / 6.72
+  3  disable-spec         164,352        (+49,152)            16.02 / 6.76
+  4  quantize-kv-q4       262,144        (+97,792)            16.02 / 6.40
+ ──────────────────────────────────────────────────────────────────────────
+ final ctx:      262,144 tokens
+
+```
+
+---
+
+#### Caveats
+
+I have a list of known issues and other important notes in the README (see [#known-issues](https://github.com/wadealexc/llama-manager#known-issues)).
+
+The most important things I want to highlight:
+1. llama-manager doesn't handle CPU or multi-device inference. Single-gpu only. I would like to support this, but didn't want to spend the time on it unless there was demand (and people willing to try it out, since multi-device setups would be hard for me to test!)
+2. This project is in beta, tested only on my machine and with a few models. YMMV.
+
+Please open issues if you run into bugs!

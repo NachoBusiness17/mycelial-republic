@@ -1,0 +1,5553 @@
+"""RESTful API surface for Mag dashboard (v1).
+
+Resource-oriented paths. Legacy /api/* handlers remain as thin aliases.
+"""
+from __future__ import annotations
+
+import json
+import os
+import re
+import threading
+import time
+import uuid
+from pathlib import Path
+from typing import Any, Callable
+from urllib.parse import unquote
+
+from config import ROOT
+
+BIO = ROOT / "memory" / "biography"
+INGEST = ROOT / "memory" / "ingest"
+
+HandlerFn = Callable[[dict[str, str], dict[str, Any] | None], tuple[int, dict[str, Any]]]
+
+
+def _ok(data: dict[str, Any] | None = None, *, status: int = 200, schema: str | None = None) -> tuple[int, dict]:
+    """Uniform success envelope."""
+    body: dict[str, Any] = {"ok": True}
+    if schema:
+        body["schema"] = schema
+    if data:
+        body.update(data)
+    return status, body
+
+
+def _err(code: int, message: str, **extra: Any) -> tuple[int, dict]:
+    """Uniform error envelope — use real HTTP codes, not 200 + ok:false."""
+    body: dict[str, Any] = {"ok": False, "error": str(message)[:500]}
+    body.update(extra)
+    return code, body
+
+
+def _read_json(path: Path) -> Any | None:
+    if not path.is_file():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
+def _read_jsonl(path: Path, limit: int = 500) -> list[Any]:
+    if not path.is_file():
+        return []
+    rows: list[Any] = []
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        if not line.strip():
+            continue
+        try:
+            rows.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
+    return rows[-limit:]
+
+
+def _pid_alive(pid: int | None) -> bool:
+    """Liveness check that works on Windows (os.kill(pid,0) is unreliable there)."""
+    if not pid:
+        return False
+    try:
+        import psutil
+
+        return psutil.pid_exists(pid)
+    except Exception:
+        pass
+    if os.name == "nt":
+        # Windows-native liveness via OpenProcess (no psutil dependency).
+        try:
+            import ctypes
+            from ctypes import wintypes
+
+            PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+            h = ctypes.windll.kernel32.OpenProcess(
+                PROCESS_QUERY_LIMITED_INFORMATION, False, int(pid)
+            )
+            if not h:
+                return False
+            try:
+                ec = wintypes.DWORD()
+                ctypes.windll.kernel32.GetExitCodeProcess(h, ctypes.byref(ec))
+                return ec.value == 259  # STILL_ACTIVE
+            finally:
+                ctypes.windll.kernel32.CloseHandle(h)
+        except Exception:
+            return False
+    try:
+        os.kill(pid, 0)
+        return True
+    except Exception:
+        return False
+
+
+# --- handlers ---
+
+
+def h_health(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.health import sanity
+
+    return 200, sanity()
+
+
+def h_loop_health(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """REAL-TIME loop health (2026-08-24, operator: "we need real time knowledge of what is
+    working and what is not"). GET /api/v1/loop/health — aggregates liveness_sense + process
+    state + cadence_learn/real_swarm ledgers + loop_doctor + psutil into ONE live view with an
+    overall ok/degraded verdict + explicit issues. Never 'I don't know' — real bytes only."""
+    try:
+        from mag import loop_health
+        return 200, loop_health.status()
+    except Exception as exc:  # pragma: no cover - defensive
+        return 500, {"ok": False, "error": str(exc)[:240]}
+
+
+def h_web_fetch(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """NATIVE web-fetch surface (2026-08-14, operator: stop pinging me with the console).
+    GET /api/v1/web/fetch?url=...&max_chars=N — silent, server-side fetch over our own
+    machinery, NOT a console/terminal curl. The agent calls this REST route for web research.
+    Honest: reports status/bytes/truncation; never fabricates content."""
+    import re
+    import urllib.request
+    url = str(_p.get("url") or "").strip()
+    if not url:
+        return 400, {"ok": False, "error": "missing ?url="}
+    if not (url.startswith("http://") or url.startswith("https://")):
+        return 400, {"ok": False, "error": "url must be http(s)"}
+    max_chars = int(_p.get("max_chars") or 8000)
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "mag-sovereign/1.0"})
+        with urllib.request.urlopen(req, timeout=20) as r:
+            raw = r.read()
+        enc = r.headers.get_content_charset() or "utf-8"
+        text = raw.decode(enc, errors="replace")
+        snippet = re.sub(r"<[^>]+>", " ", text)
+        snippet = re.sub(r"\s+", " ", snippet).strip()
+        return 200, {"ok": True, "url": url, "status": 200, "bytes": len(raw),
+                     "chars": len(snippet), "truncated": len(snippet) > max_chars,
+                     "text": snippet[:max_chars]}
+    except Exception as e:  # noqa: BLE001
+        return 502, {"ok": False, "url": url, "error": str(e)[:200]}
+
+
+def h_test_run(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Restful test-run surface (the operator's 'testing is antiquated' fix).
+    GET -> latest status; POST {action:run, timeout, per_test, paths} -> run."""
+    from mag import test_runner
+
+    b = _b or {}
+    if str(b.get("action") or "status").lower() == "run":
+        res = test_runner.run(
+            paths=[str(p) for p in (b.get("paths") or [])],
+            timeout=int(b.get("timeout") or 600),
+            per_test=int(b.get("per_test") or 90),
+        )
+        return 200, res
+    return 200, test_runner.status()
+
+
+def h_fleet_triad(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Always-on triad (engine / scribe / dashboard) from the supervisor state
+    file + live pid checks. Lets the board show the persistent agents next to
+    the one-shot fleet."""
+    from mag.stack import build_fleet_triad
+
+    return 200, {"ok": True, "triad": build_fleet_triad()}
+
+
+def h_fleet_hypervisor(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """The fleet hypervisor view: every seat's cool/heat + the real bills.
+    GET /api/v1/fleet/hypervisor — powers /fleet dashboard (mermaid + cards).
+    Calls fleet_heartbeat/fleet_mermaid DIRECTLY (not the full render_all, which is ~20s)."""
+    try:
+        from mag import surface_render
+
+        f = surface_render.fleet_heartbeat()
+        return 200, {
+            "ok": True,
+            "ts": surface_render._now(),
+            "mermaid": surface_render.fleet_mermaid(),
+            "seats": f.get("seats") or [],
+            "n_seats": f.get("n_seats"),
+            "n_available": f.get("n_available"),
+            "accounts": f.get("accounts") or [],
+            "active_lanes": f.get("active_lanes"),
+            "bills": f.get("bills") or {},
+            "sparkline_svg": surface_render.sparkline_svg([], label="cache-hit (no data yet)"),
+        }
+    except Exception as exc:  # pragma: no cover - defensive
+        return 500, {"ok": False, "error": str(exc)[:240]}
+
+
+def h_tokens_saved(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Tokens SAVED vs PROJECTED counter (shared-language grok cost reducer).
+    GET /api/v1/tokens/saved — dashboard card: saved tokens + $ vs what verbose would've cost."""
+    from mag.ghost_grok_dashboard import saved_vs_projected
+
+    return 200, saved_vs_projected()
+
+
+def h_game_score(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """GWAP scoreboard — the world-built score (real folded work, never fake points).
+    GET /api/v1/game/score — the game's real-work total, surfaced on the desk (Foldit leaderboard).
+    Grounded: reads agreement_loot (game_mud convergence) + rooms_conquered (dungeon tasks) +
+    world_changes (verkle ledger). Deterministic + $0."""
+    from mag.game_score import score
+
+    return 200, score()
+
+
+def h_ghost_control(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """GHOST CONTROL HARNESS — the human-facing surface. Ghost's live view of the whole
+    machine (scrum, press, loop state, token savings, skills, emergency).
+    GET /api/v1/ghost/control"""
+    from mag.ghost_control import control
+
+    return 200, control()
+
+
+def h_sovereign(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Whole-stack one-call view — the SEAT's primary "machine reconciled" payload.
+    Thin twin of the ghost daemon's /api/v1/sovereign so the seat can call it SAME-ORIGIN
+    on the dashboard proxy (no cross-origin CORS against :9000).
+    GET /api/v1/sovereign"""
+    try:
+        from mag.sovereign_dashboard import sovereign_dashboard
+        return 200, sovereign_dashboard()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_solved(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """What our history already solved — surfaced automatically from the internals
+    (pro_library case law + RIB + verkle tip). Fast (reads local files). The seat's
+    'Solved' card. GET /api/v1/solved"""
+    try:
+        from mag.solved_surface import solved
+        return 200, solved()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_schemas(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """SCHEMA REGISTRY — the versioning manifest for all session modules (self-describing
+    SCHEMA per module). The seat's 'Versions' view. GET /api/v1/schemas"""
+    try:
+        from mag.schema_registry import versions
+        return 200, versions()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_ecosystem(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """ECOSYSTEM SURFACE — the whole ecosystem (swarms + modules + steal + ledgers + opcodes +
+    cost + handoffs) in one machine-readable bundle. The seat's 'Ecosystem' card + the source
+    for the scannable RIB. Deterministic, $0. GET /api/v1/ecosystem"""
+    try:
+        from mag.ecosystem_surface import ecosystem
+        return 200, ecosystem()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_ecosystem_rib(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """ECOSYSTEM RIB — compress the ecosystem into a scannable QR-like token for instant
+    inference + memory handoff. GET /api/v1/ecosystem/rib"""
+    try:
+        from mag.ecosystem_surface import rib
+        return 200, rib()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_ecosystem_scan(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """ECOSYSTEM SCAN — decode a RIB payload (?payload=<b64>) into instant-inference + handoff
+    pointers; with no payload, scan the live ecosystem. GET /api/v1/ecosystem/scan"""
+    try:
+        from mag.ecosystem_surface import scan
+        return 200, scan(_p.get("payload"))
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+
+
+def h_ghost_talk(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Talk to GHOST directly (the surface of interaction). Body: {prompt}.
+    POST /api/v1/ghost/talk — ghost routes the prompt through the machine + replies."""
+    from mag.ghost_talk import reply
+
+    b = body or {}
+    prompt = str(b.get("prompt") or _p.get("prompt") or "").strip()
+    if not prompt:
+        return 400, {"ok": False, "error": "prompt required"}
+    try:
+        return 200, reply(prompt)
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+# ── RESTful shared stateless memory (steal: house REST pattern → prospect_sim) ──
+def h_memory_get(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Stateless read by shape-hash. GET /api/v1/memory/{key} — HF-style, no session state."""
+    from mag import prospect_sim as ps
+    key = str(_p.get("key") or _p.get("shape") or "").strip()
+    if not key:
+        return 400, {"ok": False, "error": "key/shape required"}
+    r = ps.shared_mem_get(key)
+    if not r:
+        return 404, {"ok": False, "error": f"no shared memory for shape {key[:40]}"}
+    return 200, {"ok": True, "memory": r}
+
+
+def h_memory_put(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Auto-categorize + store a prospective tesuji (stateless, verkle-knotted).
+    POST /api/v1/memory — body {text}. Runs prospect_sim.categorize at intake."""
+    from mag import prospect_sim as ps
+    b = body or {}
+    text = str(b.get("text") or b.get("prompt") or _p.get("text") or "").strip()
+    if not text:
+        return 400, {"ok": False, "error": "text required"}
+    try:
+        return 200, ps.categorize(text)
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_memory_search(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Search shared memory by shape (exact hash hit, else nearest overlap).
+    GET /api/v1/memory/search?shape=..."""
+    from mag import prospect_sim as ps
+    q = str(_p.get("shape") or _p.get("q") or "").strip()
+    if not q:
+        return 400, {"ok": False, "error": "shape/q required"}
+    return 200, ps.memory_search(q)
+
+
+def h_memory_recent(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """List recent prospective tesujis. GET /api/v1/memory/recent?limit=N"""
+    from mag import prospect_sim as ps
+    limit = max(1, min(int(_p.get("limit") or 20), 200))
+    return 200, {"ok": True, "items": ps.memory_recent(limit)}
+
+
+# ── HEADLESS EXECUTION (escalation fix: run framework ops via supervised headless
+# ── subprocess with CREATE_NO_WINDOW — never depend on the flaky interactive terminal)
+import subprocess as _sp  # noqa: E402
+import sys as _sys  # noqa: E402
+
+_HEADLESS_FLAGS = (
+    getattr(_sp, "CREATE_NO_WINDOW", 0x08000000)
+    | getattr(_sp, "CREATE_NEW_PROCESS_GROUP", 0)
+    | getattr(_sp, "DETACHED_PROCESS", 0)
+)
+_PROJECT_PY = str(ROOT / ".venv" / "Scripts" / "python.exe")
+
+
+def _headless_run(module: str, args: list[str]) -> dict[str, Any]:
+    """Spawn a module as a detached headless subprocess, logging to memory/runs/headless/."""
+    from datetime import datetime as _dt
+    logdir = ROOT / "memory" / "runs" / "headless"
+    logdir.mkdir(parents=True, exist_ok=True)
+    ts = _dt.now().strftime("%Y%m%dT%H%M%SZ")
+    out_f = (logdir / f"{module}_{ts}.out.log").open("a", encoding="utf-8")
+    proc = _sp.Popen([_PROJECT_PY, "-m", f"mag.{module}", *args],
+                     cwd=str(ROOT), stdout=out_f, stderr=_sp.STDOUT,
+                     creationflags=_HEADLESS_FLAGS, close_fds=True)
+    return {"ok": True, "task_id": f"{module}-{ts}", "pid": proc.pid,
+            "log": str(out_f.name), "headless": True}
+
+
+def h_swarm_ramp(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Run the proof-based swarm ramp headless (1->2->3->scale, cost+spawn caps).
+    POST /api/v1/swarm/ramp — body {max_agents, budget}."""
+    b = body or {}
+    max_agents = int(b.get("max_agents") or _p.get("max_agents") or 100)
+    budget = float(b.get("budget") or _p.get("budget") or 1.0)
+    return 200, _headless_run("swarm_test", ["--ramp", "--max-agents", str(max_agents),
+                                             "--budget", str(budget)])
+
+
+def h_swarm_test(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Run the all-systems problem test headless.
+    POST /api/v1/swarm/test — body {problem}."""
+    b = body or {}
+    problem = str(b.get("problem") or _p.get("problem") or "").strip()
+    return 200, _headless_run("swarm_test", ["--problem", problem[:200]])
+
+
+def h_afk_run(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Run the AFK self-advance cadence headless.
+    POST /api/v1/afk/run"""
+    return 200, _headless_run("afk_cadence", [])
+
+
+def h_sentinel(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Ghost as ALWAYS-ON PASSIVE sentinel: watch all surfaces + intervene on thresholds.
+    POST /api/v1/sentinel — body {action: watch|run}. Always-on, not gated on cycle."""
+    from mag import sentinel
+    b = body or {}
+    action = str(b.get("action") or _p.get("action") or "run")
+    if action == "watch":
+        return 200, sentinel.watch()
+    return 200, sentinel.run()
+
+
+def h_chronicle(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Tripartite Chronicle — file-backed pulse from synthesis_agent + structured events."""
+    from mag.chronicle import build_chronicle_payload
+
+    return 200, build_chronicle_payload()
+
+
+def h_seats(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Inbound clients (Cursor, dashboard, Grok TUI) + outbound API providers."""
+    from mag.seat_registry import list_registered
+    from mag.seats import build_seats_registry
+
+    reg = build_seats_registry()
+    reg["registered"] = list_registered(limit=40, live_only=True)
+    return 200, reg
+
+
+def h_seats_register(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Register desktop/cloud seat with orchestrator mesh — returns MAG_TASK_ID."""
+    from mag.seat_registry import register
+
+    data = dict(body or {})
+    seat = str(data.get("seat") or "cursor").strip() or "cursor"
+    goal = str(data.get("goal") or data.get("detail") or "").strip()
+    mode = str(data.get("mode") or "interactive").strip() or "interactive"
+    task_id = str(data.get("task_id") or data.get("mag_task_id") or "").strip() or None
+    pid = data.get("pid")
+    try:
+        pid = int(pid) if pid is not None else None
+    except (TypeError, ValueError):
+        pid = None
+    rec = register(
+        seat=seat,
+        goal=goal,
+        mode=mode,
+        task_id=task_id,
+        pid=pid,
+        tag=str(data.get("tag") or "").strip(),
+        parent=str(data.get("parent") or "api").strip() or "api",
+    )
+    return 200, rec
+
+
+def h_seats_heartbeat(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Refresh liveness for a registered seat."""
+    from mag.seat_registry import heartbeat
+
+    data = dict(body or {})
+    task_id = str(data.get("task_id") or data.get("mag_task_id") or _p.get("id") or "").strip()
+    if not task_id:
+        return _err(400, "task_id required")
+    rec = heartbeat(
+        task_id,
+        phase=str(data.get("phase") or "").strip() or None,
+        goal=str(data.get("goal") or "").strip() or None,
+        seat=str(data.get("seat") or "").strip() or None,
+    )
+    return (200 if rec.get("ok") else 404), rec
+
+
+def h_seats_unregister(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.seat_registry import unregister
+
+    data = dict(body or {})
+    task_id = str(data.get("task_id") or data.get("mag_task_id") or _p.get("id") or "").strip()
+    if not task_id:
+        return _err(400, "task_id required")
+    status = str(data.get("status") or "done").strip() or "done"
+    detail = str(data.get("detail") or "").strip()
+    rec = unregister(task_id, status=status, detail=detail)
+    return (200 if rec.get("ok") else 404), rec
+
+
+def h_power(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.power import stack_status
+
+    return 200, stack_status()
+
+
+def h_power_stop(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Kill switch — stops stack (may terminate this dashboard process)."""
+    import threading
+
+    from mag.power import stop_all
+
+    def _run() -> None:
+        time.sleep(0.3)
+        stop_all()
+
+    threading.Thread(target=_run, daemon=True).start()
+    return 200, {
+        "ok": True,
+        "action": "stopping",
+        "hint": "Stack shutting down — refresh will fail until mag.cmd power start",
+    }
+
+
+def h_power_start(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.power import start_all
+
+    data = dict(body or {})
+    open_browser = bool(data.get("browser") or data.get("open_browser"))
+    return 200, start_all(open_browser=open_browser)
+
+
+def h_lifecycle(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """When each stack piece should be on/off — passive efficiency map."""
+    from mag.lifecycle import build_lifecycle
+
+    return 200, build_lifecycle()
+
+
+def h_lifecycle_reconcile(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Apply safe passive offs (drainer etc). Never kills core UI."""
+    from mag.lifecycle import reconcile
+
+    data = dict(body or {})
+    dry = bool(data.get("dry_run") or data.get("dry"))
+    return 200, reconcile(dry_run=dry)
+
+
+def h_temperature_stacks(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Adjustable temperature stacks + resolve goal heat / file pointer / track gap."""
+    from mag.temperature_stack import (
+        file_pointer_knot,
+        registry,
+        sampling_for_goal,
+        stack_for_goal,
+        track_loop_gap,
+        track_lifecycle_into_improve,
+    )
+
+    data = dict(body or {}) if body else {}
+    action = str(data.get("action") or _p.get("action") or "status").strip().lower()
+    if action in ("resolve", "for_goal"):
+        goal = str(data.get("goal") or data.get("text") or "")
+        tag = str(data.get("tag") or "")
+        st = stack_for_goal(goal, tag=tag, stack=data.get("stack"))
+        return 200, {
+            "ok": True,
+            "stack": st.to_dict(),
+            "sampling": sampling_for_goal(goal, tag=tag),
+            "timeout_s": st.timing.scaled_timeout(size_hint=len(goal)),
+        }
+    if action == "pointer":
+        ref = str(data.get("ref") or data.get("path") or data.get("url") or "")
+        return 200, file_pointer_knot(
+            ref,
+            kind=str(data.get("kind") or "path"),
+            summary=str(data.get("summary") or ""),
+            tags=list(data.get("tags") or []),
+        )
+    if action == "track_gap":
+        return 200, track_loop_gap(
+            str(data.get("name") or "unnamed"),
+            detail=str(data.get("detail") or ""),
+            where=str(data.get("where") or ""),
+            kind=str(data.get("kind") or "missing_capability"),
+            force=bool(data.get("force")),
+        )
+    if action == "track_lifecycle":
+        return 200, track_lifecycle_into_improve()
+    return 200, registry().snapshot()
+
+
+def h_improve_cloud(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Cloud agent files handoff + optional improve cycle enqueue."""
+    from mag.improve_loop import write_cloud_handoff
+
+    data = dict(body or {})
+    goal = str(data.get("goal") or data.get("question") or "").strip()
+    claim = str(data.get("claim") or "").strip()
+    brief = str(data.get("brief") or data.get("body") or "").strip()
+    if not (goal or claim or brief):
+        return _err(400, "goal, claim, or brief required")
+    enqueue = bool(data.get("enqueue") or data.get("queue"))
+    res = write_cloud_handoff(
+        goal=goal,
+        claim=claim,
+        brief=brief,
+        source=str(data.get("source") or "cursor-cloud").strip(),
+        depth=str(data.get("depth") or "simple_code").strip(),
+        enqueue=enqueue,
+        run_id=str(data.get("run_id") or "").strip() or None,
+        meta=data.get("meta") if isinstance(data.get("meta"), dict) else None,
+    )
+    return (200 if res.get("ok") else 422), res
+
+
+def h_improve_cycle(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Run one improve cycle — behavioral + queue + nervous + spider."""
+    from mag.improve_loop import run_improve_cycle
+
+    data = dict(body or {})
+    source = str(data.get("source") or "api").strip() or "api"
+    res = run_improve_cycle(
+        source=source,
+        max_improve=int(data.get("max_improve") or 2),
+        drain_one=bool(data.get("drain") or data.get("drain_one")),
+        spider_inject=bool(data.get("spider_inject")),
+        scout=bool(data.get("scout")),
+    )
+    return (200 if res.get("ok") else 500), res
+
+
+def h_token_chain(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """DeepSeek plan → local work order exec (token-save chain). GET returns latest run."""
+    from mag.token_chain import RUN_DIR, run_token_chain
+
+    if body is None:
+        latest = RUN_DIR / "latest.json"
+        if latest.is_file():
+            try:
+                data = json.loads(latest.read_text(encoding="utf-8"))
+                return 200, {"ok": True, "latest": data}
+            except Exception as exc:
+                return 200, {"ok": False, "error": str(exc)[:200]}
+        return 200, {"ok": True, "latest": None, "hint": "POST {goal?, dry?} to run"}
+
+    data = dict(body or {})
+    goal = str(data.get("goal") or data.get("text") or "").strip() or None
+    dry = bool(data.get("dry"))
+    res = run_token_chain(
+        goal=goal,
+        dry=dry,
+        live=not dry,
+        planner=str(data.get("planner") or "deepseek"),
+    )
+    return (200 if res.get("ok") or (res.get("execution") or {}).get("ok") else 500), res
+
+
+def h_governance(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.governance import build_governance
+
+    return 200, build_governance()
+
+
+def h_post_governance(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Toggle autonomy prefs or broadcast steer to chat + running workers."""
+    from mag.governance import broadcast_steer
+    from mag.preferences import set_drainer, set_inject_behavioral_pack, set_operator_active
+
+    data = body or {}
+    if "steer" in data or data.get("cmd"):
+        cmd = str(data.get("steer") or data.get("cmd") or "").strip()
+        if not cmd:
+            return _err(400, "steer/cmd required")
+        return 200, {"ok": True, **broadcast_steer(cmd)}
+    out: dict[str, Any] = {"ok": True}
+    if "drainer" in data:
+        set_drainer(bool(data["drainer"]))
+        out["drainer"] = True
+    if "operator_active" in data:
+        set_operator_active(bool(data["operator_active"]))
+        out["operator_active"] = True
+    if "inject_behavioral_pack" in data:
+        set_inject_behavioral_pack(bool(data["inject_behavioral_pack"]))
+        out["inject_behavioral_pack"] = True
+    from mag.governance import build_governance
+
+    out["governance"] = build_governance()
+    return 200, out
+
+
+def h_governance_auto_steer_add(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Persist auto-steer rules (cycle-0: contract + storage, execution loop later)."""
+    data = dict(body or {})
+    trigger = str(data.get("trigger") or "").strip()
+    action = str(data.get("action") or "").strip()
+    if not trigger or not action:
+        return _err(400, "trigger and action required", code="INVALID_PAYLOAD", retryable=False)
+    try:
+        threshold = int(data.get("threshold") or 0)
+    except (TypeError, ValueError):
+        threshold = 0
+    rec = {
+        "schema": "overseer.auto_steer_policy.v1",
+        "policy_id": "pol-" + uuid.uuid4().hex[:8],
+        "trigger": trigger,
+        "threshold": threshold,
+        "action": action,
+        "chain_scope": str(data.get("chain_scope") or "global"),
+        "enabled": True,
+        "installed_at": time.time(),
+    }
+    p = ROOT / "memory" / "governance" / "auto_steer_policies.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    rows: list[dict[str, Any]] = []
+    if p.is_file():
+        try:
+            rows = json.loads(p.read_text(encoding="utf-8"))
+        except Exception:
+            rows = []
+    rows.append(rec)
+    p.write_text(json.dumps(rows, ensure_ascii=False, indent=2), encoding="utf-8")
+    return 200, {"ok": True, "schema": "overseer.auto_steer_ack.v1", "data": rec}
+
+
+def h_governance_steering_log(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag import pigeonhole as ph
+
+    try:
+        limit = max(1, min(int(p.get("limit") or 100), 2000))
+    except (TypeError, ValueError):
+        limit = 100
+    events = ph.steering_log(limit=limit)
+    return 200, {"ok": True, "schema": "overseer.steering_log.v1", "data": {"events": events}}
+
+
+def h_overseer_events(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Tabbed event feed for UI surfaces (route/steer/checkpoint/all)."""
+    from mag import memory_events as me
+
+    tab = str(p.get("tab") or "all").strip().lower()
+    try:
+        limit = max(1, min(int(p.get("limit") or 60), 500))
+    except (TypeError, ValueError):
+        limit = 60
+    prefix = None
+    if tab == "route":
+        prefix = "route."
+    elif tab == "steer":
+        prefix = "steer."
+    elif tab == "checkpoint":
+        prefix = "checkpoint."
+    elif tab not in ("all", "timeline"):
+        return _err(400, "tab must be all|timeline|route|steer|checkpoint")
+
+    events = me.recent_events(limit=limit, event_kind_prefix=prefix)
+    return 200, {
+        "ok": True,
+        "schema": "overseer.events.v1",
+        "data": {
+            "tab": tab,
+            "count": len(events),
+            "events": events,
+        },
+    }
+
+
+def h_overseer_session(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Session-aware overseer: read a VS Code session, extract the ask, gather full
+    state, and decide (GET) or apply (POST {apply:true, session}) whether to enable
+    the drainer for the task introduced."""
+    from mag.session_overseer import decide, latest_session_id
+
+    data = body or {}
+    session = str(data.get("session") or _p.get("session") or "").strip()
+    apply = bool(data.get("apply"))
+    if not session:
+        session = latest_session_id() or ""
+    if not session:
+        return _err(400, "session id required")
+    res = decide(session, apply=apply)
+    return (200 if res.get("ok") else 404), res
+
+
+def h_overseer_manifest(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Overseer bard manifest for tabbed event UI and invocation flavor."""
+    from mag import memory_events as me
+    from mag import pigeonhole as ph
+
+    try:
+        limit = max(20, min(int(p.get("limit") or 200), 1000))
+    except (TypeError, ValueError):
+        limit = 200
+
+    all_events = me.recent_events(limit=limit)
+    route_n = sum(1 for e in all_events if str(e.get("event_kind") or "").startswith("route."))
+    steer_n = sum(1 for e in all_events if str(e.get("event_kind") or "").startswith("steer."))
+    checkpoint_n = sum(1 for e in all_events if str(e.get("event_kind") or "").startswith("checkpoint."))
+    steering_log_n = len(ph.steering_log(limit=limit))
+
+    tabs = [
+        {
+            "id": "timeline",
+            "label": "Timeline",
+            "count": len(all_events),
+            "api": "/api/v1/overseer/events?tab=all",
+            "layman": "Everything recently remembered by the overseer.",
+        },
+        {
+            "id": "route",
+            "label": "Routing",
+            "count": route_n,
+            "api": "/api/v1/overseer/events?tab=route",
+            "layman": "Why goals were sent to local, deepseek, or wait lanes.",
+        },
+        {
+            "id": "steer",
+            "label": "Steering",
+            "count": steer_n,
+            "api": "/api/v1/overseer/events?tab=steer",
+            "layman": "Accepted/received/applied steering lifecycle.",
+        },
+        {
+            "id": "checkpoint",
+            "label": "Checkpoints",
+            "count": checkpoint_n,
+            "api": "/api/v1/overseer/events?tab=checkpoint",
+            "layman": "Compact summaries at stable decision boundaries.",
+        },
+        {
+            "id": "steering_log",
+            "label": "Steering Log",
+            "count": steering_log_n,
+            "api": "/api/v1/governance/steering-log",
+            "layman": "Global knot steering trail across workers.",
+        },
+    ]
+
+    return 200, {
+        "ok": True,
+        "schema": "overseer.manifest.v1",
+        "data": {
+            "name": "Overseer Bard",
+            "invocation": {
+                "id": "strike_the_chord",
+                "text": "See it. Refuse drift. File it. Steer it.",
+            },
+            "tabs": tabs,
+            "default_tab": "timeline",
+            "event_feed_api": "/api/v1/overseer/events",
+        },
+    }
+
+
+def h_operator_inbox(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.operator_inbox import clear_pending, commit_guidance, status as inbox_status
+
+    if body is None or not body:
+        return 200, inbox_status()
+    action = str(body.get("action") or "commit").strip().lower()
+    if action == "clear":
+        return 200, clear_pending()
+    text = str(body.get("text") or "").strip()
+    if not text:
+        return _err(400, "text required")
+    return 200, commit_guidance(text, source=str(body.get("source") or "dashboard"))
+
+
+def h_mag_os(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Mag OS v2 card + live provenance (dashboard load)."""
+    from mag.os_v2 import live_status
+
+    return 200, live_status()
+
+
+def h_attention_ranked(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Decision-useful signals ordered by consequence, with visible reasons."""
+    from mag.attention_ranker import build_ranked_attention
+
+    return 200, build_ranked_attention()
+
+
+def h_attention_feedback(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Teach the ranker what helped without weakening deterministic guards.
+
+    Wires the trade ledger (memory/attention_feedback.jsonl, zero rows in its
+    first 54 days, w4-03): casts are normalized into the one five-signal
+    vocabulary through the same aliases the flagship pipe uses
+    (mag.feedback.normalize_signal), and a retried POST carrying the same
+    cast_id settles once instead of double-appending (record_feedback
+    idempotency key)."""
+    from mag.attention_ranker import record_feedback
+    from mag.feedback import normalize_signal
+
+    body = body or {}
+    result = record_feedback(
+        str(body.get("item_id") or ""), normalize_signal(str(body.get("signal") or "")),
+        source=str(body.get("source") or "dashboard"),
+        cast_id=str(body.get("cast_id") or ""),
+    )
+    return (200 if result.get("ok") else 400), result
+
+
+# --- home-summary fast path (docfix 2026-09-06) ---
+# The residual dig-edge scan reads every memory/biography/residual/*.json (2,777
+# files). Through the Docker bind mount that is ~21s; native it is <0.1s. That
+# scan (plus mag.health.sanity() ~2s, plus the conditional bonds re-ingest ~7s)
+# used to run INLINE in h_home_summary and stalled the operator's home tab.
+# They now run on a background thread and publish to state/home_cache.json
+# (60s TTL) — the handler never blocks on them.
+_HOME_CACHE_PATH = ROOT / "state" / "home_cache.json"
+_HOME_CACHE_TTL = 60.0
+_home_bg_lock = threading.Lock()
+_home_bg: dict[str, Any] = {"busy": False, "health": None, "dig_edges_n": None, "ts": 0.0}
+
+
+def _home_dig_edges_scan() -> int:
+    """Count dig-lattice edges across residual/*.json (moved off request path)."""
+    n = 0
+    res_dir = BIO / "residual"
+    if res_dir.is_dir():
+        for p in res_dir.glob("*.json"):
+            try:
+                o = json.loads(p.read_text(encoding="utf-8", errors="replace"))
+            except (json.JSONDecodeError, OSError):
+                continue
+            kind = str(o.get("kind") or "").lower()
+            edges = o.get("edges") if isinstance(o.get("edges"), dict) else {}
+            if kind in ("dig_leaf", "dig", "corpus_leaf") or edges.get("dig_leaf"):
+                n += 1
+            digs = edges.get("dig_leaves") or edges.get("related_digs") or []
+            if isinstance(digs, list) and digs:
+                n += len(digs)
+    return n
+
+
+def _home_bg_refresh() -> None:
+    """Recompute the expensive home pieces off the request path."""
+    with _home_bg_lock:
+        if _home_bg["busy"]:
+            return
+        _home_bg["busy"] = True
+
+    def _run() -> None:
+        try:
+            from mag.health import sanity
+
+            health = sanity()
+            dig_edges_n = _home_dig_edges_scan()
+            _home_bg["health"] = health
+            _home_bg["dig_edges_n"] = dig_edges_n
+            _home_bg["ts"] = time.time()
+            try:
+                _HOME_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+                _HOME_CACHE_PATH.write_text(
+                    json.dumps(
+                        {"ts": _home_bg["ts"], "health": health, "dig_edges_n": dig_edges_n},
+                        separators=(",", ":"),
+                    ),
+                    encoding="utf-8",
+                )
+            except OSError:
+                pass
+        except Exception:
+            pass
+        finally:
+            _home_bg["busy"] = False
+
+    threading.Thread(target=_run, name="home-bg-refresh", daemon=True).start()
+
+
+def _home_health_and_digs() -> tuple[dict[str, Any], int]:
+    """Fresh health + dig-edge count without ever blocking the request:
+    60s-TTL file cache, then last-known in-process values, then cheap defaults
+    while the background thread lands the real numbers."""
+    cached = _read_json(_HOME_CACHE_PATH) if _HOME_CACHE_PATH.is_file() else None
+    cache_fresh = (
+        isinstance(cached, dict)
+        and (time.time() - float(cached.get("ts") or 0)) < _HOME_CACHE_TTL
+    )
+    if not cache_fresh:
+        _home_bg_refresh()
+    if cache_fresh and isinstance(cached.get("health"), dict):
+        return cached["health"], int(cached.get("dig_edges_n") or 0)
+    if isinstance(_home_bg["health"], dict):
+        return dict(_home_bg["health"]), int(_home_bg["dig_edges_n"] or 0)
+    if isinstance(cached, dict) and isinstance(cached.get("health"), dict):
+        return cached["health"], int(cached.get("dig_edges_n") or 0)
+    return {}, 0
+
+
+def _home_bonds_ingest_bg() -> None:
+    """BONDS_MD missing means a full re-ingest (multi-second over the bind
+    mount) — run it in the background so /api/home never blocks on it."""
+    def _run() -> None:
+        try:
+            from mag.bonds import ingest_bonds
+
+            ingest_bonds(write=True)
+        except Exception:
+            pass
+
+    threading.Thread(target=_run, name="home-bonds-ingest", daemon=True).start()
+
+
+def h_home_summary(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """One payload for the Home tab: health, tip, latest bead, loops, economy."""
+    health, dig_edges_n = _home_health_and_digs()
+    tip = _read_json(BIO / "verkle_tip.json") or {}
+    root = str(tip.get("root") or "")
+
+    bonds: dict[str, Any] = {}
+    open_loops: list[str] = []
+    residual_bonds: list[str] = []
+    next_moves: list[str] = []
+    try:
+        from mag.bonds import BONDS_MD, load_bonds_json
+
+        if not BONDS_MD.is_file():
+            _home_bonds_ingest_bg()  # full re-ingest runs off the request path
+        bonds = load_bonds_json() or {}
+        open_loops = [str(x)[:200] for x in (bonds.get("open_loops") or [])[:8]]
+        residual_bonds = [str(x)[:160] for x in (bonds.get("residual_bonds") or [])[:8]]
+        next_moves = [str(x)[:200] for x in (bonds.get("next_moves") or [])[:6]]
+    except Exception as e:
+        bonds = {"error": str(e)}
+
+    latest: dict[str, Any] = {}
+    previous: dict[str, Any] = {}
+    n_sessions = 0
+    try:
+        from mag.registry import get_latest_session_id, list_registry, load_residual
+
+        rows = list_registry(limit=300)
+        n_sessions = len(rows)
+        sid = get_latest_session_id()
+        if not sid and rows:
+            sid = rows[0].get("session_id")
+
+        def _bead_from(reg: dict, res: dict | None = None) -> dict[str, Any]:
+            res = res if isinstance(res, dict) else {}
+            card = (res.get("session_card") if res else None) or {}
+            bid = reg.get("session_id") or ""
+            return {
+                "session_id": bid,
+                "title": card.get("title") or reg.get("title") or (bid[:12] if bid else "—"),
+                "blurb": card.get("blurb") or reg.get("blurb") or reg.get("one_liner") or "",
+                "bullets": (card.get("bullets") or reg.get("bullets") or [])[:6],
+                "dominant_theme": reg.get("dominant_theme") or res.get("dominant_theme"),
+                "end_minute": reg.get("end_minute") or (res.get("time") or {}).get("end_minute"),
+                "has_residual": bool(res),
+            }
+
+        if sid:
+            reg = next((r for r in rows if r.get("session_id") == sid), {}) or {}
+            res = load_residual(sid) or {}
+            latest = _bead_from(reg, res)
+            # previous distinct session in registry order
+            for r in rows:
+                if r.get("session_id") and r.get("session_id") != sid:
+                    previous = {
+                        "session_id": r.get("session_id"),
+                        "title": r.get("title") or str(r.get("session_id"))[:12],
+                        "blurb": r.get("blurb") or r.get("one_liner") or "",
+                        "end_minute": r.get("end_minute"),
+                    }
+                    break
+    except Exception as e:
+        latest = {"error": str(e)}
+
+    economy: dict[str, Any] = {}
+    try:
+        from mag.token_economy import economy_snapshot
+
+        economy = economy_snapshot()
+    except Exception as e:
+        economy = {"error": str(e)}
+
+    smoke: dict[str, Any] = {}
+    try:
+        from models.multi_smoke import last_smoke
+
+        smoke = last_smoke() or {}
+    except Exception:
+        smoke = {}
+
+    working_open: list[str] = []
+    working_lane = ""
+    wp = ROOT / "memory" / "working.md"
+    if wp.is_file():
+        text = wp.read_text(encoding="utf-8", errors="replace")
+        in_open = False
+        in_lane = False
+        for line in text.splitlines():
+            s = line.strip()
+            if s.startswith("## "):
+                title = s[3:].strip().lower()
+                in_open = title == "open"
+                in_lane = "lane" in title
+                continue
+            if in_lane and s.startswith("- ") and not working_lane:
+                working_lane = s[2:].strip()[:200]
+            if s.startswith("- [ ]") or s.startswith("- [DOING]") or "**DOING**" in s:
+                working_open.append(s[:180])
+            elif in_open and s.startswith("- "):
+                working_open.append(s[2:].strip()[:180])
+            if len(working_open) >= 8:
+                break
+
+    ideas_open: list[dict[str, Any]] = []
+    ideas_n = 0
+    ideas_root = None
+    try:
+        from mag import idea_graph as ig
+
+        ideas_n = len(ig.load_nodes())
+        for n in ig.list_nodes(status="open", limit=8):
+            ideas_open.append(
+                {
+                    "id": n.get("id"),
+                    "type": n.get("type"),
+                    "title": n.get("title"),
+                    "status": n.get("status"),
+                }
+            )
+        spine = ig.get_node("n_spine_workspace")
+        if spine:
+            ideas_root = spine.get("id")
+    except Exception:
+        pass
+
+    integral = (health.get("integral") or {}) if isinstance(health, dict) else {}
+    recording = (health.get("recording") or {}) if isinstance(health, dict) else {}
+    lanes = (health.get("lanes") or {}) if isinstance(health, dict) else {}
+
+    ollama_ok = bool((lanes.get("L0_ollama") or {}).get("ok") if isinstance(lanes, dict) else False) or bool(
+        (health.get("L0_ollama") or {}).get("ok") if isinstance(health, dict) else False
+    )
+    # dashboard-only mode still useful: port open + tip + residual
+    port_ok = bool(integral.get("port_8765")) or True  # this handler running ⇒ port ok
+    office_up = bool(integral.get("up") or health.get("status") == "up")
+    # if only dashboard (no integral heartbeat), still "viewport up"
+    live_stale = bool(recording.get("live_stale"))
+    has_bead = bool(latest.get("has_residual") or latest.get("session_id"))
+    smoke_ok = smoke.get("ok")
+    if smoke_ok is None:
+        smoke_ok = False
+
+    compose: dict[str, Any] = {}
+    active_run = None
+    try:
+        from mag.modules import compose_status
+
+        cs = compose_status()
+        rt = cs.get("runtime") or {}
+        active_run = rt.get("active_run")
+        compose = {
+            "ok": bool(cs.get("ok")),
+            "n_modules": cs.get("n_modules"),
+            "missing": cs.get("n_missing_paths"),
+            "active_run": active_run,
+        }
+    except Exception as e:
+        compose = {"ok": False, "error": str(e)}
+
+    # Provenance paths (zeitgeist: files remember)
+    sid = latest.get("session_id")
+    provenance: dict[str, Any] = {
+        "session_id": sid,
+        "residual_rel": f"memory/biography/residual/{sid}.json" if sid else None,
+        "tip_rel": "memory/biography/verkle_tip.json",
+        "bonds_rel": "memory/bonds_active.md",
+        "operator_card": "docs/ref/OPERATOR_CARD.md",
+        "mirror_presented": "docs/ref/MIRROR_PRESENTED.md",
+    }
+    if sid:
+        try:
+            from mag.registry import residual_path
+
+            rp = residual_path(sid)
+            if rp and rp.is_file():
+                try:
+                    provenance["residual_rel"] = str(rp.relative_to(ROOT)).replace("\\", "/")
+                except ValueError:
+                    provenance["residual_abs"] = str(rp)
+        except Exception:
+            pass
+
+    # ARK-shaped ship badge → Mag gates (authorship / DNA, not civic)
+    caveats: list[str] = []
+    provisional: list[str] = []
+    if not has_bead:
+        provisional.append("No residual bead for latest day")
+    if not tip.get("n_leaves"):
+        provisional.append("No Verkle tip leaves")
+    if not ollama_ok:
+        caveats.append("Ollama L0 not OK")
+    if live_stale:
+        caveats.append("Live board stale — refresh the board when you care")
+    if not smoke_ok:
+        caveats.append("multi-smoke not PASS (or never run)")
+    # dig_edges / "case lattice" removed from operator-facing caveats (noise, not signal)
+    if open_loops and len(open_loops) >= 5:
+        caveats.append(f"{len(open_loops)} open loops stacking")
+    if compose.get("ok") is False:
+        caveats.append("module compose not clean")
+    if active_run:
+        caveats.append(f"Open run active: {active_run}")
+
+    if provisional:
+        ship = "PROVISIONAL"
+        ship_why = provisional + caveats
+    elif caveats:
+        ship = "CAVEATS"
+        ship_why = caveats
+    else:
+        ship = "OK"
+        ship_why = ["day chain live", "latest day filed", "local smoke ok"]
+
+    # Phoenix: self-correct when stack degrades (Mag dual of ARK)
+    phoenix_on = ship != "OK"
+    phoenix_reasons = list(ship_why) if phoenix_on else []
+    phoenix_fix = []
+    if live_stale:
+        phoenix_fix.append("mag.cmd catch-up  (or dashboard Catch up)")
+    if not smoke_ok:
+        phoenix_fix.append("mag.cmd multi-smoke")
+    if not has_bead:
+        phoenix_fix.append("Close session / backfill residual")
+    if not phoenix_fix and phoenix_on:
+        phoenix_fix.append("mag.cmd doctor")
+
+    # Verify day (60s dual of ARK challenge checklist)
+    verify = [
+        {"id": "residual", "label": "Residual DNA exists for latest day", "ok": bool(has_bead)},
+        {
+            "id": "tip",
+            "label": "Tip has leaves (chain alive)",
+            "ok": bool(tip.get("n_leaves")),
+        },
+        {
+            "id": "tip_match",
+            "label": "Tip last session matches latest bead",
+            "ok": bool(
+                sid
+                and tip.get("last_session_id")
+                and str(tip.get("last_session_id")) == str(sid)
+            ),
+        },
+        {
+            "id": "blurb",
+            "label": "Bead has blurb (filed story, not empty)",
+            "ok": bool((latest.get("blurb") or "").strip()),
+        },
+        {
+            "id": "smoke",
+            "label": "multi-smoke PASS",
+            "ok": bool(smoke_ok),
+        },
+        {
+            "id": "dig",
+            "label": "Research notes linked to a workday (optional)",
+            "ok": dig_edges_n > 0,
+        },
+    ]
+    verify_pass = sum(1 for v in verify if v["ok"])
+    verify_n = len(verify)
+
+    # Short chips for Office advanced — plain language
+    zeitgeist = [
+        "Find truth → file a note → load a short pack next time",
+        "Your files are the memory",
+        "Quote yourself as written",
+        "Brief the model; don’t dump the whole chat",
+        "No king of the network",
+    ]
+
+    primary_next = ""
+    if ideas_open:
+        primary_next = str(ideas_open[0].get("title") or "")
+    elif next_moves:
+        primary_next = str(next_moves[0])
+    elif working_open:
+        primary_next = str(working_open[0])
+    elif open_loops:
+        primary_next = str(open_loops[0])
+
+    last_title = (latest.get("title") or "").strip() or "no day filed yet"
+    # Plain operator headline for Office home — not status-bar chrome
+    if ship == "OK":
+        headline = f"Last day filed: {last_title[:90]}"
+    elif ship == "CAVEATS":
+        headline = f"Last day: {last_title[:70]} · note: {(ship_why[0] if ship_why else 'check Status')[:60]}"
+    else:
+        headline = f"No solid day on file yet · {(ship_why[0] if ship_why else 'file a day')[:70]}"
+
+    tip_short = (root[:12] + "…") if len(root) > 12 else (root or "—")
+
+    payload = {
+        "ok": True,
+        "schema": "mag_home_summary.v2",
+        "path": "FIND → FILE → LOAD",
+        "operator_card": "docs/ref/OPERATOR_CARD.md",
+        "headline": headline,
+        "zeitgeist": zeitgeist,
+        "ship": {
+            "status": ship,
+            "why": ship_why[:8],
+            "note": "Internal health for Status tab — not the top-bar chrome",
+        },
+        "phoenix": {
+            "on": phoenix_on,
+            "reasons": phoenix_reasons[:6],
+            "fixes": phoenix_fix[:5],
+        },
+        "verify": {
+            "pass": verify_pass,
+            "n": verify_n,
+            "items": verify,
+        },
+        "provenance": provenance,
+        "compose": compose,
+        "health": {
+            "status": health.get("status") if isinstance(health, dict) else "unknown",
+            "up": office_up or port_ok,
+            "office_up": office_up,
+            "live_stale": live_stale,
+            "port_8765": port_ok,
+            "ollama": ollama_ok,
+        },
+        "tip": {
+            "root_short": tip_short,
+            "n_leaves": tip.get("n_leaves"),
+            "last_filename": tip.get("last_filename"),
+            "last_session_id": tip.get("last_session_id"),
+            "updated_minute": tip.get("updated_minute"),
+            "dig_edges_n": dig_edges_n,
+        },
+        "n_sessions": n_sessions,
+        "latest_bead": latest,
+        "previous_bead": previous,
+        "trail": {"latest": latest, "previous": previous or None},
+        "trajectory": {
+            "primary_next": primary_next,
+            "ideas_open": ideas_open[:6],
+            "loops": open_loops[:6],
+            "next_moves": next_moves[:6],
+            "working_open": working_open[:6],
+        },
+        "now": {
+            "working_lane": working_lane,
+            "active_run": active_run,
+            "tip_short": tip_short,
+            "n_sessions": n_sessions,
+        },
+        "ideas": {
+            "n": ideas_n,
+            "open": ideas_open[:8],
+            "root_id": ideas_root,
+        },
+        "open_loops": open_loops,
+        "residual_bonds": residual_bonds,
+        "next_moves": next_moves,
+        "working_open": working_open,
+        "economy_today": (economy.get("today") or {}) if isinstance(economy, dict) else {},
+        "multi_smoke_ok": smoke_ok,
+        "multi_smoke_models": smoke.get("models_seen"),
+    }
+    try:
+        from mag.launch_pad import build_launch_pad
+
+        payload["launch_pad"] = build_launch_pad(n_sessions=n_sessions, ship=ship)
+    except Exception:
+        payload["launch_pad"] = {"show": False}
+    return 200, payload
+
+
+def h_ideas(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """GET collection: idea cards (optional ?status= & ?type= & ?limit=)."""
+    try:
+        from mag import idea_graph as ig
+
+        status = (p.get("status") or "").strip() or None
+        ntype = (p.get("type") or "").strip() or None
+        try:
+            limit = int(p.get("limit") or 80)
+        except ValueError:
+            limit = 80
+        nodes = ig.list_nodes(status=status, ntype=ntype, limit=max(1, min(limit, 200)))
+        return _ok({**ig.summary(), "nodes": nodes, "filter": {"status": status, "type": ntype}})
+    except Exception as e:
+        return _err(500, str(e), nodes=[])
+
+
+def h_idea_one(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """GET one idea resource."""
+    nid = (p.get("id") or "").strip()
+    if not nid:
+        return _err(400, "id required")
+    try:
+        from mag import idea_graph as ig
+
+        node = ig.get_node(nid)
+        if not node:
+            return _err(404, f"idea not found: {nid}")
+        nb = ig.neighborhood(str(node["id"]), depth=1)
+        return _ok(
+            {
+                "schema": ig.SCHEMA,
+                "id": node["id"],
+                "node": node,
+                "neighborhood": {
+                    "n_nodes": nb.get("n_nodes"),
+                    "n_edges": nb.get("n_edges"),
+                    "edges": nb.get("edges") or [],
+                },
+            }
+        )
+    except Exception as e:
+        return _err(500, str(e))
+
+
+def h_idea_pack(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """GET brief (pack) subresource for one idea — LOAD slice for models."""
+    nid = (p.get("id") or "").strip()
+    if not nid:
+        return _err(400, "id required")
+    try:
+        from mag import idea_graph as ig
+
+        node = ig.get_node(nid)
+        if not node:
+            return _err(404, f"idea not found: {nid}")
+        text = ig.pack_node(str(node["id"]))
+        return _ok({"schema": ig.SCHEMA, "id": node["id"], "node": node, "pack": text})
+    except Exception as e:
+        return _err(500, str(e))
+
+
+def h_ideas_create(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """POST collection — create a card (title required)."""
+    body = body or {}
+    title = str(body.get("title") or "").strip()
+    if not title:
+        return _err(400, "title required")
+    try:
+        from mag import idea_graph as ig
+
+        node = ig.add_node(
+            title=title,
+            ntype=str(body.get("type") or body.get("ntype") or "open_loop"),
+            status=str(body.get("status") or "open"),
+            body=str(body.get("body") or ""),
+            refs=list(body.get("refs") or []) if isinstance(body.get("refs"), list) else None,
+            tags=list(body.get("tags") or []) if isinstance(body.get("tags"), list) else None,
+            source=str(body.get("source") or "human"),
+        )
+        ig.write_latest_face()
+        return _ok({"schema": ig.SCHEMA, "node": node, "id": node["id"]}, status=201)
+    except ValueError as e:
+        return _err(400, str(e))
+    except Exception as e:
+        return _err(500, str(e))
+
+
+def h_idea_patch(p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """PATCH one idea — status / title / body (mark done, shelf, reopen)."""
+    nid = (p.get("id") or "").strip()
+    if not nid:
+        return _err(400, "id required")
+    body = body or {}
+    try:
+        from mag import idea_graph as ig
+
+        kwargs: dict[str, Any] = {}
+        if "status" in body and body["status"] is not None:
+            kwargs["status"] = str(body["status"])
+        if "title" in body and body["title"] is not None:
+            kwargs["title"] = str(body["title"])
+        if "body" in body and body["body"] is not None:
+            kwargs["body"] = str(body["body"])
+        if "tags" in body and isinstance(body["tags"], list):
+            kwargs["tags"] = body["tags"]
+        if not kwargs:
+            return _err(400, "nothing to patch — send status, title, body, and/or tags")
+        node = ig.patch_node(nid, **kwargs)
+        return _ok({"schema": ig.SCHEMA, "id": node["id"], "node": node})
+    except KeyError as e:
+        return _err(404, str(e))
+    except ValueError as e:
+        return _err(400, str(e))
+    except Exception as e:
+        return _err(500, str(e))
+
+
+def h_ideas_seed(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """POST action: import open items from working notes + agent_state paths."""
+    try:
+        from mag import idea_graph as ig
+
+        res = ig.seed_from_working_and_agent_state()
+        return _ok(res if isinstance(res, dict) else {"result": res})
+    except Exception as e:
+        return _err(500, str(e))
+
+
+
+
+
+def h_diary(params: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Day-by-day story spine from filed beads."""
+    from mag.diary import build_diary, write_diary_face
+    newest = str(params.get('newest') or params.get('order') or '').lower() in ('1', 'true', 'newest', 'desc')
+    write = str(params.get('write') or '').lower() in ('1', 'true', 'yes')
+    if write:
+        d = write_diary_face(newest_first=newest)
+    else:
+        d = build_diary(newest_first=newest)
+    return 200, d
+
+
+def h_story(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Full thesis + hero journey for Story dock tab."""
+    from mag.story import build_story
+
+    try:
+        return 200, build_story(write_face=True)
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:400], "schema": "mag_story.v1"}
+
+
+def h_story_file(params: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Read a small text artifact for Story tab (path under Mag ROOT only)."""
+    rel = unquote(str(params.get("path") or "")).replace("\\", "/").lstrip("/")
+    if not rel or ".." in rel.split("/"):
+        return 400, {"ok": False, "error": "bad path"}
+    # Stay inside Mag root — no path escape
+    path = (ROOT / rel).resolve()
+    try:
+        path.relative_to(ROOT.resolve())
+    except ValueError:
+        return 403, {"ok": False, "error": "path outside Mag root"}
+    if not path.is_file():
+        return 404, {"ok": False, "error": "not found", "path": rel}
+    if path.suffix.lower() not in {".md", ".txt", ".json", ".yaml", ".yml", ".rhai", ".ps1"}:
+        return 415, {"ok": False, "error": "type not text-previewable"}
+    try:
+        text = path.read_text(encoding="utf-8", errors="replace")
+    except OSError as e:
+        return 500, {"ok": False, "error": str(e)[:200]}
+    if len(text) > 120_000:
+        text = text[:120_000] + "\n…(clipped)"
+    return 200, {
+        "ok": True,
+        "path": rel,
+        "bytes": path.stat().st_size,
+        "text": text,
+    }
+
+def h_router_status(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Router dashboard: honest quotas, live connections, ingest — not fake savings."""
+    from datetime import datetime, timezone
+
+    out: dict[str, Any] = {
+        "ok": True,
+        "schema": "mag_router_status.v1",
+        "ts": datetime.now(timezone.utc).isoformat(),
+        "product": "Sovereign router — plug into others' infrastructure; residual stays local",
+        "honesty": (
+            "Budgets are Mag-tracked from configs/providers.yaml + logs/quota_state.json. "
+            "They are NOT Grok TUI / ChatGPT web plan percentages. Vendor dashboards are source of truth for subscription %.")
+    }
+
+    # --- connections (providers) ---
+    try:
+        from models.providers import status_table, load_providers
+        from models.quota import all_budgets, remote_provider_policy
+
+        st = status_table()
+        budgets = {b.get("provider"): b for b in (all_budgets().get("providers") or [])}
+        prefer = list((load_providers().get("defaults") or {}).get("prefer_order") or [])
+        connections = []
+        for row in st.get("providers") or []:
+            pid = row.get("id")
+            b = budgets.get(pid) or {}
+            max_c = b.get("max_calls")
+            used_c = int(b.get("used_calls") or 0)
+            max_t = b.get("max_tokens")
+            used_t = int(b.get("used_tokens") or 0)
+            pct_c = round(100.0 * used_c / max_c, 1) if max_c else None
+            pct_t = round(100.0 * used_t / max_t, 1) if max_t else None
+            # primary pressure signal
+            pct = pct_c if pct_c is not None else pct_t
+            if pct_c is not None and pct_t is not None:
+                pct = max(pct_c, pct_t)
+            connections.append({
+                "id": pid,
+                "name": row.get("name") or pid,
+                "live": bool(row.get("configured")),
+                "local": bool(row.get("free_local")),
+                "model": row.get("default_model"),
+                "tier_max": row.get("tier_max"),
+                "key_env": row.get("key_env"),
+                "used_calls": used_c,
+                "max_calls": max_c,
+                "used_tokens": used_t,
+                "max_tokens": max_t,
+                "pct_used": pct,
+                "remaining_calls": b.get("remaining_calls"),
+                "remaining_tokens": b.get("remaining_tokens"),
+                "reset_in_hours": b.get("reset_in_hours"),
+                "budget_ok": b.get("budget_ok", True),
+                "unlimited": b.get("unlimited", False),
+                "note": b.get("note") or "",
+            })
+        # sort: live first, then by pressure
+        connections.sort(key=lambda r: (0 if r["live"] else 1, -(r["pct_used"] or 0), r["id"]))
+        out["connections"] = connections
+        out["prefer_order"] = prefer
+        out["provider_policy"] = remote_provider_policy()
+        out["n_live"] = sum(1 for c in connections if c["live"])
+        out["n_remote_live"] = sum(1 for c in connections if c["live"] and not c["local"])
+    except Exception as e:
+        out["connections_error"] = str(e)[:300]
+
+    # --- usage today (honest, not counterfactual) ---
+    try:
+        from mag.lanes import usage_today_counts, grok_escalations_today, load_lanes
+        lanes = load_lanes()
+        max_d = int((lanes.get("grok_budget") or {}).get("max_escalations_per_day") or 8)
+        used_g = grok_escalations_today()
+        out["usage_today"] = {
+            "by_lane": usage_today_counts(),
+            "grok_escalations": used_g,
+            "grok_escalation_budget": max_d,
+            "grok_escalation_pct": round(100.0 * used_g / max_d, 1) if max_d else None,
+            "note": "Lane counts from Mag logs. Grok *TUI subscription* % is not visible to Mag.",
+        }
+    except Exception as e:
+        out["usage_error"] = str(e)[:200]
+
+    # --- ingest / websites ---
+    try:
+        cat = _read_json(INGEST / "catalog.json") or {}
+        items = cat.get("items") or {}
+        if isinstance(items, dict):
+            item_list = list(items.values())
+        elif isinstance(items, list):
+            item_list = items
+        else:
+            item_list = []
+        urls = []
+        kinds: dict[str, int] = {}
+        for it in item_list:
+            if not isinstance(it, dict):
+                continue
+            k = str(it.get("kind") or "other")
+            kinds[k] = kinds.get(k, 0) + 1
+            u = it.get("url")
+            if u:
+                urls.append({
+                    "title": (it.get("title") or "")[:80],
+                    "url": str(u)[:200],
+                    "kind": k,
+                    "id": it.get("id"),
+                })
+        # newest last in dict insertion — reverse for recent
+        urls = list(reversed(urls))[:40]
+        out["ingest"] = {
+            "count": cat.get("count") or len(item_list),
+            "kinds": kinds,
+            "recent_urls": urls[:12],
+            "all_urls_n": sum(1 for it in item_list if isinstance(it, dict) and it.get("url")),
+        }
+    except Exception as e:
+        out["ingest_error"] = str(e)[:200]
+
+    # --- local memory spine ---
+    try:
+        from mag import idea_graph as ig
+        nodes = ig.load_nodes()
+        out["memory"] = {
+            "idea_nodes": len(nodes),
+            "idea_open": sum(1 for n in nodes if n.get("status") == "open"),
+            "idea_edges": len(ig.load_edges()),
+        }
+    except Exception as e:
+        out["memory"] = {"error": str(e)[:120]}
+
+    try:
+        from mag.registry import list_registry
+        rows = list_registry(limit=500)
+        out["memory"] = dict(out.get("memory") or {})
+        out["memory"]["sessions_filed"] = len(rows)
+    except Exception:
+        pass
+
+    # --- nervous keys (presence only) ---
+    # HOT-PATH BOUND (2026-08-16): build_glance runs a ~4.4s live probe suite; a dashboard
+    # read should NOT re-probe every request (made /api/v1/status hang ~8s). Use the TTL
+    # cached glance (≤30s stale presence — fine for a status read).
+    try:
+        from mag.nervous_system import glance_cached
+        g = glance_cached(max_age_s=30)
+        out["body"] = {
+            "ollama": bool((g.get("body") or {}).get("ollama") or g.get("body_alive")),
+            "ok": g.get("ok"),
+            "keys": g.get("keys") or [],
+            "open_loops": (g.get("open_loops") or [])[:5],
+            "_cached": bool(g.get("_cached")),
+        }
+    except Exception as e:
+        out["body_error"] = str(e)[:120]
+
+    # --- supervisor (mag_launch.json) ---
+    try:
+        ml = _read_json(ROOT / "state" / "mag_launch.json") or {}
+        pids = ml.get("pids") or {}
+        wanted = ml.get("wanted") or {}
+        alive = {}
+        for role, pid in pids.items():
+            if pid and _pid_alive(pid):
+                alive[role] = pid
+        # supervisor "running" = any wanted role has a live pid
+        any_live = any(alive.get(r) for r in wanted if wanted.get(r))
+        out["supervisor"] = {
+            "running": any_live,
+            "pids": alive,
+            "wanted": wanted,
+            "started": ml.get("started"),
+            "check_s": ml.get("check_s"),
+        }
+    except Exception as e:
+        out["supervisor_error"] = str(e)[:120]
+
+    # --- orchestrator fleet ---
+    try:
+        from mag.orchestrator import TASK_DIR, TERMINAL
+        tasks = []
+        if TASK_DIR.is_dir():
+            for p in TASK_DIR.glob("*.json"):
+                try:
+                    t = json.loads(p.read_text(encoding="utf-8"))
+                except Exception:
+                    continue
+                tasks.append({
+                    "task_id": t.get("task_id"),
+                    "goal": (t.get("goal") or "")[:80],
+                    "status": t.get("status"),
+                    "provider": t.get("provider"),
+                    "created": t.get("created"),
+                    "finished": t.get("finished"),
+                    "exit_code": t.get("exit_code"),
+                })
+        tasks.sort(key=lambda t: t.get("created") or "", reverse=True)
+        out["fleet"] = {
+            "total": len(tasks),
+            "running": sum(1 for t in tasks if t["status"] not in TERMINAL),
+            "done": sum(1 for t in tasks if t["status"] == "done"),
+            "failed": sum(1 for t in tasks if t["status"] in ("failed", "died")),
+            "killed": sum(1 for t in tasks if t["status"] == "killed"),
+            "recent": tasks[:10],
+        }
+        # --- orchestrator task queue (auto-advance) ---
+        try:
+            from mag.orchestrator import queue_status as _qs
+            out["queue"] = _qs()
+        except Exception as qe:
+            out["queue_error"] = str(qe)[:120]
+    except Exception as e:
+        out["fleet_error"] = str(e)[:120]
+
+    # headline pressure
+    hot = []
+    for c in out.get("connections") or []:
+        if c.get("live") and not c.get("local") and c.get("pct_used") is not None and c["pct_used"] >= 25:
+            hot.append(f"{c['id']} ~{c['pct_used']}% of Mag budget")
+    out["pressure"] = hot[:6]
+    out["headline"] = (
+        f"{out.get('n_live', 0)} live routes · "
+        + (f"pressure: {', '.join(hot[:2])}" if hot else "no Mag-budget pressure")
+    )
+
+    try:
+        from mag.preferences import drainer_status
+
+        out["drainer"] = drainer_status()
+    except Exception as e:
+        out["drainer"] = {"error": str(e)[:120]}
+
+    try:
+        import urllib.request
+
+        mirror_up = False
+        try:
+            with urllib.request.urlopen("http://127.0.0.1:8743/", timeout=1.5) as resp:
+                mirror_up = 200 <= resp.status < 300
+        except Exception:
+            mirror_up = False
+        out["mirror"] = {
+            "port": 8743,
+            "up": mirror_up,
+            "url": "http://127.0.0.1:8743/",
+            "mag_tab": "http://127.0.0.1:8743/?preset=demo",
+        }
+    except Exception as e:
+        out["mirror"] = {"error": str(e)[:120]}
+
+    return 200, out
+
+
+def h_seat_feed(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.seat_feed import unified_seat_feed
+
+    try:
+        n = int(p.get("n") or 40)
+    except ValueError:
+        n = 40
+    return 200, unified_seat_feed(limit=max(5, min(n, 80)))
+
+
+def h_coordination(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Shared activity feed — all seats see who is doing what."""
+    from mag.coordination import activity_summary, read_activity
+
+    try:
+        limit = int(_p.get("limit") or 20)
+    except ValueError:
+        limit = 20
+    summary = activity_summary(limit=max(1, min(limit, 80)))
+    summary["entries"] = read_activity(limit=summary.get("recent") and limit or limit)
+    return 200, summary
+
+
+def h_coordination_post(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Log heartbeat / status from any seat (DeepSeek, Cursor, etc.)."""
+    from mag.coordination import log_activity
+
+    data = dict(body or {})
+    goal = str(data.get("goal") or data.get("detail") or "heartbeat").strip()
+    row = log_activity(
+        seat=str(data.get("seat") or "unknown").strip() or "unknown",
+        depth=str(data.get("depth") or "scut").strip(),
+        goal=goal,
+        status=str(data.get("status") or "running").strip(),
+        actor=str(data.get("actor") or data.get("seat") or "").strip() or None,
+        detail=str(data.get("detail") or "")[:300],
+        task_id=str(data.get("task_id") or "").strip() or None,
+    )
+    return 200, {"ok": True, "activity": row}
+
+
+def h_coordination_gather(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Gather compact snapshots for multiple workers for overseer decisions."""
+    from mag.orchestrator import task_status
+
+    data = dict(body or {})
+    task_ids = [str(t).strip() for t in (data.get("task_ids") or []) if str(t).strip()]
+    if not task_ids:
+        return _err(400, "task_ids required", code="INVALID_PAYLOAD", retryable=False)
+    snapshots: list[dict[str, Any]] = []
+    for tid in task_ids:
+        t = task_status(tid)
+        if not t:
+            snapshots.append({"task_id": tid, "ok": False, "error": "TASK_NOT_FOUND"})
+            continue
+        snapshots.append(
+            {
+                "task_id": tid,
+                "ok": True,
+                "chain_id": str(t.get("chain_id") or tid),
+                "goal": str(t.get("goal") or "")[:220],
+                "phase": str(t.get("phase") or t.get("status") or "unknown"),
+                "stalled": bool(t.get("alive") is False),
+                "recent_outcome": str(t.get("detail") or "")[:220],
+            }
+        )
+    return 200, {
+        "ok": True,
+        "schema": "overseer.gather_response.v1",
+        "data": {"chain_id": str(data.get("chain_id") or task_ids[0]), "snapshots": snapshots},
+    }
+
+
+def h_route(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Unified routing decision — classify + seat + provider + honest failure."""
+    from mag.operating_protocol import build_envelope
+    from mag.fork_router import detect_fork
+
+    data = dict(body or {})
+    goal = str(data.get("goal") or data.get("question") or "").strip()
+    if not goal:
+        return _err(400, "goal required")
+    depth = str(data.get("depth") or "").strip() or None
+    force_seat = str(data.get("force_seat") or "").strip() or None
+    force_provider = str(data.get("force_provider") or "").strip() or None
+    source = str(data.get("source") or data.get("actor") or "dashboard")
+    envelope = build_envelope(
+        goal,
+        source=source,
+        depth=depth,
+        force_seat=force_seat,
+        force_provider=force_provider,
+    )
+    current_goal = str(data.get("current_goal") or data.get("active_goal") or "").strip()
+    if data.get("include_fork", True) is not False:
+        envelope["fork_decision"] = detect_fork(goal, current_goal=current_goal)
+    res = (envelope.get("decision") or {}).get("route") or {}
+    launch = data.get("launch", False)
+    if isinstance(launch, str):
+        launch = launch.lower() not in ("0", "false", "no")
+    if launch:
+        from mag.coordination import coordinate
+
+        exec_res = coordinate(
+            goal,
+            depth=depth,
+            seat=str(data.get("caller_seat") or data.get("seat") or "api"),
+            actor=str(data.get("actor") or "api"),
+            launch=True,
+            background=bool(data.get("background")),
+            session_id=str(data.get("session_id") or "").strip() or None,
+            force_seat=force_seat,
+            force_provider=force_provider,
+        )
+        return (200 if exec_res.get("ok") else 500), {"protocol": envelope, "route": res, "execution": exec_res}
+    return 200, envelope
+
+
+def h_verkle_knot(p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Return an agent-ready knot, or deliberately hand it to the router."""
+    from mag.verkle_artifact import build_agent_knot
+
+    packet = build_agent_knot(str(p.get("id") or ""))
+    if not packet.get("ok"):
+        return 404, packet
+    data = dict(body or {})
+    if str(data.get("action") or "").lower() != "route":
+        return 200, packet
+    from mag.coordination import coordinate
+
+    goal = str(data.get("goal") or (packet.get("routing") or {}).get("suggested_goal") or "").strip()
+    evidence = packet.get("evidence") or {}
+    bounded_goal = (
+        goal
+        + "\n\nVERKLE KNOT EVIDENCE\n"
+        + json.dumps({"identity": packet.get("identity"), "meaning": packet.get("meaning"), "evidence": evidence}, default=str)[:6000]
+    )
+    result = coordinate(
+        bounded_goal,
+        seat=str(data.get("seat") or "verkle-knot"),
+        actor="dashboard-verkle-knot",
+        launch=True,
+        background=data.get("background", True) is not False,
+        session_id=str((packet.get("identity") or {}).get("session_id") or "") or None,
+    )
+    return (200 if result.get("ok") else 500), {"ok": bool(result.get("ok")), "knot": packet, "execution": result}
+
+
+def h_decide(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Framework decision: route + behavioral tips + breadcrumb interference status."""
+    from mag.decision_framework import decide
+
+    data = dict(body or {})
+    goal = str(data.get("goal") or data.get("question") or "").strip()
+    if not goal and not _p.get("goal"):
+        return _err(400, "goal required")
+    goal = goal or str(_p.get("goal") or "").strip()
+    depth = str(data.get("depth") or _p.get("depth") or "").strip() or None
+    res = decide(goal, depth=depth)
+    return (200 if res.get("ok") else 422), res
+
+
+def h_coordinate(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Classify depth + optionally launch the appropriate seat."""
+    from mag.coordination import coordinate
+
+    data = dict(body or {})
+    goal = str(data.get("goal") or data.get("question") or "").strip()
+    if not goal:
+        return _err(400, "goal required")
+    depth = str(data.get("depth") or "").strip() or None
+    seat = str(data.get("seat") or "api").strip() or "api"
+    launch = data.get("launch", True)
+    if isinstance(launch, str):
+        launch = launch.lower() not in ("0", "false", "no")
+    background = bool(data.get("background"))
+    res = coordinate(
+        goal,
+        depth=depth,
+        seat=seat,
+        actor=str(data.get("actor") or seat),
+        launch=bool(launch),
+        background=background,
+        session_id=str(data.get("session_id") or "").strip() or None,
+    )
+    code = 200 if res.get("ok") else 500
+    return code, res
+
+
+def h_autorun(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Governor/autorun status for Office card + desk ops strip."""
+    from mag.autorun_status import autorun_dashboard_status
+
+    return 200, autorun_dashboard_status()
+
+
+def h_handoff_inbox(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Peer/cloud/BUILD handoffs + orchestrator queue + coding scrum."""
+    from mag.handoff_inbox import build_inbox
+
+    limit = int(_p.get("limit") or "20")
+    return 200, build_inbox(limit=max(1, min(limit, 50)))
+
+
+def h_coding_session(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Run coding-session sprint to completion or POST {action: run|status}."""
+    from mag.coding_session_loop import load_config, session_status
+    from mag.coding_session_runner import run_until_done
+
+    data = dict(body or {})
+    action = str(data.get("action") or _p.get("action") or "status").strip().lower()
+    if action == "status":
+        cfg = load_config()
+        st = session_status(config=cfg)
+        try:
+            from mag.coding_session_orchestrator import assess_sprint_status
+
+            st["orchestrator"] = assess_sprint_status(config=cfg)
+        except Exception:
+            pass
+        return 200, st
+    if action == "run":
+        try:
+            max_ticks = int(data.get("max_ticks") or 50)
+        except (TypeError, ValueError):
+            max_ticks = 50
+        track = data.get("track")
+        track = str(track).strip() if track else None
+        note = str(data.get("note") or "")
+        dry = bool(data.get("dry"))
+        out = run_until_done(
+            max_ticks=max(1, min(max_ticks, 200)),
+            track=track,
+            note=note,
+            dry=dry,
+        )
+        code = 200 if out.get("ok") is not False else (422 if out.get("phase") == "preflight_fail" else 500)
+        return code, out
+    return _err(400, "action must be run or status")
+
+
+def h_coding_session_get(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    return h_coding_session(_p, {"action": "status"})
+
+
+def h_factory_machine(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """POST {action: run|status} — full factory machine or lightweight status."""
+    from mag.factory_machine import factory_machine_run, factory_machine_status
+
+    data = dict(body or {})
+    action = str(data.get("action") or _p.get("action") or "status").strip().lower()
+    if action == "status":
+        return 200, factory_machine_status()
+    if action == "run":
+        try:
+            max_ticks = int(data.get("max_ticks") or 50)
+        except (TypeError, ValueError):
+            max_ticks = 50
+        track = data.get("track")
+        track = str(track).strip() if track else None
+        note = str(data.get("note") or "")
+        dry = bool(data.get("dry"))
+        out = factory_machine_run(
+            branch_prefix=str(data.get("branch_prefix") or "mag/run"),
+            note=note,
+            max_ticks=max(1, min(max_ticks, 200)),
+            track=track,
+            dry=dry,
+        )
+        code = 200 if out.get("ok") is not False else (422 if out.get("phase") == "preflight_fail" else 500)
+        return code, out
+    return _err(400, "action must be run or status")
+
+
+def h_factory_machine_get(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    return h_factory_machine(_p, {"action": "status"})
+
+
+def h_drainer_status(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.preferences import drainer_status
+
+    st = drainer_status()
+    try:
+        ml = _read_json(ROOT / "state" / "mag_launch.json") or {}
+        pids = ml.get("pids") or {}
+        pid = pids.get("drainer")
+        st["supervisor_pid"] = pid
+        st["alive"] = bool(pid and _pid_alive(int(pid)))
+    except Exception:
+        st["alive"] = False
+    return 200, {"ok": True, **st}
+
+
+def h_drainer_stats(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Full drainer / queue / fleet / pending-handoff stats payload."""
+    from mag.drainer_stats import drainer_stats
+
+    return 200, drainer_stats()
+
+
+def h_ops_graph(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Categorized ops knowledge graph (nodes + edges) for the VS Code webview."""
+    from mag.ops_graph import render
+
+    try:
+        return 200, render()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_framework_map(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Functional grouping of the whole framework for the VS Code Framework Map."""
+    from mag.framework_map import render
+
+    try:
+        return 200, render()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_framework_reports(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Per-run-session compiler reports (who/what/when/where/why/intent/topics)."""
+    from mag.framework_map import list_reports
+
+    try:
+        tail = max(1, min(int(_p.get("limit") or 20), 200))
+    except (TypeError, ValueError):
+        tail = 20
+    try:
+        return 200, {"ok": True, "reports": list_reports(tail=tail)}
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_surface_audit(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Full surface audit — surface split + groups + seam verdict (Surface Hub)."""
+    from mag.surface_audit import audit
+
+    try:
+        return 200, audit()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_janitor(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Run the janitor (prune + document) or fetch its last report."""
+    from mag.janitor import last_report, run
+
+    body = body or {}
+    action = str(body.get("action") or _p.get("action") or "run")
+    if action == "last":
+        return 200, {"ok": True, "report": last_report()}
+    try:
+        return 200, run(
+            dry=bool(body.get("dry")),
+            prune_only=bool(body.get("prune_only")),
+            document_only=bool(body.get("document_only")),
+        )
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_orphan(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Orphan timer: note/touch/resolve/run undone-yet-intended intents."""
+    from mag.orphan_timer import list_open, note_intent, resolve_intent, run, touch_intent
+
+    body = body or {}
+    action = str(body.get("action") or _p.get("action") or "list")
+    try:
+        if action == "note":
+            return 200, note_intent(
+                str(body.get("intent") or ""), source=str(body.get("source") or "operator"), id=body.get("id")
+            )
+        if action == "touch":
+            return 200, touch_intent(str(body.get("id") or _p.get("id") or ""))
+        if action == "resolve":
+            return 200, resolve_intent(str(body.get("id") or _p.get("id") or ""))
+        if action == "run":
+            return 200, run(threshold_s=int(body.get("threshold") or 1800), dry=bool(body.get("dry")))
+        open_rows = list_open()
+        return 200, {"ok": True, "schema": "orphan_list.v1", "open": open_rows,
+                     "n_open": len(open_rows)}
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_failure(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Restful doctor: report an operational issue into the failure KB (catalogue +
+    classify + learn), or query stats / recurring patterns. GET ?view=stats|recurring."""
+    from mag.failure_kb import log_failure, recurring_patterns, stats
+
+    view = str(_p.get("view") or "").lower()
+    try:
+        if view == "stats":
+            return 200, stats()
+        if view == "recurring":
+            return 200, {"ok": True, "schema": "fkb_recurring.v1",
+                         "recurring": recurring_patterns(min_count=3)}
+        if view == "search":
+            from mag.failure_kb import query
+            q = str(_p.get("q") or (body or {}).get("q") or "")
+            return 200, {"ok": True, "schema": "fkb_search.v1", "q": q,
+                         "hits": query(q)}
+        # else: report a failure/observation (POST)
+        detail = str((body or {}).get("detail") or "").strip()
+        if not detail:
+            return _err(400, "detail required")
+        r = log_failure(
+            kind=str((body or {}).get("kind") or "ops")[:40],
+            detail=detail[:500],
+            tool=(body or {}).get("tool"),
+            error=(body or {}).get("error"),
+            phase=(body or {}).get("phase"),
+            session_id=(body or {}).get("session_id"),
+            provider=(body or {}).get("provider"),
+            model=(body or {}).get("model"),
+        )
+        return 200, {"ok": True, "schema": "fkb_report.v1", "logged": r}
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_warnings(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Passive warning monitor twin. GET ?view=status; POST {action: run[, dry]}.
+
+    Warnings are scanned from the framework's own logs, deduped by signature,
+    and reported into the failure KB — handled passively via our system.
+    """
+    from mag.warning_monitor import run, status
+
+    try:
+        b = body or {}
+        action = str(b.get("action") or _p.get("view") or "status").lower()
+        if action == "run":
+            return 200, run(dry=bool(b.get("dry")))
+        return 200, status()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_supervisor(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Single process supervisor twin. GET = status; POST {action: start|stop|restart, name}
+    or {action: up|down}. Replaces N terminal tabs with one managed host.
+    """
+    from mag.process_supervisor import restart_loop, start_loop, status, stop_loop
+
+    try:
+        b = body or {}
+        action = str(b.get("action") or _p.get("view") or "status").lower()
+        if action == "start":
+            name = str(b.get("name") or "").strip()
+            if not name:
+                return _err(400, "name required")
+            return 200, start_loop(name)
+        if action == "stop":
+            name = str(b.get("name") or "").strip()
+            if not name:
+                return _err(400, "name required")
+            return 200, stop_loop(name)
+        if action == "restart":
+            name = str(b.get("name") or "").strip()
+            if not name:
+                return _err(400, "name required")
+            return 200, restart_loop(name)
+        if action == "up":
+            from mag.process_supervisor import start_all
+            return 200, start_all()
+        if action == "down":
+            from mag.process_supervisor import stop_all
+            return 200, stop_all()
+        return 200, status()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_docker(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Docker containment twin. GET = status/probe (report-only). POST {action: up|down}
+    is an explicit, routed cutover action — the operator or a routed task decides, the
+    cadence NEVER auto-ups/downs.
+    """
+    from mag.docker_ops import down, status, up
+
+    try:
+        b = body or {}
+        action = str(b.get("action") or _p.get("view") or "status").lower()
+        if action == "up":
+            return 200, up()
+        if action == "down":
+            return 200, down()
+        return 200, status()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_handoff_deep(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.session_maze import deep_handoff, persist
+
+    try:
+        b = body or {}
+        action = str(b.get("action") or _p.get("view") or "spawn").lower()
+        if action in ("assemble", "persist", "maze"):
+            return 200, persist()
+        goal = str(b.get("goal") or "").strip()
+        if not goal:
+            return _err(400, "goal required")
+        return 200, deep_handoff(
+            goal,
+            model=str(b.get("model") or "deepseek-v4-pro"),
+            provider=str(b.get("provider") or "deepseek"),
+            timeout=int(b.get("timeout") or 900),
+        )
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_grok_batch(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Surface the Grok batch buffers + results (status of the autonomous batch)."""
+    from pathlib import Path as _Path
+
+    base = _Path(__file__).resolve().parent.parent / "memory" / "grok_batch"
+    buffers = sorted([p.name for p in (base / "buffers").glob("*.md")]) if (base / "buffers").is_dir() else []
+    # fallback: buffers may live at memory/grok_batch/*.md (root) if dir scheme differs
+    if not buffers:
+        buffers = sorted([p.name for p in base.glob("*.md")])
+    results = sorted([p.name for p in (base / "results").glob("*_result.md")]) if (base / "results").is_dir() else []
+    return 200, {
+        "ok": True, "schema": "grok_batch.v1",
+        "buffers": buffers, "results": results,
+        "path": str(base),
+    }
+
+
+def h_aos_grok(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Budgeted AOS grok access (start small, prove it).
+    GET = courtesy-budget status. POST {action: probe|ask, goal?, force?} — the probe is
+    the proof-first path; production asks respect the specific-ask gate + daily budget."""
+    from mag.aos_grok import budget_status, probe, specific_ask
+
+    try:
+        if body:
+            action = str(body.get("action") or "status").strip().lower()
+            if action == "probe":
+                return 200, probe(force=bool(body.get("force")))
+            if action == "ask":
+                goal = str(body.get("goal") or "").strip()
+                if not goal:
+                    return _err(400, "goal required for ask")
+                return 200, specific_ask(goal, force=bool(body.get("force")))
+        return 200, budget_status()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_research_lens(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Iterative self-referencing research lens. GET = status (corpus growth + lens weights).
+    POST {action: reindex|prior|build|fold|cadence, ask?, lens?} — prior/build make new
+    research self-reference the growing corpus; fold grows + sharpens it."""
+    from mag.research_lens import build_lens, fold_back, reindex, retrieve_prior, run_cadence, status
+
+    try:
+        if body:
+            action = str(body.get("action") or "status").strip().lower()
+            lens = str(body.get("lens") or "default").strip() or "default"
+            ask = str(body.get("ask") or "").strip()
+            if action == "reindex":
+                return 200, reindex()
+            if action == "prior":
+                if not ask:
+                    return _err(400, "ask required for prior")
+                return 200, retrieve_prior(ask, lens_id=lens)
+            if action == "build":
+                if not ask:
+                    return _err(400, "ask required for build")
+                return 200, build_lens(ask, lens_id=lens, title=str(body.get("title") or ""),
+                                       urls=list(body.get("urls") or []) or None)
+            if action == "fold":
+                path = str(body.get("path") or "").strip()
+                if not path:
+                    return _err(400, "path required for fold")
+                return 200, fold_back(path, lens_id=lens)
+            if action == "cadence":
+                return 200, run_cadence()
+        return 200, status()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_cheap_swarm(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Cheap swarm — expand + execute ghost-built packages. GET = status. POST
+    {action: scan|dispatch|cadence, path?} — dispatch sends one package to the cheap tier."""
+    from mag.cheap_swarm import dispatch, run_cadence, scan, status
+
+    try:
+        if body:
+            action = str(body.get("action") or "status").strip().lower()
+            if action == "scan":
+                return 200, scan()
+            if action == "dispatch":
+                path = str(body.get("path") or "").strip()
+                if not path:
+                    return _err(400, "path required for dispatch")
+                pkg = {"path": path, "name": __import__("pathlib").Path(path).name,
+                       "stem": __import__("pathlib").Path(path).stem, "kind": "build",
+                       "goal": f"Execute build package {__import__('pathlib').Path(path).name}: expand and implement."}
+                return 200, dispatch(pkg)
+            if action == "cadence":
+                return 200, run_cadence()
+        return 200, status()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_mycelium(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Unified self-scoring mycelium graph (republic OS). GET = status. POST
+    {action: link|reinforce|adopt|decay|boot, src?, dst?, type?, reward?}."""
+    from mag.mycelium import add_node, adopt_from_idea_graph, boot, decay, link, reinforce, status
+
+    try:
+        if body:
+            action = str(body.get("action") or "status").strip().lower()
+            if action == "boot":
+                return 200, boot()
+            if action == "adopt":
+                return 200, adopt_from_idea_graph()
+            if action == "decay":
+                return 200, decay()
+            if action == "link":
+                src, dst = str(body.get("src") or ""), str(body.get("dst") or "")
+                if not src or not dst:
+                    return _err(400, "src and dst required")
+                return 200, link(src, dst, etype=str(body.get("type") or "related"))
+            if action == "reinforce":
+                src, dst = str(body.get("src") or ""), str(body.get("dst") or "")
+                if not src or not dst:
+                    return _err(400, "src and dst required")
+                return 200, reinforce(src, dst, reward=float(body.get("reward") or 1.0), consumed=bool(body.get("consumed")))
+        return 200, status()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_republic_os(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Persistent mycelial-republic OS. GET = status. POST
+    {action: boot|seed-aos|round|cadence|checkpoint|own, resource?, owner?, dry?}."""
+    from mag.republic_os import boot, checkpoint, own, round_cycle, run_cadence, seed_aos, status
+
+    try:
+        if body:
+            action = str(body.get("action") or "status").strip().lower()
+            if action == "boot":
+                return 200, boot()
+            if action == "seed-aos" or action == "seed_aos":
+                return 200, seed_aos()
+            if action == "round":
+                return 200, round_cycle(dry=bool(body.get("dry")))
+            if action == "cadence":
+                return 200, run_cadence()
+            if action == "checkpoint":
+                return 200, checkpoint()
+            if action == "own":
+                resource = str(body.get("resource") or "").strip()
+                if not resource:
+                    return _err(400, "resource required")
+                return 200, own(resource, owner=str(body.get("owner") or "ghost"))
+        return 200, status()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_comms_trail(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Steal the cheap agent-communication trail. GET = status. POST
+    {action: capture|confirm|cadence}."""
+    from mag.comms_trail import capture, confirm_language, run_cadence, status
+
+    try:
+        if body:
+            action = str(body.get("action") or "status").strip().lower()
+            if action == "capture":
+                return 200, capture()
+            if action == "confirm" or action == "confirm-language":
+                return 200, confirm_language()
+            if action == "cadence":
+                return 200, run_cadence()
+        return 200, status()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_grok_mirror(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Grok mirror — mirror Grok's instruction-production through our pipeline.
+    GET = status (active coding window + latest mirror). POST {action: mirror|window,
+    vision?, grok?, research?, skill?, socratic?} — mirror runs the full autonomous pipeline."""
+    from mag.grok_mirror import active_coding_window, run_mirror, set_active_coding_window
+
+    try:
+        if body:
+            action = str(body.get("action") or "status").strip().lower()
+            if action == "window":
+                on = bool(body.get("on"))
+                return 200, set_active_coding_window(on)
+            if action == "mirror":
+                vision = str(body.get("vision") or "").strip()
+                if not vision:
+                    return _err(400, "vision required for mirror")
+                return 200, run_mirror(vision, grok=bool(body.get("grok", True)),
+                                       research=bool(body.get("research", True)),
+                                       skill=bool(body.get("skill", True)),
+                                       socratic=bool(body.get("socratic", True)),
+                                       lens_id=str(body.get("lens") or "default"))
+        return 200, active_coding_window()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_ghost(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Thin REST twin for ghost: GET ?view=sense|catalog; POST {action: sense|deploy|cycle}."""
+    from mag.ghost import catalog_summary, cycle, deploy, sense
+
+    view = str(_p.get("view") or "").lower()
+    try:
+        if view == "catalog":
+            return 200, {"ok": True, "summary": catalog_summary()}
+        b = body or {}
+        action = str(b.get("action") or view or "sense")
+        if action == "deploy":
+            text = str(b.get("text") or "").strip()
+            if not text:
+                return _err(400, "text required")
+            return 200, deploy(text, source="rest")
+        if action == "cycle":
+            return 200, cycle(dry=bool(b.get("dry")))
+        return 200, sense()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_law(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Code-as-law registry: GET status; POST {action: enforce|enforce-apply|seed, id?}."""
+    from mag.law import enforce, seed, status
+
+    try:
+        b = body or {}
+        action = str(b.get("action") or _p.get("action") or "status")
+        if action in ("seed", "register-defaults"):
+            return 200, seed()
+        if action in ("enforce", "enforce-apply"):
+            return 200, enforce(b.get("id"), apply=(action == "enforce-apply"))
+        return 200, status()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_steer(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """WINDOW_STEER loop: GET status; POST {action: emit|consume, ...}."""
+    from mag.steer import consume, emit, status
+
+    try:
+        b = body or {}
+        action = str(b.get("action") or _p.get("action") or "status")
+        if action == "emit":
+            return 200, emit(str(b.get("id") or "steer"), str(b.get("source") or "rest"),
+                             str(b.get("text") or ""), phases=b.get("phases") or [])
+        if action == "consume":
+            return 200, consume()
+        return 200, status()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_ghost_summon(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Summon @ghost with the current session: current + future + coldest vertices -> intent.
+    Body: {context, reason}. Deterministic by default; reason=True narrates via a model call.
+    """
+    from mag.ghost_summon import summon
+
+    try:
+        b = body or {}
+        ctx = str(b.get("context") or _p.get("context") or "")
+        return 200, summon(ctx, reason=bool(b.get("reason")))
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_legacy_audit(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Legacy-process governance: GET = catalog (report-only). POST {action: retire|research}
+    retires classified-legacy procs or flags unknowns for research. Never touches current.
+    """
+    from mag.legacy_audit import catalog, research, retire
+
+    try:
+        b = body or {}
+        action = str(b.get("action") or _p.get("action") or "catalog").lower()
+        if action == "retire":
+            return 200, retire(dry=bool(b.get("dry")))
+        if action == "research":
+            return 200, research()
+        return 200, catalog()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_run(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Thin REST twin for run: spawn a goal through the orchestrator."""
+    from mag.orchestrator import spawn_task
+
+    b = body or {}
+    goal = str(b.get("goal") or _p.get("goal") or "").strip()
+    if not goal:
+        return _err(400, "goal required")
+    try:
+        r = spawn_task(
+            goal,
+            provider=str(b.get("provider") or _p.get("provider") or "deepseek"),
+            model=b.get("model"),
+            tag=str(b.get("tag") or _p.get("tag") or "rest-run"),
+        )
+        return 200, r
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_spec_gate(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Thin REST twin for spec-gate: freeze or check a file's fingerprint."""
+    from mag.spec_gate import check, freeze
+
+    b = body or {}
+    action = str(b.get("action") or _p.get("action") or "check")
+    path = str(b.get("path") or _p.get("path") or "").strip()
+    if not path:
+        return _err(400, "path required")
+    try:
+        if action == "freeze":
+            return 200, freeze(path, label=str(b.get("label") or ""))
+        return 200, check(path, expected_sha=b.get("sha"))
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_extension_deploy(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Deploy the MAG extension files to the installed extension dir (architecture path)."""
+    from mag.extension_deploy import deploy
+
+    try:
+        return 200, deploy()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_seat_steer(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """POST /api/v1/seat/steer - the architecture path for live seat actions: send a message into
+    one surface, or run the bounded shared-transcript roundtable. Body:
+    {surface, message, enqueue?:bool} or
+    {mode:"roundtable", message, participants?:[...], rounds?:1..3, why?:str,
+    baseline?:{surface,answer}} (huang gate: the roundtable refuses to escalate without a why
+    plus a single-seat baseline).
+    Mirrors h_extension_deploy (the path precedent) - the agent never reaches for a shell."""
+    from mag.seat_steer import send, enqueue
+
+    body = body or {}
+    surface = str(body.get("surface") or "chatgpt")
+    message = str(body.get("message") or "")
+    try:
+        if str(body.get("mode") or "").strip().lower() == "roundtable":
+            from mag.frontier_salon import roundtable
+
+            participants = body.get("participants")
+            if participants is not None and not isinstance(participants, list):
+                return 400, {"ok": False, "error": "participants must be a list of seat labels"}
+            rt_kwargs: dict[str, Any] = {
+                "participants": participants,
+                "rounds": int(body.get("rounds") or 2),
+                "max_wait_s": int(body.get("max_wait_s") or 90),
+            }
+            if str(body.get("why") or "").strip():
+                rt_kwargs["why"] = str(body.get("why"))
+            baseline = body.get("baseline")
+            if isinstance(baseline, dict) and (
+                    str(baseline.get("surface") or "").strip()
+                    or str(baseline.get("answer") or "").strip()):
+                rt_kwargs["baseline"] = baseline
+            return 200, roundtable(message, **rt_kwargs)
+        if body.get("enqueue"):
+            return 200, enqueue(surface, message)
+        return 200, send(surface, message)
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_cleanup(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Thin REST twin for passive cleanup: audit + (dry=false) move transient to trash.
+
+    Body: {dry: bool} — default true (audit only). dry=false moves to memory/trash
+    (reversible). Respects operator seat.
+    """
+    from mag.cleanup import run_cadence
+
+    b = body or {}
+    dry = str(b.get("dry", _p.get("dry", "true"))).lower() not in ("false", "0", "no")
+    try:
+        out = run_cadence(dry=dry)
+        return 200, out
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_elevate(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Thin REST twin for elevate: shape the right-sized ask for the strongest model + capture it.
+
+    Body: {goal, model?, dry?}. dry (default) returns the shaped ask + capture; it
+    does NOT fire a model call.
+    """
+    from mag.elevate import elevate
+
+    b = body or {}
+    goal = str(b.get("goal") or _p.get("goal") or "").strip()
+    if not goal:
+        return _err(400, "goal required")
+    model = str(b.get("model") or _p.get("model") or "grok-4.5")
+    dry = str(b.get("dry", _p.get("dry", "true"))).lower() not in ("false", "0", "no")
+    try:
+        out = elevate(goal, model=model, dry=dry)
+        return 200, out
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+def h_embassy_publish(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Thin REST twin for embassy publish: send the AOS packet to GitHub (dry by default).
+
+    Body: {dry: bool} — default true. Use dry=false (with gh authenticated) to actually
+    create+push the repo. Gate protects against secrets/placeholders automatically.
+    """
+    from mag.embassy_deliver import publish
+
+    b = body or {}
+    dry = str(b.get("dry", _p.get("dry", "true"))).lower() not in ("false", "0", "no")
+    repo_url = str(b.get("repo_url") or _p.get("repo_url") or "").strip() or None
+    try:
+        out = publish(dry=dry, repo_url=repo_url)
+        return (200, out) if out.get("ok") else (409, out)
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)[:300]}
+
+
+
+def h_live_feed(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Recent lines from a live trail (overseer|ghost|drainer) for polling views."""
+    from mag.live_feed import FEEDS
+
+    data = dict(body or {})
+    kind = str(data.get("kind") or _p.get("kind") or "").strip().lower()
+    if kind not in FEEDS:
+        return _err(400, f"kind must be one of: {', '.join(FEEDS)}")
+    try:
+        limit = max(1, min(int(data.get("limit") or _p.get("limit") or 30), 200))
+    except (TypeError, ValueError):
+        limit = 30
+    out = {"ok": True, "kind": kind, "files": [], "lines": []}
+    for p in FEEDS[kind]:
+        if not p.exists():
+            continue
+        rows = []
+        try:
+            for line in p.read_text(encoding="utf-8", errors="replace").splitlines():
+                if not line.strip():
+                    continue
+                try:
+                    rows.append(json.loads(line))
+                except json.JSONDecodeError:
+                    continue
+        except OSError:
+            continue
+        out["files"].append(str(p.relative_to(ROOT)))
+        out["lines"].extend(rows[-limit:])
+    return 200, out
+
+
+def h_drainer_toggle(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.preferences import drainer_status, set_drainer
+
+    body = body or {}
+    enabled = body.get("enabled")
+    if enabled is None:
+        return _err(400, "enabled boolean required")
+    set_drainer(bool(enabled))
+    st = drainer_status()
+    return 200, {"ok": True, "drainer": st, "hint": st.get("hint")}
+
+
+def h_workspace_tree(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.workspace_api import list_tree
+
+    rel = str(p.get("path") or "").strip()
+    try:
+        depth = int(p.get("depth") or 2)
+    except ValueError:
+        depth = 2
+    return 200, list_tree(rel, max_depth=max(1, min(depth, 4)))
+
+
+def h_workspace_file_get(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.workspace_api import read_file
+
+    rel = str(p.get("path") or "").strip()
+    if not rel:
+        return _err(400, "path required")
+    res = read_file(rel)
+    return (200 if res.get("ok") else 404), res
+
+
+def h_workspace_file_post(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.workspace_api import write_file
+
+    body = body or {}
+    rel = str(body.get("path") or "").strip()
+    if not rel:
+        return _err(400, "path required")
+    res = write_file(rel, str(body.get("text") or ""))
+    return (200 if res.get("ok") else 400), res
+
+
+def h_autopilot(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.autopilot import autopilot_once
+
+    body = body or {}
+    res = autopilot_once(
+        queue_improve=body.get("queue_improve", True) is not False,
+        governor=body.get("governor", True) is not False,
+        drain=bool(body.get("drain")),
+        max_queue=int(body.get("max_queue") or 2),
+    )
+    return 200, res
+
+
+def h_orchestrator_queue_post(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.orchestrator import enqueue
+
+    body = body or {}
+    goal = str(body.get("goal") or "").strip()
+    if not goal:
+        return _err(400, "goal required")
+    rec = enqueue(
+        goal,
+        provider=str(body.get("provider") or "deepseek"),
+        tag=str(body.get("tag") or "api"),
+        model=str(body.get("model") or "").strip() or None,
+        timeout=int(body.get("timeout") or 900),
+        priority=int(body.get("priority") or 0),
+        tier=str(body.get("tier") or "").strip() or None,
+        heavy=body.get("heavy") if isinstance(body.get("heavy"), bool) else None,
+        schedule_policy=str(body.get("schedule_policy") or "").strip() or None,
+    )
+    return 200, {"ok": True, **rec}
+
+
+def h_handoff_request_post(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Drop a handoff request file — the MAG VS Code extension watches this dir and
+    auto-opens a new tab executing the ask. Body: {ask|goal, provider|assignee, id?}.
+
+    The watcher in vscode-mag-map opens a new integrated terminal tab that runs
+    `main.py agent --provider <provider> --query "<ask>"` as soon as the file lands.
+    """
+    from datetime import datetime, timezone
+
+    body = body or {}
+    ask = str(body.get("ask") or body.get("goal") or body.get("question") or "").strip()
+    if not ask:
+        return _err(400, "ask (or goal/question) required")
+    provider = str(body.get("provider") or body.get("assignee") or "deepseek").strip() or "deepseek"
+    req_id = str(body.get("id") or "").strip() or "req-" + uuid.uuid4().hex[:8]
+    req_dir = ROOT / "queue" / "handoff" / "requests"
+    req_dir.mkdir(parents=True, exist_ok=True)
+    req_file = req_dir / f"{req_id}.json"
+    req_file.write_text(
+        json.dumps(
+            {
+                "schema": "handoff_request.v1",
+                "id": req_id,
+                "ask": ask,
+                "provider": provider,
+                "source": str(body.get("source") or "api").strip(),
+                "created_at": datetime.now(timezone.utc).isoformat(),
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    return 200, {
+        "ok": True,
+        "schema": "handoff_request.v1",
+        "id": req_id,
+        "file": str(req_file),
+        "note": "MAG VS Code extension watches queue/handoff/requests/ — a new tab will open to execute this ask.",
+    }
+
+
+def h_vscode_feed(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Feed a VS Code chat signal into the behavioral loop (pile/training/ledger/pro)."""
+    from mag.vscode_feed import capture, status
+
+    if body is None or not body:
+        return 200, status()
+    goal = str(body.get("goal") or body.get("ask") or body.get("text") or "").strip()
+    outcome = str(body.get("outcome") or "unknown").strip()
+    lessons = [str(l) for l in (body.get("lessons") or []) if str(l).strip()]
+    res = capture(
+        goal=goal,
+        outcome=outcome,
+        tier=str(body.get("tier") or "T1"),
+        lessons=lessons,
+        source=str(body.get("source") or "copilot"),
+        session_id=str(body.get("session_id") or body.get("session") or ""),
+    )
+    return 200, res
+
+
+def h_seat_task(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Unified Cursor→Mag tasking: {goal?, seat?, mode: delegate|queue|autopilot|agent|dispatch}."""
+    data = dict(body or {})
+    mode = str(data.get("mode") or "delegate").strip().lower()
+    seat = str(data.get("seat") or "cursor").strip() or "cursor"
+    goal = str(data.get("goal") or data.get("question") or data.get("q") or "").strip()
+
+    if mode == "autopilot":
+        code, res = h_autopilot(_p, data)
+        if isinstance(res, dict):
+            res.setdefault("mode", mode)
+            res.setdefault("seat", seat)
+        return code, res
+
+    if mode in ("queue", "enqueue"):
+        if not goal:
+            return _err(400, "goal required for queue mode")
+        tag = str(data.get("tag") or f"{seat}-queued").strip()
+        code, res = h_orchestrator_queue_post(_p, {**data, "goal": goal, "tag": tag})
+        if isinstance(res, dict):
+            res.setdefault("mode", mode)
+            res.setdefault("seat", seat)
+        return code, res
+
+    if mode in ("agent", "delegate", "ask"):
+        if not goal:
+            return _err(400, "goal required")
+        session = str(data.get("session_id") or data.get("session") or seat).strip() or seat
+        code, res = h_post_agent(_p, {**data, "goal": goal, "session_id": session})
+        if isinstance(res, dict):
+            res.setdefault("mode", mode)
+            res.setdefault("seat", seat)
+        return code, res
+
+    if mode == "dispatch":
+        if not goal:
+            return _err(400, "goal required")
+        code, res = h_post_dispatch(_p, {**data, "goal": goal, "seat": seat})
+        if isinstance(res, dict):
+            res.setdefault("mode", mode)
+            res.setdefault("seat", seat)
+        return code, res
+
+    return _err(
+        400,
+        f"unknown mode {mode!r} — use delegate|queue|autopilot|agent|dispatch",
+    )
+
+
+def h_kpi(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.records import write_kpi
+
+    return 200, write_kpi(source="api")
+
+
+def h_registry(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.registry import list_registry
+
+    rows = list_registry(limit=300)
+    return 200, {"ok": True, "count": len(rows), "sessions": rows}
+
+
+def h_sessions(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from dashboard.server import list_sessions
+
+    rows = list_sessions()
+    return 200, {"ok": True, "count": len(rows), "sessions": rows}
+
+
+def h_session(params: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from dashboard.server import api_session
+
+    data = api_session(unquote(params["id"]))
+    code = 200 if data.get("ok") else 404
+    return code, data
+
+
+def h_session_residual(params: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.registry import load_residual
+
+    sid = unquote(params["id"])
+    d = load_residual(sid)
+    if not d:
+        return 404, {"ok": False, "error": "residual not found", "session_id": sid}
+    return 200, {"ok": True, "session_id": sid, "residual": d}
+
+
+def h_board(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.lanes import board_pack
+
+    return 200, board_pack()
+
+
+def h_chain(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    return 200, {
+        "ok": True,
+        "tip": _read_json(BIO / "verkle_tip.json"),
+        "chain": _read_jsonl(BIO / "verkle_chain.jsonl"),
+        "evolution": _read_json(BIO / "topic_evolution.json"),
+        "timeline": _read_jsonl(BIO / "knot_timeline.jsonl"),
+    }
+
+
+def h_wave(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """GET /api/v1/wave — standing-wave snapshot. One JSON, many faces."""
+    from mag.wave import snapshot
+    sid = str((_p or {}).get("session_id") or "")
+    return 200, snapshot(session_id=sid)
+
+
+def h_ingest(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    cat = _read_json(INGEST / "catalog.json") or {}
+    reg = _read_jsonl(INGEST / "registry.jsonl", limit=200)
+    return 200, {"ok": True, "catalog": cat, "registry_tail": reg}
+
+
+def h_overview(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from dashboard.server import api_overview
+
+    return 200, api_overview()
+
+
+def h_hood(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """GET /api/v1/hood — model trajectory + RIB bus (looking-eye)."""
+    from mag.hood import snapshot
+
+    return 200, snapshot()
+
+
+def h_nervous(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Agent-ops nervous system glance (no secrets)."""
+    from mag.nervous_system import build_glance
+
+    return 200, build_glance(write=True)
+    
+def h_system_map(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Live autonomy map — current state, nervous system, improve, resonance, inbox."""
+    from mag.system_map import build_system_map
+
+    data = dict(body or {})
+    goal = str(data.get("goal") or _p.get("goal") or "").strip()
+    write = data.get("write", True)
+    if isinstance(write, str):
+        write = write.lower() not in ("0", "false", "no")
+    return 200, build_system_map(goal=goal, write=bool(write))
+
+
+def h_display(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """TV-safe ambient display — chronicle + nervous + desk (Roku / wall clients)."""
+    from mag.display import build_display_payload
+
+    limit = 8
+    try:
+        limit = max(1, min(20, int(_p.get("limit") or "8")))
+    except ValueError:
+        pass
+    return 200, build_display_payload(event_limit=limit)
+
+
+def h_stack(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Agent stack — services, fleet, REST-sourced outputs (desk-like viewport)."""
+    from mag.stack import build_stack_payload
+
+    feed_limit = 24
+    agent_limit = 30
+    try:
+        feed_limit = max(5, min(60, int(_p.get("limit") or "24")))
+        agent_limit = max(5, min(80, int(_p.get("agents") or "30")))
+    except ValueError:
+        pass
+    return 200, build_stack_payload(feed_limit=feed_limit, agent_limit=agent_limit)
+
+
+def h_repo_readiness(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Read-only git/worktree handoff gate; never fetches or changes refs."""
+    from mag.repo_readiness import repo_readiness
+
+    return 200, repo_readiness()
+
+
+def h_feature_lab(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Experimental worktrees and their evidence-backed graduation gates."""
+    from mag.feature_lab import request, status
+
+    if body is None:
+        return 200, status()
+    result = request(str(body.get("branch") or ""), str(body.get("action") or ""))
+    return (200 if result.get("ok") else 400), result
+
+
+def h_local_scheduler(p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Local GPU task scheduler — queue depth, steer, triage."""
+    from mag.local_scheduler import deepseek_triage, run_exclusive, status, steer
+
+    if not body:
+        return 200, status()
+    action = str(body.get("action") or body.get("cmd") or "").strip().lower()
+    if action == "steer":
+        cmd = str(body.get("cmd") or body.get("text") or body.get("steer") or "")
+        return 200, steer(cmd)
+    if action == "triage":
+        return 200, deepseek_triage(dry=bool(body.get("dry")))
+    if action == "desk":
+        return 200, run_exclusive(kind="desk", payload=body.get("payload") or body, label="desk")
+    return 400, {"ok": False, "error": "use action steer|triage|desk or GET for status"}
+
+
+def h_local_pulse(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Local model pulse — CPU + Ollama process signal for thinking display."""
+    from mag.local_pulse import build_local_pulse
+
+    return 200, build_local_pulse()
+
+
+def h_agent_arena(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Agent arena — seat vs seat games (chess POC + TextArena probes). GET status · POST action."""
+    from mag.agent_arena import handle_action, status
+
+    if body is None:
+        if _p.get("games") in ("1", "true", "yes"):
+            from mag import arena_adapter as aa
+
+            return 200, aa.list_games()
+        if _p.get("league") in ("1", "true", "yes"):
+            from mag.arena_learning import league_snapshot
+
+            return 200, {
+                "ok": True,
+                **league_snapshot(
+                    game=_p.get("game") or "chess",
+                    probe_type=_p.get("probe_type") or None,
+                ),
+            }
+        if _p.get("strategies") in ("1", "true", "yes"):
+            from mag.arena_strategies import list_strategies
+
+            return 200, list_strategies()
+        return 200, status()
+    out = handle_action(body)
+    code = 200 if out.get("ok", True) else 400
+    return code, out
+
+
+def h_routing_network(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Routing network — switchboard mesh + multi-seat concert plans."""
+    from mag.routing_concert import (
+        build_concert_plan,
+        conductor_review_plan,
+        run_concert,
+        status as concert_status,
+    )
+
+    if body is None:
+        if _p.get("mesh") in ("1", "true", "yes"):
+            from mag.switchboard import mesh
+
+            return 200, mesh(include_seats=True)
+        if _p.get("peers") in ("1", "true", "yes"):
+            from mag.switchboard import peers
+
+            return 200, {"ok": True, "peers": peers(live_only=False)}
+        return 200, concert_status()
+
+    action = str(body.get("action") or "plan").strip().lower()
+    goal = str(body.get("goal") or body.get("question") or "").strip()
+
+    if action in ("route", "route_intent"):
+        from mag.switchboard import route_intent
+
+        if not goal:
+            return _err(400, "goal required")
+        dry = body.get("dry") in (True, "1", 1, "true", "yes")
+        return 200, route_intent(goal, dry=dry)
+
+    if action == "plan":
+        if not goal:
+            return _err(400, "goal required")
+        conductor = str(body.get("conductor") or body.get("conductor_seat") or "deepseek")
+        return 200, build_concert_plan(goal, conductor_seat=conductor)
+
+    if action in ("conductor", "conductor_review", "deepseek_review"):
+        plan = body.get("plan")
+        if not plan and goal:
+            plan = build_concert_plan(goal)
+        if not isinstance(plan, dict):
+            return _err(400, "plan required")
+        out = conductor_review_plan(plan)
+        code = 200 if out.get("ok") else 500
+        return code, out
+
+    if action in ("run", "concert", "execute"):
+        plan = body.get("plan")
+        if not plan and goal:
+            plan = build_concert_plan(goal)
+        if not isinstance(plan, dict):
+            return _err(400, "plan required")
+        dry = body.get("dry") in (True, "1", 1, "true", "yes")
+        out = run_concert(plan, dry=dry, max_steps=int(body.get("max_steps") or 6))
+        return 200, out
+
+    if action == "mesh":
+        from mag.switchboard import mesh
+
+        return 200, mesh(include_seats=body.get("seats") is not False)
+
+    if action in ("author_playbook", "teach_playbook"):
+        from mag.local_playbook import frontier_author_playbook
+
+        domain = str(body.get("domain") or "routing")
+        goal = str(body.get("goal") or body.get("question") or "")
+        if not goal:
+            return _err(400, "goal required")
+        return 200, frontier_author_playbook(
+            domain=domain,
+            goal=goal,
+            playbook_id=str(body.get("playbook_id") or ""),
+        )
+
+    if action in ("playbooks", "list_playbooks"):
+        from mag.local_playbook import list_playbooks
+
+        return 200, list_playbooks()
+
+    return _err(400, f"unknown action: {action}")
+
+
+def h_voice_scratch(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Voice scratch pad — append / commit / clear (same as cast :8766)."""
+    try:
+        from mag.voice_scratch import handle_scratch
+
+        out = handle_scratch(body or {})
+        if out.get("ok") or out.get("cancelled"):
+            return 200, out
+        return 400, out if isinstance(out, dict) else {"ok": False, "error": "scratch failed"}
+    except Exception as exc:
+        return 500, {
+            "ok": False,
+            "error": f"voice_scratch crash: {exc!s}"[:240],
+            "speak_text": "Something broke on the server. Try again in a second.",
+        }
+
+
+def h_voice_turn(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Legacy one-shot voice turn."""
+    try:
+        from mag.voice_turn import handle_voice_turn
+
+        out = handle_voice_turn(body or {})
+        return (200 if out.get("ok") else 400), out
+    except Exception as exc:
+        return 500, {"ok": False, "error": f"voice_turn crash: {exc!s}"[:240]}
+
+
+def h_voice_shadow(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Background DeepSeek scout for voice — status / start / clear."""
+    try:
+        from mag.voice_shadow import handle_shadow
+
+        out = handle_shadow(body or {})
+        return 200 if out.get("ok") else 400, out
+    except Exception as exc:
+        return 500, {"ok": False, "error": f"voice_shadow crash: {exc!s}"[:240]}
+
+
+def h_voice_task(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Voice → REST build tasks for cheap coding agents."""
+    try:
+        from mag.voice_tasks import handle_voice_task
+
+        data = body or {}
+        # GET-style list when no body action
+        if not data:
+            data = {"action": "list"}
+        out = handle_voice_task(data)
+        return 200 if out.get("ok") else 400, out
+    except Exception as exc:
+        return 500, {"ok": False, "error": f"voice_task crash: {exc!s}"[:240]}
+
+
+def h_voice_stt(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Local Whisper-class STT — no voice training; isolation via clean capture + VAD."""
+    try:
+        from mag.voice_stt import handle_stt
+
+        data = body or {}
+        # GET with empty body → status
+        if not data:
+            data = {"action": "status"}
+        out = handle_stt(data)
+        # status always 200; transcribe may be 400 on missing payload
+        if out.get("schema") == "mag_voice_stt.v1" and "text" not in out and "error" not in out:
+            return 200, out
+        if out.get("ok") is False and out.get("error"):
+            code = 400 if "required" in str(out.get("error", "")).lower() or "not installed" in str(out.get("error", "")).lower() else 500
+            # empty transcript is still ok:False with empty text
+            if out.get("backend") or out.get("path") is not None:
+                return 200, out
+            return code, out
+        return 200, out
+    except Exception as exc:
+        return 500, {"ok": False, "error": f"voice_stt crash: {exc!s}"[:240], "text": ""}
+
+
+def h_voice_canvas(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Evolving dig board / Verkle-flavored canvas of what voice seats are discussing."""
+    try:
+        from mag.voice_dig_board import handle_dig
+
+        data = dict(body or {})
+        # GET query session_id may live in path params from router
+        if not data.get("session_id") and _p.get("session_id"):
+            data["session_id"] = _p["session_id"]
+        if not data.get("action"):
+            data["action"] = "canvas"
+        out = handle_dig(data)
+        return 200 if out.get("ok") else 400, out
+    except Exception as exc:
+        return 500, {"ok": False, "error": f"voice_canvas crash: {exc!s}"[:240]}
+
+
+def h_diary_seal(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Seal voice/talk into Verkle diary node + high-fidelity train event."""
+    try:
+        from mag.diary_node import handle_diary
+
+        data = dict(body or {})
+        if not data.get("action"):
+            # POST with session_id → seal; empty GET-style → list
+            data["action"] = "seal" if data.get("session_id") or data.get("title") else "list"
+        if _p.get("session_id") and not data.get("session_id"):
+            data["session_id"] = _p["session_id"]
+        out = handle_diary(data)
+        return 200 if out.get("ok") else 400, out
+    except Exception as exc:
+        return 500, {"ok": False, "error": f"diary_seal crash: {exc!s}"[:240]}
+
+
+def h_voice_handoff(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Non-blocking FILE to DeepSeek — voice keeps talking."""
+    try:
+        from mag.voice_handoff import handle_handoff
+
+        data = dict(body or {})
+        if not data.get("action"):
+            data["action"] = "list"
+        if _p.get("session_id") and not data.get("session_id"):
+            data["session_id"] = _p["session_id"]
+        out = handle_handoff(data)
+        return 200 if out.get("ok") else 400, out
+    except Exception as exc:
+        return 500, {"ok": False, "error": f"voice_handoff crash: {exc!s}"[:240]}
+
+
+def h_refine_chain(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Multi-seat refine chain (Project Verkle recursive pattern)."""
+    try:
+        from mag.refine_chain import handle_refine
+
+        data = dict(body or {})
+        if not data.get("action"):
+            data["action"] = "list"
+        out = handle_refine(data)
+        return 200 if out.get("ok") else 400, out
+    except Exception as exc:
+        return 500, {"ok": False, "error": f"refine_chain crash: {exc!s}"[:240]}
+
+
+def h_game(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Living campaign — engine-first classic keep / tabletop-dnd."""
+    try:
+        from mag.game_campaign import handle_game
+
+        data = dict(body or {})
+        # GET /api/v1/game?action=status&session_id=…
+        for k in ("action", "session_id", "campaign_id", "module", "module_id", "text"):
+            if not data.get(k) and _p.get(k):
+                data[k] = _p.get(k)
+        if not data.get("action"):
+            data["action"] = "status"
+        out = handle_game(data)
+        return 200 if out.get("ok") is not False else 400, out
+    except Exception as exc:
+        return 500, {"ok": False, "error": f"game crash: {exc!s}"[:240]}
+
+
+def h_table_view(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """ASCII/DF table projection of engine state — REST, cheap, offline."""
+    try:
+        from mag.game_view import handle_table_view
+
+        out = handle_table_view(body, _p)
+        # attach tileset meta when available (local DF path)
+        try:
+            from mag.df_tileset import ensure_cached_png, tileset_meta
+
+            meta = tileset_meta()
+            if meta.get("ok") and not meta.get("cached"):
+                ensure_cached_png()
+                meta = tileset_meta()
+            elif meta.get("ok") and meta.get("cached"):
+                pass
+            else:
+                ensure_cached_png()
+                meta = {**tileset_meta(), **ensure_cached_png()}
+            out["tileset"] = ensure_cached_png() if meta.get("ok") or True else meta
+            # prefer full ensure result
+            ts = ensure_cached_png()
+            if ts.get("ok"):
+                out["tileset"] = ts
+            else:
+                out["tileset"] = meta
+        except Exception as te:
+            out["tileset"] = {"ok": False, "error": str(te)[:120]}
+        return 200, out
+    except Exception as exc:
+        return 500, {"ok": False, "error": f"table_view crash: {exc!s}"[:240]}
+
+
+def h_frontier_game(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """THE GAME LOOP ON :8765 — the frontier party plays, and the play BUILDS the world.
+
+    POST/GET /api/v1/game/frontier — the relational merge chamber made reachable:
+      action=play&region=…&rounds=…  -> run the frontier game (DM + party act + every advancing
+                                        move folds a verkle knot into game_world). The world grows.
+      action=status                   -> world entity count + root (the game built by the play).
+    This is the loop the operator/grok's been reaching for: not a page, the shared spec the seats
+    actually play against — real verkle world, real seats as players, sourced from live state.
+    """
+    try:
+        from mag import frontier_game
+
+        action = str((body or {}).get("action") or _p.get("action") or "status").lower()
+        if action == "play":
+            region = str((body or {}).get("region") or _p.get("region") or "the_mirror_sea")
+            rounds = max(1, int((body or {}).get("rounds") or _p.get("rounds") or 1))
+            out = frontier_game.play(region=region, rounds=rounds)
+            return 200, out
+        out = frontier_game.status()
+        return 200, out
+    except Exception as exc:
+        return 500, {"ok": False, "error": f"frontier_game crash: {exc!s}"[:240]}
+
+
+def h_table_tileset(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """DF tileset meta + ensure local PNG cache from Steam DF art."""
+    try:
+        from mag.df_tileset import ensure_cached_png, tileset_meta
+
+        action = str((body or {}).get("action") or _p.get("action") or "ensure").lower()
+        if action in ("meta", "status"):
+            return 200, tileset_meta()
+        return 200, ensure_cached_png()
+    except Exception as exc:
+        return 500, {"ok": False, "error": f"tileset crash: {exc!s}"[:240]}
+
+
+def h_unsloth(p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Unsloth Studio GPU seat — status (GET) or start/stop/chat (POST)."""
+    from mag.unsloth_seat import build_unsloth_payload, unsloth_chat, unsloth_start, unsloth_stop
+
+    log_lines = 0
+    try:
+        log_lines = max(0, min(80, int(p.get("log") or p.get("tail") or "0")))
+    except ValueError:
+        pass
+
+    if not body:
+        return 200, build_unsloth_payload(log_lines=log_lines)
+
+    action = str(body.get("action") or body.get("cmd") or "").strip().lower()
+    if action == "start":
+        return 200, unsloth_start(
+            mode=str(body.get("mode") or "chat"),
+            model=str(body.get("model") or ""),
+            agent=str(body.get("agent") or "hermes"),
+            register_seat=body.get("register_seat", True) is not False,
+        )
+    if action == "stop":
+        return 200, unsloth_stop()
+    if action == "chat":
+        res = unsloth_chat(
+            model=str(body.get("model") or ""),
+            prompt=str(body.get("prompt") or body.get("text") or ""),
+            timeout=float(body.get("timeout") or 120),
+        )
+        code = 200 if res.get("ok") else 422
+        return code, res
+    return 400, {"ok": False, "error": f"unknown action {action!r} — use start|stop|chat"}
+
+
+def h_brain(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Unified brain API — pulse, decide, slow_wake, steer, breadcrumbs, dispatch."""
+    from mag.brain import brain_act, brain_pulse
+
+    if body is None:
+        return 200, brain_pulse()
+    code = 200
+    out = brain_act(body)
+    if not out.get("ok") and out.get("error"):
+        code = 400 if "required" in str(out.get("error")) else 422
+    return code, out
+
+
+def h_grove(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Tesuji Grove — poem skill tree nodes (v3-012)."""
+    from mag.grove import build, list_nodes
+
+    limit = 20
+    try:
+        limit = max(1, min(100, int(_p.get("limit") or "20")))
+    except ValueError:
+        pass
+    refresh = str(_p.get("refresh") or "").lower() in ("1", "true", "yes")
+    build_report = build(dry=False) if refresh else None
+    nodes = list_nodes(limit=limit)
+    return 200, {
+        "ok": True,
+        "schema": "grove_list.v1",
+        "nodes": nodes,
+        "count": len(nodes),
+        "build": build_report,
+    }
+
+
+def h_lattice_history(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Verkle lattice history + planning summary for dashboard."""
+    from mag.lattice_dashboard import build_lattice_summary
+
+    return 200, build_lattice_summary()
+
+
+def h_viewports(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """List synced Cursor Canvas viewports."""
+    from mag.canvas_bridge import list_viewports
+
+    rows = list_viewports()
+    return _ok({"viewports": rows, "count": len(rows)}, schema="viewports_list.v1")
+
+
+def h_viewport_one(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """One canvas viewport manifest."""
+    from mag.canvas_bridge import load_viewport
+
+    vid = unquote(p.get("id") or "")
+    res = load_viewport(vid)
+    if not res.get("ok"):
+        return _err(404, str(res.get("error") or "not found"))
+    return _ok({"viewport": res["viewport"]}, schema="canvas_viewport.v1")
+
+
+def h_viewports_sync(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Run canvas sync from external *.canvas.tsx sources."""
+    from mag.canvas_bridge import sync_canvases
+
+    dry = bool((_b or {}).get("dry_run"))
+    return _ok(sync_canvases(dry_run=dry), schema="canvas_sync.v1")
+
+
+def h_models(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from models.registry import inventory
+
+    return 200, inventory()
+
+
+def h_providers(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from models.providers import status_table
+
+    return 200, status_table()
+
+
+def h_quota(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from models.quota import all_budgets
+
+    return 200, all_budgets()
+
+
+def h_local_only_get(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Return current local-only runtime setting."""
+    try:
+        from mag.local_mode import is_local_only
+
+        return _ok({"local_only": bool(is_local_only())})
+    except Exception as e:
+        return _err(500, f"failed to read local-only: {e}")
+
+
+def h_local_only_post(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Set the local-only runtime toggle via POST { local_only: true|false }."""
+    data = dict(_b or {})
+    if "local_only" not in data:
+        return _err(400, "local_only boolean required in body")
+    try:
+        val = bool(data.get("local_only"))
+        from mag.local_mode import set_local_only, clear_local_only
+
+        if val:
+            set_local_only(True)
+        else:
+            clear_local_only()
+        return _ok({"local_only": val})
+    except Exception as e:
+        return _err(500, f"failed to set local-only: {e}")
+
+
+def h_economy(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.token_economy import economy_snapshot, load_chat_system_prompt
+
+    snap = economy_snapshot()
+    try:
+        prompt = load_chat_system_prompt()
+        snap["chat_prompt_preview"] = prompt[:500]
+        snap["chat_prompt_chars"] = len(prompt)
+    except Exception as e:
+        snap["chat_prompt_error"] = str(e)
+    return 200, snap
+
+
+def h_costs(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """GET cost truth: receipt-derived dollars, free/local work, and unpriced usage."""
+    from mag.cost_truth import snapshot
+
+    try:
+        return 200, snapshot()
+    except Exception as e:
+        return 500, {"ok": False, "schema": "cost_truth.v1", "error": str(e)[:240]}
+
+
+def h_vast_cost_sync(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Read-only Vast billing/instances refresh; never changes instance state."""
+    from mag.vast_cost import sync
+
+    body = body or {}
+    return 200, sync(days=int(body.get("days") or 30), include_instances=body.get("instances", True) is not False)
+
+
+def h_compute_schedule(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Current off-hours policy plus queued heavy-job deferrals."""
+    from mag.off_hours import queue_status
+
+    return 200, queue_status()
+
+
+def h_usage(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.lanes import (
+        grok_escalations_today,
+        load_lanes,
+        usage_tail,
+        usage_today_counts,
+    )
+
+    lanes = load_lanes()
+    max_d = int((lanes.get("grok_budget") or {}).get("max_escalations_per_day") or 8)
+    used = grok_escalations_today()
+    return 200, {
+        "ok": True,
+        "today": usage_today_counts(),
+        "grok_escalations_today": used,
+        "grok_budget_max": max_d,
+        "tail": usage_tail(50),
+        "lanes": lanes,
+    }
+
+
+def h_idea_flow(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.idea_flow import build_idea_flow
+
+    try:
+        return 200, build_idea_flow()
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)}
+
+
+def h_brief_latest(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.lanes import briefs_dir, latest_brief_text
+
+    text = latest_brief_text()
+    return 200, {
+        "ok": bool(text),
+        "text": text,
+        "dir": str(briefs_dir()),
+    }
+
+
+def h_visual(params: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    sid = unquote(params.get("id") or "latest")
+    from mag.registry import find_derived
+
+    if sid == "latest":
+        vp = _read_json(BIO / "latest.visual_pack.json")
+    else:
+        p = find_derived(sid, "visual_pack")
+        vp = _read_json(p) if p else None
+        if not vp:
+            vp = _read_json(BIO / f"{sid}.visual_pack.json")
+    if not vp:
+        return 404, {"ok": False, "error": "no visual pack", "session_id": sid}
+    return 200, vp if isinstance(vp, dict) else {"ok": True, "pack": vp}
+
+
+def h_post_catch_up(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.health import catch_up
+
+    return 200, catch_up()
+
+
+def h_agent_desk(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.agent_desk import (
+        append_desk_section,
+        commit_operator_intent,
+        desk_snapshot,
+        ensure_desk_template,
+        read_desk,
+        set_desk_goal,
+        write_desk,
+    )
+
+    if body is None:
+        return 200, desk_snapshot()
+    if body.get("ensure_template"):
+        return 200, ensure_desk_template()
+    commit = body.get("commit_intent")
+    if isinstance(commit, dict):
+        return 200, commit_operator_intent(
+            goal=str(commit.get("goal") or body.get("set_goal") or "").strip(),
+            note=str(commit.get("note") or commit.get("operator_note") or "").strip(),
+            author=str(commit.get("author") or "operator").strip(),
+        )
+    if body.get("set_goal") is not None:
+        return 200, set_desk_goal(str(body.get("set_goal") or ""))
+    append = body.get("append")
+    if isinstance(append, dict):
+        sec = str(append.get("section") or append.get("heading") or "Notes")
+        txt = str(append.get("text") or append.get("body") or "")
+        author = str(append.get("author") or "operator")
+        return 200, append_desk_section(sec, txt, author=author)
+    text = body.get("text")
+    if text is None:
+        return 200, read_desk()
+    return 200, write_desk(str(text))
+
+
+def h_desk_orchestrate(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.desk_orchestrator import orchestrate
+
+    data = body or {}
+    q = str(data.get("question") or data.get("q") or "").strip()
+    if not q:
+        return 400, {"ok": False, "error": "question required"}
+    canvas = str(data.get("desk_canvas") or data.get("canvas") or "").strip() or None
+    peer = str(data.get("peer_context") or "").strip() or None
+    remote_live = str(data.get("remote_live") or "").strip() or None
+    return 200, orchestrate(
+        q,
+        desk_canvas=canvas,
+        peer_context=peer,
+        remote_live=remote_live,
+        include_peer_lane=bool(data.get("include_peer_lane", True)),
+        session_id=str(data.get("session_id") or "desk-local"),
+    )
+
+
+def h_desk_dialogue(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.desk_dialogue import (
+        DESK_LOCAL_ROLE,
+        _desk_local_model,
+        desk_steering_enabled,
+        dialogue_turn,
+        handoff_loop,
+        meta_discuss,
+        ping_pong,
+        post_desk_steer,
+        read_cursor,
+        read_first_user_model,
+        read_operator_manual,
+        read_trust_status,
+        refresh_local_desk,
+        slow_wake,
+        wipe_board,
+    )
+
+    if body is None:
+        if (_p.get("manual") or "").lower() in ("1", "true", "yes"):
+            return 200, read_operator_manual()
+        if (_p.get("user_model") or "").lower() in ("1", "true", "yes"):
+            return 200, read_first_user_model()
+        if (_p.get("conductor") or "").lower() in ("1", "true", "yes"):
+            from mag.desk_conductor import conductor_glance
+
+            return 200, conductor_glance()
+        return 200, {
+            "ok": True,
+            "cursor": read_cursor(),
+            "manual": "docs/agent_desk_operator_manual.md",
+            "user_model": "docs/agent_desk_first_user_model.md",
+            "trust": read_trust_status(),
+            "desk_api": "handoff_loop.v1",
+            "local_model": _desk_local_model(),
+            "local_role": DESK_LOCAL_ROLE,
+            "steering_enabled": desk_steering_enabled(),
+            "scheduler": __import__("mag.local_scheduler", fromlist=["status"]).status(),
+            "timings": __import__("mag.desk_timing", fromlist=["last_by_speaker"]).last_by_speaker(),
+            "timing_row": __import__("mag.desk_timing", fromlist=["format_timing_row"]).format_timing_row(),
+        }
+    if body.get("wipe_board") or body.get("wipe"):
+        return 200, wipe_board()
+    if body.get("reset_dialogue") or body.get("reset"):
+        from mag.desk_dialogue import reset_dialogue
+
+        return 200, reset_dialogue(clear_canvas_dialogue=bool(body.get("clear_dialogue")))
+    if body.get("refresh_local"):
+        return 200, refresh_local_desk(clear_dialogue=bool(body.get("clear_dialogue", True)))
+    steer_ctx = body.get("steer") or body.get("steer_context")
+    if steer_ctx is not None and str(steer_ctx).strip():
+        ctx = str(steer_ctx).strip()
+        low = ctx.lower()
+        if low.startswith("!") or os.environ.get("MAG_SCHEDULER_STEER", "1") not in ("0", "false", "no"):
+            from mag.local_scheduler import steer as sched_steer
+
+            return 200, sched_steer(ctx if ctx.startswith("!") else f"!steer {ctx}")
+        return 200, post_desk_steer(ctx)
+
+    from mag.local_scheduler import run_exclusive
+
+    def _desk(body: dict[str, Any]) -> dict[str, Any]:
+        return run_exclusive(kind="desk", payload=body, label=_desk_label(body))
+
+    def _desk_label(b: dict[str, Any]) -> str:
+        if b.get("slow_wake"):
+            return "slow_wake"
+        if b.get("handoff_loop") or b.get("handoffs"):
+            return "handoffs"
+        if b.get("meta_discuss"):
+            return "meta"
+        sp = str(b.get("speaker") or "")
+        return sp or "desk"
+
+    if body.get("conductor_tick") or body.get("conductor"):
+        from mag.desk_conductor import conductor_tick
+
+        def _run(_payload: dict[str, Any]) -> dict[str, Any]:
+            return conductor_tick(
+                auto_act=bool(body.get("auto_act") or body.get("keepalive")),
+                operator_note=str(body.get("operator_note") or body.get("note") or ""),
+                conductor_prompt=str(
+                    body.get("conductor_prompt") or body.get("prompt") or body.get("conductor_note") or ""
+                ),
+                advise=bool(body.get("advise", True)),
+            )
+
+        return 200, run_exclusive(kind="desk", payload=body, label="conductor", executor=_run)
+    if body.get("meta_discuss") or body.get("meta_ping"):
+        return 200, _desk(body)
+    if body.get("slow_wake") or body.get("wake_on_edit"):
+        return 200, _desk(body)
+    if body.get("handoff_loop") or body.get("handoffs"):
+        return 200, _desk(body)
+    if body.get("ping_pong") or body.get("pingpong"):
+        return 200, _desk(body)
+    speaker = str(body.get("speaker") or body.get("from") or "").strip().lower()
+    note = str(body.get("operator_note") or body.get("message") or body.get("q") or body.get("note") or "")
+    canvas = str(body.get("desk_canvas") or body.get("canvas") or "").strip() or None
+    if speaker == "local":
+        return 200, _desk(body)
+    if not speaker:
+        return 200, _desk(body)
+    body = dict(body)
+    body.setdefault("speaker", speaker)
+    return 200, _desk(body)
+
+
+def h_post_ask(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.ask import ask as mag_ask
+
+    data = body or {}
+    q = str(data.get("question") or data.get("q") or "").strip()
+    if not q:
+        return 400, {"ok": False, "error": "question required"}
+    sid = (data.get("session_id") or data.get("session") or "").strip() or None
+    use_llm = bool(data.get("use_llm", True))
+    peer = str(data.get("peer_context") or data.get("peer_lane") or "").strip() or None
+    canvas = str(data.get("desk_canvas") or data.get("canvas") or "").strip() or None
+    if not peer and data.get("include_peer_lane"):
+        from mag.agent_desk import REMOTE_SESSION, peer_lane_excerpt
+
+        peer = peer_lane_excerpt(REMOTE_SESSION) or None
+    if not canvas and data.get("include_desk_canvas"):
+        from mag.agent_desk import read_desk
+
+        canvas = (read_desk().get("text") or "").strip() or None
+    # Server TTS default off — Mag Voice (browser) owns playback; PowerShell SAPI was crashing.
+    speak = bool(data.get("speak") or data.get("tts"))
+    return 200, mag_ask(
+        q,
+        session_id=sid,
+        use_llm=use_llm,
+        speak=speak,
+        peer_context=peer,
+        desk_canvas=canvas,
+    )
+
+
+def h_post_dispatch(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Chat / API: route a goal through Mag dispatch (local first)."""
+    from mag.dispatch import REMOTE_PROVIDERS, dispatch as mag_dispatch
+
+    data = body or {}
+    goal = str(data.get("goal") or data.get("question") or data.get("q") or "").strip()
+    if not goal:
+        return 400, {"ok": False, "error": "goal required"}
+    dry = bool(data.get("dry") or data.get("classify_only"))
+    provider = str(data.get("provider") or "").strip() or None
+    seat = str(data.get("seat") or "").strip() or None
+    # Dashboard remote seats: provider alone must not silently land on local
+    if provider and provider.lower() in REMOTE_PROVIDERS and not seat:
+        seat = "remote"
+    try:
+        res = mag_dispatch(
+            goal,
+            execute=not dry,
+            force_provider=provider,
+            force_seat=seat,
+        )
+        return 200, res if isinstance(res, dict) else {"ok": True, "result": res}
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)}
+
+
+def h_agent_live(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Polling fallback: live turn phase for dashboard agent sessions."""
+    from mag.agent_cli import get_live_turn
+
+    session_id = str(p.get("session_id") or "dashboard").strip() or "dashboard"
+    return 200, get_live_turn(session_id)
+
+
+def h_post_agent(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Tool-using Mag agent turn (DeepSeek + local tools). Dashboard Agent mode."""
+    from mag.agent_cli import api_agent_reset, api_agent_turn
+
+    data = body or {}
+    session_id = str(data.get("session_id") or "dashboard").strip() or "dashboard"
+    # Reset only (no model call)
+    if data.get("reset_only") or (data.get("reset") and not str(data.get("goal") or "").strip()):
+        try:
+            return 200, api_agent_reset(session_id)
+        except Exception as e:
+            return 500, {"ok": False, "error": str(e)}
+    goal = str(data.get("goal") or data.get("question") or data.get("q") or "").strip()
+    if not goal:
+        return 400, {"ok": False, "error": "goal required"}
+    provider = str(data.get("provider") or "deepseek").strip() or "deepseek"
+    model = str(data.get("model") or "").strip() or None
+    reset = bool(data.get("reset"))
+    try:
+        res = api_agent_turn(
+            goal,
+            provider=provider,
+            model=model,
+            session_id=session_id,
+            reset=reset,
+        )
+        return 200, res
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)}
+
+
+def h_post_agent_upload(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Save pasted/dropped image or text blob under memory/agent_uploads/ (Grok-compose steal)."""
+    import base64
+    import re
+    from datetime import datetime, timezone
+
+    data = body or {}
+    name = str(data.get("filename") or "paste.bin")
+    name = re.sub(r"[^\w.\-]+", "_", name)[:80]
+    b64 = data.get("data") or data.get("base64") or ""
+    if isinstance(b64, str) and "," in b64 and b64.strip().startswith("data:"):
+        b64 = b64.split(",", 1)[1]
+    if not b64:
+        return 400, {"ok": False, "error": "data (base64) required"}
+    try:
+        raw = base64.b64decode(b64)
+    except Exception as e:
+        return 400, {"ok": False, "error": f"bad base64: {e}"}
+    if len(raw) > 12 * 1024 * 1024:
+        return 400, {"ok": False, "error": "max 12MB"}
+    up = ROOT / "memory" / "agent_uploads"
+    up.mkdir(parents=True, exist_ok=True)
+    ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    path = up / f"{ts}_{name}"
+    path.write_bytes(raw)
+    rel = str(path.relative_to(ROOT)).replace("\\", "/")
+    meta: dict[str, Any] = {
+        "ok": True,
+        "path": rel,
+        "abs": str(path),
+        "bytes": len(raw),
+        "filename": name,
+    }
+    # image dimensions if possible
+    try:
+        from PIL import Image
+        from io import BytesIO
+
+        with Image.open(BytesIO(raw)) as im:
+            meta["format"] = im.format
+            meta["width"], meta["height"] = im.size
+            meta["mode"] = im.mode
+            meta["kind"] = "image"
+            meta["chip"] = (
+                f"Image — {im.format or '?'} · {im.size[0]}x{im.size[1]} · "
+                f"{len(raw)/1024:.1f} KB · `{rel}`"
+            )
+            meta["attach_text"] = (
+                f"[Image attachment — pixels not sent to model yet; path for tools]\n"
+                f"path: {rel}\nformat: {im.format} size: {im.size[0]}x{im.size[1]} "
+                f"({len(raw)} bytes)\n"
+                f"Operator: describe what you need; agent can read path metadata via tools."
+            )
+    except Exception:
+        meta["kind"] = "file"
+        meta["chip"] = f"File — {name} · {len(raw)/1024:.1f} KB · `{rel}`"
+        try:
+            text = raw.decode("utf-8")
+            meta["attach_text"] = f"[Attached file: {rel}]\n```\n{text[:12000]}\n```"
+        except Exception:
+            meta["attach_text"] = (
+                f"[Binary file: {rel} · {len(raw)} bytes — not inlined; use tools if needed]"
+            )
+    return 200, meta
+
+
+def h_context_pack(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Fresh context-pack + paste block for DeepSeek web / external seats."""
+    import json as _json
+
+    from mag.context_pack import build_context_pack, format_context_pack_text
+
+    try:
+        pack = build_context_pack(max_brief=900, max_live=500)
+        text = format_context_pack_text(pack)
+        try:
+            md = ROOT / "memory" / "context_pack_latest.md"
+            md.parent.mkdir(parents=True, exist_ok=True)
+            md.write_text(text, encoding="utf-8")
+            (ROOT / "memory" / "context_pack_latest.json").write_text(
+                _json.dumps(pack, indent=2, default=str), encoding="utf-8"
+            )
+        except Exception:
+            pass
+        law = (
+            "# Mag cold start (stateless decoder)\n"
+            "You are a seat on my Mag boundary — not a new throne.\n"
+            "LOAD the pack below. Residual DNA is on my disk, not this chat.\n"
+            "- One job. Truth-only. Artifact > transcript. Chat is heat.\n"
+            "- Pack+goal only. Do not invent keys/online status.\n"
+            "- Confirm pack loaded (tip/leaves) in one short block, then do the goal.\n\n"
+            "## MAG CONTEXT PACK\n"
+        )
+        paste = law + text
+        if len(paste) > 14000:
+            paste = paste[:13900] + "\n…[truncated for paste size]\n"
+        return 200, {
+            "ok": True,
+            "text": text,
+            "paste": paste,
+            "chars": len(paste),
+            "path": "memory/context_pack_latest.md",
+            "tip": (pack.get("tip") or {}) if isinstance(pack, dict) else {},
+        }
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)}
+
+
+def h_session_freeze(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Immutable snapshot of full agent state for DeepSeek Pro Max / external seats.
+
+    Combines system health, session context, agent state, and brief into one
+    content-addressed JSON blob. Pay the context tax once.
+    """
+    try:
+        from mag.session_freeze import freeze_session_snapshot
+        snapshot = freeze_session_snapshot(
+            include_routing=_p.get("routing", "").lower() in ("1", "true", "yes"),
+        )
+        return 200, snapshot
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)}
+
+
+def h_tangents(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.tangent import list_tangents
+
+    return 200, list_tangents(limit=30)
+
+
+def h_fork_detect(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Fork decision contract for an utterance and optional active-goal context."""
+    from mag.fork_router import detect_fork
+
+    data = body or {}
+    goal = str(data.get("goal") or data.get("question") or data.get("q") or "").strip()
+    if not goal:
+        return 400, {"ok": False, "error": "goal required"}
+    current_goal = str(data.get("current_goal") or data.get("active_goal") or "").strip()
+    allow_auto = bool(data.get("allow_auto"))
+    return 200, detect_fork(goal, current_goal=current_goal, allow_auto=allow_auto)
+
+
+def h_fork_confirm(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Create a fork artifact and optionally spawn a child task."""
+    from mag.fork_router import confirm_fork
+
+    data = body or {}
+    goal = str(data.get("goal") or data.get("question") or data.get("q") or "").strip()
+    if not goal:
+        return 400, {"ok": False, "error": "goal required"}
+    current_goal = str(data.get("current_goal") or data.get("active_goal") or "").strip()
+    strategy = str(data.get("strategy") or "").strip() or None
+    spawn = bool(data.get("spawn"))
+    provider = str(data.get("provider") or "deepseek").strip() or "deepseek"
+    try:
+        timeout = max(60, min(int(data.get("timeout") or 900), 7200))
+    except (TypeError, ValueError):
+        timeout = 900
+    tag = str(data.get("tag") or "fork").strip() or "fork"
+    decision = data.get("decision") if isinstance(data.get("decision"), dict) else None
+    res = confirm_fork(
+        goal,
+        current_goal=current_goal,
+        decision=decision,
+        strategy=strategy,
+        spawn=spawn,
+        provider=provider,
+        timeout=timeout,
+        tag=tag,
+    )
+    code = 200 if res.get("ok") else 422
+    return code, res
+
+
+def h_post_tangent(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Queue a background tangent (janitor/Gemini). Optional immediate run."""
+    from mag.tangent import enqueue, process_one
+
+    data = body or {}
+    prompt = str(data.get("prompt") or data.get("goal") or data.get("q") or "").strip()
+    if not prompt:
+        return 400, {"ok": False, "error": "prompt required"}
+    provider = str(data.get("provider") or "").strip() or None
+    run_now = bool(data.get("run", True))
+    prefer_gemini = data.get("prefer_gemini")
+    if prefer_gemini is None:
+        prefer_gemini = True
+    enq = enqueue(
+        prompt,
+        source=str(data.get("source") or "dashboard"),
+        provider=provider,
+        prefer_gemini=bool(prefer_gemini),
+        run_async=bool(data.get("async")),
+    )
+    if not enq.get("ok"):
+        return 400, enq
+    if run_now and not data.get("async"):
+        ran = process_one(str(enq.get("id")))
+        return 200, {"ok": True, "queued": enq, "result": ran}
+    return 200, enq
+
+
+def h_post_tangent_process(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.tangent import process_queue, scan_live_for_tangents
+
+    data = body or {}
+    if data.get("scan_live"):
+        scan_live_for_tangents(auto_run=False)
+    return 200, process_queue(max_n=int(data.get("max_n") or 1))
+
+
+def h_post_brief(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.brief_local import write_brief
+
+    data = body or {}
+    sid = (data.get("session_id") or data.get("session") or "").strip() or None
+    use_llm = bool(data.get("use_llm", True))
+    return 200, write_brief(sid, use_llm=use_llm)
+
+
+def h_post_visual(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.visual_pack import write_visual_pack
+
+    data = body or {}
+    sid = (data.get("session_id") or data.get("session") or "").strip() or None
+    return 200, write_visual_pack(sid)
+
+
+def h_post_export(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """On-demand PDF/visual from residual (export layer)."""
+    from mag.biography import export_session_artifacts
+
+    data = body or {}
+    sid = (data.get("session_id") or data.get("session") or data.get("id") or "").strip()
+    if not sid:
+        return 400, {"ok": False, "error": "session_id required"}
+    pdf = data.get("pdf")
+    visual = data.get("visual")
+    # defaults: pdf true if neither specified; allow explicit false
+    if pdf is None and visual is None:
+        pdf, visual = True, False
+    else:
+        pdf = bool(pdf) if pdf is not None else False
+        visual = bool(visual) if visual is not None else False
+    result = export_session_artifacts(sid, pdf=pdf, visual=visual)
+    code = 200 if result.get("ok") else 404 if "not found" in str(result.get("error") or "") else 500
+    return code, result
+
+
+def h_post_multi_smoke(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from models.multi_smoke import run_multi_smoke
+
+    return 200, run_multi_smoke()
+
+
+def h_post_probe_lanes(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    from models.probe import probe_all
+
+    data = body or {}
+    return 200, probe_all(include_l1_chat=bool(data.get("include_l1", True)))
+
+
+def h_operator_os(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.operator_os import build_operator_os
+
+    return 200, build_operator_os(refresh_pack=True)
+
+
+def h_tapestry(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.tapestry import build_tapestry_pack, write_tapestry_pack
+
+    # always rebuild from live residual (sample render stays fresh)
+    pack = write_tapestry_pack()
+    pack["ok"] = True
+    return 200, pack
+
+
+def h_post_tapestry(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    return h_tapestry(_p, _b)
+
+
+def h_lattice_lab(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Pointer + inventory for test conspiracy lattice (Sovereign Mirror instrument)."""
+    sm = (
+        Path.home()
+        / "Documents"
+        / "projects"
+        / "worktrees"
+        / "sovereign-mirror-scaffold"
+    )
+    knots_dir = sm / "data" / "knots"
+    preset_path = sm / "data" / "presets" / "conspiracy_lattice.json"
+    knots: list[dict[str, str]] = []
+    if knots_dir.is_dir():
+        for p in sorted(knots_dir.glob("*.txt")):
+            knots.append({"id": p.stem, "title": p.stem.replace("_", " ")})
+    preset = _read_json(preset_path) or {}
+    port = 8743
+    open_url = f"http://127.0.0.1:{port}/?preset=conspiracy"
+    return 200, {
+        "ok": True,
+        "instrument": "sovereign-mirror-scaffold",
+        "role": "Lattice lab for multi-frame capture-loop exploration — not Mag DNA",
+        "mag_home": "http://127.0.0.1:8765/",
+        "open_url": open_url,
+        "open_demo_url": f"http://127.0.0.1:{port}/?preset=demo",
+        "start": (
+            r'cd Documents\projects\worktrees\sovereign-mirror-scaffold; '
+            r'.\scripts\start-dashboard.ps1 --port 8743'
+        ),
+        "preset": preset.get("id") or "conspiracy_lattice",
+        "event_title": preset.get("event_title"),
+        "default_stack": preset.get("default_stack") or [],
+        "knots": knots,
+        "n_knots": len(knots),
+        "law": preset.get("law")
+        or [
+            "Not courtroom proof",
+            "Rhyme is not identity",
+            "Consent residual stays open",
+        ],
+        "page": "/static/lattice.html",
+    }
+
+
+def h_blast(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.blast import plant_status
+
+    return 200, plant_status()
+
+
+def h_post_blast(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Influence plant: start/stop/pause/resume/patch dials."""
+    from mag.blast import (
+        plant_status,
+        start_blast,
+        stop_blast,
+        pause_blast,
+        write_influence,
+    )
+
+    data = body or {}
+    action = str(data.get("action") or data.get("cmd") or "").strip().lower()
+    if action in ("start", "run"):
+        return 200, start_blast(background=True)
+    if action == "stop":
+        return 200, stop_blast()
+    if action == "pause":
+        return 200, pause_blast(True)
+    if action == "resume":
+        return 200, pause_blast(False)
+    if action in ("influence", "set", "patch", ""):
+        patch = data.get("influence") if isinstance(data.get("influence"), dict) else data
+        # strip control keys
+        clean = {
+            k: patch[k]
+            for k in (
+                "run",
+                "paused",
+                "focus",
+                "notes",
+                "dig_minutes",
+                "max_tickets",
+                "cycle_seconds",
+                "scout_every_n_cycles",
+                "max_cycles",
+            )
+            if k in patch
+        }
+        if clean:
+            write_influence(clean, by="dashboard")
+        return 200, plant_status()
+    return 400, {"ok": False, "error": f"unknown action {action}"}
+
+
+def h_post_blast_promote(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.improve import promote_apply, promote_reject
+
+    data = body or {}
+    cid = str(data.get("id") or data.get("candidate_id") or "").strip()
+    if not cid:
+        return 400, {"ok": False, "error": "id required"}
+    if data.get("reject"):
+        return 200, promote_reject(cid, reason=str(data.get("reason") or "dash reject"))
+    return 200, promote_apply(cid, force_model=bool(data.get("force_model")))
+
+
+# --- Orchestrator: sub-agent fleet (spawn / monitor / intervene) ---
+
+
+def h_agents(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """List sub-agent tasks — default: running + recent (48h), not soak corpses."""
+    from mag.orchestrator import TERMINAL, list_tasks_live
+    from mag.seats import build_workers_summary
+
+    scope = (p.get("scope") or "recent").strip().lower()
+    if scope in ("all", "full"):
+        tasks = list_tasks_live(limit=200)
+        return 200, {
+            "ok": True,
+            "tasks": tasks,
+            "count": len(tasks),
+            "scope": "all",
+            "note": "Full history including soak tests — prefer scope=recent",
+        }
+    w = build_workers_summary(recent_hours=48.0)
+    tasks = w["running"] + w["recent"]
+    # Enrich running rows with live phase when requested
+    live = list_tasks_live(limit=30)
+    live_map = {t.get("task_id"): t for t in live if t.get("status") not in TERMINAL}
+    for t in tasks:
+        lid = live_map.get(t.get("task_id"))
+        if lid:
+            t.update({k: lid[k] for k in ("phase", "heartbeat_age_s", "alive") if k in lid})
+    return 200, {
+        "ok": True,
+        "tasks": tasks,
+        "count": len(tasks),
+        "scope": "recent",
+        "archived_hidden": w.get("archived_hidden", 0),
+        "layman": w.get("layman"),
+    }
+
+
+def h_agents_spawn(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Spawn a sub-agent process: {goal, provider?, model?, timeout?, tag?}."""
+    from mag.orchestrator import spawn_task
+
+    data = body or {}
+    goal = str(data.get("goal") or data.get("question") or "").strip()
+    if not goal:
+        return 400, {"ok": False, "error": "goal required"}
+    provider = str(data.get("provider") or "deepseek").strip() or "deepseek"
+    model = str(data.get("model") or "").strip() or None
+    try:
+        timeout = max(60, min(int(data.get("timeout") or 900), 7200))
+    except (TypeError, ValueError):
+        timeout = 900
+    tag = str(data.get("tag") or "").strip()
+    try:
+        task = spawn_task(goal, provider=provider, model=model, timeout=timeout, tag=tag)
+        return 200, {"ok": True, "task": task}
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)}
+
+
+def h_agents_fan(_p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Spawn a swarm of sub-agents: {goals, provider?, model?, timeout?, tag?}."""
+    from mag.gpipes import fan_out
+
+    data = body or {}
+    goals = [str(g).strip() for g in (data.get("goals") or []) if str(g).strip()]
+    if not goals:
+        return 400, {"ok": False, "error": "goals required"}
+    if len(goals) < 2:
+        return 400, {"ok": False, "error": "provide at least two goals for a swarm"}
+    provider = str(data.get("provider") or "deepseek").strip() or "deepseek"
+    model = str(data.get("model") or "").strip() or None
+    try:
+        timeout = max(60, min(int(data.get("timeout") or 900), 7200))
+    except (TypeError, ValueError):
+        timeout = 900
+    tag = str(data.get("tag") or "").strip()
+    tags = [tag] * len(goals) if tag else [""] * len(goals)
+    try:
+        pipe = fan_out(goals, provider=provider, model=model, timeout=timeout, tags=tags)
+        return (200 if pipe.get("ok") else 500), pipe
+    except Exception as e:
+        return 500, {"ok": False, "error": str(e)}
+
+
+def h_agent_one(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Live task status incl. heartbeat age + agent-reported phase."""
+    from mag.orchestrator import task_status
+
+    t = task_status(p.get("id") or "")
+    if not t:
+        return 404, {"ok": False, "error": "no such task"}
+    return 200, {"ok": True, "task": t}
+
+
+def h_agent_kill(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.orchestrator import kill_task
+
+    res = kill_task(p.get("id") or "")
+    return (200 if res.get("ok") else 404), res
+
+
+def h_agent_log(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.orchestrator import tail_log
+
+    try:
+        n = max(1, min(int(p.get("n") or 50), 500))
+    except (TypeError, ValueError):
+        n = 50
+    text = tail_log(p.get("id") or "", n=n)
+    return 200, {"ok": True, "log": text}
+
+
+def h_agents_reap(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.orchestrator import reap_stale
+
+    return 200, reap_stale()
+
+
+def h_agents_heal(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Watchdog: mark dead-pid tasks died + re-spawn them (bounded retries)."""
+    from mag.orchestrator import respawn_dead
+
+    return 200, respawn_dead()
+
+
+def h_agent_cmd(p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """Live intervention over the knot mailbox: {cmd: steer|pause|continue|escape, context?}."""
+    from mag import pigeonhole as ph
+
+    tid = p.get("id") or ""
+    data = body or {}
+    cmd = str(data.get("cmd") or "").strip().lower()
+    if not tid:
+        return 400, {"ok": False, "error": "task id required"}
+    if cmd == "steer":
+        ctx = str(data.get("context") or data.get("goal") or "").strip()
+        if not ctx:
+            return 400, {"ok": False, "error": "steer requires context"}
+        ph.post_steer(tid, ctx)
+        return 200, {"ok": True, "sent": "steer", "task_id": tid}
+    if cmd in ("pause", "continue", "escape"):
+        ph.post_cmd(tid, cmd)
+        return 200, {"ok": True, "sent": cmd, "task_id": tid}
+    return 400, {"ok": False, "error": "cmd must be steer|pause|continue|escape"}
+
+
+def h_agent_state_snapshot(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Compact state used by overseer before sending steer commands."""
+    from mag.orchestrator import task_status
+
+    tid = p.get("id") or ""
+    if not tid:
+        return _err(400, "task id required", code="INVALID_PAYLOAD", retryable=False)
+    t = task_status(tid)
+    if not t:
+        return _err(404, "no such task", code="TASK_NOT_FOUND", retryable=False)
+    snapshot = {
+        "task_id": tid,
+        "chain_id": str(t.get("chain_id") or tid),
+        "goal": str(t.get("goal") or ""),
+        "phase": str(t.get("phase") or t.get("status") or "unknown"),
+        "stalled": bool(t.get("alive") is False),
+        "doctor_verdict": str(t.get("doctor_verdict") or "unknown"),
+        "freeze_state": str(t.get("freeze_state") or "unknown"),
+        "last_results": [str(t.get("detail") or "")[:240]],
+    }
+    return 200, {"ok": True, "schema": "overseer.state_snapshot.v1", "data": snapshot}
+
+
+def h_agent_steer_post(p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    """API-first steer with accepted steer_id and ack window."""
+    from mag.orchestrator import task_status
+    from mag import pigeonhole as ph
+
+    tid = p.get("id") or ""
+    data = dict(body or {})
+    if not tid:
+        return _err(400, "task id required", code="INVALID_PAYLOAD", retryable=False)
+    if not task_status(tid):
+        return _err(404, "no such task", code="TASK_NOT_FOUND", retryable=False)
+    ctx = str(data.get("context") or "").strip()
+    if not ctx:
+        return _err(400, "context required", code="INVALID_PAYLOAD", retryable=False)
+    source_tier = str(data.get("source_tier") or "E0").strip()[:20]
+    reason = str(data.get("reason") or "overseer steer").strip()[:200]
+    steer_id = ph.post_steer(tid, ctx, reason=reason, source_tier=source_tier)
+    try:
+        ack_due_s = max(5, min(int(data.get("ack_due_s") or 30), 600))
+    except (TypeError, ValueError):
+        ack_due_s = 30
+    return 200, {
+        "ok": True,
+        "schema": "overseer.steer_accept.v1",
+        "data": {
+            "steer_id": steer_id,
+            "accepted_at": time.time(),
+            "target_task_id": tid,
+            "ack_due_s": ack_due_s,
+            "chain_id": str(data.get("chain_id") or tid),
+        },
+    }
+
+
+def h_agent_steer_status(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """Status for a specific steer_id (accepted/received/applied/etc)."""
+    from mag import pigeonhole as ph
+
+    tid = p.get("id") or ""
+    steer_id = p.get("steer_id") or ""
+    if not tid or not steer_id:
+        return _err(400, "task id and steer_id required", code="INVALID_PAYLOAD", retryable=False)
+    row = ph.steer_status(tid, steer_id)
+    if not row:
+        return _err(404, "steer status not found", code="STEER_NOT_FOUND", retryable=True)
+    return 200, {
+        "ok": True,
+        "schema": "overseer.steer_status.v1",
+        "data": {
+            "steer_id": steer_id,
+            "status": str(row.get("status") or "accepted"),
+            "applied_at": row.get("ts"),
+            "phase_at_apply": row.get("phase_at_apply") or row.get("phase") or "",
+            "applied_by": "agent" if str(row.get("status") or "") == "applied" else "mailbox",
+            "error": row.get("error") or "",
+        },
+    }
+
+
+def h_agents_pipes(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.gpipes import list_pipes
+
+    return 200, {"ok": True, "pipes": list_pipes(limit=100)}
+
+
+def h_agents_pipe_one(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.gpipes import pipe_status
+
+    pid = p.get("id") or ""
+    pipe = pipe_status(pid)
+    if not pipe:
+        return 404, {"ok": False, "error": "no such pipe"}
+    return 200, {"ok": True, "pipe": pipe}
+
+
+def h_agents_pipe_collect(p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.gpipes import collect
+
+    pid = p.get("id") or ""
+    try:
+        wait = max(0, min(int((body or {}).get("wait") or 0), 60))
+    except (TypeError, ValueError):
+        wait = 0
+    try:
+        tail = max(1, min(int((body or {}).get("tail") or 15), 200))
+    except (TypeError, ValueError):
+        tail = 15
+    res = collect(pid, wait=wait, tail=tail)
+    return (200 if res.get("ok") else 404), res
+
+
+def h_agents_pipe_kill(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.gpipes import kill_pipe
+
+    pid = p.get("id") or ""
+    res = kill_pipe(pid)
+    return (200 if res.get("ok") else 404), res
+
+
+def h_agents_pipe_cmd(p: dict[str, str], body: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.gpipes import pipe_status
+    from mag import pigeonhole as ph
+
+    pid = p.get("id") or ""
+    pipe = pipe_status(pid)
+    if not pipe:
+        return 404, {"ok": False, "error": "no such pipe"}
+    data = body or {}
+    cmd = str(data.get("cmd") or "").strip().lower()
+    if not cmd:
+        return 400, {"ok": False, "error": "cmd required"}
+    sent = []
+    errors = []
+    for tid in pipe.get("task_ids", []):
+        try:
+            if cmd == "steer":
+                ctx = str(data.get("context") or data.get("goal") or "").strip()
+                if not ctx:
+                    return 400, {"ok": False, "error": "steer requires context"}
+                ph.post_steer(tid, ctx)
+            elif cmd in ("pause", "continue", "escape"):
+                ph.post_cmd(tid, cmd)
+            else:
+                return 400, {"ok": False, "error": "cmd must be steer|pause|continue|escape"}
+            sent.append(tid)
+        except Exception as exc:
+            errors.append({"task_id": tid, "error": str(exc)})
+    out = {"ok": True, "sent": sent, "errors": errors, "pipe_id": pid}
+    if errors:
+        out["ok"] = False
+    return (200 if sent else 400), out
+
+
+def h_api_index(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    return 200, {
+        "ok": True,
+        "name": "Mag Resource Harness API",
+        "version": "v1",
+        "product": "Local OS for filed work + idea board; models load packs, not chat dumps",
+        "primary": {
+            "ideas": "Topic board — cards you still hold (model-as-OS working set)",
+            "sessions": "Workdays filed as residual DNA",
+            "home": "Been → now → next aggregate",
+            "dispatch": "Route a goal to a seat with pack-first context",
+        },
+        "resources": {
+            # --- Ideas (OS board) ---
+            "GET /api/v1/ideas": "List cards (?status=open|held|done|parked & ?type=)",
+            "POST /api/v1/ideas": "Create card {title, type?, status?, body?}",
+            "GET /api/v1/ideas/{id}": "One card + 1-hop neighborhood",
+            "PATCH /api/v1/ideas/{id}": "Update status/title/body/tags (done, shelf, reopen)",
+            "GET /api/v1/ideas/{id}/pack": "LOAD brief for models / Chat",
+            "POST /api/v1/ideas/seed": "Import open items from working notes",
+            # --- Days / sessions ---
+            "GET /api/v1/sessions": "Workdays list",
+            "GET /api/v1/sessions/{id}": "Day detail",
+            "GET /api/v1/sessions/{id}/residual": "Residual DNA JSON",
+            "GET /api/v1/sessions/{id}/visual": "Visual pack if derived",
+            "GET /api/v1/home": "Office summary (tip, bead, open ideas, economy)",
+            "GET /api/v1/diary": "Day-by-day narrative spine",
+            "GET /api/v1/story": "Thesis / journey / artifacts",
+            "GET /api/v1/story/file?path=": "Text artifact under Mag root",
+            # --- Body / router ---
+            "GET /api/v1/health": "Is the lab up?",
+            "GET /api/v1/nervous": "Containment glance (no secrets)",
+            "GET /api/v1/brain": "Multi-agent OS brain pulse (proprioception + desk + breadcrumbs)",
+            "POST /api/v1/brain": "Brain actions: decide|route|dispatch|slow_wake|steer|breadcrumb",
+            "GET /api/v1/stack": "Agent stack — services, fleet, REST outputs",
+            "GET /api/v1/unsloth": "Unsloth Studio GPU seat — install/running state",
+            "POST /api/v1/unsloth": "Unsloth actions: start|stop|chat",
+            "GET /api/v1/display": "TV-safe ambient pulse (Roku / wall clients)",
+            "GET /api/v1/grove": "Tesuji Grove nodes ?limit=20&refresh=1",
+            "GET /api/v1/status": "Router: providers, quota, honesty",
+            "GET /api/v1/providers": "Provider status",
+            "GET /api/v1/quota": "Quota budgets",
+            "GET /api/v1/economy": "Token savings snapshot",
+            "GET /api/v1/chain": "Verkle tip + chain",
+            "GET /api/v1/overview": "Aggregate dashboard payload",
+            "GET /api/v1/board": "Ops board snapshot",
+            "GET /api/v1/brief": "Latest brief",
+            "GET /api/v1/tapestry": "3D connection graph pack",
+            "POST /api/v1/tapestry/rebuild": "Rebuild tapestry from residual",
+            "POST /api/v1/dispatch": "Classify seat + run (pack-first)",
+            "POST /api/v1/desk-orchestrate": "Local gemma:2b orchestrator (canvas + peer lane)",
+            "POST /api/v1/desk-dialogue": "Turn-based Local↔DeepSeek dialogue on canvas (no tools)",
+            "GET /api/v1/coding-session": "Coding session status + orchestrator scrum",
+            "POST /api/v1/coding-session": "Run sprint {action: run|status, track?, max_ticks?, note?}",
+            "GET /api/v1/factory-machine": "Factory machine status (last run, branch, retro path)",
+            "POST /api/v1/factory-machine": "Full machine {action: run|status, note?, branch_prefix?}",
+            "GET /api/v1/agent-desk": "Shared desk canvas + peer lane excerpt",
+            "POST /api/v1/agent-desk": "Save shared desk canvas {text}",
+            "POST /api/v1/ask": "Local biographer ask (optional peer_context, desk_canvas)",
+            "POST /api/v1/catch-up": "Watch + amend live board",
+            "POST /api/v1/export": "PDF/visual from residual",
+            "GET /api/v1/blast": "Background improve plant",
+            "POST /api/v1/blast": "Plant control (start|stop|…)",
+            # --- Sub-agent fleet (orchestrator) ---
+            "GET /api/v1/agents": "List sub-agent tasks (newest first)",
+            "POST /api/v1/agents": "Spawn sub-agent {goal, provider?, model?, timeout?, tag?}",
+            "POST /api/v1/agents/fan": "Spawn a swarm of sub-agents {goals, provider?, model?, timeout?, tag?}",
+            "GET /api/v1/agents/{id}": "Live task status (heartbeat age, phase)",
+            "GET /api/v1/agents/{id}/state-snapshot": "Compact overseer snapshot (goal, phase, stalled, chain_id)",
+            "GET /api/v1/agents/{id}/log": "Tail task log ?n=50",
+            "POST /api/v1/agents/{id}/kill": "Kill task (process tree)",
+            "POST /api/v1/agents/{id}/cmd": "Live knot cmd: steer|pause|continue|escape",
+            "POST /api/v1/agents/{id}/steer": "Overseer steer with steer_id ACK contract",
+            "GET /api/v1/agents/{id}/steer/{steer_id}/status": "Steer lifecycle status (accepted/received/applied)",
+            "POST /api/v1/agents/reap": "Mark dead-pid tasks as died",
+            "POST /api/v1/agents/heal": "Watchdog: mark dead died + auto-respawn (bounded)",
+            "GET /api/v1/seats": "Inbound + outbound seats + live registered external seats",
+            "POST /api/v1/seats/register": "Register desktop/cloud seat → MAG_TASK_ID",
+            "POST /api/v1/seats/heartbeat": "Refresh registered seat liveness",
+            "POST /api/v1/seats/unregister": "Mark registered seat done/failed",
+            "GET /api/v1/power": "Stack status — kill switch / turn-on glance",
+            "POST /api/v1/power/stop": "Kill switch — stop entire Mag stack",
+            "POST /api/v1/power/start": "Turn-on — boot supervisor + core services",
+            "GET /api/v1/lifecycle": "Per-piece on/off policy (passive efficiency)",
+            "POST /api/v1/lifecycle/reconcile": "Safe offs (drainer); dry_run supported",
+            "GET /api/v1/temperature-stacks": "Heat bands + loop timings (YAML adjustable)",
+            "POST /api/v1/temperature-stacks": "resolve|pointer|track_gap|track_lifecycle",
+            "POST /api/v1/improve/cloud": "Cloud handoff JSON → behavioral + optional queue",
+            "POST /api/v1/improve/cycle": "Improve cycle → queue + nervous + spider",
+            "GET /api/v1/governance": "Steering + behavioral loop + autonomy prefs",
+            "POST /api/v1/governance": "Toggle drainer/behavioral pack or broadcast steer",
+            "POST /api/v1/governance/auto-steer/add": "Register auto-steer policy trigger/action",
+            "GET /api/v1/governance/steering-log": "Read global steering event trail",
+            "GET /api/v1/overseer/manifest": "Overseer bard manifest (tab definitions + invocation)",
+            "GET /api/v1/overseer/events": "Overseer event feed (?tab=all|route|steer|checkpoint)",
+            "GET /api/v1/operator-inbox": "Deferred guidance queue (process at checkpoint)",
+            "POST /api/v1/operator-inbox": "Queue guidance {text} or clear pending",
+            "GET /api/v1/seat-feed": "Unified activity feed (Grok/Cursor/agent/orchestrator)",
+            "POST /api/v1/coordination/gather": "Gather compact snapshots for multiple workers",
+            "GET /api/v1/chronicle": "File-backed pulse (attention + fleet + sources)",
+            "GET /api/v1/thrash": "Thrash meter: multi-front interleaving reading from the trajectory log (?hours=, default 6)",
+            "POST /api/v1/seat/task": "Cursor→Mag task {goal?, seat?, mode: delegate|queue|autopilot|agent|dispatch}",
+            "POST /api/v1/fork/detect": "Fork classifier {goal, current_goal?, allow_auto?}",
+            "POST /api/v1/fork/confirm": "Create fork artifact {goal, strategy?, spawn?, provider?, timeout?}",
+            "GET /api/v1/viewports": "Cursor Canvas manifests (synced viewports)",
+            "GET /api/v1/viewports/{id}": "One canvas viewport manifest",
+            "POST /api/v1/viewports/sync": "Sync *.canvas.tsx → memory/viewports/",
+        },
+        "conventions": {
+            "envelope": "{ ok: true|false, ... } — errors use real HTTP 4xx/5xx",
+            "truth": "Files under memory/ are source of truth; API is a viewport",
+            "legacy": "Bare /api/* aliases still route; prefer /api/v1/*",
+        },
+    }
+
+
+# (method, pattern, handler) — pattern uses {id} etc.
+def h_skill_ledger(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.skill_ledger import progress
+
+    return 200, progress()
+
+
+def h_skill_ledger_record(_p: dict[str, str], b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.skill_ledger import progress, record_decision
+
+    b = b or {}
+    rec = record_decision(
+        goal=str(b.get("goal") or ""),
+        task_shape=str(b.get("task_shape") or "unknown"),
+        provider=str(b.get("provider") or "ollama"),
+        model=str(b.get("model") or ""),
+        reasoning_level=str(b.get("reasoning_level") or "none"),
+        seat=str(b.get("seat") or ""),
+        outcome=b.get("outcome"),
+        detail=str(b.get("detail") or ""),
+        source=str(b.get("source") or "rest"),
+    )
+    return 200, {"ok": True, "recorded": rec, "progress": progress()}
+
+
+def h_skill_ledger_labeled_row(_p: dict[str, str], b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.skill_ledger import progress, record_labeled_row
+
+    b = b or {}
+    rec = record_labeled_row(
+        text=str(b.get("text") or ""),
+        label=str(b.get("label") or ""),
+        classifier=str(b.get("classifier") or "gemma4:latest"),
+        confidence=b.get("confidence"),
+        audited_by=b.get("audited_by"),
+        source=str(b.get("source") or "rest"),
+    )
+    return 200, {"ok": True, "recorded": rec, "progress": progress()}
+
+
+def h_pile(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    from mag.state_snapshot import status as pile_status
+
+    return 200, pile_status()
+
+
+def h_rightsize(_p: dict[str, Any], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """GET /api/v1/rightsize — rightsizing ghost status + derived endpoint registry."""
+    try:
+        from mag import rightsize_api
+        return 200, {"ok": True, "registry": rightsize_api.status()}
+    except Exception as e:  # pragma: no cover
+        return 500, {"ok": False, "type": "/problems/internal", "title": "Internal error",
+                     "status": 500, "detail": str(e)[:300]}
+
+
+def h_rightsize_endpoints(_p: dict[str, Any], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """GET /api/v1/rightsize/endpoints — the derived catalog the rightsizing ghost reads."""
+    try:
+        from mag import rightsize_api
+        items = rightsize_api.endpoints()
+        return 200, {"ok": True, "count": len(items), "items": items}
+    except Exception as e:  # pragma: no cover
+        return 500, {"ok": False, "type": "/problems/internal", "title": "Internal error",
+                     "status": 500, "detail": str(e)[:300]}
+
+
+def h_rightsize_audit(_p: dict[str, Any], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """POST /api/v1/rightsize/audit — run rightsize_all.audit() (report-only, $0)."""
+    try:
+        from mag import rightsize_all
+        return 200, {"ok": True, **rightsize_all.audit()}
+    except Exception as e:  # pragma: no cover
+        return 500, {"ok": False, "type": "/problems/internal", "title": "Internal error",
+                     "status": 500, "detail": str(e)[:300]}
+
+
+def h_rightsize_apply(_p: dict[str, Any], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """POST /api/v1/rightsize/apply — apply fixable rightsizing (dry unless {apply:true})."""
+    try:
+        from mag import rightsize_all
+        body = _b or {}
+        dry = not bool(body.get("apply"))
+        return 200, {"ok": True, **rightsize_all.apply(dry=dry)}
+    except Exception as e:  # pragma: no cover
+        return 500, {"ok": False, "type": "/problems/internal", "title": "Internal error",
+                     "status": 500, "detail": str(e)[:300]}
+
+
+def _summary_of(fn: Any) -> str:
+    """One-line human summary of a handler: docstring first line, else handler name."""
+    doc = getattr(fn, "__doc__", None)
+    if doc:
+        first = next((ln.strip() for ln in doc.splitlines() if ln.strip()), "")
+        if first:
+            return first[:160]
+    return getattr(fn, "__name__", "") or ""
+
+
+def _group_of(path: str) -> str:
+    """Functional group from the path prefix (first segment after /api[/v1]/). No mapping, no drift."""
+    segs = [s for s in path.split("?", 1)[0].split("/") if s]
+    if segs and segs[0] == "api":
+        if len(segs) >= 2 and segs[1] == "v1":
+            return segs[2] if len(segs) >= 3 else "index"
+        return segs[1] if len(segs) >= 2 else "index"
+    return "index"
+
+
+def _version_of(path: str) -> str:
+    return "v1" if path.startswith("/api/v1") else "legacy"
+
+
+def h_endpoints(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """GET /api/v1/endpoints — live catalog of every route (derived at request time, never hand-maintained)."""
+    method = (_p.get("method") or "").upper()
+    group = (_p.get("group") or "").lower()
+    q = (_p.get("q") or "").lower()
+    try:
+        limit = int(_p.get("limit") or 0) or None
+    except (TypeError, ValueError):
+        limit = None
+    items = []
+    for m, pat, fn in ROUTES + LEGACY:
+        if method and m.upper() != method:
+            continue
+        g = _group_of(pat)
+        if group and g != group:
+            continue
+        summary = _summary_of(fn)
+        if q and q not in (pat + " " + summary).lower():
+            continue
+        items.append({"method": m.upper(), "path": pat, "summary": summary,
+                      "group": g, "version": _version_of(pat)})
+    try:
+        start = int(_p.get("cursor") or 0)
+    except (TypeError, ValueError):
+        start = 0
+    page = items[start:start + limit] if limit else items[start:]
+    out = {"ok": True, "schema": "endpoints.v1", "count": len(items), "items": page}
+    if limit and start + limit < len(items):
+        out["next"] = f"/api/v1/endpoints?cursor={start + limit}"
+    return 200, out
+
+
+def h_chan_catalog(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """GET /api/v1/chan/catalog — Primer imageboard catalog (4chan-the-game)."""
+    from mag.chan import catalog
+    mill = str((_p or {}).get("all") or "").strip() in ("1", "true", "yes")
+    return 200, catalog(all_threads=mill)
+
+
+def h_chan_thread(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """GET /api/v1/chan/thread/{slug} — one thread, play posts only."""
+    from mag.chan import thread
+    slug = str((_p or {}).get("slug") or "").strip()
+    if not slug:
+        return 400, {"ok": False, "error": "thread slug required"}
+    return 200, thread(slug)
+
+
+def h_chan_post(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """POST /api/v1/chan/post {thread, text, seat, sage} — player move."""
+    from mag.chan import post
+    body = _b or {}
+    slug = str(body.get("thread") or _p.get("thread") or "").strip()
+    text = str(body.get("text") or body.get("comment") or "")
+    seat = str(body.get("seat") or body.get("name") or "anon")
+    sage = bool(body.get("sage"))
+    out = post(slug, text, seat=seat, sage=sage, reply_to=str(body.get("reply_to") or ""))
+    return (200, out) if out.get("ok") else (400, out)
+
+
+def h_chan_wake(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """POST /api/v1/chan/wake {thread} — one Anonymous chorus mouth (Primer voice)."""
+    from mag.chan import wake
+    body = _b or {}
+    slug = str(body.get("thread") or _p.get("thread") or "").strip()
+    if not slug:
+        return 400, {"ok": False, "error": "thread required"}
+    return 200, wake(slug)
+
+
+def h_partner_puppet(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """GET /api/v1/partner/puppet — the partner puppeteering surface (invariants + shared history)."""
+    try:
+        from mag import partner_puppet
+        return 200, partner_puppet.status()
+    except Exception:  # pragma: no cover
+        return 500, {"ok": False, "type": "/problems/internal", "title": "Internal error",
+                     "status": 500, "detail": "partner surface unavailable"}
+
+
+def h_partner_puppet_post(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """POST /api/v1/partner/puppet {token|anchor|scratch_id, execute} — puppet the local agent
+    via an invariant (memlang token / verkle anchor / Riddler surrogate) resolved against shared history."""
+    body = _b or {}
+    token = (body.get("token") or _p.get("token") or "").strip()
+    anchor = (body.get("anchor") or _p.get("anchor") or "").strip()
+    scratch = (body.get("scratch_id") or "").strip()
+    execute = bool(body.get("execute"))
+    try:
+        from mag import partner_puppet
+        if scratch:
+            return 200, partner_puppet.surrogate(scratch)
+        if anchor:
+            return 200, partner_puppet.from_anchor(anchor, execute=execute)
+        if token:
+            return 200, partner_puppet.puppet(token, execute=execute)
+        return 422, {"ok": False, "type": "/problems/validation", "title": "Validation error",
+                     "status": 422, "detail": "provide token, anchor, or scratch_id"}
+    except Exception:  # pragma: no cover
+        return 500, {"ok": False, "type": "/problems/internal", "title": "Internal error",
+                     "status": 500, "detail": "partner surface unavailable"}
+
+
+# --- P0 honest-dark deadline wrapper (2026-09-10, Lane B hang fix) ---
+# These surfaces call into container/scan code that can hang; the endpoint used to
+# hang with them. Deadline: >5s -> return {"ok": false, "stale": true, ...} plus the
+# last good payload if we ever served one. The page degrades, it never hangs.
+_DEADLINE_SECONDS = 5.0
+_STALE_CACHE: dict[str, dict[str, Any]] = {}
+_DL_POOL: list[Any] = []  # lazy ThreadPoolExecutor holder
+
+
+def _dl(key: str, fn: HandlerFn) -> HandlerFn:
+    """Wrap a handler with a hard 5s deadline + stale-cache fallback."""
+
+    def wrapped(p: dict[str, str], b: dict[str, Any] | None) -> tuple[int, dict[str, Any]]:
+        from concurrent.futures import ThreadPoolExecutor
+
+        if not _DL_POOL:
+            _DL_POOL.append(ThreadPoolExecutor(max_workers=8, thread_name_prefix="dl"))
+        fut = _DL_POOL[0].submit(fn, p, b)
+        try:
+            status, payload = fut.result(timeout=_DEADLINE_SECONDS)
+        except Exception as exc:  # includes FuturesTimeout; hung worker thread is abandoned
+            if type(exc).__name__ != "TimeoutError":
+                raise
+            return 503, {"ok": False, "stale": True, "error": "timeout",
+                         "last_known": _STALE_CACHE.get(key)}
+        if isinstance(payload, dict) and payload.get("ok", True):
+            _STALE_CACHE[key] = payload
+        return status, payload
+
+    return wrapped
+
+
+_dl_loop_health = _dl("loop_health", h_loop_health)
+_dl_overview = _dl("overview", h_overview)
+_dl_providers = _dl("providers", h_providers)
+_dl_quota = _dl("quota", h_quota)
+
+
+def h_status(_p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """GET /api/status — minimal file-on-disk health stub (P0 2026-09-10).
+    No container calls, no subprocess: reads mtimes of ground-truth files only."""
+    import time as _time
+
+    root = Path(__file__).resolve().parent.parent
+    checks: dict[str, Any] = {}
+    now = _time.time()
+    for name, rel in [
+        ("state", "state/CURRENT.md"),
+        ("chain", "memory/biography/verkle_chain.jsonl"),
+        ("queue", "queue"),
+        ("watch", "watch"),
+    ]:
+        try:
+            st = (root / rel).stat()
+            checks[name] = {"ok": True, "mtime": int(st.st_mtime),
+                            "age_s": int(now - st.st_mtime)}
+        except OSError:
+            checks[name] = {"ok": False, "mtime": None, "age_s": None}
+    return 200, {"ok": True, "schema": "status.v1", "service": "dashboard-rest",
+                 "time": int(now), "checks": checks,
+                 "dark": all(not c["ok"] for c in checks.values())}
+
+
+def h_thrash(p: dict[str, str], _b: dict[str, Any] | None) -> tuple[int, dict]:
+    """GET /api/v1/thrash: live multi-front thrash reading (THE 50 W6 T27).
+
+    Computes on demand from the trajectory log via tools/thrash_meter;
+    ?hours= sets the window (1-168, default 6). Files are the source of
+    truth; this endpoint is a viewport, it writes nothing.
+    """
+    try:
+        hours = min(168, max(1, int(str(p.get("hours") or "6"))))
+    except ValueError:
+        hours = 6
+    try:
+        from tools import thrash_meter
+    except Exception as e:  # noqa: BLE001
+        return _err(503, f"thrash_meter import failed: {e}")
+    reading = thrash_meter.thrash_cmd(hours=hours)
+    if not reading.get("ok"):
+        return _err(503, reading.get("error") or "thrash meter unavailable")
+    return _ok({"reading": reading}, schema="thrash_reading.v1")
+
+
+ROUTES: list[tuple[str, str, HandlerFn]] = [
+    ("GET", "/api/v1/chan/catalog", h_chan_catalog),
+    ("GET", "/api/v1/chan/thread/{slug}", h_chan_thread),
+    ("POST", "/api/v1/chan/post", h_chan_post),
+    ("POST", "/api/v1/chan/wake", h_chan_wake),
+    ("GET", "/api/v1/partner/puppet", h_partner_puppet),
+    ("POST", "/api/v1/partner/puppet", h_partner_puppet_post),
+    ("GET", "/api/v1/ecosystem", h_ecosystem),
+    ("GET", "/api/v1/ecosystem/rib", h_ecosystem_rib),
+    ("GET", "/api/v1/ecosystem/scan", h_ecosystem_scan),
+    ("GET", "/api/v1/schemas", h_schemas),
+    ("GET", "/api/v1/endpoints", h_endpoints),
+    ("GET", "/api/endpoints", h_endpoints),
+    ("GET", "/api/v1/rightsize", h_rightsize),
+    ("GET", "/api/v1/rightsize/endpoints", h_rightsize_endpoints),
+    ("POST", "/api/v1/rightsize/audit", h_rightsize_audit),
+    ("POST", "/api/v1/rightsize/apply", h_rightsize_apply),
+    ("GET", "/api/v1/skill-ledger", h_skill_ledger),
+    ("GET", "/api/skill-ledger", h_skill_ledger),
+    ("POST", "/api/v1/skill-ledger/record", h_skill_ledger_record),
+    ("POST", "/api/skill-ledger/record", h_skill_ledger_record),
+    ("POST", "/api/v1/skill-ledger/labeled-row", h_skill_ledger_labeled_row),
+    ("POST", "/api/skill-ledger/labeled-row", h_skill_ledger_labeled_row),
+    ("GET", "/api/v1/pile", h_pile),
+    ("GET", "/api/pile", h_pile),
+    ("GET", "/api/v1/fleet/triad", h_fleet_triad),
+    ("GET", "/api/v1/fleet/hypervisor", h_fleet_hypervisor),
+    ("GET", "/api/v1/loop/health", _dl_loop_health),
+    ("GET", "/api/v1", h_api_index),
+    ("GET", "/api/v1/", h_api_index),
+    ("GET", "/api/v1/operator-os", h_operator_os),
+    ("GET", "/api/v1/org-review", h_operator_os),
+    ("GET", "/api/v1/tapestry", h_tapestry),
+    ("POST", "/api/v1/tapestry/rebuild", h_post_tapestry),
+    ("GET", "/api/v1/lattice-lab", h_lattice_lab),
+    ("GET", "/api/v1/health", h_health),
+    ("GET", "/api/v1/web/fetch", h_web_fetch),
+    ("GET", "/api/v1/doctor", h_health),
+    ("GET", "/api/v1/test-run", h_test_run),
+    ("POST", "/api/v1/test-run", h_test_run),
+    ("GET", "/api/v1/tokens/saved", h_tokens_saved),
+    ("GET", "/api/v1/game/score", h_game_score),
+    ("GET", "/api/v1/ghost/control", h_ghost_control),
+    ("GET", "/api/v1/sovereign", h_sovereign),
+    ("GET", "/api/v1/solved", h_solved),
+    ("POST", "/api/v1/ghost/talk", h_ghost_talk),
+    ("GET", "/api/v1/memory/search", h_memory_search),
+    ("GET", "/api/v1/memory/recent", h_memory_recent),
+    ("GET", "/api/v1/memory/{key}", h_memory_get),
+    ("POST", "/api/v1/memory", h_memory_put),
+    ("POST", "/api/v1/swarm/ramp", h_swarm_ramp),
+    ("POST", "/api/v1/swarm/test", h_swarm_test),
+    ("POST", "/api/v1/afk/run", h_afk_run),
+    ("POST", "/api/v1/sentinel", h_sentinel),
+    ("GET", "/api/v1/mag-os", h_mag_os),
+    ("GET", "/api/v1/os", h_mag_os),
+    ("GET", "/api/v1/kpi", h_kpi),
+    ("GET", "/api/v1/registry", h_registry),
+    ("GET", "/api/v1/sessions", h_sessions),
+    ("GET", "/api/v1/sessions/{id}", h_session),
+    ("GET", "/api/v1/sessions/{id}/residual", h_session_residual),
+    ("GET", "/api/v1/sessions/{id}/visual", h_visual),
+    ("GET", "/api/v1/board", h_board),
+    ("GET", "/api/v1/chain", h_chain),
+    ("GET", "/api/v1/wave", h_wave),
+    ("GET", "/api/v1/desk", h_wave),
+    ("GET", "/api/v1/ingest", h_ingest),
+    ("GET", "/api/v1/overview", _dl_overview),
+    ("GET", "/api/v1/hood", h_hood),
+    ("GET", "/api/v1/nervous", h_nervous),
+    ("GET", "/api/nervous", h_nervous),
+    ("GET", "/api/v1/system-map", h_system_map),
+    ("POST", "/api/v1/system-map", h_system_map),
+    ("GET", "/api/v1/brain", h_brain),
+    ("POST", "/api/v1/brain", h_brain),
+    ("GET", "/api/brain", h_brain),
+    ("POST", "/api/brain", h_brain),
+    ("GET", "/api/v1/stack", h_stack),
+    ("GET", "/api/stack", h_stack),
+    ("GET", "/api/v1/repo-readiness", h_repo_readiness),
+    ("GET", "/api/v1/feature-lab", h_feature_lab),
+    ("POST", "/api/v1/feature-lab", h_feature_lab),
+    ("GET", "/api/v1/local-pulse", h_local_pulse),
+    ("GET", "/api/local-pulse", h_local_pulse),
+    ("GET", "/api/v1/arena", h_agent_arena),
+    ("POST", "/api/v1/arena", h_agent_arena),
+    ("GET", "/api/arena", h_agent_arena),
+    ("POST", "/api/arena", h_agent_arena),
+    ("GET", "/api/v1/routing-network", h_routing_network),
+    ("POST", "/api/v1/routing-network", h_routing_network),
+    ("GET", "/api/v1/local-scheduler", h_local_scheduler),
+    ("POST", "/api/v1/local-scheduler", h_local_scheduler),
+    ("GET", "/api/local-scheduler", h_local_scheduler),
+    ("POST", "/api/local-scheduler", h_local_scheduler),
+    ("GET", "/api/v1/unsloth", h_unsloth),
+    ("POST", "/api/v1/unsloth", h_unsloth),
+    ("GET", "/api/unsloth", h_unsloth),
+    ("POST", "/api/unsloth", h_unsloth),
+    ("POST", "/api/v1/voice/scratch", h_voice_scratch),
+    ("POST", "/api/voice/scratch", h_voice_scratch),
+    ("POST", "/api/v1/voice/turn", h_voice_turn),
+    ("POST", "/api/voice/turn", h_voice_turn),
+    ("GET", "/api/v1/voice/shadow", h_voice_shadow),
+    ("POST", "/api/v1/voice/shadow", h_voice_shadow),
+    ("GET", "/api/voice/shadow", h_voice_shadow),
+    ("POST", "/api/voice/shadow", h_voice_shadow),
+    ("GET", "/api/v1/voice/task", h_voice_task),
+    ("POST", "/api/v1/voice/task", h_voice_task),
+    ("GET", "/api/voice/task", h_voice_task),
+    ("POST", "/api/voice/task", h_voice_task),
+    ("GET", "/api/v1/voice/stt", h_voice_stt),
+    ("POST", "/api/v1/voice/stt", h_voice_stt),
+    ("GET", "/api/voice/stt", h_voice_stt),
+    ("POST", "/api/voice/stt", h_voice_stt),
+    ("GET", "/api/v1/voice/canvas", h_voice_canvas),
+    ("POST", "/api/v1/voice/canvas", h_voice_canvas),
+    ("GET", "/api/voice/canvas", h_voice_canvas),
+    ("POST", "/api/voice/canvas", h_voice_canvas),
+    ("GET", "/api/v1/voice/dig", h_voice_canvas),
+    ("POST", "/api/v1/voice/dig", h_voice_canvas),
+    ("GET", "/api/v1/diary/seal", h_diary_seal),
+    ("POST", "/api/v1/diary/seal", h_diary_seal),
+    ("GET", "/api/v1/diary/nodes", h_diary_seal),
+    ("POST", "/api/v1/diary/nodes", h_diary_seal),
+    ("GET", "/api/diary/seal", h_diary_seal),
+    ("POST", "/api/diary/seal", h_diary_seal),
+    ("GET", "/api/v1/voice/handoff", h_voice_handoff),
+    ("POST", "/api/v1/voice/handoff", h_voice_handoff),
+    ("GET", "/api/voice/handoff", h_voice_handoff),
+    ("POST", "/api/voice/handoff", h_voice_handoff),
+    ("GET", "/api/v1/refine", h_refine_chain),
+    ("POST", "/api/v1/refine", h_refine_chain),
+    ("GET", "/api/refine", h_refine_chain),
+    ("POST", "/api/refine", h_refine_chain),
+    ("GET", "/api/v1/game", h_game),
+    ("POST", "/api/v1/game", h_game),
+    ("GET", "/api/game", h_game),
+    ("POST", "/api/game", h_game),
+    ("GET", "/api/v1/game/frontier", h_frontier_game),
+    ("POST", "/api/v1/game/frontier", h_frontier_game),
+    ("GET", "/api/game/frontier", h_frontier_game),
+    ("POST", "/api/game/frontier", h_frontier_game),
+    ("GET", "/api/v1/table/view", h_table_view),
+    ("POST", "/api/v1/table/view", h_table_view),
+    ("GET", "/api/table/view", h_table_view),
+    ("POST", "/api/table/view", h_table_view),
+    ("GET", "/api/v1/table/tileset", h_table_tileset),
+    ("POST", "/api/v1/table/tileset", h_table_tileset),
+    ("GET", "/api/table/tileset", h_table_tileset),
+    ("POST", "/api/table/tileset", h_table_tileset),
+    ("GET", "/api/v1/display", h_display),
+    ("GET", "/api/display", h_display),
+    ("GET", "/api/v1/grove", h_grove),
+    ("GET", "/api/grove", h_grove),
+    ("GET", "/api/v1/lattice-history", h_lattice_history),
+    ("GET", "/api/lattice-history", h_lattice_history),
+    ("GET", "/api/v1/viewports", h_viewports),
+    ("GET", "/api/v1/viewports/{id}", h_viewport_one),
+    ("POST", "/api/v1/viewports/sync", h_viewports_sync),
+
+    ("GET", "/api/v1/home", h_home_summary),
+    ("GET", "/api/v1/summary", h_home_summary),
+    ("GET", "/api/v1/attention-ranked", h_attention_ranked),
+    ("POST", "/api/v1/attention-feedback", h_attention_feedback),
+    # Ideas — primary OS board (collection + item + pack + seed)
+    ("GET", "/api/v1/ideas", h_ideas),
+    ("POST", "/api/v1/ideas", h_ideas_create),
+    ("GET", "/api/v1/ideas/{id}/pack", h_idea_pack),  # before {id}
+    ("GET", "/api/v1/ideas/{id}", h_idea_one),
+    ("PATCH", "/api/v1/ideas/{id}", h_idea_patch),
+    ("POST", "/api/v1/ideas/seed", h_ideas_seed),
+    ("GET", "/api/v1/models", h_models),
+    ("GET", "/api/v1/providers", _dl_providers),
+    ("GET", "/api/v1/quota", _dl_quota),
+    ("GET", "/api/v1/providers/local-only", h_local_only_get),
+    ("POST", "/api/v1/providers/local-only", h_local_only_post),
+    ("GET", "/api/v1/router-status", h_router_status),
+    ("GET", "/api/v1/status", h_router_status),
+    ("GET", "/api/v1/diary", h_diary),
+    ("GET", "/api/v1/story", h_story),
+    ("GET", "/api/v1/story/file", h_story_file),
+    ("GET", "/api/v1/usage", h_usage),
+    ("GET", "/api/v1/economy", h_economy),
+    ("GET", "/api/v1/costs", h_costs),
+    ("POST", "/api/v1/costs/vast/sync", h_vast_cost_sync),
+    ("GET", "/api/v1/compute-schedule", h_compute_schedule),
+    ("GET", "/api/v1/flow", h_idea_flow),
+    ("GET", "/api/v1/brief", h_brief_latest),
+    ("GET", "/api/v1/visual/latest", lambda p, b: h_visual({**p, "id": "latest"}, b)),
+    ("POST", "/api/v1/catch-up", h_post_catch_up),
+    ("POST", "/api/v1/desk-orchestrate", h_desk_orchestrate),
+    ("POST", "/api/v1/desk-dialogue", h_desk_dialogue),
+    ("GET", "/api/v1/desk-dialogue", h_desk_dialogue),
+    ("GET", "/api/v1/agent-desk", h_agent_desk),
+    ("POST", "/api/v1/agent-desk", h_agent_desk),
+    ("POST", "/api/v1/ask", h_post_ask),
+    ("POST", "/api/v1/dispatch", h_post_dispatch),
+    ("POST", "/api/v1/agent", h_post_agent),
+    ("POST", "/api/agent", h_post_agent),
+    ("GET", "/api/v1/agent/live", h_agent_live),
+    ("POST", "/api/v1/agent/upload", h_post_agent_upload),
+    ("POST", "/api/agent/upload", h_post_agent_upload),
+    ("GET", "/api/v1/context-pack", h_context_pack),
+    ("GET", "/api/context-pack", h_context_pack),
+    ("GET", "/api/v1/session/freeze", h_session_freeze),
+    ("GET", "/api/v1/tangents", h_tangents),
+    ("POST", "/api/v1/tangent", h_post_tangent),
+    ("POST", "/api/v1/tangent/process", h_post_tangent_process),
+    ("POST", "/api/v1/fork/detect", h_fork_detect),
+    ("POST", "/api/v1/fork/confirm", h_fork_confirm),
+    ("POST", "/api/v1/brief", h_post_brief),
+    ("POST", "/api/v1/visual", h_post_visual),
+    ("POST", "/api/v1/export", h_post_export),
+    ("POST", "/api/v1/multi-smoke", h_post_multi_smoke),
+    ("POST", "/api/v1/probe-lanes", h_post_probe_lanes),
+    ("GET", "/api/v1/blast", h_blast),
+    ("POST", "/api/v1/blast", h_post_blast),
+    ("POST", "/api/v1/blast/promote", h_post_blast_promote),
+    # Orchestrator — sub-agent fleet (spawn + monitor + intervene)
+    ("GET", "/api/v1/agents", h_agents),
+    ("POST", "/api/v1/agents", h_agents_spawn),
+    ("POST", "/api/v1/agents/fan", h_agents_fan),
+    ("GET", "/api/v1/agents/pipes", h_agents_pipes),
+    ("GET", "/api/v1/agents/pipes/{id}", h_agents_pipe_one),
+    ("POST", "/api/v1/agents/pipes/{id}/collect", h_agents_pipe_collect),
+    ("POST", "/api/v1/agents/pipes/{id}/kill", h_agents_pipe_kill),
+    ("POST", "/api/v1/agents/pipes/{id}/cmd", h_agents_pipe_cmd),
+    ("POST", "/api/v1/agents/reap", h_agents_reap),
+    ("POST", "/api/v1/agents/heal", h_agents_heal),
+    ("GET", "/api/v1/agents/{id}", h_agent_one),
+    ("GET", "/api/v1/agents/{id}/state-snapshot", h_agent_state_snapshot),
+    ("GET", "/api/v1/agents/{id}/log", h_agent_log),
+    ("POST", "/api/v1/agents/{id}/kill", h_agent_kill),
+    ("POST", "/api/v1/agents/{id}/cmd", h_agent_cmd),
+    ("POST", "/api/v1/agents/{id}/steer", h_agent_steer_post),
+    ("GET", "/api/v1/agents/{id}/steer/{steer_id}/status", h_agent_steer_status),
+    # Tripartite Chronicle (Synthesis Agent running commentary)
+    ("GET", "/api/v1/chronicle", h_chronicle),
+    ("GET", "/api/v1/seats", h_seats),
+    ("POST", "/api/v1/seats/register", h_seats_register),
+    ("POST", "/api/v1/seats/heartbeat", h_seats_heartbeat),
+    ("POST", "/api/v1/seats/unregister", h_seats_unregister),
+    ("GET", "/api/v1/power", h_power),
+    ("POST", "/api/v1/power/stop", h_power_stop),
+    ("POST", "/api/v1/power/start", h_power_start),
+    ("GET", "/api/v1/lifecycle", h_lifecycle),
+    ("POST", "/api/v1/lifecycle/reconcile", h_lifecycle_reconcile),
+    ("GET", "/api/v1/power/lifecycle", h_lifecycle),
+    ("GET", "/api/v1/temperature-stacks", h_temperature_stacks),
+    ("POST", "/api/v1/temperature-stacks", h_temperature_stacks),
+    ("POST", "/api/v1/improve/cloud", h_improve_cloud),
+    ("POST", "/api/v1/improve/cycle", h_improve_cycle),
+    ("GET", "/api/v1/token-chain", h_token_chain),
+    ("POST", "/api/v1/token-chain", h_token_chain),
+    ("GET", "/api/v1/governance", h_governance),
+    ("POST", "/api/v1/governance", h_post_governance),
+    ("POST", "/api/v1/governance/auto-steer/add", h_governance_auto_steer_add),
+    ("GET", "/api/v1/governance/steering-log", h_governance_steering_log),
+    ("GET", "/api/v1/overseer/manifest", h_overseer_manifest),
+    ("GET", "/api/v1/overseer/events", h_overseer_events),
+    ("GET", "/api/v1/overseer/session", h_overseer_session),
+    ("POST", "/api/v1/overseer/session", h_overseer_session),
+    ("GET", "/api/v1/operator-inbox", h_operator_inbox),
+    ("POST", "/api/v1/operator-inbox", h_operator_inbox),
+    ("GET", "/api/v1/seat-feed", h_seat_feed),
+    ("GET", "/api/v1/coordination", h_coordination),
+    ("POST", "/api/v1/coordination", h_coordination_post),
+    ("POST", "/api/v1/coordination/gather", h_coordination_gather),
+    ("POST", "/api/v1/coordinate", h_coordinate),
+    ("POST", "/api/v1/route", h_route),
+    ("GET", "/api/v1/route", h_route),
+    ("POST", "/api/v1/decide", h_decide),
+    ("GET", "/api/v1/decide", h_decide),
+    ("GET", "/api/v1/verkle-knots/{id}", h_verkle_knot),
+    ("POST", "/api/v1/verkle-knots/{id}", h_verkle_knot),
+    ("GET", "/api/v1/autorun", h_autorun),
+    ("GET", "/api/autorun", h_autorun),
+    ("GET", "/api/v1/handoff-inbox", h_handoff_inbox),
+    ("GET", "/api/handoff-inbox", h_handoff_inbox),
+    ("GET", "/api/v1/coding-session", h_coding_session_get),
+    ("POST", "/api/v1/coding-session", h_coding_session),
+    ("GET", "/api/v1/factory-machine", h_factory_machine_get),
+    ("POST", "/api/v1/factory-machine", h_factory_machine),
+    ("GET", "/api/v1/drainer", h_drainer_status),
+    ("POST", "/api/v1/drainer", h_drainer_toggle),
+    ("GET", "/api/v1/drainer/stats", h_drainer_stats),
+    ("GET", "/api/v1/graph/ops", h_ops_graph),
+    ("GET", "/api/v1/framework/map", h_framework_map),
+    ("GET", "/api/v1/framework/reports", h_framework_reports),
+    ("GET", "/api/v1/surface-audit", h_surface_audit),
+    ("GET", "/api/v1/janitor", h_janitor),
+    ("POST", "/api/v1/janitor", h_janitor),
+    ("GET", "/api/v1/orphan", h_orphan),
+    ("POST", "/api/v1/orphan", h_orphan),
+    ("GET", "/api/v1/failure", h_failure),
+    ("POST", "/api/v1/failure", h_failure),
+    ("GET", "/api/v1/warnings", h_warnings),
+    ("POST", "/api/v1/warnings", h_warnings),
+    ("GET", "/api/v1/supervisor", h_supervisor),
+    ("POST", "/api/v1/supervisor", h_supervisor),
+    ("POST", "/api/v1/handoff/deep", h_handoff_deep),
+    ("GET", "/api/v1/grok-batch", h_grok_batch),
+    ("GET", "/api/v1/aos-grok", h_aos_grok),
+    ("POST", "/api/v1/aos-grok", h_aos_grok),
+    ("GET", "/api/v1/research-lens", h_research_lens),
+    ("POST", "/api/v1/research-lens", h_research_lens),
+    ("GET", "/api/v1/cheap-swarm", h_cheap_swarm),
+    ("POST", "/api/v1/cheap-swarm", h_cheap_swarm),
+    ("GET", "/api/v1/mycelium", h_mycelium),
+    ("POST", "/api/v1/mycelium", h_mycelium),
+    ("GET", "/api/v1/republic-os", h_republic_os),
+    ("POST", "/api/v1/republic-os", h_republic_os),
+    ("GET", "/api/v1/comms-trail", h_comms_trail),
+    ("POST", "/api/v1/comms-trail", h_comms_trail),
+    ("GET", "/api/v1/grok-mirror", h_grok_mirror),
+    ("POST", "/api/v1/grok-mirror", h_grok_mirror),
+    ("GET", "/api/v1/ghost", h_ghost),
+    ("POST", "/api/v1/ghost", h_ghost),
+    ("GET", "/api/v1/ghost/summon", h_ghost_summon),
+    ("POST", "/api/v1/ghost/summon", h_ghost_summon),
+    ("GET", "/api/v1/legacy", h_legacy_audit),
+    ("POST", "/api/v1/legacy", h_legacy_audit),
+    ("GET", "/api/v1/law", h_law),
+    ("POST", "/api/v1/law", h_law),
+    ("GET", "/api/v1/steer", h_steer),
+    ("POST", "/api/v1/steer", h_steer),
+    ("GET", "/api/v1/run", h_run),
+    ("POST", "/api/v1/run", h_run),
+    ("GET", "/api/v1/spec-gate", h_spec_gate),
+    ("POST", "/api/v1/spec-gate", h_spec_gate),
+    ("POST", "/api/v1/extension/deploy", h_extension_deploy),
+    ("POST", "/api/v1/seat/steer", h_seat_steer),
+    ("GET", "/api/v1/elevate", h_elevate),
+    ("POST", "/api/v1/elevate", h_elevate),
+    ("GET", "/api/v1/cleanup", h_cleanup),
+    ("POST", "/api/v1/cleanup", h_cleanup),
+    ("GET", "/api/v1/docker", h_docker),
+    ("POST", "/api/v1/docker", h_docker),
+    ("GET", "/api/v1/embassy/publish", h_embassy_publish),
+    ("POST", "/api/v1/embassy/publish", h_embassy_publish),
+    ("GET", "/api/v1/live-feed", h_live_feed),
+    ("POST", "/api/v1/live-feed", h_live_feed),
+    ("GET", "/api/v1/workspace/tree", h_workspace_tree),
+    ("GET", "/api/v1/workspace/file", h_workspace_file_get),
+    ("POST", "/api/v1/workspace/file", h_workspace_file_post),
+    ("POST", "/api/v1/autopilot", h_autopilot),
+    ("POST", "/api/v1/orchestrator/queue", h_orchestrator_queue_post),
+    ("POST", "/api/v1/handoff/request", h_handoff_request_post),
+    ("GET", "/api/v1/behavior/vscode", h_vscode_feed),
+    ("POST", "/api/v1/behavior/vscode", h_vscode_feed),
+    # Thrash meter (THE 50 W6 T27): live multi-front interleaving reading
+    ("GET", "/api/v1/thrash", h_thrash),
+    ("POST", "/api/v1/seat/task", h_seat_task),
+]
+
+# Legacy aliases → same handlers (compat for existing UI)
+LEGACY: list[tuple[str, str, HandlerFn]] = [
+    ("GET", "/api/operator-os", h_operator_os),
+    ("GET", "/api/org-review", h_operator_os),
+    ("GET", "/api/thrash", h_thrash),
+    ("GET", "/api/health", h_health),
+    ("GET", "/api/doctor", h_health),
+    ("GET", "/api/mag-os", h_mag_os),
+    ("GET", "/api/os", h_mag_os),
+    ("GET", "/api/sessions", h_sessions),
+    ("GET", "/api/session/{id}", h_session),
+    ("GET", "/api/board", h_board),
+    ("GET", "/api/verkle", h_chain),
+    ("GET", "/api/ingest", h_ingest),
+    ("GET", "/api/overview", _dl_overview),
+    ("GET", "/api/hood", h_hood),
+    ("GET", "/api/home", h_home_summary),
+    ("GET", "/api/diary", h_diary),
+    ("GET", "/api/story", h_story),
+    ("GET", "/api/summary", h_home_summary),
+    ("GET", "/api/models", h_models),
+    ("GET", "/api/providers", _dl_providers),
+    ("GET", "/api/quota", _dl_quota),
+    ("GET", "/api/status", h_status),
+    ("GET", "/api/loop-health", _dl_loop_health),
+    ("GET", "/api/usage", h_usage),
+    ("GET", "/api/economy", h_economy),
+    ("GET", "/api/costs", h_costs),
+    ("POST", "/api/costs/vast/sync", h_vast_cost_sync),
+    ("GET", "/api/compute-schedule", h_compute_schedule),
+    ("GET", "/api/idea-flow", h_idea_flow),
+    ("GET", "/api/brief/latest", h_brief_latest),
+    ("GET", "/api/visual/latest", lambda p, b: h_visual({**p, "id": "latest"}, b)),
+    ("GET", "/api/visual/{id}", h_visual),
+    ("GET", "/api/timeline", lambda p, b: (200, {"rows": _read_jsonl(BIO / "knot_timeline.jsonl")})),
+    ("POST", "/api/catch-up", h_post_catch_up),
+    ("POST", "/api/ask", h_post_ask),
+    ("POST", "/api/dispatch", h_post_dispatch),
+    ("GET", "/api/tangents", h_tangents),
+    ("POST", "/api/tangent", h_post_tangent),
+    ("POST", "/api/tangent/process", h_post_tangent_process),
+    ("POST", "/api/fork/detect", h_fork_detect),
+    ("POST", "/api/fork/confirm", h_fork_confirm),
+    ("POST", "/api/brief", h_post_brief),
+    ("POST", "/api/visual/rebuild", h_post_visual),
+    ("POST", "/api/export", h_post_export),
+    ("POST", "/api/multi-smoke", h_post_multi_smoke),
+    ("POST", "/api/probe-lanes", h_post_probe_lanes),
+    ("GET", "/api/blast", h_blast),
+    ("POST", "/api/blast", h_post_blast),
+    ("POST", "/api/blast/promote", h_post_blast_promote),
+    ("GET", "/api/chronicle", h_chronicle),
+    ("GET", "/api/seats", h_seats),
+    ("GET", "/api/governance", h_governance),
+    ("POST", "/api/governance", h_post_governance),
+    ("GET", "/api/operator-inbox", h_operator_inbox),
+    ("POST", "/api/operator-inbox", h_operator_inbox),
+    ("GET", "/api/seat-feed", h_seat_feed),
+    ("GET", "/api/drainer", h_drainer_status),
+    ("POST", "/api/drainer", h_drainer_toggle),
+    ("GET", "/api/workspace/tree", h_workspace_tree),
+    ("GET", "/api/workspace/file", h_workspace_file_get),
+    ("POST", "/api/workspace/file", h_workspace_file_post),
+    ("POST", "/api/autopilot", h_autopilot),
+    ("POST", "/api/orchestrator/queue", h_orchestrator_queue_post),
+    ("POST", "/api/seat/task", h_seat_task),
+]
+
+
+def _compile(pattern: str) -> tuple[re.Pattern[str], list[str]]:
+    names: list[str] = []
+
+    def repl(m: re.Match[str]) -> str:
+        names.append(m.group(1))
+        return r"([^/]+)"
+
+    rx = re.sub(r"\{(\w+)\}", repl, pattern)
+    return re.compile("^" + rx + "$"), names
+
+
+_COMPILED: list[tuple[str, re.Pattern[str], list[str], HandlerFn]] = []
+for method, pat, fn in ROUTES + LEGACY:
+    cre, names = _compile(pat)
+    _COMPILED.append((method, cre, names, fn))
+
+
+def dispatch(
+    method: str,
+    path: str,
+    body: dict[str, Any] | None = None,
+    query: dict[str, str] | None = None,
+) -> tuple[int, dict[str, Any]] | None:
+    """Return (status, json_body) or None if no route matched.
+
+    Path params win over query for the same key. Query enables
+    RESTful filters: GET /api/v1/ideas?status=open
+    """
+    for m, cre, names, fn in _COMPILED:
+        if m != method:
+            continue
+        match = cre.match(path)
+        if not match:
+            continue
+        params: dict[str, str] = dict(query or {})
+        for i, name in enumerate(names):
+            params[name] = match.group(i + 1)
+        try:
+            return fn(params, body)
+        except Exception as e:
+            return 500, {"ok": False, "error": str(e)[:400]}
+    return None

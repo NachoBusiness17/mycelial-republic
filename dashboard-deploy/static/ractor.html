@@ -1,0 +1,66 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MAG · The Ractor Board</title><style>
+:root{--bg:#030806;--ink:#c8e6d9;--accent:#7cf5ff;--line:rgba(0,240,255,.22);--muted:#8ab8a4;--gold:#e8c96a;--run:#7cf5ff;--done:#7dfab0;--pend:#e8c96a;--block:#ff7d7d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-monospace,Consolas,monospace}
+header{padding:18px 20px;border-bottom:1px solid var(--line);background:#0a1412;position:sticky;top:0}
+h1{margin:0;font-size:1.05rem;letter-spacing:.12em;color:var(--accent)}
+.muted{color:var(--muted);font-size:.72rem}
+.counts{margin-top:6px;font-size:.75rem}
+.counts b{color:var(--gold)}
+.ex{max-width:860px;margin:14px auto;padding:12px 16px;border:1px solid var(--line);border-radius:8px;background:#071009}
+.ex h2{margin:0;font-size:.9rem;color:var(--ink);letter-spacing:.02em}
+.row1{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.chip{font-size:.62rem;padding:2px 7px;border-radius:9px;border:1px solid var(--line);letter-spacing:.08em}
+.organ{color:var(--accent)}.kind{color:var(--muted)}
+.s-DONE{color:var(--done);border-color:var(--done)}.s-RUNNING{color:var(--run);border-color:var(--run)}
+.s-PENDING{color:var(--pend);border-color:var(--pend)}.s-BLOCKED{color:var(--block);border-color:var(--block)}
+.ex p{margin:6px 0 0;font-size:.8rem;color:var(--muted)}
+.ts{margin-left:auto;font-size:.65rem;color:var(--muted)}
+a{color:var(--accent)}
+footer{max-width:860px;margin:18px auto 30px;font-size:.7rem;color:var(--muted)}
+</style></head><body>
+<header><h1>THE RACTOR BOARD</h1>
+<span class="muted">diamond-age primer feed — one tape, many windows · deeds append, glances don't · verbose rides the cage</span>
+<div class="counts" id="counts"></div></header>
+<div style="margin:8px auto;max-width:860px"><a href="/static/room_lightmap.html" style="color:#e8c96a;font-size:.8rem;text-decoration:none">◪ THE ROOM is live — open the lightmap dungeon</a></div>
+<div id="hall"></div>
+<footer>verbose tapes: watch/room.jsonl (the room) · openclaw webchat :18789 (the cage) · this feed: /data/ractor_board.jsonl · chain: memory/runs/harness/events.jsonl</footer>
+<script>
+const ORDER={"RUNNING":0,"PENDING":1,"DONE":2,"BLOCKED":3};
+function render(rows){
+  rows.sort((a,b)=>(ORDER[a.status]??9)-(ORDER[b.status]??9)|| (b.ts||"").localeCompare(a.ts||""));
+  const c={};rows.forEach(r=>c[r.status]=(c[r.status]||0)+1);
+  document.getElementById('counts').innerHTML=
+    '<b>'+rows.length+'</b> beats &nbsp;·&nbsp; RUNNING '+ (c.RUNNING||0) +' · PENDING '+ (c.PENDING||0) +' · DONE '+ (c.DONE||0) + (c.BLOCKED?' · <span style="color:var(--block)">BLOCKED '+c.BLOCKED+'</span>':'');
+  const hall=document.getElementById('hall');hall.innerHTML='';
+  for(const e of rows){
+    const d=document.createElement('div');d.className='ex';
+    const ev=e.evidence?((e.evidence.startsWith('http')||e.evidence.startsWith('/'))?'<a href="'+e.evidence+'">'+e.evidence+'</a>':e.evidence):'';
+    d.innerHTML='<div class="row1"><span class="chip organ">'+e.organ+'</span><span class="chip kind">'+e.kind+'</span>'
+      +'<span class="chip s-'+(e.status||'PENDING')+'">'+(e.status||'')+'</span><span class="ts">'+(e.ts||'')+'</span></div>'
+      +'<h2>'+e.title+'</h2><p>'+ (e.detail||'') + (ev?' · '+ev:'') +'</p>';
+    hall.appendChild(d);
+  }
+}
+function load(){fetch('/api/v1/ractor/tail?limit=500').then(r=>{if(!r.ok)throw new Error('tail '+r.status);return r.json()}).then(d=>{
+  render(d.rows||[]);
+}).catch(e=>{
+  // tail door down: NEVER auto-pull the 713MB legacy tape — it waits behind an explicit click (lazy door)
+  const hall=document.getElementById('hall');
+  if(load._fell){return;} // door already rendered; don't wipe it every 15s
+  load._fell=1;
+  document.getElementById('counts').textContent='tail door down — board dark';
+  hall.innerHTML='<div class="ex"><h2>tail door down</h2><p>'+e.message
+    +' · the legacy full tape is <b>713MB</b> and is no longer fetched automatically. '
+    +'<button id="legacyLoad" style="max-width:320px;margin-top:8px">Load legacy tape anyway (713MB, slow)</button></p></div>';
+  const btn=document.getElementById('legacyLoad');
+  btn.onclick=()=>{
+    btn.disabled=true;btn.textContent='loading 713MB…';
+    fetch('/data/ractor_board.jsonl').then(r=>r.text()).then(t=>{
+      const rows=t.split('\n').filter(l=>l.trim()).map(l=>JSON.parse(l));render(rows);
+    }).catch(e2=>{hall.textContent='board dark: '+e2});
+  };
+});}
+load();setInterval(load,15000);
+</script><script src="/static/nav.js"></script></body></html>

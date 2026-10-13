@@ -1,0 +1,83 @@
+<!doctype html>
+<!--
+  FALSIFIERS INDEX v1 — paste-checkable browser falsifiers, fleet build 2026-09-04
+  Provenance: salon_launch_law_20260904, falsifier table (#1..#5). A falsifier
+  is a pure function of pasted state: browser-surfaceable, JS<->Python
+  parity-checked, zero-dep. Status: 1 built (lattice), 2 built today
+  (chain, claim), 2 unproven (mass balance, concurrency).
+  ZERO-FETCH: no network resource, no CDN, no libraries.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MAG · Falsifiers — paste-checkable invariants index v1</title>
+<style>
+:root{--bg:#030806;--ink:#c8e6d9;--accent:#7cf5ff;--gold:#e8c96a;--mut:#8ab8a4;--bad:#ff9d5c;--ok:#7dfab0}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-monospace,Consolas,monospace}
+header{text-align:center;margin:16px 0 8px}
+h1{font-size:.95rem;letter-spacing:.12em;color:var(--accent);margin:0}
+.mut{color:var(--mut);font-size:.72rem;margin:6px auto 0;max-width:760px;line-height:1.5}
+a{color:var(--accent)}
+main{max-width:760px;margin:0 auto;padding:10px 14px 30px}
+.item{display:block;text-decoration:none;color:inherit;border:1px solid rgba(124,245,255,.25);
+  border-radius:8px;padding:10px 14px;margin:10px 0;font-size:.74rem;line-height:1.6}
+.item:hover{border-color:var(--accent);background:rgba(124,245,255,.04)}
+.item .name{color:var(--accent);letter-spacing:.06em}
+.item .desc{color:var(--mut);display:block;margin-top:3px}
+.status{float:right;font-size:.64rem;padding:1px 8px;border-radius:9px;border:1px solid}
+.st-built{color:var(--ok);border-color:rgba(125,250,176,.4)}
+.st-unproven{color:var(--gold);border-color:rgba(232,201,106,.4)}
+.footer{color:var(--mut);font-size:.66rem;line-height:1.7;margin-top:16px}
+</style>
+</head>
+<body>
+<header>
+  <h1>MAG · FALSIFIERS — PASTE-CHECKABLE INVARIANTS</h1>
+  <p class="mut">A falsifier is a pure function of pasted state: paste → check → verdict, no network,
+  no dependencies. The pattern: any fleet invariant expressible as f(input) → bool becomes a browser
+  surface. Provenance: memory/runs/salons/salon_launch_law_20260904/SALON_ARTIFACT.md</p>
+</header>
+<main>
+  <a class="item" href="lattice_check.html">
+    <span class="status st-built">BUILT 2026-09-04</span>
+    <span class="name">lattice_check.html — #1 lattice / SDF float claims</span>
+    <span class="desc">Legendre three-square: squared distances of the form 4^a(8b+7) can never occur
+    between ℤ³ lattice points. Paste coords; falsifies "on-grid" claims on parsed floats.
+    Python twin: mag/lattice_distance.py.</span>
+  </a>
+  <a class="item" href="chain_check.html">
+    <span class="status st-built">BUILT 2026-09-04</span>
+    <span class="name">chain_check.html — #2 chain hash integrity</span>
+    <span class="desc">Recomputes the verkle chain's actual formulas: leaf = sha256("leaf:"+canonical
+    json), node = sha256("node:"+L+":"+R), genesis = sha256("empty"), merkle prefix roots per row.
+    Paste verkle_chain.jsonl rows, knot leaves, or any payload; falsifies "signed line" claims.
+    Python twin: mag/verkle_knot.py + mag/verkle_artifact.verify_leaf.</span>
+  </a>
+  <a class="item" href="claim_check.html">
+    <span class="status st-built">BUILT 2026-09-04</span>
+    <span class="name">claim_check.html — #5 claim semantics (launch law)</span>
+    <span class="desc">Launch law on intake cards: score ≥14/25 is launch-eligible iff it names a lane
+    and has no unnamed gate; BUILD WINDOWED / BUILD NOW must carry a launched-builder marker or name an
+    explicit operator gate. Paste a card; falsifies "windowed but actually deferred".</span>
+  </a>
+  <div class="item" style="cursor:default">
+    <span class="status st-unproven">UNPROVEN</span>
+    <span class="name">#3 mass balance</span>
+    <span class="desc">sum(in) == sum(out) + stored over pasted room flows. Needs the room.jsonl flow
+    schema pinned before the check is writable — paste-truncation is the known exploit.</span>
+  </div>
+  <div class="item" style="cursor:default">
+    <span class="status st-unproven">UNPROVEN</span>
+    <span class="name">#4 concurrency table serializability</span>
+    <span class="desc">claim_version(current, proposed) replay for the split-brain race. Depends on the
+    per-card in-flight lock (spawn gate) landing first; the falsifier is two same-card launches both
+    BUILD_SUCCESS.</span>
+  </div>
+  <p class="footer">Pattern law (salon convergent): loops adopt the score → file → LAUNCH → verify →
+  receipt skeleton iff self-verifiable in-turn and free of operator gates. Each surface here carries its
+  formula provenance inline; JS↔Python parity is vector-checked (see each page's header comment).
+  Engines: crypto.subtle with inline FIPS 180-4 fallback, self-tested on load.</p>
+</main>
+</body>
+</html>

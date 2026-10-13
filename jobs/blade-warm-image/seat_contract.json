@@ -1,0 +1,22 @@
+{
+  "schema": "seat_contract.v1",
+  "job_id": "blade-warm-image",
+  "goal": "Design the WARM blade image (dockers warmed like our ribs): (1) docker/Dockerfile.blade — FROM ollama/ollama, plus git, plus ENTRYPOINT that starts ollama serve and runs docker/warm_preload.sh; (2) docker/warm_preload.sh — pulls EVERY model named in state/vast/blade_templates.json (read the registry, loop `ollama pull`), writes /root/status.json phase rows (pull/ready) same shape boot_watcher.py expects; (3) docs/WARM_BLADE_RUNBOOK.md — the snapshot loop: launch cheap box -> build/pull once -> vast snapshot as private image -> template entries gain \"warm_image\" field -> next launches boot in minutes not tens of minutes. Mark the snapshot step OPERATOR-GO (it spends).",
+  "invariants": [
+    "bind the EXISTING shapes: status.json phases from bootstrap_box.py/boot_watcher.py expectations, template registry fields from blade_templates.json",
+    "preload script reads the registry at runtime — registry changes never require image rebuild",
+    "no instance creation, no snapshot execution (files+code+docs only), no covenant edits"
+  ],
+  "forbidden_moves": ["spending", "docker commands", "editing covenant.json or mag_launch.py"],
+  "acceptance_commands": [
+    "test -f docker/Dockerfile.blade && test -f docker/warm_preload.sh && test -f docs/WARM_BLADE_RUNBOOK.md && echo FILES OK",
+    "bash -n docker/warm_preload.sh && echo SH PARSES",
+    ".venv/Scripts/python.exe -c \"import json; d=json.load(open('state/vast/blade_templates.json')); print('registry models:', sum(len(t.get('models',[])) if 'models' in t else 1 for t in d['templates']))\""
+  ],
+  "checkpoint_schema": {"required": ["completed","artifacts","failures","budget_used_pct","next_action_one_line"]},
+  "handoff_schema": {"required": ["done","untested","blocked","resume_command"]},
+  "resume_command": "grok#1: read jobs/blade-warm-image/seat_contract.json + latest trail_core, do next_action, run acceptance, write trail_core_N",
+  "driver": "desktop:grok1",
+  "opened": "2026-08-29",
+  "opened_by": "zcode (operator: dockers designed and warmed like our ribs)"
+}

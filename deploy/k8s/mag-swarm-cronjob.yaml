@@ -1,0 +1,69 @@
+# Kubernetes-native 24/7 SWARM: the stateless swarm now runs as its OWN binary in the
+# cluster — `python -m mag.swarm_worker run` — NOT as local Windows Popen processes.
+# (SELF/EXTERNAL steal 2026-08-10: the "headless, stateless" swarm was not actually in
+# its own binary; the operator's correction. This CronJob IS that binary.)
+#
+# mag.swarm_worker owns a DEDICATED swarm queue (memory/runs/swarm_worker/queue, on the
+# shared state PVC) so it NEVER double-drains the local mission queue (replicas:1 /
+# single-drainer law). The local seat hands work to the cluster by writing task specs
+# there (stateless_research.launch(k8s=True)); this CronJob drains them in-cluster —
+# headless, stateless, in its own binary, no local desktop processes at all.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mag-swarm
+  namespace: mag
+  labels:
+    app: mag
+    kind: swarm
+  annotations:
+    mag.swarm/mode: "24-7"
+    mag.swarm/worker: "mag.swarm_worker.run (own binary, in-cluster)"
+    mag.swarm/provider: "deepseek"
+    mag.swarm/steal: "swarm-belongs-in-k8s — dedicated queue, no local spawns"
+spec:
+  schedule: "*/15 * * * *"   # every 15 minutes, all day, every day
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: swarm
+              image: mag-sovereign:local
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: MAG_SLOT
+                  value: "swarm-cron"
+                - name: MAG_SOURCE
+                  value: "mag-swarm-cronjob"
+              envFrom:
+                - configMapRef: { name: mag-config }
+                - secretRef: { name: mag-secrets }
+              # KEY ALIGNMENT (autonomous 2026-08-10): the code reads DEEPSEEK_SWARM_API_KEY, but
+              # the mag-secrets secret carries the key as DEEPSEEK_API_KEY. Map the existing secret
+              # key into the expected env name so the pod's agents authenticate — the value never
+              # leaves k8s (config-only, no secret handled by the operator).
+              env:
+                - name: DEEPSEEK_SWARM_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: mag-secrets
+                      key: DEEPSEEK_API_KEY
+              volumeMounts:
+                - { name: state, mountPath: /app/logs, subPath: logs }
+                - { name: state, mountPath: /app/memory, subPath: memory }
+              # RIGHT-SIZING the swarm (operator 2026-08-10): the swarm worker is a stateless
+              # batch (MAX_PER_PASS=8 dumb agents/pass) — it needs FAR less than the supervisor
+              # pod (requests 500m/512Mi, limits 2/2Gi). Bounded, burstable, never crowds the
+              # controller. It shares the (larger) image with the supervisor; a dedicated slim
+              # agent-only image is a follow-up if swarm volume grows.
+              resources:
+                requests: { cpu: "100m", memory: "256Mi" }
+                limits: { cpu: "500m", memory: "1Gi" }
+              command: ["python", "-m", "mag.swarm_worker", "run"]
+          volumes:
+            - name: state
+              persistentVolumeClaim:
+                claimName: mag-state

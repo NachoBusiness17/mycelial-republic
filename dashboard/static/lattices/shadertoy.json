@@ -1,0 +1,154 @@
+{
+ "schema": "lattice_logic.v1",
+ "name": "shadertoy",
+ "family": "rule_md",
+ "source": "docs/ref/shadertoy_rule_lattice.md",
+ "count": 29,
+ "entries": [
+  {
+   "_key": "Render the scene's answer into an offscreen buffer once, then let every downstream pass sample that buffer instead of re-deriving it per pixel.",
+   "rule": "Render the scene's answer into an offscreen buffer once, then let every downstream pass sample that buffer instead of re-deriving it per pixel.",
+   "spec": "-"
+  },
+  {
+   "_key": "Split the render into a fixed chain of passes where each pass answers exactly one question and hands its answer to the next.",
+   "rule": "Split the render into a fixed chain of passes where each pass answers exactly one question and hands its answer to the next.",
+   "spec": "-"
+  },
+  {
+   "_key": "Put the query origin at the center of the buffer so every ray becomes a trivial function of position.",
+   "rule": "Put the query origin at the center of the buffer so every ray becomes a trivial function of position.",
+   "spec": "-"
+  },
+  {
+   "_key": "Fix all intermediate buffers to the same square power-of-two size so passes stay composable and the resolution is a named constant, not an accident.",
+   "rule": "Fix all intermediate buffers to the same square power-of-two size so passes stay composable and the resolution is a named constant, not an accident.",
+   "spec": "-"
+  },
+  {
+   "_key": "Store categorical facts (occluder or not) as a single channel value and decode them with one fixed threshold at the read site.",
+   "rule": "Store categorical facts (occluder or not) as a single channel value and decode them with one fixed threshold at the read site.",
+   "spec": "-"
+  },
+  {
+   "_key": "When precomputing a distance/ray map, reduce with a minimum — each texel stores the first hit and nothing downstream ever looks further.",
+   "rule": "When precomputing a distance/ray map, reduce with a minimum — each texel stores the first hit and nothing downstream ever looks further.",
+   "spec": "-"
+  },
+  {
+   "_key": "Compress a 2D query space into a 1D lookup (angle to distance) before the expensive pass; dimension you remove is fill-rate you never pay.",
+   "rule": "Compress a 2D query space into a 1D lookup (angle to distance) before the expensive pass; dimension you remove is fill-rate you never pay.",
+   "spec": "-"
+  },
+  {
+   "_key": "Build lookup textures with hard per-texel writes, consume them with linear filtering, and set RepeatWrapping on any axis whose domain is circular.",
+   "rule": "Build lookup textures with hard per-texel writes, consume them with linear filtering, and set RepeatWrapping on any axis whose domain is circular.",
+   "spec": "-"
+  },
+  {
+   "_key": "Blur by summing multiple samples along the lookup axis with a fixed Gaussian kernel — softness is a sampling decision, not a geometry change.",
+   "rule": "Blur by summing multiple samples along the lookup axis with a fixed Gaussian kernel — softness is a sampling decision, not a geometry change.",
+   "spec": "-"
+  },
+  {
+   "_key": "Scale the blur radius by distance from the source so the answer is sharp near the origin and soft where it stops mattering.",
+   "rule": "Scale the blur radius by distance from the source so the answer is sharp near the origin and soft where it stops mattering.",
+   "spec": "-"
+  },
+  {
+   "_key": "Render each light independently and add the results; never build one mega-pass that computes all lights at once.",
+   "rule": "Render each light independently and add the results; never build one mega-pass that computes all lights at once.",
+   "spec": "-"
+  },
+  {
+   "_key": "Before adding a per-pixel pass, price it as lights-times-pixels fill cost and cap the count.",
+   "rule": "Before adding a per-pixel pass, price it as lights-times-pixels fill cost and cap the count.",
+   "spec": "-"
+  },
+  {
+   "_key": "Say out loud when a per-pixel technique is the wrong tool, and steal it anyway only where per-pixel is the point.",
+   "rule": "Say out loud when a per-pixel technique is the wrong tool, and steal it anyway only where per-pixel is the point.",
+   "spec": "-"
+  },
+  {
+   "_key": "Turn any fragment shader into a full-canvas pass with a 2x2 plane under an orthographic camera — the geometry is scaffolding, the fragment is the program.",
+   "rule": "Turn any fragment shader into a full-canvas pass with a 2x2 plane under an orthographic camera — the geometry is scaffolding, the fragment is the program.",
+   "spec": "-"
+  },
+  {
+   "_key": "Treat iTime/iResolution/iChannel0 as a host contract, not GLSL: declare them as uniforms and set them from the host every frame.",
+   "rule": "Treat iTime/iResolution/iChannel0 as a host contract, not GLSL: declare them as uniforms and set them from the host every frame.",
+   "spec": "-"
+  },
+  {
+   "_key": "Normalize host values (ms to seconds, pixels to normalized coords) once where the host feeds the uniform, never inside the shader.",
+   "rule": "Normalize host values (ms to seconds, pixels to normalized coords) once where the host feeds the uniform, never inside the shader.",
+   "spec": "-"
+  },
+  {
+   "_key": "Insert guest shader code verbatim behind a tiny host-written `main()` that maps official GLSL globals onto the guest's convention.",
+   "rule": "Insert guest shader code verbatim behind a tiny host-written `main()` that maps official GLSL globals onto the guest's convention.",
+   "spec": "-"
+  },
+  {
+   "_key": "The same fragment kernel serves fullscreen (coords from pixels) and per-surface (coords from an interpolated vUv varying) — only the coordinate feeder changes.",
+   "rule": "The same fragment kernel serves fullscreen (coords from pixels) and per-surface (coords from an interpolated vUv varying) — only the coordinate feeder changes.",
+   "spec": "-"
+  },
+  {
+   "_key": "Per-pixel everything-in-a-function rendering costs orders of magnitude over triangle-based scenes; count the tax, then decide on purpose.",
+   "rule": "Per-pixel everything-in-a-function rendering costs orders of magnitude over triangle-based scenes; count the tax, then decide on purpose.",
+   "spec": "-"
+  },
+  {
+   "_key": "Treat every pass output as an ordinary texture the moment it lands, so the pass graph is textures all the way down.",
+   "rule": "Treat every pass output as an ordinary texture the moment it lands, so the pass graph is textures all the way down.",
+   "spec": "-"
+  },
+  {
+   "_key": "Set a buffer's size and aspect to what consumes it, not to the display canvas.",
+   "rule": "Set a buffer's size and aspect to what consumes it, not to the display canvas.",
+   "spec": "-"
+  },
+  {
+   "_key": "Run a chain of passes by alternating read/write between two buffers, swapping after each pass, until the last pass — and only the last — writes to screen.",
+   "rule": "Run a chain of passes by alternating read/write between two buffers, swapping after each pass, until the last pass — and only the last — writes to screen.",
+   "spec": "-"
+  },
+  {
+   "_key": "Standardize the input name every pass reads its predecessor through, so any pass can be swapped into any slot.",
+   "rule": "Standardize the input name every pass reads its predecessor through, so any pass can be swapped into any slot.",
+   "spec": "-"
+  },
+  {
+   "_key": "Give every pass explicit enabled/clear/swap flags so a chain is reconfigured, not rewritten.",
+   "rule": "Give every pass explicit enabled/clear/swap flags so a chain is reconfigured, not rewritten.",
+   "spec": "-"
+  },
+  {
+   "_key": "Keep the texture that means (\"this pixel is id 3\") apart from the texture that looks (\"id 3 is red\"), and join them in the shader.",
+   "rule": "Keep the texture that means (\"this pixel is id 3\") apart from the texture that looks (\"id 3 is red\"), and join them in the shader.",
+   "spec": "-"
+  },
+  {
+   "_key": "Force NearestFilter on any texture holding ids or measurements — linear interpolation of data fabricates values that never existed.",
+   "rule": "Force NearestFilter on any texture holding ids or measurements — linear interpolation of data fabricates values that never existed.",
+   "spec": "-"
+  },
+  {
+   "_key": "When the CPU needs a GPU answer, render a 1x1 target and read the few bytes under the question.",
+   "rule": "When the CPU needs a GPU answer, render a 1x1 target and read the few bytes under the question.",
+   "spec": "-"
+  },
+  {
+   "_key": "Raw data written into a texture reaches the GPU only when the host raises the update flag — make that write explicit and single-owner.",
+   "rule": "Raw data written into a texture reaches the GPU only when the host raises the update flag — make that write explicit and single-owner.",
+   "spec": "-"
+  },
+  {
+   "_key": "Size textures by what they must hold — the GPU pays width-times-height-times-4 regardless of compression.",
+   "rule": "Size textures by what they must hold — the GPU pays width-times-height-times-4 regardless of compression.",
+   "spec": "-"
+  }
+ ]
+}

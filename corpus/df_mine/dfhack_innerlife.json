@@ -1,0 +1,142 @@
+{
+  "source": "dfhack_full local clone (read-only mine, 2026-09-25)",
+  "scope": "inner-life system: needs, emotions/thoughts, stress, personality facets, preferences as exposed by DFHack plugins + Lua API",
+  "caveat": "df-structures XML submodule NOT present in this clone; full enum value lists (unit_thought_type, emotion_type, need_type, trait_type, value_type, goal_type) live upstream in df-structures. Enum members listed here are only those observed in DFHack sources.",
+  "structure_path": {
+    "root": "df.unit",
+    "soul": "unit.status.current_soul (df.unit_soul)",
+    "personality": "unit.status.current_soul.personality (df.unit_personality)",
+    "note": "No soul -> DFHack defaults getStressCategory to middle (3 = 'fine')."
+  },
+  "stress": {
+    "accumulator": "personality.stress (int32 raw level; sort.lua uses this field)",
+    "display_level": "personality.stress_level (manipulator.cpp uses this field; rendered as 6-digit int clamped to [-99999, 999999])",
+    "longterm_stress": "personality.longterm_stress (strangemood.cpp mood-type gate)",
+    "decay": "handled by vanilla DF, not DFHack; DFHack only reads categories",
+    "cutoffs": [50000, 25000, 10000, -10000, -25000, -50000, -100000],
+    "cutoffs_semantics": "category i where stress_level >= cutoffs[i]; 0 = highest stress, 6 = lowest",
+    "categories": [
+      {"level": 0, "dwarfmonitor_label": "miserable", "stressicons_label": "Miserable", "spectate_text": "=C", "spectate_color": "COLOR_RED", "dwarfmonitor_color": "COLOR_LIGHTRED"},
+      {"level": 1, "dwarfmonitor_label": "very unhappy", "stressicons_label": "Unhappy", "spectate_text": ":C", "spectate_color": "COLOR_LIGHTRED", "dwarfmonitor_color": "COLOR_RED"},
+      {"level": 2, "dwarfmonitor_label": "unhappy", "stressicons_label": "Displeased", "spectate_text": ":(", "spectate_color": "COLOR_YELLOW", "dwarfmonitor_color": "COLOR_YELLOW"},
+      {"level": 3, "dwarfmonitor_label": "fine", "stressicons_label": "Content", "spectate_text": ":]", "spectate_color": "COLOR_GREY", "dwarfmonitor_color": "COLOR_WHITE"},
+      {"level": 4, "dwarfmonitor_label": "quite content", "stressicons_label": "Pleased", "spectate_text": ":)", "spectate_color": "COLOR_GREEN", "dwarfmonitor_color": "COLOR_CYAN"},
+      {"level": 5, "dwarfmonitor_label": "happy", "stressicons_label": "Happy", "spectate_text": ":D", "spectate_color": "COLOR_LIGHTGREEN", "dwarfmonitor_color": "COLOR_LIGHTBLUE"},
+      {"level": 6, "dwarfmonitor_label": "ecstatic", "stressicons_label": "Ecstatic", "spectate_text": "=D", "spectate_color": "COLOR_LIGHTCYAN", "dwarfmonitor_color": "COLOR_LIGHTGREEN"}
+    ],
+    "manipulator_5_color_ladder": [13, 12, 14, 2, 10],
+    "api": [
+      "dfhack.units.getStressCategory(unit) -> 0..6",
+      "dfhack.units.getStressCategoryRaw(stress_level) -> 0..6",
+      "dfhack.units.getStressCutoffs() -> table of cutoffs",
+      "Units::getStressCategory / getStressCategoryRaw / stress_cutoffs (C++)"
+    ]
+  },
+  "emotions_thoughts": {
+    "container": "personality.emotions (vector of df.personality_moodst*)",
+    "instance_struct": "df.personality_moodst",
+    "fields_observed": {
+      "type": "df.emotion_type (e.g. MISERY) -- the feeling",
+      "thought": "df.unit_thought_type (e.g. SoapyBath) -- the trigger event ('has been without drink', 'slept on the floor' style enum keys live in df-structures)",
+      "strength": "int (misery.cpp uses STRENGTH_MULTIPLIER=100 * factor)",
+      "severity": "int (set equal to strength by misery.cpp)",
+      "year": "int (cur_year at acquisition)",
+      "year_tick": "int (cur_year_tick at acquisition)",
+      "flags.whole": "bitfield; DFHack parks FAKE_EMOTION_FLAG at bit (1<<30) to mark plugin-injected emotions for later removal"
+    },
+    "trigger_effect_chain": "event -> unit_thought_type instance + emotion_type + strength/severity + timestamp appended to personality.emotions -> vanilla DF aggregates into personality.stress -> stress category 0..6 -> UI icon/tooltip/column -> at thresholds gates Fell/Macabre moods and tantrums",
+    "injection_example": "misery.cpp daily cycle (CYCLE_TICKS=1229): append MISERY/SoapyBath emotion to every citizen, clearable via misery_clear which removes all emotions with FAKE_EMOTION_FLAG",
+    "game_ui_tabs": "view sheets Thoughts tab: sub-tab 0 Recent, 1 Memories (Gui.cpp focus string)"
+  },
+  "needs": {
+    "container": "personality.needs (vector of df.personality_needst*)",
+    "instance_fields_observed": {
+      "id": "df.need_type",
+      "focus_level": "int; -999 (desperate) .. +400 (satisfied) per autolabor modernengine.cpp comment; negative = unmet"
+    },
+    "focus_penalty_api": "dfhack.units.getFocusPenalty(unit, need_type...) -> largest (most negative) focus_level among matching needs; returns >400 if unit lacks the need",
+    "locked_in_threshold": "focus_level <= -10000 makes a social activity 'unbailable' (purple 'Socialize!'/Prayer/Read cannot be interrupted) -- Units::hasUnbailableSocialActivity",
+    "need_type_members_observed": [
+      "Socialize", "MakeMerry", "TakeItEasy", "BeWithFamily", "BeWithFriends",
+      "HearEloquence", "LearnSomething", "Wander", "Excitement", "BeCreative",
+      "CraftObject", "ThinkAbstractly", "StayOccupied", "AcquireObject",
+      "HelpSomebody", "PrayOrMeditate", "AdmireArt", "MartialTraining"
+    ],
+    "need_sets": {
+      "socialize_needs": ["Socialize", "BeCreative", "Excitement", "AdmireArt"],
+      "pray_needs": ["PrayOrMeditate"],
+      "read_needs": ["ThinkAbstractly", "LearnSomething"]
+    },
+    "need_to_labor_bias_autolabor": {
+      "laborer_pull": ["StayOccupied", "AcquireObject", "HelpSomebody"],
+      "idle_pull": ["Socialize", "MakeMerry", "TakeItEasy", "BeWithFamily", "BeWithFriends", "HearEloquence", "LearnSomething"],
+      "favored_skills": {
+        "Wander": ["FISH", "HUNT", "HERBALIST"],
+        "Excitement": ["TRAPPER", "HUNT"],
+        "BeCreative/CraftObject/ThinkAbstractly": ["craft labors"]
+      },
+      "urgency_formula": "urgency = min(-focus_level, 400) / 8, scaled 0..50; pulls capped 0..100"
+    },
+    "martial_training_rating": "sort.lua 'need for training': -focus_level >100000 -> rating 0, >10000 -> 1, >1000 -> 2, >100 -> 3, else 6",
+    "count_observed": 18
+  },
+  "personality_facets": {
+    "traits": {
+      "access": "personality.traits.<TRAIT_NAME>",
+      "members_observed": ["ALTRUISM", "ANXIETY_PROPENSITY", "BRAVERY", "CHEER_PROPENSITY", "CURIOUS", "DISCORD", "DUTIFULNESS", "EMOTIONALLY_OBSESSIVE", "HUMOR", "LOVE_PROPENSITY", "PERSEVERANCE", "POLITENESS", "PRIVACY", "STRESS_VULNERABILITY", "TOLERANT"],
+      "count_observed": 15
+    },
+    "values_beliefs": {
+      "access": "personality.values / setbelief.getUnitBelief(unit, df.value_type.X)",
+      "members_observed": ["CRAFTSMANSHIP", "FAMILY", "HARMONY", "INDEPENDENCE", "KNOWLEDGE", "LEISURE_TIME", "NATURE", "SKILL"],
+      "count_observed": 8
+    },
+    "dreams_goals": {
+      "access": "personality.dreams (vector; .type = df.goal_type, .flags.bits.accomplished)",
+      "api": ["dfhack.units.getGoalName(unit, goalIndex) (achieved short-name variant when done)", "dfhack.units.isGoalAchieved(unit, goalIndex)"],
+      "goal_type_members_observed": ["STAY_ALIVE", "START_A_FAMILY"]
+    },
+    "mental_stability_formula_sortlua": {
+      "description": "weighted linear composite; higher = more stable; used as tiebreak sort",
+      "positive_weights": {"cheer_propensity": 0.41, "nature": 0.27, "leisure_time": 0.24, "love_propensity": 0.15, "discord": 0.14, "altruism": 0.13, "harmony": 0.05, "independence": 0.06, "bravery": 0.06, "privacy": 0.03},
+      "negative_weights": {"knowledge": -0.30, "skill": -0.21, "stress_vulnerability": -0.20, "politeness": -0.14, "emotionally_obsessive": -0.13, "tolerant": -0.11, "perseverance": -0.07, "anxiety_propensity": -0.06, "curious": -0.06, "humor": -0.05, "dutifulness": -0.03, "craftsmanship": -0.01, "family": -0.09}
+    }
+  },
+  "preferences": {
+    "container": "unit.status.current_soul.preferences (vector of df.unit_preference*)",
+    "fields": ["type (T_type)", "active", "item_type", "item_subtype", "mattype", "matindex", "creature_id", "plant_id", "shape_id", "color_id", "poetic_form_id", "musical_form_id", "dance_form_id"],
+    "T_type_members_observed": ["LikeCreature", "HateCreature", "LikeItem", "LikeFood", "LikeMaterial", "LikePlant", "LikeShape", "LikeTree", "LikeColor", "LikePoeticForm", "LikeMusicalForm", "LikeDanceForm"],
+    "dwarfmonitor_color_code": {"LikeCreature": "WHITE", "HateCreature": "LIGHTRED", "LikeFood": "GREEN", "LikeItem": "YELLOW", "LikeMaterial": "CYAN", "LikePlant": "BROWN", "LikeShape": "BLUE", "LikeTree": "BROWN", "LikeColor": "BLUE", "forms": "LIGHTCYAN"}
+  },
+  "visualization_and_query_surface": {
+    "dwarfmonitor_cpp": ["ViewscreenFortStats: fort activity percentages over 28/84-day rolling windows, job->category folding", "ViewscreenDwarfStats: per-dwarf activity percentages", "ViewscreenPreferences: fort-wide preference co-occurrence; dwarf list annotated with stress category name+color; reads unit_preference.active only", "monitor colors: LIGHTRED/RED/YELLOW/WHITE/CYAN/LIGHTBLUE/LIGHTGREEN for cat 0..6"],
+    "dwarfmonitor_lua": ["MiseryWidget: 'H:' + 7 slash-separated citizen counts, one per stress category (getCategory+1), colored per category", "also Weather/Date/Cursor widgets; config dfhack-config/dwarfmonitor.json"],
+    "sort_stressicons_lua": ["overlay scanning the top bar 'Pop' label to find the 7 stress face icons; clicking a face lists citizens in that category and zooms to them", "STRESS_CATEGORY_NAMES 0..6: Miserable..Ecstatic"],
+    "sort_lua": ["sort widgets: 'stress level' (desc/asc on personality.stress, stress faces as rating labels)", "'need for training' (MartialTraining focus_level bucketed to stress faces)", "'mental stability' (trait+belief weighted composite)"],
+    "spectate": ["tooltip-follow-stress / tooltip-hover-stress: stress emoticon+color per category; configurable via tooltip-stress-levels (level name text pen)"],
+    "manipulator": ["Stress column: raw stress_level 6-digit render, 5-color ladder via getStressCategoryRaw", "sort key sortByStress on personality.stress_level"],
+    "misery": ["write-side: inject/remove fake MISERY emotions at configurable strength"],
+    "strangemood": ["longterm_stress gates Fell/Macabre moods"]
+  },
+  "trigger_effect_chains": [
+    {"trigger": "thought event (df.unit_thought_type, e.g. SoapyBath; vanilla keys incl. 'has been without drink', 'slept on the floor' live in df-structures)", "immediate": "emotion instance (emotion_type + strength/severity + year/year_tick) pushed to personality.emotions", "aggregate": "personality.stress accumulates/decays (vanilla DF)", "effects": ["stress category 0-6 -> icon counts, faces, tooltips, columns", "longterm_stress >=20000/50000/100000 -> 10%/50%/100% chance Fell or Macabre mood (strangemood.cpp)", "stress drives tantrum/depression spiral (vanilla)"]},
+    {"trigger": "unmet need (focus_level < 0)", "immediate": "focus penalty = most negative focus_level; <= -10000 pins unit into uninterruptible Socialize/Prayer/Read activity", "effects": ["autolabor modernengine biases laborer_pull/idle_pull/favored skills by urgency=min(-focus,400)/8", "sort.lua buckets MartialTraining deficit into stress-face ratings"]},
+    {"trigger": "work history sampling every 100 ticks (dwarfmonitor)", "effects": ["28/84-day rolling activity windows per dwarf and fort-wide", "idle/leisure detection via social activities and Migrant misc trait"]}
+  ],
+  "files": {
+    "plugins/dwarfmonitor.cpp": "stats screens, preference screen, stress category labels/colors",
+    "plugins/lua/dwarfmonitor.lua": "MiseryWidget H: counts + weather/date/cursor overlays",
+    "plugins/lua/sort.lua": "stress/need/mental-stability sorts, trait+belief weights",
+    "plugins/lua/sort/stressicons.lua": "top-bar stress face overlay + category names",
+    "plugins/manipulator.cpp": "Stress column, stress_level field, 5-color ladder",
+    "plugins/misery.cpp": "emotion injection/clear, personality_moodst field usage, FAKE_EMOTION_FLAG",
+    "plugins/strangemood.cpp": "longterm_stress -> Fell/Macabre mood gate",
+    "plugins/autolabor/modernengine.cpp": "unmet need -> labor bias (NeedBias, scan_needs)",
+    "library/modules/Units.cpp": "stress_cutoffs, getStressCategory(Raw), getFocusPenalty, needs sets, goals",
+    "library/include/modules/Units.h": "need_type_set bitset, stress API decls",
+    "library/LuaApi.cpp": "Lua exposure: getStressCategory, getStressCategoryRaw, getStressCutoffs, getFocusPenalty, getGoalName, isGoalAchieved",
+    "library/modules/Gui.cpp": "view sheet focus strings: Thoughts/Recent/Memories, Personality/Traits/Values/Preferences/Needs tabs",
+    "docs/dev/Lua API.rst": "documented stress + focus penalty APIs",
+    "docs/plugins/spectate.rst": "stress level table (name/text/pen per 0-6)"
+  }
+}

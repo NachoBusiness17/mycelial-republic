@@ -1,0 +1,183 @@
+<!doctype html>
+<!--
+  LATTICE CHECK v1 — Legendre three-square invariant, fleet build 2026-09-04
+  Provenance: intake card watch/INTAKE_LEGENDRE_LATTICE_20260904.md (15/25
+  BUILD WINDOWED). Python twin: mag/lattice_distance.py (tests:
+  tests/test_lattice_distance.py). Pair surface: mesh_gallery.html voxel grids.
+  THE LAW: distance on the 3D integer lattice is sqrt(dx^2+dy^2+dz^2), and by
+  Legendre's three-square theorem n is a sum of three squares iff n is NOT of
+  the form 4^a(8b+7). So on-grid distances can NEVER measure sqrt(7), sqrt(15),
+  sqrt(23), sqrt(28), sqrt(31), sqrt(39)... If a claimed on-grid pair measures
+  sqrt(7), the grid is broken or the space is not Z^3. Falsifier-class.
+  ZERO-FETCH: this file loads no network resource, ever. No CDN, no libraries —
+  the check below is inline and self-contained. Paste is via textarea only.
+  Dungeon beat: type 7 in the quick check — "numbers that refuse to live in
+  three perpendicular directions."
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MAG · Lattice Check — Legendre three-square invariant v1</title>
+<style>
+:root{--bg:#030806;--ink:#c8e6d9;--accent:#7cf5ff;--gold:#e8c96a;--mut:#8ab8a4;--bad:#ff9d5c;--ok:#7dfab0}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-monospace,Consolas,monospace}
+header{text-align:center;margin:14px 0 4px}
+h1{font-size:.95rem;letter-spacing:.12em;color:var(--accent);margin:0}
+.mut{color:var(--mut);font-size:.72rem;margin:4px auto 0;max-width:860px;line-height:1.5}
+main{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;align-items:flex-start;padding:10px}
+#panel{width:420px;max-width:96vw;font-size:.72rem;line-height:1.6}
+#panel h2{font-size:.72rem;letter-spacing:.14em;color:var(--gold);margin:0 0 6px}
+textarea{width:100%;box-sizing:border-box;min-height:170px;background:#07130f;color:var(--ink);
+  border:1px solid rgba(124,245,255,.3);border-radius:6px;font:inherit;padding:8px;resize:vertical}
+textarea:focus{outline:1px solid var(--accent)}
+button{background:none;border:1px solid rgba(124,245,255,.3);border-radius:8px;color:var(--ink);
+  font:inherit;font-size:.68rem;padding:4px 12px;cursor:pointer;margin-top:8px}
+button:hover{color:var(--accent);border-color:var(--accent)}
+#quick{width:110px;background:#07130f;color:var(--gold);border:1px solid rgba(232,201,106,.4);
+  border-radius:6px;font:inherit;padding:3px 8px}
+#out{width:420px;max-width:96vw;font-size:.72rem;line-height:1.7}
+.pair{padding:4px 8px;border-bottom:1px dotted rgba(124,245,255,.12);display:flex;justify-content:space-between;gap:10px}
+.pair .d2{color:var(--mut);white-space:nowrap}
+.verdict-ok{color:var(--ok)}
+.verdict-bad{color:var(--bad)}
+.verdict-off{color:var(--gold)}
+#summary{margin-top:10px;padding:8px 10px;border:1px solid rgba(124,245,255,.25);border-radius:6px}
+#summary.bad{border-color:rgba(255,157,92,.5);color:var(--bad)}
+#summary.good{border-color:rgba(125,250,176,.4);color:var(--ok)}
+#quickout{margin-top:8px;color:var(--gold)}
+.law{margin:10px 0 0;padding:8px 10px;border:1px solid rgba(232,201,106,.35);border-radius:6px;color:var(--gold);line-height:1.5}
+</style>
+</head>
+<body>
+<header>
+  <h1>MAG · LATTICE CHECK — LEGENDRE THREE-SQUARE INVARIANT</h1>
+  <p class="mut">On the 3D integer lattice, squared distances n = dx²+dy²+dz² are sums of three squares:
+  possible iff n is <b>not</b> of the form 4<sup>a</sup>(8b+7). √7, √15, √23, √28, √31, √39… never appear
+  between lattice points. A claimed on-grid pair measuring √7 means the space is not ℤ³.
+  Python twin: <span style="color:var(--accent)">mag/lattice_distance.py</span> · provenance:
+  watch/INTAKE_LEGENDRE_LATTICE_20260904.md</p>
+</header>
+<main>
+  <div id="panel">
+    <h2>PASTE COORDS (one point per line: x, y, z)</h2>
+    <textarea id="coords" spellcheck="false" placeholder="# lines starting with # are skipped
+0, 0, 0
+1, 1, 1
+2, 0, 0"></textarea>
+    <button id="go">CHECK LATTICE</button>
+    <button id="demo">LOAD √7 BROKEN GRID</button>
+    <h2 style="margin-top:14px">QUICK CHECK (single squared distance)</h2>
+    <input id="quick" type="text" placeholder="e.g. 7" inputmode="numeric">
+    <button id="qgo">IS √n REAL?</button>
+    <div id="quickout"></div>
+    <p class="law">Dungeon beat: some doors can never be exactly √7 apart. The excluded numbers
+    refuse to live in three perpendicular directions.</p>
+  </div>
+  <div id="out">
+    <div id="summary">paste coords and hit CHECK LATTICE</div>
+    <div id="pairs"></div>
+  </div>
+</main>
+<script>
+"use strict";
+// strip 4^a, then n ≡ 7 (mod 8) => excluded. Returns {a,b} of 4^a(8b+7) or null.
+function excludedForm(n) {
+  if (!Number.isFinite(n) || n <= 0 || !Number.isInteger(n)) return null;
+  var a = 0;
+  while (n % 4 === 0) { n /= 4; a++; }
+  if (n % 8 === 7) return { a: a, b: (n - 7) / 8 };
+  return null;
+}
+function latticeDistanceOk(d2) {
+  if (!Number.isFinite(d2) || d2 < 0 || !Number.isInteger(d2)) return false;
+  return excludedForm(d2) === null;
+}
+// parse "x, y, z" lines; # comments and blank lines skipped; bad lines reported
+function parseCoords(text) {
+  var pts = [], bad = [];
+  text.split(/\r?\n/).forEach(function (line, i) {
+    var s = line.trim();
+    if (!s || s.charAt(0) === "#") return;
+    var parts = s.split(/[\s,]+/).filter(Boolean).map(Number);
+    if (parts.length === 3 && parts.every(Number.isFinite)) {
+      pts.push(parts);
+    } else {
+      bad.push(i + 1);
+    }
+  });
+  return { pts: pts, bad: bad };
+}
+function fmtPt(p) {
+  return "(" + p.map(function (c) {
+    return Number.isInteger(c) ? c : c.toFixed(4);
+  }).join(",") + ")";
+}
+function runCheck() {
+  var parsed = parseCoords(document.getElementById("coords").value);
+  var pairsEl = document.getElementById("pairs");
+  var sumEl = document.getElementById("summary");
+  pairsEl.innerHTML = "";
+  var violations = 0, offGrid = 0, checked = 0;
+  for (var i = 0; i < parsed.pts.length; i++) {
+    for (var j = i + 1; j < parsed.pts.length; j++) {
+      var p = parsed.pts[i], q = parsed.pts[j];
+      var d2 = 0;
+      for (var k = 0; k < 3; k++) { var d = p[k] - q[k]; d2 += d * d; }
+      checked++;
+      var d2i = Math.round(d2);
+      var integral = Math.abs(d2 - d2i) < 1e-9;
+      var row = document.createElement("div");
+      row.className = "pair";
+      var verdict, cls;
+      if (!integral) {
+        offGrid++;
+        verdict = "OFF-GRID (non-integer d²)"; cls = "verdict-off";
+      } else {
+        var form = excludedForm(d2i);
+        if (form) {
+          violations++;
+          verdict = "EXCLUDED 4^" + form.a + "(8·" + form.b + "+7) — NOT ℤ³"; cls = "verdict-bad";
+        } else {
+          verdict = "OK — √" + d2i + " lives"; cls = "verdict-ok";
+        }
+      }
+      row.innerHTML = '<span>' + fmtPt(p) + " ↔ " + fmtPt(q) + '</span>' +
+        '<span class="' + cls + '"><span class="d2">d²=' + (integral ? d2i : d2.toFixed(4)) + '</span> ' + verdict + '</span>';
+      pairsEl.appendChild(row);
+    }
+  }
+  var note = checked + " pair" + (checked === 1 ? "" : "s") + " checked";
+  if (parsed.bad.length) note += " · skipped malformed line(s): " + parsed.bad.join(",");
+  if (violations > 0) {
+    sumEl.className = "bad";
+    sumEl.textContent = "BROKEN GRID — " + violations + " excluded-distance pair(s). This space is NOT the true ℤ³ lattice. (" + note + ")";
+  } else {
+    sumEl.className = "good";
+    sumEl.textContent = "NO VIOLATIONS — every measured distance is representable on ℤ³. (" + note + (offGrid ? " · " + offGrid + " off-grid pair(s) flagged gold" : "") + ")";
+  }
+}
+function runQuick() {
+  var v = Number(document.getElementById("quick").value);
+  var out = document.getElementById("quickout");
+  if (!Number.isFinite(v) || v < 0 || !Number.isInteger(v)) {
+    out.textContent = "enter a non-negative integer d²";
+    return;
+  }
+  var form = excludedForm(v);
+  out.textContent = form
+    ? "√" + v + " = √(4^" + form.a + "·(8·" + form.b + "+7)) — IMPOSSIBLE on ℤ³. Cursed number."
+    : "√" + v + " is a real lattice distance — some integer point sits exactly there.";
+}
+document.getElementById("go").addEventListener("click", runCheck);
+document.getElementById("qgo").addEventListener("click", runQuick);
+document.getElementById("quick").addEventListener("keydown", function (e) {
+  if (e.key === "Enter") runQuick();
+});
+document.getElementById("demo").addEventListener("click", function () {
+  document.getElementById("coords").value = "# a 'grid' that measures sqrt(7) between voxel centers — broken\n0, 0, 0\n1, 1, 1\n2.6457513110645907, 0, 0";
+  runCheck();
+});
+</script>
+</body>
+</html>

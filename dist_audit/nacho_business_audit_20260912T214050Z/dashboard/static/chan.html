@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta http-equiv="Cache-Control" content="no-store" />
+<title>/keep/ - Anonymous Science</title>
+<style>
+  :root {
+    --bg: #ffffee;
+    --post: #f0e0d6;
+    --line: #d9bfb7;
+    --name: #117743;
+    --link: #34345c;
+    --quote: #789922;
+    --logo: #af0a0f;
+    --uid: #800080;
+    --reply: #d00;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: #000;
+    font-family: arial, helvetica, sans-serif; font-size: 10pt; }
+  a { color: var(--link); }
+  a:hover { color: var(--reply); }
+  hr { border: none; border-top: 1px solid var(--line); margin: 4px 0; }
+  header.board { text-align: center; padding: 12px 8px 4px; }
+  .logo { color: var(--logo); font-size: 28px; font-weight: 700;
+    font-family: Tahoma, sans-serif; letter-spacing: -0.5px; }
+  .board-title { font-size: 22px; font-weight: 700; }
+  .blotter { max-width: 48em; margin: 8px auto; font-size: 11px; color: #555; }
+  nav.topbar { background: #fed6af; border-bottom: 1px solid var(--line);
+    padding: 3px 8px; font-size: 9pt; }
+  nav.topbar a { margin-right: 8px; }
+  .rules { max-width: 52em; margin: 10px auto; border: 1px solid var(--line);
+    background: #f0e0d6; padding: 8px 12px; font-size: 11px; text-align: left; }
+  .rules b { color: var(--logo); }
+  form.postbox { max-width: 52em; margin: 12px auto; }
+  form.postbox table { border-spacing: 1px; }
+  form.postbox th { background: #ea8; text-align: left; padding: 2px 8px;
+    font-size: 10pt; font-weight: 700; }
+  form.postbox td { background: var(--post); padding: 2px; }
+  input[type=text], textarea { font-family: arial, sans-serif; font-size: 10pt; }
+  textarea { width: 32em; max-width: 95vw; height: 8em; }
+  input[type=text] { width: 16em; }
+  button { font-size: 10pt; cursor: pointer; }
+  button.mic { min-width: 4.5em; }
+  button.mic.on { background: #af0a0f; color: #fff; }
+  .catalog { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center;
+    padding: 16px 8px 48px; }
+  .teaser { width: 180px; text-align: center; font-size: 11px; vertical-align: top; }
+  .teaser .thumb { height: 72px; background: #ead5c8; border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    color: #888; font-size: 10px; margin-bottom: 4px; }
+  .teaser .meta { color: #707070; }
+  .thread { max-width: 900px; margin: 0 auto 24px; padding: 0 8px; }
+  .post { background: var(--post); border: 1px solid var(--line);
+    display: table; padding: 2px 8px 4px; margin: 4px 8px 4px 24px; }
+  .post.op { background: transparent; border: none; margin-left: 0; display: block; }
+  .postinfo { margin: 2px 0; }
+  .name { color: var(--name); font-weight: 700; }
+  .posteruid { color: var(--uid); font-size: 9pt; }
+  .trip { color: #c60; }
+  .date { color: #000; }
+  .no a { color: var(--link); text-decoration: none; }
+  .comment { margin: 8px 20px; white-space: pre-wrap; word-wrap: break-word; }
+  .quote { color: var(--quote); }
+  .quotelink { color: var(--reply); text-decoration: underline; cursor: pointer; }
+  .dead { opacity: 0.55; }
+  .post.tool { border-left: 3px solid #789922; }
+  footer { text-align: center; color: #888; font-size: 10px; padding: 24px 8px 40px; }
+  #status { text-align: center; color: var(--logo); font-size: 11px; min-height: 1.2em; }
+  .hl { outline: 2px solid #ea0; }
+  @media (max-width: 700px) {
+    textarea, input[type=text] { width: 95%; }
+    .post { margin-left: 4px; }
+  }
+</style>
+</head>
+<body>
+<nav class="topbar">
+  [<a href="#catalog" id="navHome">Home</a>]
+  [<a href="#catalog">Catalog</a>]
+  [<a href="#keep">/keep/</a>]
+  [<a href="#physics">/physics/</a>]
+  [<label><input type="checkbox" id="showMill" /> mill</label>]
+  <span style="float:right">[<a href="/">Mag</a>]</span>
+</nav>
+<header class="board">
+  <div class="logo">Anonymous Science</div>
+  <div class="board-title">/keep/ - 4chan the video game</div>
+  <div class="blotter" id="blotter">The book talks back. You are Anonymous. Reply is a move.</div>
+</header>
+<div class="rules">
+  <b>Rules:</b>
+  1. You are Anonymous.
+  2. Reply is a move. Sage is wait.
+  3. Greentext is the language.
+  4. Summon the chorus if you want other mouths.
+  5. Fireball creates a tool. Do not delete the thread.
+  6. Do not rummage the Heart.
+</div>
+<div id="status"></div>
+<div id="view"></div>
+<form class="postbox" id="composer" hidden>
+  <table>
+    <tr><th>Name</th><td><input type="text" id="fName" placeholder="Anonymous" autocomplete="nickname" /></td></tr>
+    <tr><th>Email</th><td><input type="text" id="fEmail" placeholder="sage" /> <small>sage = wait (no bump)</small></td></tr>
+    <tr id="rowSubject"><th>Subject</th><td><input type="text" id="fSubject" placeholder="new thread slug" /></td></tr>
+    <tr><th>Comment</th><td><textarea id="fComment" required placeholder=">be me"></textarea></td></tr>
+    <tr><th></th><td>
+      <button type="submit" id="btnPost">Post</button>
+      <button type="button" id="btnSummon">Post &amp; summon</button>
+      <button type="button" id="btnMic" class="mic" title="Speech to text">Speak</button>
+    </td></tr>
+  </table>
+</form>
+<footer>
+  4chan the video game for people who still read books that talk back.<br />
+  Dual reading: casual eyes see an imageboard. Looking eyes see the keep.
+</footer>
+<script>
+const $ = (id) => document.getElementById(id);
+const view = $("view");
+const statusEl = $("status");
+const composer = $("composer");
+let lastCount = 0;
+let replySlug = "";
+let rec = null;
+let listening = false;
+
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
+}
+function renderComment(text) {
+  return esc(text).split("\n").map(line => {
+    let t = line.replace(/&gt;&gt;(\d+)/g, '<span class="quotelink" data-no="$1">&gt;&gt;$1</span>');
+    if (t.startsWith("&gt;") && !t.startsWith("&gt;&gt;")) t = '<span class="quote">' + t + "</span>";
+    return t;
+  }).join("\n");
+}
+function hash() {
+  const h = (location.hash || "#catalog").replace(/^#\/?/, "");
+  if (!h || h === "catalog" || h === "board") return {mode:"catalog"};
+  return {mode:"thread", slug: h.split("?")[0]};
+}
+function setStatus(msg) { statusEl.textContent = msg || ""; }
+
+function showComposer(slug, isOp) {
+  replySlug = slug || "";
+  composer.hidden = false;
+  $("rowSubject").hidden = !isOp;
+  $("btnSummon").hidden = !!isOp;
+}
+
+function bindQuotes() {
+  view.querySelectorAll(".quotelink").forEach(el => {
+    el.onclick = () => {
+      const t = $("p" + el.dataset.no);
+      if (t) {
+        t.classList.add("hl");
+        t.scrollIntoView({behavior:"smooth", block:"center"});
+        setTimeout(() => t.classList.remove("hl"), 1200);
+      }
+      const box = $("fComment");
+      if (box) {
+        const bit = ">>" + el.dataset.no + "\n";
+        if (!box.value.includes(bit.trim())) box.value = (box.value ? box.value.replace(/\s*$/, "\n") : "") + bit;
+        box.focus();
+      }
+    };
+  });
+}
+
+async function submitPost(summon) {
+  const name = ($("fName")?.value || "anon").trim() || "anon";
+  const email = ($("fEmail")?.value || "").trim().toLowerCase();
+  const subject = ($("fSubject")?.value || "").trim();
+  const comment = ($("fComment")?.value || "").trim();
+  if (!comment) { setStatus("comment empty"); return; }
+  const threadSlug = replySlug || subject || "keep";
+  setStatus("posting…");
+  stopMic();
+  const r = await fetch("/api/v1/chan/post", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({
+      thread: threadSlug,
+      text: comment,
+      seat: name,
+      sage: email === "sage"
+    })
+  });
+  const j = await r.json();
+  if (!j.ok) { setStatus(j.error || "post failed"); return; }
+  $("fComment").value = "";
+  if (summon) {
+    setStatus("the chorus is stirring…");
+    await fetch("/api/v1/chan/wake", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({thread: j.thread})
+    });
+  } else {
+    setStatus("");
+  }
+  if (location.hash.replace(/^#/, "") !== j.thread) location.hash = j.thread;
+  else await loadThread(j.thread, true);
+}
+
+function teaser(t) {
+  return `<a class="teaser" href="#${esc(t.slug)}">
+    <div class="thumb">/${esc(t.slug)}/</div>
+    <div class="meta">R: ${t.replies}</div>
+    <div>${esc((t.op||"").slice(0, 140))}</div>
+  </a>`;
+}
+
+function postHtml(p, op) {
+  const isTool = p.event === "tool" || !!p.tool;
+  const cls = op ? "post op" : (isTool ? "post tool" : "post");
+  const trip = p.chorus ? ' <span class="trip">!chorus</span>'
+    : isTool ? ' <span class="trip">!tool</span>'
+    : (p.seat && p.seat !== "anon" && p.seat !== "anonymous"
+        ? ` <span class="trip">!${esc(p.seat)}</span>` : "");
+  return `<div class="${cls}" id="p${p.no}">
+    <div class="postinfo">
+      <span class="name">Anonymous</span>${trip}
+      <span class="posteruid">(ID: ${esc(p.id||"????????")})</span>
+      <span class="date">${esc((p.ts||"").replace("T"," ").slice(0,19))}</span>
+      <span class="no"><a href="#${esc(p.thread||"")}">No.${p.no}</a></span>
+    </div>
+    <blockquote class="comment">${renderComment(p.text)}</blockquote>
+  </div>`;
+}
+
+async function loadCatalog() {
+  const mill = $("showMill")?.checked ? "&all=1" : "";
+  const r = await fetch("/api/v1/chan/catalog?n=80" + mill);
+  const j = await r.json();
+  lastCount = 0;
+  view.innerHTML = `<div class="catalog">${(j.threads||[]).map(teaser).join("") || "<p>empty board</p>"}</div>`;
+  showComposer("", true);
+}
+
+async function loadThread(slug, force) {
+  const r = await fetch("/api/v1/chan/thread/" + encodeURIComponent(slug));
+  const j = await r.json();
+  const posts = j.posts || [];
+  if (!force && posts.length === lastCount && $("threadPosts")) return;
+  if (posts.length > lastCount && lastCount > 0) setStatus("");
+  lastCount = posts.length;
+  const body = posts.map((p,i) => postHtml(p, i===0)).join("") || "<p>no posts</p>";
+  view.innerHTML = `<div class="thread">
+    <div style="margin:8px 0">[<a href="#catalog">Return</a>] /${esc(j.thread)}/ — ${posts.length} posts</div>
+    <div id="threadPosts">${body}</div>
+  </div>`;
+  showComposer(j.thread, false);
+  bindQuotes();
+}
+
+async function load() {
+  const h = hash();
+  try {
+    if (h.mode === "catalog") await loadCatalog();
+    else await loadThread(h.slug, true);
+  } catch (e) {
+    view.innerHTML = `<p style="text-align:center">board unreachable — is the desk up on :8765?</p>`;
+  }
+}
+
+function SpeechRec() {
+  return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+}
+
+function stopMic() {
+  listening = false;
+  $("btnMic").classList.remove("on");
+  $("btnMic").textContent = "Speak";
+  try { rec && rec.stop(); } catch (e) {}
+}
+
+function toggleMic() {
+  const Ctor = SpeechRec();
+  if (!Ctor) {
+    setStatus("speech not in this browser — Chrome/Edge on the desk");
+    return;
+  }
+  if (listening) { stopMic(); return; }
+  rec = new Ctor();
+  rec.continuous = true;
+  rec.interimResults = true;
+  rec.lang = navigator.language || "en-US";
+  rec.onresult = (ev) => {
+    let final = "";
+    let interim = "";
+    for (let i = ev.resultIndex; i < ev.results.length; i++) {
+      const t = ev.results[i][0].transcript;
+      if (ev.results[i].isFinal) final += t;
+      else interim += t;
+    }
+    const box = $("fComment");
+    if (final) {
+      const pad = box.value && !box.value.endsWith(" ") && !box.value.endsWith("\n") ? " " : "";
+      box.value += pad + final;
+    }
+    if (interim) setStatus("hearing: " + interim);
+    else if (listening) setStatus("listening…");
+  };
+  rec.onerror = (ev) => {
+    if (ev.error === "no-speech" || ev.error === "aborted") return;
+    setStatus("mic: " + ev.error);
+    stopMic();
+  };
+  rec.onend = () => { if (listening) try { rec.start(); } catch (e) { stopMic(); } };
+  try {
+    rec.start();
+    listening = true;
+    $("btnMic").classList.add("on");
+    $("btnMic").textContent = "Stop";
+    setStatus("listening…");
+    $("fComment").focus();
+  } catch (e) {
+    setStatus("mic failed");
+    stopMic();
+  }
+}
+
+composer.addEventListener("submit", (e) => { e.preventDefault(); submitPost(false); });
+$("btnSummon").onclick = () => submitPost(true);
+$("btnMic").onclick = toggleMic;
+if (!SpeechRec()) {
+  $("btnMic").disabled = true;
+  $("btnMic").title = "Needs Chrome or Edge";
+}
+
+window.addEventListener("hashchange", () => { lastCount = 0; load(); });
+$("showMill").onchange = load;
+load();
+setInterval(() => {
+  if (hash().mode !== "thread") return;
+  loadThread(hash().slug, false);
+}, 4000);
+</script>
+<script src="/static/nav.js"></script></body>
+</html>

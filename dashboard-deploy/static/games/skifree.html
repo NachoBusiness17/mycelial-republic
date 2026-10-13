@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SKIFREE</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: #0b1a2f;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-family: 'Courier New', Courier, monospace;
+  color: #c8e2ff;
+}
+h1 { font-size: 28px; margin-bottom: 16px; color: #ffcc44; text-shadow: 0 0 10px #ff8800; }
+.game-wrapper {
+  background: #0a111c;
+  padding: 20px;
+  border-radius: 24px;
+  box-shadow: 0 12px 0 #03060b, 0 0 0 4px #2e4b6e;
+}
+canvas {
+  display: block;
+  margin: 0 auto;
+  border-radius: 16px;
+  box-shadow: inset 0 0 0 2px #3f5e7a, 0 8px 0 #02060a;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+  background: #1a2a3a;
+}
+.info-panel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  color: #c8e2ff;
+  text-shadow: 2px 2px 0 #0a1a2a;
+  font-weight: bold;
+  font-size: 20px;
+  letter-spacing: 1px;
+  padding: 0 8px;
+}
+.lives span {
+  display: inline-block;
+  margin-right: 6px;
+  font-size: 26px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 0 #0a1a2a);
+}
+button {
+  background: #3f6e9c;
+  border: none;
+  color: white;
+  font-family: inherit;
+  font-weight: bold;
+  font-size: 22px;
+  padding: 10px 28px;
+  border-radius: 40px;
+  box-shadow: 0 6px 0 #1a2e44, 0 0 0 2px #8bb9e0;
+  cursor: pointer;
+  letter-spacing: 2px;
+  transition: 0.05s linear;
+  text-shadow: 2px 2px 0 #1a2e44;
+}
+button:hover { background: #5a8fbf; }
+button:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 #1a2e44, 0 0 0 2px #8bb9e0;
+}
+button:disabled {
+  opacity: 0.5;
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 #1a2e44, 0 0 0 2px #8bb9e0;
+  pointer-events: none;
+}
+.hud {
+  display: flex;
+  gap: 28px;
+  align-items: center;
+}
+</style>
+</head>
+<body>
+<h1>SKIFREE</h1>
+<div class="game-wrapper" style="position:relative;">
+  <canvas id="gameCanvas" width="600" height="500"></canvas>
+  <div id="overlay" class="visible">
+    <h2>SKIFREE</h2>
+    <p>Press START to play</p>
+  </div>
+  <div class="info-panel">
+    <div class="hud">
+      <div>SCORE <span id="scoreDisplay">0</span></div>
+      <div>HI <span id="highScoreDisplay">0</span></div>
+      <div class="lives" id="livesDisplay">❤️❤️❤️</div>
+    </div>
+    <button id="startBtn">START</button>
+  </div>
+</div>
+<script>
+(function() {
+  // ----- CANVAS & CONTEXT -----
+  var canvas = document.getElementById('gameCanvas');
+  var ctx = canvas.getContext('2d');
+  var scoreSpan = document.getElementById('scoreDisplay');
+  var highScoreSpan = document.getElementById('highScoreDisplay');
+  var livesSpan = document.getElementById('livesDisplay');
+  var startBtn = document.getElementById('startBtn');
+
+  // ----- CONSTANTS -----
+  var W = 600, H = 500;
+  var PLAYER_WIDTH = 24;
+  var PLAYER_HEIGHT = 28;
+  var PLAYER_FIXED_Y = H - 90;
+  var TREE_WIDTH = 22;
+  var TREE_HEIGHT = 32;
+  var YETI_WIDTH = 32;
+  var YETI_HEIGHT = 36;
+  var YETI_START_FRAME = 200;
+  var BASE_SPEED = 2.2;
+  var SPEED_INCREASE_PER_FRAME = 0.0012;
+  var MAX_SPEED = 7.5;
+  var TREE_SPAWN_RATE = 0.028;
+  var MAX_TREES = 28;
+  var SNOWFLAKES_COUNT = 70;
+
+  // ----- GAME STATE -----
+  var gameActive = false;
+  var gamePaused = false;
+  var gameOver = false;
+  var frameCount = 0;
+  var score = 0;
+  var highScore = 0;
+  var lives = 3;
+  var currentSpeed = BASE_SPEED;
+
+  // ----- ENTITIES -----
+  var trees = [];
+  var snowflakes = [];
+  var player = { x: W/2, y: PLAYER_FIXED_Y };
+  var yeti = { active: false, x: W/2, y: -YETI_HEIGHT - 20, w: YETI_WIDTH, h: YETI_HEIGHT };
+
+  // ----- INPUT -----
+  var keys = {
+    ArrowLeft: false,
+    ArrowRight: false,
+    a: false,
+    d: false,
+    ' ': false,
+    Escape: false
+  };
+
+  // ----- HELPER: load high score from localStorage -----
+  function loadHighScore() {
+    try {
+      var stored = localStorage.getItem('skiFreeHighScore');
+      if (stored !== null) {
+        var parsed = parseInt(stored, 10);
+        if (!isNaN(parsed) && parsed >= 0) highScore = parsed;
+      }
+    } catch (e) { /* ignore */ }
+    highScoreSpan.textContent = highScore;
+  }
+
+  function saveHighScore() {
+      try {
+        localStorage.setItem('skiFreeHighScore', highScore.toString());
+      } catch (e) { /* ignore */ }
+    }
+
+    function showOverlay(text, subtext) {
+      overlay.innerHTML = '<h2>' + text + '</h2><p>' + (subtext || '') + '</p>';
+      overlay.className = 'visible' + (text === 'GAME OVER' ? ' gameover' : '');
+    }
+
+    function hideOverlay() {
+      overlay.className = '';
+    }
+
+    // ----- RESET / INIT GAME -----
+  function resetGame() {
+    gameActive = true;
+    gamePaused = false;
+    gameOver = false;
+    frameCount = 0;
+    score = 0;
+    lives = 3;
+    currentSpeed = BASE_SPEED;
+    trees = [];
+    player.x = W / 2;
+    player.y = PLAYER_FIXED_Y;
+    yeti.active = false;
+    yeti.x = W / 2;
+    yeti.y = -YETI_HEIGHT - 20;
+
+    // init snowflakes
+    snowflakes = [];
+    for (var i = 0; i < SNOWFLAKES_COUNT; i++) {
+      snowflakes.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        size: Math.floor(Math.random() * 3) + 1,
+        speed: 0.8 + Math.random() * 1.8
+      });
+    }
+
+    updateUI();
+    startBtn.disabled = true;
+  }
+
+  // ----- UI UPDATE -----
+  function updateUI() {
+    scoreSpan.textContent = Math.floor(score);
+    highScoreSpan.textContent = highScore;
+    var hearts = '';
+    for (var i = 0; i < lives; i++) hearts += '❤️';
+    for (var i = lives; i < 3; i++) hearts += '🖤';
+    livesSpan.textContent = hearts;
+  }
+
+  // ----- SPAWN TREE -----
+  function spawnTree() {
+    if (trees.length >= MAX_TREES) return;
+    var x = Math.random() * (W - TREE_WIDTH);
+    trees.push({
+      x: x,
+      y: -TREE_HEIGHT - Math.random() * 40,
+      w: TREE_WIDTH,
+      h: TREE_HEIGHT
+    });
+  }
+
+  // ----- COLLISION DETECTION (AABB) -----
+  function rectCollide(r1, r2) {
+    return r1.x < r2.x + r2.w &&
+           r1.x + r1.w > r2.x &&
+           r1.y < r2.y + r2.h &&
+           r1.y + r1.h > r2.y;
+  }
+
+  // ----- UPDATE GAME (called each frame when active & not paused) -----
+  function updateGame() {
+    if (!gameActive || gamePaused || gameOver) return;
+
+    // 1. increase speed over time
+    currentSpeed = Math.min(BASE_SPEED + frameCount * SPEED_INCREASE_PER_FRAME, MAX_SPEED);
+
+    // 2. score per frame
+    score += 1;
+    if (score > highScore) {
+      highScore = Math.floor(score);
+      saveHighScore();
+    }
+
+    // 3. player movement (left/right)
+    var moveSpeed = 5.2;
+    if (keys.ArrowLeft || keys.a) {
+      player.x = Math.max(0, player.x - moveSpeed);
+    }
+    if (keys.ArrowRight || keys.d) {
+      player.x = Math.min(W - PLAYER_WIDTH, player.x + moveSpeed);
+    }
+
+    // 4. spawn trees
+    if (Math.random() < TREE_SPAWN_RATE) {
+      spawnTree();
+    }
+
+    // 5. move trees downward & remove offscreen
+    for (var i = trees.length - 1; i >= 0; i--) {
+      var t = trees[i];
+      t.y += currentSpeed;
+      if (t.y > H + 40) {
+        trees.splice(i, 1);
+      }
+    }
+
+    // 6. yeti logic
+    if (frameCount >= YETI_START_FRAME) {
+      if (!yeti.active) {
+        yeti.active = true;
+        yeti.x = player.x + (Math.random() * 80 - 40);
+        yeti.y = -YETI_HEIGHT - 10;
+      }
+      // yeti moves down faster than trees, and slightly tracks player
+      var yetiSpeed = currentSpeed * 1.25 + 0.6;
+      yeti.y += yetiSpeed;
+      // horizontal tracking (slow)
+      if (yeti.x < player.x - 4) yeti.x += 1.2;
+      else if (yeti.x > player.x + 4) yeti.x -= 1.2;
+      // clamp yeti x
+      yeti.x = Math.max(0, Math.min(W - YETI_WIDTH, yeti.x));
+
+      // yeti collision with player
+      var playerRect = { x: player.x, y: player.y, w: PLAYER_WIDTH, h: PLAYER_HEIGHT };
+      var yetiRect = { x: yeti.x, y: yeti.y, w: YETI_WIDTH, h: YETI_HEIGHT };
+      if (rectCollide(playerRect, yetiRect)) {
+        lives -= 1;
+        if (lives <= 0) {
+          gameActive = false;
+          gameOver = true;
+          startBtn.disabled = false;
+        } else {
+          yeti.y = -YETI_HEIGHT - 20;
+          yeti.x = player.x + (Math.random() * 60 - 30);
+          yeti.x = Math.max(0, Math.min(W - YETI_WIDTH, yeti.x));
+        }
+        updateUI();
+      }
+    }
+
+    // 7. tree collision with player
+    var playerRect = { x: player.x, y: player.y, w: PLAYER_WIDTH, h: PLAYER_HEIGHT };
+    for (var i = trees.length - 1; i >= 0; i--) {
+      var t = trees[i];
+      var treeRect = { x: t.x, y: t.y, w: t.w, h: t.h };
+      if (rectCollide(playerRect, treeRect)) {
+        trees.splice(i, 1);
+        lives -= 1;
+        if (lives <= 0) {
+          gameActive = false;
+          gameOver = true;
+          startBtn.disabled = false;
+        }
+        updateUI();
+        break;
+      }
+    }
+
+    // 8. update snowflakes (falling snow)
+    for (var s of snowflakes) {
+      s.y += s.speed * (currentSpeed * 0.5 + 0.8);
+      if (s.y > H + 5) {
+        s.y = -5;
+        s.x = Math.random() * W;
+      }
+    }
+
+    // 9. increment frame counter
+    frameCount++;
+
+    // 10. update UI (score, lives, highscore)
+    updateUI();
+  }
+
+  // ----- DRAWING -----
+  function draw() {
+    // clear background (dark slope)
+    ctx.fillStyle = '#1a2a3a';
+    ctx.fillRect(0, 0, W, H);
+
+    // subtle slope lines (pixel style)
+    ctx.fillStyle = '#253b4e';
+    for (var i = 0; i < 12; i++) {
+      var y = (i * 45 + (frameCount * 0.5) % 45) % H;
+      ctx.fillRect(0, y, W, 2);
+    }
+
+    // draw snowflakes
+    ctx.fillStyle = '#e0f0ff';
+    for (var s of snowflakes) {
+      ctx.fillRect(Math.floor(s.x), Math.floor(s.y), s.size, s.size);
+    }
+
+    // draw trees (pixel art style)
+    for (var t of trees) {
+      // trunk
+      ctx.fillStyle = '#5d3a1a';
+      ctx.fillRect(Math.floor(t.x + t.w/2 - 3), Math.floor(t.y + t.h - 10), 6, 10);
+      // foliage (three tiers)
+      ctx.fillStyle = '#2d6a4f';
+      ctx.fillRect(Math.floor(t.x), Math.floor(t.y + 8), t.w, 10);
+      ctx.fillStyle = '#40916c';
+      ctx.fillRect(Math.floor(t.x + 2), Math.floor(t.y + 2), t.w - 4, 10);
+      ctx.fillStyle = '#52b788';
+      ctx.fillRect(Math.floor(t.x + 5), Math.floor(t.y - 4), t.w - 10, 10);
+      // snow on top
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(Math.floor(t.x + 6), Math.floor(t.y - 6), t.w - 12, 4);
+    }
+
+    // draw yeti (if active)
+    if (yeti.active && gameActive && !gameOver) {
+      // body
+      ctx.fillStyle = '#e0e0e0';
+      ctx.fillRect(Math.floor(yeti.x), Math.floor(yeti.y), YETI_WIDTH, YETI_HEIGHT);
+      // fur texture
+      ctx.fillStyle = '#b0b0b0';
+      ctx.fillRect(Math.floor(yeti.x + 4), Math.floor(yeti.y + 6), 6, 6);
+      ctx.fillRect(Math.floor(yeti.x + 20), Math.floor(yeti.y + 12), 6, 6);
+      // eyes
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(Math.floor(yeti.x + 8), Math.floor(yeti.y + 8), 4, 4);
+      ctx.fillRect(Math.floor(yeti.x + 20), Math.floor(yeti.y + 8), 4, 4);
+      // mouth
+      ctx.fillStyle = '#8b0000';
+      ctx.fillRect(Math.floor(yeti.x + 12), Math.floor(yeti.y + 20), 8, 4);
+    }
+
+    // draw player (penguin)
+    var px = Math.floor(player.x);
+    var py = Math.floor(player.y);
+    // body (black)
+    ctx.fillStyle = '#1e1e1e';
+    ctx.fillRect(px, py, PLAYER_WIDTH, PLAYER_HEIGHT);
+    // belly (white)
+    ctx.fillStyle = '#f0f0f0';
+    ctx.fillRect(px + 4, py + 6, PLAYER_WIDTH - 8, PLAYER_HEIGHT - 12);
+    // eyes
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(px + 5, py + 6, 4, 4);
+    ctx.fillRect(px + 15, py + 6, 4, 4);
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(px + 6, py + 7, 2, 2);
+    ctx.fillRect(px + 16, py + 7, 2, 2);
+    // beak (orange)
+    ctx.fillStyle = '#ff8c00';
+    ctx.fillRect(px + 9, py + 12, 6, 4);
+    // feet
+    ctx.fillStyle = '#ff8c00';
+    ctx.fillRect(px + 2, py + PLAYER_HEIGHT - 4, 6, 4);
+    ctx.fillRect(px + 16, py + PLAYER_HEIGHT - 4, 6, 4);
+
+    // overlay messages
+    if (!gameActive && !gameOver) {
+      // start screen
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 32px "Courier New", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('SKIFREE', W/2, H/2 - 40);
+      ctx.font = '20px "Courier New", monospace';
+      ctx.fillStyle = '#aaccff';
+      ctx.fillText('press START', W/2, H/2 + 30);
+    } else if (gamePaused) {
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 36px "Courier New", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('PAUSED', W/2, H/2);
+    } else if (gameOver) {
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#ffb3b3';
+      ctx.font = 'bold 36px "Courier New", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('GAME OVER', W/2, H/2 - 30);
+      ctx.font = '24px "Courier New", monospace';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText('score: ' + Math.floor(score), W/2, H/2 + 30);
+    }
+  }
+
+  // ----- GAME LOOP -----
+  function gameLoop() {
+    if (gameActive && !gamePaused && !gameOver) {
+      updateGame();
+    } else {
+      // still update snowflakes for visual effect when paused/start screen
+      if (!gameActive || gamePaused) {
+        for (var s of snowflakes) {
+          s.y += s.speed * 0.8;
+          if (s.y > H + 5) {
+            s.y = -5;
+            s.x = Math.random() * W;
+          }
+        }
+      }
+    }
+    draw();
+    requestAnimationFrame(gameLoop);
+  }
+
+  // ----- EVENT LISTENERS -----
+  function handleKeyDown(e) {
+    var key = e.key;
+    // prevent scrolling with arrows / space
+    if (key === ' ' || key === 'ArrowLeft' || key === 'ArrowRight' || key === 'ArrowUp' || key === 'ArrowDown') {
+      e.preventDefault();
+    }
+
+    // pause with SPACE
+    if (key === ' ') {
+      if (gameActive && !gameOver) {
+        gamePaused = !gamePaused;
+      }
+      return;
+    }
+
+    // quit with ESC
+    if (key === 'Escape') {
+      if (gameActive) {
+        gameActive = false;
+        gamePaused = false;
+        gameOver = true;
+        startBtn.disabled = false;
+      }
+      return;
+    }
+
+    // steering keys
+    if (key === 'ArrowLeft' || key === 'a' || key === 'A') {
+      keys.ArrowLeft = true;
+      keys.a = true;
+    }
+    if (key === 'ArrowRight' || key === 'd' || key === 'D') {
+      keys.ArrowRight = true;
+      keys.d = true;
+    }
+  }
+
+  function handleKeyUp(e) {
+    var key = e.key;
+    if (key === 'ArrowLeft' || key === 'a' || key === 'A') {
+      keys.ArrowLeft = false;
+      keys.a = false;
+    }
+    if (key === 'ArrowRight' || key === 'd' || key === 'D') {
+      keys.ArrowRight = false;
+      keys.d = false;
+    }
+    if (key === ' ') {
+      e.preventDefault();
+    }
+  }
+
+  // ----- START BUTTON -----
+  startBtn.onclick = function() {
+    resetGame();
+    // ensure keys are reset
+    keys.ArrowLeft = false;
+    keys.ArrowRight = false;
+    keys.a = false;
+    keys.d = false;
+  };
+
+  // ----- INIT -----
+  function init() {
+    loadHighScore();
+    // initial snowflakes for start screen
+    snowflakes = [];
+    for (var i = 0; i < SNOWFLAKES_COUNT; i++) {
+      snowflakes.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        size: Math.floor(Math.random() * 3) + 1,
+        speed: 0.8 + Math.random() * 1.8
+      });
+    }
+    // set initial UI
+    updateUI();
+    // start loop
+    gameLoop();
+  }
+
+  // attach listeners
+  window.addEventListener('keydown', handleKeyDown);
+  window.addEventListener('keyup', handleKeyUp);
+
+  // start everything
+  init();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,119 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Mag: Route goal",
+      "type": "shell",
+      "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+      "args": [
+        "main.py",
+        "route",
+        "--dry",
+        "${input:magGoal}"
+      ],
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Mag: Context pack",
+      "type": "shell",
+      "command": "${workspaceFolder}\\mag.cmd",
+      "args": [
+        "context-pack"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Mag: System map",
+      "type": "shell",
+      "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+      "args": [
+        "main.py",
+        "system-map"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Mag: DeepSeek agent",
+      "type": "shell",
+      "command": "${workspaceFolder}\\launch_agent_deepseek.cmd",
+      "problemMatcher": []
+    },
+    {
+      "label": "Mag: DeepSeek one-shot",
+      "type": "shell",
+      "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+      "args": [
+        "main.py",
+        "agent",
+        "--provider",
+        "deepseek",
+        "--query",
+        "${input:magGoal}"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Mag: Queue DeepSeek",
+      "type": "shell",
+      "command": "${workspaceFolder}\\queue_deepseek.cmd",
+      "args": [
+        "${input:magGoal}"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Mag: Orchestrator queue add",
+      "type": "shell",
+      "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+      "args": [
+        "main.py",
+        "orchestrator",
+        "queue",
+        "add",
+        "${input:magGoal}",
+        "--provider",
+        "deepseek"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Mag: Orchestrator drain once",
+      "type": "shell",
+      "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+      "args": [
+        "main.py",
+        "orchestrator",
+        "drain",
+        "--once"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Mag: Routing smoke",
+      "type": "shell",
+      "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+      "args": [
+        "-m",
+        "pytest",
+        "tests/test_routing_smoke.py",
+        "-q"
+      ],
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Mag: v3 home smoke",
+      "type": "shell",
+      "command": "${workspaceFolder}\\scripts\\v3_home_smoke.cmd",
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "magGoal",
+      "type": "promptString",
+      "description": "Goal, blocker, or smoke input for Mag"
+    }
+  ]
+}

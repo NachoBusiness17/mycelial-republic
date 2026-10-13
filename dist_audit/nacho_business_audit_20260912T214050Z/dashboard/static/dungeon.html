@@ -1,0 +1,155 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>THE DUNGEON — invariants as lighting</title>
+<style>
+body{margin:0;background:#07080c;color:#cfd6e4;font:13px/1.5 Consolas,monospace}
+#wrap{width:960px;margin:0 auto}
+h1{font-size:14px;letter-spacing:2px;color:#9fb0cc;margin:10px 0 2px}
+.sub{color:#5c6a82;font-size:11px;margin-bottom:6px}
+#roombar{display:flex;gap:8px;align-items:center;margin:6px 0}
+#inv{flex:1;font-size:12px;color:#dfe6f2;border-left:3px solid #39445c;padding-left:8px}
+.lens{width:34px;height:26px;border:1px solid #39445c;background:#0d1017;color:#cfd6e4;
+  font:11px Consolas;cursor:pointer;border-radius:3px}
+.lens.on{outline:2px solid #fff}
+#cv{display:block;background:#05060a;border:1px solid #1a2030;border-radius:4px}
+#stats{font-size:11px;color:#8a97ad;margin-top:6px;white-space:pre-wrap}
+</style></head><body><div id="wrap">
+<h1>THE DUNGEON — the dungeon IS the test suite</h1>
+<div class="sub">each room renders one invariant as its lighting · traps are channel-specific ·
+read the field, don't fight it · click an adjacent cell to step</div>
+<div id="roombar"><div id="inv"></div>
+<button class="lens on" data-l="0">ALL</button><button class="lens" data-l="1">R</button>
+<button class="lens" data-l="2">G</button><button class="lens" data-l="3">B</button></div>
+<canvas id="cv" width="960" height="600"></canvas>
+<div id="stats"></div></div>
+<script>
+// ROOMS: real invariants from the record (watch/INVARIANTS_REPORT_20260901.md,
+// invariants_proposals.jsonl). trap = {x,y,ch} — visible only under its channel's
+// lens (1=R,2=G,3=B). pillars block all light (CPU ray-rect occlusion, the
+// salon-revised K-ray engine). exit = the angle where light passes.
+const CW=40, COLS=24, ROWS=15;
+const ROOMS=[
+ {inv:"I1 · STATIC-PREFIX IMMUTABILITY — sporulate only what you can canonically encode; the prefix never mutates mid-run (receipt: K_T2 kill on hit-ratio decay).",
+  lights:[{x:2,y:2,c:1},{x:21,y:12,c:2}],pillars:[{x:6,y:4,w:1,h:6},{x:11,y:1,w:1,h:8},{x:16,y:6,w:1,h:8}],
+  traps:[{x:9,y:7,ch:1},{x:14,y:3,ch:1},{x:18,y:10,ch:2},{x:5,y:12,ch:2}],start:{x:1,y:13},exit:{x:22,y:1}},
+ {inv:"I2 · VARIABLE-LAST ORDERING — variable content goes last; byte-exactness generates the whole layer stack (receipt: static-first salon skeleton).",
+  lights:[{x:2,y:7,c:3},{x:21,y:7,c:1}],pillars:[{x:8,y:0,w:1,h:9},{x:8,y:12,w:1,h:3},{x:15,y:4,w:1,h:11}],
+  traps:[{x:12,y:2,ch:3},{x:12,y:12,ch:3},{x:5,y:3,ch:1},{x:18,y:9,ch:1}],start:{x:1,y:1},exit:{x:22,y:13}},
+ {inv:"I3 · THE LLM NEVER SOLVES — state and legal actions first; the model narrates after (EXPTIME chess/go: you walk the field, you don't brute it).",
+  lights:[{x:12,y:1,c:2},{x:12,y:13,c:3}],pillars:[{x:4,y:5,w:16,h:1},{x:4,y:9,w:16,h:1}],
+  traps:[{x:7,y:7,ch:2},{x:12,y:7,ch:3},{x:17,y:7,ch:2},{x:3,y:13,ch:3}],start:{x:1,y:7},exit:{x:22,y:7}},
+ {inv:"I6 · FALSIFIABILITY DISCIPLINE — a theory forbids; distrust your own metaphor by design (the dragon you haven't falsified is the trap you step on).",
+  lights:[{x:2,y:13,c:1},{x:21,y:2,c:3}],pillars:[{x:7,y:2,w:1,h:7},{x:12,y:6,w:1,h:9},{x:17,y:2,w:1,h:7}],
+  traps:[{x:9,y:12,ch:1},{x:14,y:4,ch:1},{x:10,y:2,ch:3},{x:19,y:11,ch:3}],start:{x:1,y:1},exit:{x:22,y:12}},
+ {inv:"P0 · APPEND-ONLY OR CLAIMED — every shared-surface write is append-only or claimed before act; read-modify-write of whole files is forbidden (receipt: board runaway).",
+  lights:[{x:4,y:2,c:1},{x:19,y:2,c:1},{x:12,y:13,c:2}],pillars:[{x:9,y:3,w:1,h:10},{x:14,y:3,w:1,h:10}],
+  traps:[{x:6,y:8,ch:1},{x:17,y:8,ch:1},{x:12,y:5,ch:2},{x:12,y:10,ch:2}],start:{x:12,y:0},exit:{x:1,y:13}},
+ {inv:"P1 · MEASURED OR ESTIMATED — every cost claim carries a measured source pointer or is labeled ESTIMATED/UNKNOWN (receipt: economist spend audit, 8 gaps).",
+  lights:[{x:1,y:7,c:2},{x:11,y:1,c:3},{x:22,y:7,c:2}],pillars:[{x:6,y:6,w:1,h:9},{x:17,y:0,w:1,h:9}],
+  traps:[{x:9,y:3,ch:2},{x:9,y:12,ch:3},{x:14,y:3,ch:3},{x:14,y:12,ch:2}],start:{x:0,y:1},exit:{x:23,y:13}},
+];
+const CH={1:"#ff5560",2:"#5fff8a",3:"#6fb4ff"}, CHN={1:"R",2:"G",3:"B"};
+
+let R=0, lens=0, px, py, steps=0, falls=0, done=[], trace=[];
+const cv=document.getElementById("cv"), ctx=cv.getContext("2d");
+
+function segBlocked(x0,y0,x1,y1){ // CPU K-ray engine, salon-revised: ray vs rect
+  const dx=x1-x0, dy=y1-y0, n=36;
+  for(let i=1;i<n;i++){
+    const t=i/n, x=x0+dx*t, y=y0+dy*t;
+    for(const p of R_.pillars) if(x>=p.x*CW&&x<(p.x+p.w)*CW&&y>=p.y*CW&&y<(p.y+p.h)*CW) return true;
+  }
+  return false;
+}
+let R_;
+function litAt(cx,cy,ch){ // light arriving at cell center on channel ch (0=all)
+  let v=0;
+  for(const L of R_.lights){
+    if(ch&&L.c!==ch) continue;
+    if(segBlocked((L.x+.5)*CW,(L.y+.5)*CW,(cx+.5)*CW,(cy+.5)*CW)) continue;
+    const d=Math.hypot(L.x-cx,L.y-cy);
+    v+=Math.max(0,1-d/16);
+  }
+  return Math.min(1,v);
+}
+function trapVisible(t){ // a trap blazes only under its own channel's light
+  return litAt(t.x,t.y,t.ch)>0.12 && (lens===0||lens===t.ch);
+}
+function preload(){
+  // precompute channel fields once per room (static lights): the shadow BEFORE the step
+  R_.fields={};
+  for(const ch of [1,2,3,0]){
+    const f=[];
+    for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++) f.push(litAt(x,y,ch||undefined));
+    R_.fields[ch]=f;
+  }
+}
+function load(i){
+  R=i; R_=ROOMS[i]; px=R_.start.x; py=R_.start.y; trace=[[px,py]];
+  document.getElementById("inv").textContent=R_.inv;
+  if(!R_.fields) preload();
+  draw();
+}
+function draw(){
+  const f=R_.fields[lens];
+  for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++){
+    const v=f[y*COLS+x];
+    const base=(v*38+4)|0, warm=lens===0;
+    ctx.fillStyle=`rgb(${warm?(base+14):base},${warm?(base+16):base},${warm?(base+22):base+8})`;
+    ctx.fillRect(x*CW,y*CW,CW-1,CW-1);
+  }
+  // pillars (occluders — the failure modes as walls)
+  for(const p of R_.pillars){ctx.fillStyle="#1c2333";ctx.fillRect(p.x*CW,p.y*CW,p.w*CW-2,p.h*CW-2);
+    ctx.strokeStyle="#39445c";ctx.strokeRect(p.x*CW+.5,p.y*CW+.5,p.w*CW-2,p.h*CW-2);}
+  // traps: visible ONLY under their channel (and its lens) — metamerism as game mechanic
+  for(const t of R_.traps){
+    const vis=trapVisible(t);
+    ctx.beginPath();ctx.arc((t.x+.5)*CW,(t.y+.5)*CW,vis?11:0,0,7);
+    ctx.fillStyle=CH[t.ch];ctx.globalAlpha=.85;ctx.fill();ctx.globalAlpha=1;
+    if(vis){ctx.strokeStyle=CH[t.ch];ctx.beginPath();ctx.arc((t.x+.5)*CW,(t.y+.5)*CW,15,0,7);ctx.stroke();}
+  }
+  // exit: the angle where light passes
+  const ex=R_.exit, lit=litAt(ex.x,ex.y,0);
+  ctx.strokeStyle="#e8ecf5";ctx.lineWidth=2;
+  ctx.beginPath();ctx.arc((ex.x+.5)*CW,(ex.y+.5)*CW,13+3*Math.sin(Date.now()/300),0,7);ctx.stroke();
+  ctx.fillStyle="#e8ecf5";ctx.font="10px Consolas";ctx.textAlign="center";
+  ctx.fillText("EXIT", (ex.x+.5)*CW,(ex.y+.5)*CW+3);
+  // the party's path = the feedback signal (rendered trail)
+  ctx.strokeStyle="rgba(232,236,245,.45)";ctx.lineWidth=1.5;ctx.beginPath();
+  trace.forEach((p,i)=>i?ctx.lineTo((p[0]+.5)*CW,(p[1]+.5)*CW):ctx.moveTo((p[0]+.5)*CW,(p[1]+.5)*CW));
+  ctx.stroke();
+  ctx.fillStyle="#fff";ctx.beginPath();ctx.arc((px+.5)*CW,(py+.5)*CW,7,0,7);ctx.fill();
+  ctx.lineWidth=1;
+  document.getElementById("stats").textContent=
+    `room ${R+1}/${ROOMS.length} · lens ${lens===0?"ALL":CHN[lens]} · steps ${steps} · falls ${falls} · `+
+    done.map(d=>`R${d.r}:${d.s}s/${d.f}f`).join(" ");
+}
+function step(nx,ny){
+  if(nx<0||ny<0||nx>=COLS||ny>=ROWS) return;
+  for(const p of R_.pillars) if(nx>=p.x&&nx<p.x+p.w&&ny>=p.y&&ny<p.y+p.h) return;
+  steps++;
+  const t=R_.traps.find(t=>t.x===nx&&t.y===ny);
+  if(t){
+    const seen=trapVisible(t);
+    if(seen){ // read the field: you saw it and walked around? stepping in still burns
+      falls++; }
+    else falls++;
+    px=R_.start.x; py=R_.start.y; trace=[[px,py]];
+  } else { px=nx; py=ny; trace.push([px,py]); }
+  if(px===R_.exit.x&&py===R_.exit.y){
+    done.push({r:R+1,s:steps,f:falls});
+    steps=0; falls=0;
+    load((R+1)%ROOMS.length);
+    return;
+  }
+  draw();
+}
+cv.addEventListener("click",e=>{
+  const r=cv.getBoundingClientRect(), mx=e.clientX-r.left, my=e.clientY-r.top;
+  const tx=Math.floor(mx/CW), ty=Math.floor(my/CW);
+  if(Math.abs(tx-px)+Math.abs(ty-py)===1) step(tx,ty);
+});
+document.querySelectorAll(".lens").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll(".lens").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on"); lens=+b.dataset.l; draw();
+}));
+load(0);
+</script></body></html>

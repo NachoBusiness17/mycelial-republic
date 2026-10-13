@@ -1,0 +1,1440 @@
+<!doctype html>
+<!--
+  MESH GALLERY v1 — dungeon mesh content pipeline, fleet build 2026-09-03
+  MOTION v1 (2026-09-04, kimodo organ follow-up): animation channels are
+  evaluated client-side (lerp/slerp, STEP + CUBICSPLINE honored), joints are
+  composed up the node graph, vertices are linear-blend skinned against
+  inverseBindMatrices. Onion-skin ghosts gold->cyan by time (same palette as
+  the baked strip GLB), frame-stepped playback via slider. Verified against
+  kimodo_walk_wave.glb: 120 keys / 30 joints / 31 channels / 240 skinned verts.
+  Provenance: intake card watch/INTAKE_MESH_BAKER_20260903.md (20/25 BUILD NOW).
+  Bakery source: mesh-baker.needle.tools (herbst / needle.tools) running TRELLIS
+  (Microsoft image-to-3D) locally on the VISITOR's GPU. The fleet bakes nothing;
+  it curates: image -> bakery -> .glb -> THIS SURFACE -> dungeon scenes.
+  ZERO-FETCH: this file loads no network resource, ever. No CDN, no three.js —
+  the GLB/glTF parser and the WebGL renderer below are inline and self-contained.
+  File reads happen through FileReader only. There is NO network exception.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MAG · Mesh Gallery — dungeon content pipeline v1</title>
+<style>
+:root{--bg:#030806;--ink:#c8e6d9;--accent:#7cf5ff;--gold:#e8c96a;--mut:#8ab8a4}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-monospace,Consolas,monospace}
+header{text-align:center;margin:14px 0 4px}
+h1{font-size:.95rem;letter-spacing:.12em;color:var(--accent);margin:0}
+.mut{color:var(--mut);font-size:.72rem;margin:4px auto 0;max-width:860px;line-height:1.5}
+main{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;align-items:flex-start;padding:10px}
+#stage{position:relative;width:960px;max-width:96vw;height:600px;border:1px solid rgba(124,245,255,.25);
+  border-radius:6px;overflow:hidden;background:radial-gradient(ellipse at 50% 35%,#07130f 0%,#030806 70%)}
+canvas#gl{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab}
+canvas#gl.dragging{cursor:grabbing}
+#drop{position:absolute;inset:0;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;
+  text-align:center;color:var(--mut);font-size:.8rem;transition:background .15s;cursor:pointer}
+#drop.hot{background:rgba(124,245,255,.07);outline:2px dashed rgba(124,245,255,.5);outline-offset:-12px;color:var(--accent)}
+#drop b{color:var(--gold);font-size:1rem;letter-spacing:.1em}
+#hud{position:absolute;top:8px;left:10px;font-size:.68rem;color:var(--mut);pointer-events:none;white-space:pre-line}
+#panel{width:300px;max-width:96vw;font-size:.72rem;line-height:1.6}
+#panel h2{font-size:.72rem;letter-spacing:.14em;color:var(--gold);margin:0 0 6px}
+#panel table{width:100%;border-collapse:collapse}
+#panel td{padding:1px 4px;border-bottom:1px dotted rgba(124,245,255,.12)}
+#panel td:first-child{color:var(--mut)}
+#panel td:last-child{text-align:right;color:var(--ink)}
+.law{margin:10px 0 0;padding:8px 10px;border:1px solid rgba(232,201,106,.35);border-radius:6px;color:var(--gold);line-height:1.5}
+.band-low{color:#7dfab0}.band-mid{color:var(--gold)}.band-high{color:#ff9d5c}
+.controls{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px}
+button{background:none;border:1px solid rgba(124,245,255,.3);border-radius:8px;color:var(--ink);
+  font:inherit;font-size:.68rem;padding:3px 10px;cursor:pointer}
+button.on{color:var(--accent);border-color:var(--accent)}
+#status{margin-top:8px;color:#ff9d5c;font-size:.68rem;white-space:pre-line;min-height:1em}
+.warn{color:#ff9d5c}
+#motionSec{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;align-items:flex-start;padding:0 10px 10px;width:100%}
+#mstage{position:relative;width:960px;max-width:96vw;height:520px;border:1px solid rgba(232,201,106,.25);
+  border-radius:6px;overflow:hidden;background:radial-gradient(ellipse at 50% 35%,#07130f 0%,#030806 70%)}
+canvas#mgl{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab}
+canvas#mgl.dragging{cursor:grabbing}
+#mempty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--mut);
+  font-size:.75rem;letter-spacing:.08em;text-align:center;padding:0 20px;line-height:1.7}
+#mhud{position:absolute;top:8px;left:10px;font-size:.68rem;color:var(--mut);pointer-events:none;white-space:pre-line}
+#mpanel{width:300px;max-width:96vw;font-size:.72rem;line-height:1.6}
+#mpanel h2{font-size:.72rem;letter-spacing:.14em;color:var(--gold);margin:0 0 6px}
+#mpanel table{width:100%;border-collapse:collapse}
+#mpanel td{padding:1px 4px;border-bottom:1px dotted rgba(124,245,255,.12)}
+#mpanel td:first-child{color:var(--mut)}
+#mpanel td:last-child{text-align:right;color:var(--ink)}
+#mlive{color:var(--accent);margin-top:2px}
+#mstatus{margin-top:8px;color:#ff9d5c;font-size:.68rem;white-space:pre-line;min-height:1em}
+input[type=range]{width:100%;accent-color:#7cf5ff;background:transparent;margin:8px 0 2px}
+.legend{font-size:.68rem;color:var(--mut);text-align:center;max-width:900px;margin:6px auto 16px;line-height:1.5}
+</style>
+</head>
+<body>
+<header>
+  <h1>MESH GALLERY — DUNGEON CONTENT PIPELINE v1</h1>
+  <div class="mut">image &rarr; <b>mesh-baker.needle.tools</b> (TRELLIS on the visitor's GPU) &rarr; .glb &rarr; this surface &rarr; dungeon scenes &middot;
+  zero-fetch: inline parser + raw WebGL, no CDN, no three.js, no network at render time</div>
+</header>
+<main>
+  <div id="stage">
+    <canvas id="gl"></canvas>
+    <div id="drop"><b>DROP .GLB / .GLTF</b>or click to browse &middot; parsed &amp; rendered locally, nothing uploads<br>
+    <span style="font-size:.62rem">.gltf with external .bin: drop the .bin in the same drag</span></div>
+    <div id="hud"></div>
+  </div>
+  <div id="panel">
+    <h2>DECIMATION CALIBRATOR</h2>
+    <table id="stats"><tr><td>status</td><td>awaiting mesh</td></tr></table>
+    <div class="law">DECIMATION LAW — high-poly in, silhouette kept, low-poly out.<br>
+    The bakery bakes dense; the dungeon renders the remainder. These numbers are the calibrator's chair.</div>
+    <div class="controls">
+      <button id="bWire">wireframe [W]</button>
+      <button id="bTurn" class="on">turntable [T]</button>
+      <button id="bGrid" class="on">grid [G]</button>
+      <button id="bReset">reset view [R]</button>
+    </div>
+    <div id="status"></div>
+  </div>
+</main>
+<section id="motionSec">
+  <div id="mstage">
+    <canvas id="mgl"></canvas>
+    <div id="mempty">MOTION — drop an animated .glb above<br>channels are sampled and skinned right here, client-side, same zero-network law</div>
+    <div id="mhud"></div>
+  </div>
+  <div id="mpanel">
+    <h2>MOTION — ANIMATION CALIBRATOR</h2>
+    <table id="mstats"><tr><td>status</td><td>awaiting animated mesh</td></tr></table>
+    <input type="range" id="mSlider" min="0" max="119" value="0" step="1" disabled>
+    <div id="mlive">frame —/— · t=—</div>
+    <div class="controls">
+      <button id="bPlay" class="on">pause [P]</button>
+      <button id="bOnion" class="on">onion [O]</button>
+      <button id="bBones" class="on">bones [S]</button>
+      <button id="bMesh" class="on">mesh [M]</button>
+      <button id="bMTurn" class="on">orbit</button>
+      <button id="bPoses6" class="poseBtn">6</button><button id="bPoses12" class="poseBtn on">12</button><button id="bPoses24" class="poseBtn">24</button>
+    </div>
+    <div id="mstatus"></div>
+    <div class="law">MOTION LAW — the animation is evaluated from the GLB's own channels: slerp between keys, joints
+    composed up the node graph, vertices blended against inverseBindMatrices. No library, no fetch. Onion ghosts are
+    gold&rarr;cyan by time, exactly like the baked strip. If a file has channels but no skin, the bare joint hierarchy
+    animates instead — honest motion beats fake skinning.</div>
+  </div>
+</section>
+<div class="legend">drag = orbit &middot; wheel = zoom &middot; W wireframe &middot; T turntable &middot; G grid &middot; R reset view &middot;
+motion: drag orbit &middot; P play &middot; O onion &middot; S bones &middot; M skin mesh &middot; slider = frame step<br>
+errors surface here, honestly — draco/meshopt-compressed GLBs and sparse accessors are refused in v0, not faked</div>
+<script>
+"use strict";
+// ============================ PURE PARSER BEGIN ============================
+// (everything between PURE PARSER markers is DOM/GL-free and unit-testable)
+const GLB_MAGIC = 0x46546C67; // "glTF"
+const CHUNK_JSON = 0x4E4F534A, CHUNK_BIN = 0x004E4942;
+const CTYPES = {5120:Int8Array,5121:Uint8Array,5122:Int16Array,5123:Uint16Array,5125:Uint32Array,5126:Float32Array};
+const CSIZES = {5120:1,5121:1,5122:2,5123:2,5125:4,5126:4};
+const NCOMP  = {SCALAR:1,VEC2:2,VEC3:3,VEC4:4,MAT4:16};
+const VIEW_GET = {5120:"getInt8",5121:"getUint8",5122:"getInt16",5123:"getUint16",5125:"getUint32",5126:"getFloat32"};
+
+function parseGLBContainer(buf){
+  const dv = new DataView(buf);
+  if (dv.byteLength < 12 || dv.getUint32(0,true) !== GLB_MAGIC) throw new Error("not a GLB container");
+  const version = dv.getUint32(4,true);
+  if (version !== 2) throw new Error("GLB version "+version+" unsupported (need 2.0)");
+  let off = 12, json = null, bin = null;
+  while (off + 8 <= dv.byteLength){
+    const clen = dv.getUint32(off,true), ctype = dv.getUint32(off+4,true), start = off+8;
+    if (start+clen > dv.byteLength) throw new Error("GLB chunk overruns file");
+    if (ctype === CHUNK_JSON) json = JSON.parse(new TextDecoder().decode(new Uint8Array(buf,start,clen)));
+    else if (ctype === CHUNK_BIN) bin = new Uint8Array(buf,start,clen);
+    off = start + clen;
+  }
+  if (!json) throw new Error("GLB has no JSON chunk");
+  return { json, bin };
+}
+
+function decodeDataURI(uri){
+  const b64 = uri.slice(uri.indexOf(",")+1);
+  const s = atob(b64), out = new Uint8Array(s.length);
+  for (let i=0;i<s.length;i++) out[i] = s.charCodeAt(i);
+  return out;
+}
+function uriBasename(uri){
+  return decodeURIComponent(uri.split(/[\\/]/).pop() || "").toLowerCase();
+}
+function resolveBuffer(json, bin, files, bi){
+  const b = json.buffers[bi];
+  if (!b) throw new Error("missing buffer "+bi);
+  if (!b.uri){ if (bin) return bin; throw new Error("GLB references a buffer without a BIN chunk"); }
+  if (b.uri.startsWith("data:")) return decodeDataURI(b.uri);
+  const name = uriBasename(b.uri);
+  const f = files.get(name);
+  if (f) return f;
+  throw new Error('external buffer "'+b.uri+'" was not among the dropped files — drop the .bin together with the .gltf');
+}
+
+function readAccessor(json, bin, files, ai){
+  const a = json.accessors[ai];
+  if (!a) throw new Error("missing accessor "+ai);
+  if (a.sparse) throw new Error("sparse accessors unsupported in v0 (mesh uses one)");
+  if (!CTYPES[a.componentType]) throw new Error("unsupported componentType "+a.componentType);
+  if (!NCOMP[a.type]) throw new Error("unsupported accessor type "+a.type);
+  const ncomp = NCOMP[a.type], count = a.count, total = count*ncomp;
+  const csz = CSIZES[a.componentType];
+  const bv = json.bufferViews[a.bufferView];
+  const data = resolveBuffer(json, bin, files, bv.buffer);
+  const base = data.byteOffset + (bv.byteOffset||0) + (a.byteOffset||0);
+  const stride = bv.byteStride || 0;
+  if (!stride && (a.byteOffset||0) % csz === 0 && base % csz === 0){
+    return new (CTYPES[a.componentType])(data.buffer, base, total);
+  }
+  // de-interleave (or misaligned offset): byte-wise copy through DataView
+  const dv = new DataView(data.buffer);
+  const get = DV_GET[VIEW_GET[a.componentType]];
+  const out = new (CTYPES[a.componentType])(total);
+  let o = 0;
+  for (let i=0;i<count;i++){
+    let p = base + i*(stride || ncomp*csz);
+    for (let c=0;c<ncomp;c++){ out[o++] = get(dv,p); p += csz; }
+  }
+  return out;
+}
+const DV_GET = {
+  getInt8:(dv,p)=>dv.getInt8(p), getUint8:(dv,p)=>dv.getUint8(p),
+  getInt16:(dv,p)=>dv.getInt16(p,true), getUint16:(dv,p)=>dv.getUint16(p,true),
+  getUint32:(dv,p)=>dv.getUint32(p,true), getFloat32:(dv,p)=>dv.getFloat32(p,true)
+};
+
+// ---- mat4 (column-major, glTF convention) ----
+const M4 = {
+  I:()=>[1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1],
+  mul(a,b){ const o=new Array(16);
+    for(let c=0;c<4;c++)for(let r=0;r<4;r++){
+      o[c*4+r]=a[r]*b[c*4]+a[4+r]*b[c*4+1]+a[8+r]*b[c*4+2]+a[12+r]*b[c*4+3]; }
+    return o; },
+  fromTRS(t,r,s){
+    const [x,y,z,w]=r||[0,0,0,1], [sx,sy,sz]=s||[1,1,1];
+    const x2=x+x,y2=y+y,z2=z+z;
+    const xx=x*x2,xy=x*y2,xz=x*z2,yy=y*y2,yz=y*z2,zz=z*z2,wx=w*x2,wy=w*y2,wz=w*z2;
+    return [
+      (1-(yy+zz))*sx, (xy+wz)*sx, (xz-wy)*sx, 0,
+      (xy-wz)*sy, (1-(xx+zz))*sy, (yz+wx)*sy, 0,
+      (xz+wy)*sz, (yz-wx)*sz, (1-(xx+yy))*sz, 0,
+      t?t[0]:0, t?t[1]:0, t?t[2]:0, 1 ]; },
+  point(m,v){ return [
+    m[0]*v[0]+m[4]*v[1]+m[8]*v[2]+m[12],
+    m[1]*v[0]+m[5]*v[1]+m[9]*v[2]+m[13],
+    m[2]*v[0]+m[6]*v[1]+m[10]*v[2]+m[14] ]; }
+};
+function nodeLocalMatrix(n){
+  if (n.matrix) return n.matrix.slice();
+  return M4.fromTRS(n.translation, n.rotation, n.scale);
+}
+function checkExtensions(json){
+  const req = (json.extensionsRequired||[]).concat(json.extensionsUsed||[]);
+  const bad = req.filter(e=>/draco|meshopt|mesh_quant|WEB3D/i.test(e));
+  if (bad.length) throw new Error("compressed encoding refused in v0: "+bad.join(", ")+" — re-bake as plain GLB");
+}
+function bboxOfAccessor(json, ai, world){
+  const a = json.accessors[ai];
+  let mn, mx;
+  if (a.min && a.max && NCOMP[a.type]===3){
+    mn = a.min.slice(); mx = a.max.slice();
+  } else {
+    throw new Error("POSITION accessor lacks min/max — v0 needs them (all common bakers emit them)");
+  }
+  if (!world) return {min:mn, max:mx};
+  // transform all 8 corners, re-min/max (handles rotation/scale)
+  const cmn=[Infinity,Infinity,Infinity], cmx=[-Infinity,-Infinity,-Infinity];
+  for (let i=0;i<8;i++){
+    const p=M4.point(world,[i&1?mx[0]:mn[0], i&2?mx[1]:mn[1], i&4?mx[2]:mn[2]]);
+    for(let k=0;k<3;k++){ cmn[k]=Math.min(cmn[k],p[k]); cmx[k]=Math.max(cmx[k],p[k]); }
+  }
+  return {min:cmn, max:cmx};
+}
+// Build renderable geometry for one primitive. Pure: returns typed arrays + counts.
+function buildPrimitive(json, bin, files, mesh, prim, world, warnings){
+  if (prim.mode != null && prim.mode !== 4) {
+    warnings.push("primitive with mode "+prim.mode+" skipped (only TRIANGLES in v0)");
+    return null;
+  }
+  const attrs = prim.attributes||{};
+  if (attrs.POSITION == null){ warnings.push("primitive without POSITION skipped"); return null; }
+  const pos = readAccessor(json, bin, files, attrs.POSITION);
+  const vcount = pos.length/3;
+  let idx;
+  if (prim.indices != null){
+    const raw = readAccessor(json, bin, files, prim.indices);
+    idx = (raw instanceof Uint32Array) ? raw : Uint32Array.from(raw);
+  } else {
+    idx = vcount < 65536 ? new Uint16Array(vcount) : new Uint32Array(vcount);
+    for (let i=0;i<vcount;i++) idx[i]=i;
+  }
+  const tris = idx.length/3|0;
+  let nor;
+  if (attrs.NORMAL != null){
+    nor = readAccessor(json, bin, files, attrs.NORMAL);
+    if (nor.length !== pos.length){ warnings.push("NORMAL size mismatch — recomputed"); nor = null; }
+  }
+  let flatNormals = false;
+  if (!nor){
+    flatNormals = true;
+    nor = new Float32Array(pos.length);
+    for (let t=0;t<tris;t++){
+      const i0=idx[t*3],i1=idx[t*3+1],i2=idx[t*3+2];
+      const ax=pos[i0*3],ay=pos[i0*3+1],az=pos[i0*3+2];
+      const bx=pos[i1*3],by=pos[i1*3+1],bz=pos[i1*3+2];
+      const cx=pos[i2*3],cy=pos[i2*3+1],cz=pos[i2*3+2];
+      const ux=bx-ax,uy=by-ay,uz=bz-az, vx=cx-ax,vy=cy-ay,vz=cz-az;
+      let nx=uy*vz-uz*vy, ny=uz*vx-ux*vz, nz=ux*vy-uy*vx;
+      const L=Math.hypot(nx,ny,nz)||1; nx/=L;ny/=L;nz/=L;
+      for (const i of [i0,i1,i2]){ nor[i*3]=nx; nor[i*3+1]=ny; nor[i*3+2]=nz; }
+    }
+  }
+  let col = null;
+  if (attrs.COLOR_0 != null){
+    const ca = json.accessors[attrs.COLOR_0];
+    if (ca.componentType === 5126 && (NCOMP[ca.type]===3||NCOMP[ca.type]===4)){
+      const raw = readAccessor(json, bin, files, attrs.COLOR_0);
+      col = new Float32Array(vcount*3);
+      const w = NCOMP[ca.type];
+      for (let i=0;i<vcount;i++){ col[i*3]=raw[i*w]; col[i*3+1]=raw[i*w+1]; col[i*3+2]=raw[i*w+2]; }
+    } else warnings.push("non-float COLOR_0 ignored (v0 reads float vertex colors only)");
+  }
+  return {
+    pos, nor, col, idx, tris, verts: vcount,
+    world, flatNormals,
+    lineIdx: null // built lazily on first wireframe draw
+  };
+}
+// Parse any supported container (.glb ArrayBuffer or .gltf text) into scene geometry.
+// files: Map basename->Uint8Array of companion drops (for external .bin).
+function parseMeshFile(buf, isGltfText, files){
+  const t0 = (typeof performance!=="undefined"?performance.now():Date.now());
+  let json, bin = null;
+  if (isGltfText){
+    json = JSON.parse(new TextDecoder().decode(buf));
+  } else {
+    ({json, bin} = parseGLBContainer(buf));
+  }
+  checkExtensions(json);
+  const scene = json.scenes && json.scenes[json.scene||0];
+  if (!scene) throw new Error("no scene in file");
+  const warnings = [], prims = [];
+  let totalTris = 0, totalVerts = 0;
+  let bbox = null;
+  let meshes = 0;
+  const meshEntries = [];
+  const seen = new Set();
+  function walk(ni, parent){
+    if (seen.has(ni)) return; seen.add(ni);
+    const n = json.nodes[ni]; if (!n) return;
+    const world = M4.mul(parent, nodeLocalMatrix(n));
+    if (n.mesh != null) meshEntries.push({ mesh: json.meshes[n.mesh], world, node: ni });
+    (n.children||[]).forEach(c=>walk(c, world));
+  }
+  (scene.nodes||[]).forEach(r=>walk(r, M4.I()));
+  for (const entry of meshEntries){
+    meshes++;
+    for (const prim of (entry.mesh.primitives||[])){
+      const g = buildPrimitive(json, bin, files, entry.mesh, prim, entry.world, warnings);
+      if (!g) continue;
+      g.meshNode = entry.node; // MOTION: mesh node index for the post-skin transform
+      totalTris += g.tris; totalVerts += g.verts;
+      const bb = bboxOfAccessor(json, prim.attributes.POSITION, entry.world);
+      bbox = bbox ? unionBBox(bbox, bb) : bb;
+      prims.push(g);
+    }
+  }
+  if (!prims.length) throw new Error("no renderable triangle primitives found");
+  const parseMs = Math.round((typeof performance!=="undefined"?performance.now():Date.now()) - t0);
+  return { json, bin, prims, warnings, totalTris, totalVerts, meshes, bbox, parseMs };
+}
+function unionBBox(a,b){
+  return {
+    min:[Math.min(a.min[0],b.min[0]),Math.min(a.min[1],b.min[1]),Math.min(a.min[2],b.min[2])],
+    max:[Math.max(a.max[0],b.max[0]),Math.max(a.max[1],b.max[1]),Math.max(a.max[2],b.max[2])]
+  };
+}
+// ---- motion: animation sampling + linear-blend skinning (pure, DOM/GL-free) ----
+function slerpQuat(a, b, t){
+  let d = a[0]*b[0] + a[1]*b[1] + a[2]*b[2] + a[3]*b[3];
+  let b2 = b;
+  if (d < 0){ d = -d; b2 = [-b[0], -b[1], -b[2], -b[3]]; }
+  if (d > 0.9995){
+    return [a[0]+(b2[0]-a[0])*t, a[1]+(b2[1]-a[1])*t, a[2]+(b2[2]-a[2])*t, a[3]+(b2[3]-a[3])*t];
+  }
+  const th = Math.acos(Math.min(1, d)), s = Math.sin(th);
+  const wa = Math.sin((1-t)*th)/s, wb = Math.sin(t*th)/s;
+  return [a[0]*wa+b2[0]*wb, a[1]*wa+b2[1]*wb, a[2]*wa+b2[2]*wb, a[3]*wa+b2[3]*wb];
+}
+function seekKeys(times, t){
+  const n = times.length;
+  if (t <= times[0]) return [0, 0, 0];
+  if (t >= times[n-1]) return [n-1, n-1, 0];
+  let lo = 0, hi = n-1;
+  while (hi - lo > 1){ const mid = (lo+hi)>>1; if (times[mid] <= t) lo = mid; else hi = mid; }
+  const span = times[hi] - times[lo];
+  return [lo, hi, span > 0 ? (t - times[lo])/span : 0];
+}
+// Sample one animation channel at time t. Supports LINEAR (lerp/slerp),
+// STEP and CUBICSPLINE (cubic Hermite through the stored tangents).
+function sampleChannel(ch, t){
+  const {times, values, ncomp, interp} = ch;
+  const n = times.length;
+  if (n === 0) return new Array(ncomp).fill(0);
+  const oSpline = interp === "CUBICSPLINE" ? 3 : 1;
+  if (n === 1 || t <= times[0] || t >= times[n-1] || interp === "STEP"){
+    const i = t <= times[0] ? 0 : (t >= times[n-1] ? n-1 : seekKeys(times, t)[0]);
+    const o = (oSpline === 3 ? 3*i+1 : i) * ncomp;
+    const out = new Array(ncomp);
+    for (let c=0;c<ncomp;c++) out[c] = values[o+c];
+    return out;
+  }
+  const [i0, i1, u] = seekKeys(times, t);
+  const o0 = (oSpline === 3 ? 3*i0+1 : i0) * ncomp;
+  if (oSpline === 3){
+    const dt = times[i1] - times[i0];
+    const o1 = (3*i1+1)*ncomp, tan0 = (3*i0+2)*ncomp, tan1 = (3*i1)*ncomp;
+    const u2 = u*u, u3 = u2*u;
+    const h00 = 2*u3-3*u2+1, h10 = u3-2*u2+u, h01 = -2*u3+3*u2, h11 = u3-u2;
+    const out = new Array(ncomp);
+    for (let c=0;c<ncomp;c++){
+      out[c] = h00*values[o0+c] + h10*dt*values[tan0+c] + h01*values[o1+c] + h11*dt*values[tan1+c];
+    }
+    if (ncomp === 4){ const L = Math.hypot(out[0],out[1],out[2],out[3])||1; out[0]/=L; out[1]/=L; out[2]/=L; out[3]/=L; }
+    return out;
+  }
+  if (ncomp === 4){ // rotation quaternion
+    return slerpQuat(
+      [values[o0], values[o0+1], values[o0+2], values[o0+3]],
+      [values[i1*4], values[i1*4+1], values[i1*4+2], values[i1*4+3]], u);
+  }
+  const o1 = i1 * ncomp, out = new Array(ncomp);
+  for (let c=0;c<ncomp;c++) out[c] = values[o0+c] + (values[o1+c]-values[o0+c])*u;
+  return out;
+}
+// Build pure motion context: parents map, evaluated animation channel data,
+// first skin (joints + inverseBindMatrices) and per-primitive skin attributes.
+// primSkins is aligned 1:1 with parseMeshFile's scene.prims order (same walk,
+// same skip rules: non-TRIANGLES modes and POSITION-less prims are skipped).
+function buildMotion(json, bin, files, warnings){
+  const out = { parents:null, animations:[], skin:null, primSkins:[] };
+  const parents = new Int32Array(json.nodes.length).fill(-1);
+  json.nodes.forEach((n,i)=>{ (n.children||[]).forEach(c=>{ parents[c] = i; }); });
+  out.parents = parents;
+  (json.animations||[]).forEach((a, ai)=>{
+    const channels = [];
+    let dur = 0, keys = 0;
+    for (const c of (a.channels||[])){
+      const tg = c.target || {};
+      if (tg.node == null){ warnings.push("animation channel without a node target skipped"); continue; }
+      const s = (a.samplers||[])[c.sampler];
+      if (!s){ warnings.push("animation channel with missing sampler skipped"); continue; }
+      if (tg.path !== "translation" && tg.path !== "rotation" && tg.path !== "scale"){
+        warnings.push('unsupported channel path "'+tg.path+'" skipped'); continue;
+      }
+      const node = json.nodes[tg.node];
+      if (node && node.matrix) warnings.push("channel targets node "+tg.node+" which uses a matrix — animated paths override its rest TRS");
+      let times, values, ncomp;
+      try {
+        times = readAccessor(json, bin, files, s.input);
+        values = readAccessor(json, bin, files, s.output);
+        ncomp = NCOMP[json.accessors[s.output].type];
+      } catch(e){ warnings.push("animation sampler unreadable: "+(e.message||e)); continue; }
+      let interp = s.interpolation || "LINEAR";
+      if (interp !== "LINEAR" && interp !== "STEP" && interp !== "CUBICSPLINE"){
+        warnings.push("sampler interpolation "+interp+" unknown — LINEAR used");
+        interp = "LINEAR";
+      }
+      for (let i=0;i<times.length;i++) if (times[i] > dur) dur = times[i];
+      if (times.length > keys) keys = times.length;
+      channels.push({ node: tg.node, path: tg.path, times, values, ncomp, interp });
+    }
+    if (channels.length){
+      out.animations.push({ name: a.name || ("anim "+ai), duration: dur > 0 ? dur : 1, keys, channels });
+    }
+  });
+  if (json.skins && json.skins.length){
+    const sk = json.skins[0];
+    let ibm = null;
+    try { ibm = readAccessor(json, bin, files, sk.inverseBindMatrices); }
+    catch(e){ warnings.push("inverseBindMatrices unreadable: "+(e.message||e)+" — skinning disabled"); }
+    if (ibm) out.skin = { joints: sk.joints.slice(), ibm };
+  }
+  const seen = new Set();
+  const skin0 = out.skin;
+  function walk(ni){
+    if (seen.has(ni)) return; seen.add(ni);
+    const n = json.nodes[ni]; if (!n) return;
+    if (n.mesh != null){
+      for (const prim of (((json.meshes[n.mesh]||{}).primitives)||[])){
+        const attrs = prim.attributes||{};
+        if ((prim.mode != null && prim.mode !== 4) || attrs.POSITION == null) continue; // mirrors buildPrimitive
+        let sd = null;
+        if (skin0 && attrs.JOINTS_0 != null && attrs.WEIGHTS_0 != null){
+          try {
+            const vc = json.accessors[attrs.POSITION].count;
+            const jj = readAccessor(json, bin, files, attrs.JOINTS_0);
+            const ww = readAccessor(json, bin, files, attrs.WEIGHTS_0);
+            if (jj.length === vc*4 && ww.length === vc*4){
+              sd = { joints: Uint16Array.from(jj), weights: Float32Array.from(ww) };
+            } else warnings.push("JOINTS_0/WEIGHTS_0 are not 4 influences per vertex — primitive left unskinned");
+          } catch(e){ warnings.push("skin attributes unreadable: "+(e.message||e)); }
+        }
+        out.primSkins.push(sd);
+      }
+    }
+    (n.children||[]).forEach(c=>walk(c));
+  }
+  (((json.scenes||[])[json.scene||0]||{}).nodes||[]).forEach(r=>walk(r));
+  return out;
+}
+// World matrices for every node at animation time t: rest TRS by default,
+// then each channel's sampled value overrides its path for its node.
+function poseWorlds(json, parents, anim, t){
+  const N = json.nodes.length;
+  const tr = new Float32Array(N*3), ro = new Float32Array(N*4), sc = new Float32Array(N*3);
+  for (let i=0;i<N;i++){
+    const n = json.nodes[i];
+    const tt = n.translation||[0,0,0], rr = n.rotation||[0,0,0,1], ss = n.scale||[1,1,1];
+    tr[i*3]=tt[0]; tr[i*3+1]=tt[1]; tr[i*3+2]=tt[2];
+    ro[i*4]=rr[0]; ro[i*4+1]=rr[1]; ro[i*4+2]=rr[2]; ro[i*4+3]=rr[3];
+    sc[i*3]=ss[0]; sc[i*3+1]=ss[1]; sc[i*3+2]=ss[2];
+  }
+  for (const ch of anim.channels){
+    const v = sampleChannel(ch, t);
+    if (ch.path === "translation"){ tr[ch.node*3]=v[0]; tr[ch.node*3+1]=v[1]; tr[ch.node*3+2]=v[2]; }
+    else if (ch.path === "rotation"){ ro[ch.node*4]=v[0]; ro[ch.node*4+1]=v[1]; ro[ch.node*4+2]=v[2]; ro[ch.node*4+3]=v[3]; }
+    else { sc[ch.node*3]=v[0]; sc[ch.node*3+1]=v[1]; sc[ch.node*3+2]=v[2]; }
+  }
+  const locals = new Array(N);
+  for (let i=0;i<N;i++){
+    locals[i] = M4.fromTRS([tr[i*3],tr[i*3+1],tr[i*3+2]],
+                           [ro[i*4],ro[i*4+1],ro[i*4+2],ro[i*4+3]],
+                           [sc[i*3],sc[i*3+1],sc[i*3+2]]);
+  }
+  const world = new Array(N);
+  const calc = i => world[i] || (world[i] = parents[i] < 0 ? locals[i] : M4.mul(calc(parents[i]), locals[i]));
+  for (let i=0;i<N;i++) calc(i);
+  return world;
+}
+// skinning matrix j = world(joint) * inverseBind(joint)   (glTF 2.0 spec)
+function jointMatrices(skin, world){
+  const n = skin.joints.length, out = new Array(n), b = skin.ibm;
+  for (let j=0;j<n;j++){
+    const o = j*16;
+    out[j] = M4.mul(world[skin.joints[j]],
+      [b[o],b[o+1],b[o+2],b[o+3], b[o+4],b[o+5],b[o+6],b[o+7],
+       b[o+8],b[o+9],b[o+10],b[o+11], b[o+12],b[o+13],b[o+14],b[o+15]]);
+  }
+  return out;
+}
+// Linear-blend skinning of every primitive into one flat world-space array.
+// Weights are normalized defensively (some bakers emit unnormalized sums).
+// Primitives without skin attributes keep their rest pose, carried by their
+// node's animated world matrix — still real motion, never faked skinning.
+function skinPrimsInto(prims, jmats, world, out){
+  let vo = 0;
+  for (const p of prims){
+    const mw = p.meshNode >= 0 ? world[p.meshNode] : null;
+    for (let v=0; v<p.vcount; v++){
+      let x = p.pos[v*3], y = p.pos[v*3+1], z = p.pos[v*3+2];
+      if (!p.skinnable){
+        if (mw){
+          const tx = mw[0]*x+mw[4]*y+mw[8]*z+mw[12];
+          const ty = mw[1]*x+mw[5]*y+mw[9]*z+mw[13];
+          const tz = mw[2]*x+mw[6]*y+mw[10]*z+mw[14];
+          x = tx; y = ty; z = tz;
+        }
+      } else {
+        const ws = p.weights, js = p.joints, b = v*4;
+        const inv = 1 / Math.max(ws[b]+ws[b+1]+ws[b+2]+ws[b+3], 1e-9);
+        let ax = 0, ay = 0, az = 0;
+        for (let k=0;k<4;k++){
+          const w = ws[b+k]*inv;
+          if (w <= 0) continue;
+          const m = jmats[js[b+k]];
+          ax += w*(m[0]*x + m[4]*y + m[8]*z + m[12]);
+          ay += w*(m[1]*x + m[5]*y + m[9]*z + m[13]);
+          az += w*(m[2]*x + m[6]*y + m[10]*z + m[14]);
+        }
+        x = ax; y = ay; z = az;
+        if (mw){
+          const tx = mw[0]*x+mw[4]*y+mw[8]*z+mw[12];
+          const ty = mw[1]*x+mw[5]*y+mw[9]*z+mw[13];
+          const tz = mw[2]*x+mw[6]*y+mw[10]*z+mw[14];
+          x = tx; y = ty; z = tz;
+        }
+      }
+      out[vo*3] = x; out[vo*3+1] = y; out[vo*3+2] = z;
+      vo++;
+    }
+  }
+}
+function jointPoints(world, joints){
+  const out = new Float32Array(joints.length*3);
+  for (let i=0;i<joints.length;i++){
+    const m = world[joints[i]];
+    out[i*3] = m[12]; out[i*3+1] = m[13]; out[i*3+2] = m[14];
+  }
+  return out;
+}
+// ============================= PURE PARSER END =============================
+
+// ------------------------------- WebGL side -------------------------------
+const canvas = document.getElementById("gl");
+const gl = canvas.getContext("webgl", {antialias:true});
+const statusEl = document.getElementById("status");
+const hudEl = document.getElementById("hud");
+const statsEl = document.getElementById("stats");
+if (!gl){ statusEl.textContent = "WebGL unavailable in this browser — surface is dead here, honestly."; }
+
+const VS = [
+  "attribute vec3 aPos; attribute vec3 aNor; attribute vec3 aCol;",
+  "uniform mat4 uProj, uView, uModel; uniform mat3 uNMat;",
+  "varying vec3 vN; varying vec3 vC; varying vec3 vW;",
+  "void main(){",
+  "  vec4 w = uModel * vec4(aPos, 1.0);",
+  "  vW = w.xyz; vN = uNMat * aNor; vC = aCol;",
+  "  gl_Position = uProj * uView * w;",
+  "}"].join("\n");
+const FS = [
+  "precision mediump float;",
+  "varying vec3 vN; varying vec3 vC; varying vec3 vW;",
+  "uniform vec3 uEye; uniform float uUnlit; uniform vec3 uTint;",
+  "void main(){",
+  "  vec3 base = (dot(vC,vC) > 0.000001 ? vC : vec3(0.60,0.64,0.62)) * uTint;",
+  "  if (uUnlit > 0.5){ gl_FragColor = vec4(base, 1.0); return; }",
+  "  vec3 n = normalize(vN);",
+  "  vec3 l1 = normalize(vec3(0.5, 0.9, 0.6));",   // key, warm-neutral
+  "  vec3 l2 = normalize(vec3(-0.6, 0.15, -0.8));", // rim, the room's cyan
+  "  float d1 = max(dot(n,l1), 0.0), d2 = max(dot(n,l2), 0.0);",
+  "  vec3 col = base*(0.16 + 0.9*d1) + vec3(0.20,0.55,0.62)*d2*0.45;",
+  "  vec3 h = normalize(l1 + normalize(uEye - vW));",
+  "  col += vec3(0.35)*pow(max(dot(n,h),0.0), 32.0)*0.3;",
+  "  gl_FragColor = vec4(col, 1.0);",
+  "}"].join("\n");
+
+function shader(type, src){
+  const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error("shader: "+gl.getShaderInfoLog(s));
+  return s;
+}
+let prog = null, loc = {};
+if (gl){
+  prog = gl.createProgram();
+  gl.attachShader(prog, shader(gl.VERTEX_SHADER, VS));
+  gl.attachShader(prog, shader(gl.FRAGMENT_SHADER, FS));
+  gl.bindAttribLocation(prog, 0, "aPos");
+  gl.bindAttribLocation(prog, 1, "aNor");
+  gl.bindAttribLocation(prog, 2, "aCol");
+  gl.linkProgram(prog);
+  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error("link: "+gl.getProgramInfoLog(prog));
+  gl.useProgram(prog);
+  for (const n of ["uProj","uView","uModel","uNMat","uEye","uUnlit","uTint"]) loc[n] = gl.getUniformLocation(prog, n);
+  gl.enable(gl.DEPTH_TEST);
+  gl.clearColor(0.012, 0.031, 0.024, 1); // --bg #030806
+}
+
+function uploadGeometry(g){
+  g.vboPos = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, g.vboPos);
+  gl.bufferData(gl.ARRAY_BUFFER, g.pos, gl.STATIC_DRAW);
+  g.vboNor = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, g.vboNor);
+  gl.bufferData(gl.ARRAY_BUFFER, g.nor, gl.STATIC_DRAW);
+  if (g.col){ g.vboCol = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, g.vboCol);
+    gl.bufferData(gl.ARRAY_BUFFER, g.col, gl.STATIC_DRAW); }
+  g.ibo = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, g.ibo);
+  g.idx32 = g.idx instanceof Uint32Array;
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, g.idx, gl.STATIC_DRAW);
+  g.idx = null; g.pos = null; g.nor = null; g.col = null; // CPU copies freed
+}
+// state
+let SCENE = null;       // {prims, grid, bbox}
+let cam = {yaw:0.7, pitch:0.45, baseDist:3, center:[0,0,0]};
+let wire=false, turntable=true, showGrid=true;
+let lastT = 0, dragging = false;
+
+function normalMat3(m){
+  // inverse-transpose of upper 3x3
+  const a=m[0],b=m[1],c=m[2], d=m[4],e=m[5],f=m[6], g=m[8],h=m[9],i=m[10];
+  const A=e*i-f*h, B=f*g-d*i, C=d*h-e*g;
+  const det=a*A+b*B+c*C || 1e-9;
+  const id=1/det;
+  return new Float32Array([
+    A*id, (c*h-b*i)*id, (b*f-c*e)*id,
+    B*id, (a*i-c*g)*id, (c*d-a*f)*id,
+    C*id, (b*g-a*h)*id, (a*e-b*d)*id ]);
+}
+function perspective(fovy, aspect, near, far){
+  const f = 1/Math.tan(fovy/2), nf = 1/(near-far);
+  return new Float32Array([f/aspect,0,0,0, 0,f,0,0, 0,0,(far+near)*nf,-1, 0,0,2*far*near*nf,0]);
+}
+function lookAt(eye, ct, up){
+  const zx=eye[0]-ct[0], zy=eye[1]-ct[1], zz=eye[2]-ct[2];
+  let zl=Math.hypot(zx,zy,zz)||1; const z=[zx/zl,zy/zl,zz/zl];
+  const x=[up[1]*z[2]-up[2]*z[1], up[2]*z[0]-up[0]*z[2], up[0]*z[1]-up[1]*z[0]];
+  let xl=Math.hypot(x[0],x[1],x[2])||1; x[0]/=xl;x[1]/=xl;x[2]/=xl;
+  const y=[z[1]*x[2]-z[2]*x[1], z[2]*x[0]-z[0]*x[2], z[0]*x[1]-z[1]*x[0]];
+  return new Float32Array([
+    x[0],y[0],z[0],0, x[1],y[1],z[1],0, x[2],y[2],z[2],0,
+    -(x[0]*eye[0]+x[1]*eye[1]+x[2]*eye[2]),
+    -(y[0]*eye[0]+y[1]*eye[1]+y[2]*eye[2]),
+    -(z[0]*eye[0]+z[1]*eye[1]+z[2]*eye[2]), 1 ]);
+}
+function resize(){
+  const dpr = window.devicePixelRatio||1;
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  if (canvas.width !== (w*dpr|0) || canvas.height !== (h*dpr|0)){
+    canvas.width = w*dpr|0; canvas.height = h*dpr|0;
+  }
+}
+function frame(t){
+  requestAnimationFrame(frame);
+  if (!gl) return;
+  const dt = Math.min((t-lastT)/1000 || 0, 0.05); lastT = t;
+  renderMotion(dt);
+  if (turntable && SCENE && !dragging) cam.yaw += dt*0.4;
+  resize();
+  gl.viewport(0,0,canvas.width,canvas.height);
+  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+  if (!SCENE) return;
+  const bb = SCENE.bbox;
+  const c = cam.center, r = cam.baseDist;
+  const eye = [
+    c[0] + r*Math.cos(cam.pitch)*Math.cos(cam.yaw),
+    c[1] + r*Math.sin(cam.pitch),
+    c[2] + r*Math.cos(cam.pitch)*Math.sin(cam.yaw)];
+  const aspect = canvas.width/Math.max(canvas.height,1);
+  const proj = perspective(0.9, aspect, r*0.01, r*20);
+  const view = lookAt(eye, c, [0,1,0]);
+  gl.uniformMatrix4fv(loc.uProj, false, proj);
+  gl.uniformMatrix4fv(loc.uView, false, view);
+  gl.uniform3f(loc.uEye, eye[0], eye[1], eye[2]);
+  const drawPrim = (g, mode) => {
+    gl.bindBuffer(gl.ARRAY_BUFFER, g.vboPos);
+    gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,3,gl.FLOAT,false,0,0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, g.vboNor);
+    gl.enableVertexAttribArray(1); gl.vertexAttribPointer(1,3,gl.FLOAT,false,0,0);
+    if (g.vboCol){ gl.bindBuffer(gl.ARRAY_BUFFER, g.vboCol);
+      gl.enableVertexAttribArray(2); gl.vertexAttribPointer(2,3,gl.FLOAT,false,0,0);
+    } else { gl.disableVertexAttribArray(2); gl.vertexAttrib3f(2, 0,0,0); }
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, mode==="lines" ? g.lineIbo : g.ibo);
+    const type = g.idx32 ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT;
+    const count = mode==="lines" ? g.lineCount : g.triCount;
+    gl.drawElements(mode==="lines"?gl.LINES:gl.TRIANGLES, count, type, 0);
+  };
+  // grid (world floor at bbox bottom)
+  if (showGrid && SCENE.grid){
+    gl.uniformMatrix4fv(loc.uModel, false, new Float32Array(M4.I()));
+    gl.uniformMatrix3fv(loc.uNMat, false, normalMat3(M4.I()));
+    gl.uniform1f(loc.uUnlit, 1);
+    gl.uniform3f(loc.uTint, 0.10, 0.34, 0.38);
+    gl.bindBuffer(gl.ARRAY_BUFFER, SCENE.grid.vbo);
+    gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0,3,gl.FLOAT,false,0,0);
+    gl.disableVertexAttribArray(1); gl.vertexAttrib3f(1, 0,1,0);
+    gl.disableVertexAttribArray(2); gl.vertexAttrib3f(2, 0,0,0);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, SCENE.grid.ibo);
+    gl.drawElements(gl.LINES, SCENE.grid.count, gl.UNSIGNED_SHORT, 0);
+  }
+  for (const g of SCENE.prims){
+    const wm = new Float32Array(g.world);
+    gl.uniformMatrix4fv(loc.uModel, false, wm);
+    gl.uniformMatrix3fv(loc.uNMat, false, normalMat3(g.world));
+    if (wire && g.lineIbo){
+      gl.uniform1f(loc.uUnlit, 0);
+      gl.uniform3f(loc.uTint, 0.10, 0.16, 0.15); // dark fill under wire
+      gl.enable(gl.POLYGON_OFFSET_FILL); gl.polygonOffset(1, 1);
+      drawPrim(g, "tris");
+      gl.disable(gl.POLYGON_OFFSET_FILL);
+      gl.uniform1f(loc.uUnlit, 1);
+      gl.uniform3f(loc.uTint, 0.487, 0.961, 1.0); // --accent #7cf5ff
+      drawPrim(g, "lines");
+    } else {
+      gl.uniform1f(loc.uUnlit, 0);
+      gl.uniform3f(loc.uTint, 1,1,1);
+      drawPrim(g, "tris");
+    }
+  }
+}
+
+function makeGrid(bb){
+  const cx=(bb.min[0]+bb.max[0])/2, cz=(bb.min[2]+bb.max[2])/2, y=bb.min[1];
+  const rad = Math.max(bb.max[0]-bb.min[0], bb.max[2]-bb.min[2])*0.8 + 0.001;
+  const N=10, verts=[], idx=[];
+  for (let i=0;i<=N;i++){
+    const p=-rad+2*rad*i/N;
+    verts.push(cx+p,y,cz-rad, cx+p,y,cz+rad, cx-rad,y,cz+p, cx+rad,y,cz+p);
+    const b=i*4; idx.push(b,b+1, b+2,b+3);
+  }
+  const vbo=gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER,vbo);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(verts),gl.STATIC_DRAW);
+  const ibo=gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ibo);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(idx),gl.STATIC_DRAW);
+  return {vbo, ibo, count: idx.length};
+}
+
+function humanBytes(n){
+  if (n < 1024) return n+" B";
+  if (n < 1048576) return (n/1024).toFixed(1)+" KB";
+  return (n/1048576).toFixed(2)+" MB";
+}
+function band(tris){
+  if (tris < 50000)  return ['band-low',  "LOW — dungeon-ready as baked"];
+  if (tris < 300000) return ['band-mid',  "MID — keep silhouette under decimation"];
+  return              ['band-high', "HIGH — decimate before dungeon use"];
+}
+function updatePanel(meta, fileLabel){
+  const [cls, label] = band(meta.totalTris);
+  const d = [
+    meta.bbox.max[0]-meta.bbox.min[0],
+    meta.bbox.max[1]-meta.bbox.min[1],
+    meta.bbox.max[2]-meta.bbox.min[2]];
+  const rows = [
+    ["file", fileLabel],
+    ["size", humanBytes(meta.fileSize)],
+    ["triangles", meta.totalTris.toLocaleString()],
+    ["vertices", meta.totalVerts.toLocaleString()],
+    ["meshes", String(meta.meshes)],
+    ["primitives", String(meta.prims.length)],
+    ["parse time", meta.parseMs+" ms"],
+    ["bbox X·Y·Z", d.map(v=>v.toFixed(3)).join(" · ")],
+    ["normals", meta.flatNormalsUsed ? "computed flat (bake had none)" : "from file"],
+    ["vertex colors", meta.hasColors ? "yes" : "no"],
+    ["band", ""],
+  ];
+  statsEl.innerHTML = rows.map(r=>
+    `<tr><td>${r[0]}</td><td>${r[0]==="band" ? `<span class="${cls}">${label}</span>` : r[1]}</td></tr>`
+  ).join("");
+  if (meta.warnings.length){
+    statusEl.innerHTML = meta.warnings.map(w=>`<span class="warn">! ${w}</span>`).join("<br>");
+  } else statusEl.textContent = "";
+}
+function loadFileBuffer(buf, name, files){
+  if (!gl){ return; }
+  try{
+    const isGltf = /\.gltf$/i.test(name);
+    const scene = parseMeshFile(buf, isGltf, files||new Map());
+    // MOTION v1 — capture animation/skin data and build the motion buffers
+    // while the CPU-side vertex/index arrays are still alive (upload frees them)
+    setupMotion(scene, files || new Map(), name);
+    let flatNormalsUsed=false, hasColors=false;
+    // upload
+    for (const g of scene.prims){
+      if (g.flatNormals) flatNormalsUsed = true;
+      hasColors = hasColors || !!g.col;
+      // build line indices now, while CPU index array is alive
+      const Arr = g.idx instanceof Uint32Array ? Uint32Array : Uint16Array;
+      if (g.tris*6 <= 24e6){
+        const li = new Arr(g.tris*6);
+        for (let t=0;t<g.tris;t++){
+          const a=g.idx[t*3],b=g.idx[t*3+1],c=g.idx[t*3+2], o=t*6;
+          li[o]=a;li[o+1]=b; li[o+2]=b;li[o+3]=c; li[o+4]=c;li[o+5]=a;
+        }
+        g.lineIbo = gl.createBuffer(); gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, g.lineIbo);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, li, gl.STATIC_DRAW);
+        g.lineCount = li.length;
+      }
+      g.triCount = g.idx.length;
+      g.idx32 = g.idx instanceof Uint32Array;
+      uploadGeometry(g);
+    }
+    SCENE = { prims: scene.prims, bbox: scene.bbox, grid: makeGrid(scene.bbox) };
+    const size = Math.max(scene.bbox.max[1]-scene.bbox.min[1],
+                Math.hypot(scene.bbox.max[0]-scene.bbox.min[0], scene.bbox.max[2]-scene.bbox.min[2])) || 1;
+    cam.center = [(scene.bbox.min[0]+scene.bbox.max[0])/2,
+                  (scene.bbox.min[1]+scene.bbox.max[1])/2,
+                  (scene.bbox.min[2]+scene.bbox.max[2])/2];
+    cam.baseDist = size*1.9; cam.yaw=0.7; cam.pitch=0.45;
+    updatePanel({
+      totalTris: scene.totalTris, totalVerts: scene.totalVerts, meshes: scene.meshes,
+      prims: scene.prims, parseMs: scene.parseMs, fileSize: buf.byteLength,
+      bbox: scene.bbox, warnings: scene.warnings, flatNormalsUsed, hasColors,
+    }, name);
+    hudEl.textContent = name + "\n" + humanBytes(buf.byteLength);
+  } catch(err){
+    SCENE = null;
+    motionReset();
+    statusEl.innerHTML = `<span class="warn">REFUSED: ${String(err.message||err)}</span>`;
+  }
+}
+
+// ------------------------------ file intake ------------------------------
+const dropEl = document.getElementById("drop");
+const fileInput = document.createElement("input");
+fileInput.type = "file"; fileInput.multiple = true; fileInput.accept = ".glb,.gltf,.bin";
+fileInput.style.display = "none";
+document.body.appendChild(fileInput);
+function handleFiles(fileList){
+  const files = [...fileList];
+  if (!files.length) return;
+  const companions = new Map();
+  for (const f of files){
+    if (!/\.glb$|\.gltf$/i.test(f.name)) companions.set(f.name.toLowerCase(), f);
+  }
+  const main = files.find(f=>/\.glb$/i.test(f.name)) || files.find(f=>/\.gltf$/i.test(f.name));
+  if (!main){ statusEl.textContent = "no .glb/.gltf in the drop — nothing parsed"; return; }
+  const r = new FileReader();
+  r.onload = () => {
+    const buf = r.result;
+    if (/\.glb$/i.test(main.name)){ loadFileBuffer(buf, main.name, new Map()); return; }
+    // gltf: resolve companion .bin files
+    const map = new Map();
+    let pending = companions.size, done = false;
+    const finish = () => {
+      if (done) return; done = true;
+      loadFileBuffer(buf, main.name, map);
+    };
+    if (!pending) { finish(); return; }
+    for (const f of companions.values()){
+      const fr = new FileReader();
+      fr.onload = () => { map.set(f.name.toLowerCase(), new Uint8Array(fr.result)); if (--pending===0) finish(); };
+      fr.onerror = () => { if (--pending===0) finish(); };
+      fr.readAsArrayBuffer(f);
+    }
+  };
+  r.readAsArrayBuffer(main);
+}
+dropEl.addEventListener("click", ()=>fileInput.click());
+fileInput.addEventListener("change", ()=>{ handleFiles(fileInput.files); fileInput.value=""; });
+["dragenter","dragover"].forEach(ev=>window.addEventListener(ev, e=>{
+  e.preventDefault(); dropEl.classList.add("hot");
+}));
+["dragleave","drop"].forEach(ev=>window.addEventListener(ev, e=>{
+  e.preventDefault();
+  if (ev==="drop" || e.target===document.documentElement || !e.relatedTarget) dropEl.classList.remove("hot");
+}));
+window.addEventListener("drop", e=>{
+  e.preventDefault(); dropEl.classList.remove("hot");
+  if (e.dataTransfer && e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+});
+
+// ------------------------------ interaction ------------------------------
+let lastX=0, lastY=0;
+canvas.addEventListener("mousedown", e=>{ dragging=true; lastX=e.clientX; lastY=e.clientY; canvas.classList.add("dragging"); });
+window.addEventListener("mouseup", ()=>{ dragging=false; canvas.classList.remove("dragging"); });
+window.addEventListener("mousemove", e=>{
+  if (!dragging || !SCENE) return;
+  cam.yaw   += (e.clientX-lastX)*0.008;
+  cam.pitch += (e.clientY-lastY)*0.008;
+  cam.pitch = Math.max(-1.45, Math.min(1.45, cam.pitch));
+  lastX=e.clientX; lastY=e.clientY;
+});
+canvas.addEventListener("wheel", e=>{
+  e.preventDefault();
+  if (!SCENE) return;
+  const k = e.deltaY > 0 ? 1.1 : 1/1.1;
+  cam.baseDist = Math.max(0.2, Math.min(50, cam.baseDist*k));
+}, {passive:false});
+
+function toggle(btn, get, set){
+  btn.addEventListener("click", ()=>{ set(!get()); btn.classList.toggle("on", get()); });
+}
+const bWire=document.getElementById("bWire"), bTurn=document.getElementById("bTurn"),
+      bGrid=document.getElementById("bGrid"), bReset=document.getElementById("bReset");
+toggle(bWire, ()=>wire, v=>wire=v);
+toggle(bTurn, ()=>turntable, v=>turntable=v);
+toggle(bGrid, ()=>showGrid, v=>showGrid=v);
+bReset.addEventListener("click", ()=>{ cam.yaw=0.7; cam.pitch=0.45; });
+window.addEventListener("keydown", e=>{
+  const k = e.key.toLowerCase();
+  if (k==="w") bWire.click();
+  else if (k==="t") bTurn.click();
+  else if (k==="g") bGrid.click();
+  else if (k==="r"){ cam.yaw=0.7; cam.pitch=0.45; }
+  else if (k==="p" && MOT.ready) bPlay.click();
+  else if (k==="o" && MOT.ready) bOnion.click();
+  else if (k==="s" && MOT.ready) bBones.click();
+  else if (k==="m" && MOT.ready) bMesh.click();
+});
+// ============================== MOTION v1 ==============================
+// Animation evaluation + linear-blend skinning, client-side, zero-network.
+// Reads only what the drop already delivered. Onion ghosts are wireframe
+// poses colored gold->cyan by time (the baked strip's palette); the playhead
+// is the live CPU-skinned mesh with bright skeleton. If a file has channels
+// but no skin, the bare joint hierarchy animates instead.
+const mcanvas = document.getElementById("mgl");
+const mgl = mcanvas ? mcanvas.getContext("webgl", {antialias:true}) : null;
+const mstatsEl = document.getElementById("mstats");
+const mstatusEl = document.getElementById("mstatus");
+const mliveEl = document.getElementById("mlive");
+const mSlider = document.getElementById("mSlider");
+const mhudEl = document.getElementById("mhud");
+const memptyEl = document.getElementById("mempty");
+const bPlay = document.getElementById("bPlay");
+const bOnion = document.getElementById("bOnion");
+const bBones = document.getElementById("bBones");
+const bMesh = document.getElementById("bMesh");
+const bMTurn = document.getElementById("bMTurn");
+const MOT_GOLD = [0.910, 0.788, 0.416], MOT_CYAN = [0.487, 0.961, 1.0]; // #e8c96a -> #7cf5ff
+const MOT = {
+  ready:false, skinnable:false, json:null, anim:null, animName:"—", animTotal:0,
+  parents:null, skin:null, prims:[], totalV:0, joints:[], bones:[],
+  frames:0, duration:0, fps:0, channels:0, poses:12,
+  time:0, drawnT:-1, playing:true, onion:true, bonesOn:true, meshOn:true, turn:true,
+  cam:{yaw:0.85, pitch:0.28, dist:5, center:[0,1,0]}, dragging:false,
+  skinned:null, skinnedN:null, playTriIbo:null, playTriCount:0,
+  playWireIbo:null, playWireCount:0, wireI32:false, wireFlat:null,
+  onion:null, sk:null, play:null, grid:null,
+};
+
+const LVS = "attribute vec3 aPos; attribute vec3 aCol; uniform mat4 uProj, uView; uniform float uPtSize; varying vec3 vC;" +
+  "void main(){ gl_Position = uProj * uView * vec4(aPos, 1.0); vC = aCol; gl_PointSize = uPtSize; }";
+const LFS = "precision mediump float; varying vec3 vC; uniform float uAlpha;" +
+  "void main(){ gl_FragColor = vec4(vC, uAlpha); }";
+
+let lineProg = null, lineLoc = {}, triProg = null, triLoc = {};
+if (mgl){
+  mgl.getExtension("OES_element_index_uint");
+  const mShader = (type, src) => {
+    const s = mgl.createShader(type); mgl.shaderSource(s, src); mgl.compileShader(s);
+    if (!mgl.getShaderParameter(s, mgl.COMPILE_STATUS)) throw new Error("motion shader: "+mgl.getShaderInfoLog(s));
+    return s;
+  };
+  const mProgram = (vs, fs) => {
+    const p = mgl.createProgram();
+    mgl.attachShader(p, mShader(mgl.VERTEX_SHADER, vs));
+    mgl.attachShader(p, mShader(mgl.FRAGMENT_SHADER, fs));
+    mgl.bindAttribLocation(p, 0, "aPos");
+    mgl.bindAttribLocation(p, 1, "aNor");
+    mgl.bindAttribLocation(p, 2, "aCol");
+    mgl.linkProgram(p);
+    if (!mgl.getProgramParameter(p, mgl.LINK_STATUS)) throw new Error("motion link: "+mgl.getProgramInfoLog(p));
+    return p;
+  };
+  lineProg = mProgram(LVS, LFS);
+  triProg = mProgram(VS, FS); // same shading model as the main stage
+  for (const n of ["uProj","uView","uPtSize","uAlpha"]) lineLoc[n] = mgl.getUniformLocation(lineProg, n);
+  for (const n of ["uProj","uView","uModel","uNMat","uEye","uUnlit","uTint"]) triLoc[n] = mgl.getUniformLocation(triProg, n);
+  mgl.enable(mgl.DEPTH_TEST);
+  mgl.clearColor(0.012, 0.031, 0.024, 1);
+}
+function mBuf(data, dynamic){
+  const b = mgl.createBuffer();
+  mgl.bindBuffer(mgl.ARRAY_BUFFER, b);
+  mgl.bufferData(mgl.ARRAY_BUFFER, data, dynamic ? mgl.DYNAMIC_DRAW : mgl.STATIC_DRAW);
+  return b;
+}
+function mIBuf(data){
+  const b = mgl.createBuffer();
+  mgl.bindBuffer(mgl.ELEMENT_ARRAY_BUFFER, b);
+  mgl.bufferData(mgl.ELEMENT_ARRAY_BUFFER, data, mgl.STATIC_DRAW);
+  return b;
+}
+function poseColor(k, n){ const u = n <= 1 ? 1 : k/(n-1);
+  return [MOT_GOLD[0]+(MOT_CYAN[0]-MOT_GOLD[0])*u, MOT_GOLD[1]+(MOT_CYAN[1]-MOT_GOLD[1])*u, MOT_GOLD[2]+(MOT_CYAN[2]-MOT_GOLD[2])*u]; }
+function flatFill(n, c){ const a = new Float32Array(n*3);
+  for (let i=0;i<n;i++){ a[i*3]=c[0]; a[i*3+1]=c[1]; a[i*3+2]=c[2]; } return a; }
+
+function motionReset(){
+  MOT.ready = false; MOT.anim = null;
+  mSlider.disabled = true; mSlider.max = "0";
+  mliveEl.textContent = "frame —/—";
+  memptyEl.style.display = "flex";
+  memptyEl.innerHTML = "MOTION — drop an animated .glb above<br>channels are sampled and skinned right here, client-side, same zero-network law";
+}
+function motionRefuse(name, msg, W){
+  MOT.ready = false;
+  memptyEl.style.display = "flex";
+  memptyEl.innerHTML = "MOTION — " + msg;
+  mstatsEl.innerHTML = `<tr><td>file</td><td>${name}</td></tr><tr><td>motion</td><td class="warn">none</td></tr>`;
+  const notes = (W||[]).map(w=>`<span class="warn">! ${w}</span>`).join("<br>");
+  mstatusEl.innerHTML = `<span class="warn">${msg}</span>` + (notes ? "<br>"+notes : "");
+}
+function setPlaying(v){
+  MOT.playing = v;
+  bPlay.classList.toggle("on", v);
+  bPlay.textContent = v ? "pause [P]" : "play [P]";
+}
+function mMakeGrid(bb){
+  const cx = (bb.min[0]+bb.max[0])/2, cz = (bb.min[2]+bb.max[2])/2, y = bb.min[1];
+  const rad = Math.max(bb.max[0]-bb.min[0], bb.max[2]-bb.min[2])*0.8 + 0.001;
+  const N = 10, verts = [], cols = [], idx = [];
+  for (let i=0;i<=N;i++){
+    const p = -rad + 2*rad*i/N;
+    verts.push(cx+p,y,cz-rad, cx+p,y,cz+rad, cx-rad,y,cz+p, cx+rad,y,cz+p);
+    for (let k=0;k<4;k++) cols.push(0.10,0.34,0.38);
+    const b = i*4; idx.push(b,b+1, b+2,b+3);
+  }
+  return { vbo: mBuf(new Float32Array(verts)), cbo: mBuf(new Float32Array(cols)),
+           ibo: mIBuf(new Uint16Array(idx)), count: idx.length };
+}
+function setupMotion(scene, files, name){
+  motionReset();
+  if (!mgl){ motionRefuse(name, "WebGL unavailable in this browser — motion surface is dead here, honestly", []); return; }
+  const W = [];
+  let md;
+  try { md = buildMotion(scene.json, scene.bin, files, W); }
+  catch(err){ motionRefuse(name, "motion parse refused: "+String(err.message||err), W); return; }
+  if (!md.animations.length){
+    motionRefuse(name, "no animation channels in this file — static drop, nothing to play", W);
+    return;
+  }
+  const prims = scene.prims.map((g, i)=>({
+    vcount: g.verts, pos: g.pos, idx: g.idx,
+    joints: md.primSkins[i] ? md.primSkins[i].joints : null,
+    weights: md.primSkins[i] ? md.primSkins[i].weights : null,
+    meshNode: (g.meshNode != null) ? g.meshNode : -1,
+    skinnable: !!(md.skin && md.primSkins[i]),
+  }));
+  const totalV = prims.reduce((s,p)=>s+p.vcount, 0);
+  let skinnable = prims.length > 0 && prims.every(p=>p.skinnable);
+  const anim = md.animations[0];
+  let joints = md.skin ? md.skin.joints.slice() : [...new Set(anim.channels.map(c=>c.node))];
+  const jset = new Set(joints);
+  const bones = [];
+  joints.forEach(j=>{ const p = md.parents[j]; if (p >= 0 && jset.has(p)) bones.push([p, j]); });
+  if (!md.skin) W.push("no skin in file — animating the bare joint hierarchy (honest motion beats fake skinning)");
+  // CPU cost guards, stated honestly rather than silently degraded
+  if (skinnable && totalV > 300000){
+    skinnable = false;
+    W.push(totalV.toLocaleString()+" skinned verts exceed the CPU preview budget (300k) — skeleton-only motion");
+  }
+  let poses = 12;
+  if (skinnable && poses*totalV > 2e6){
+    poses = Math.max(4, Math.min(24, Math.floor(2e6/totalV)));
+    W.push("onion reduced to "+poses+" poses to fit the ghost buffer budget");
+  }
+  MOT.json = scene.json; MOT.parents = md.parents; MOT.skin = md.skin;
+  MOT.prims = prims; MOT.totalV = totalV; MOT.skinnable = skinnable;
+  MOT.joints = joints; MOT.bones = bones;
+  MOT.anim = anim; MOT.animName = anim.name || "anim 0"; MOT.animTotal = md.animations.length;
+  MOT.frames = Math.max(anim.keys, 2);
+  MOT.duration = anim.duration;
+  MOT.fps = anim.duration > 0 ? (anim.keys-1)/anim.duration : 0;
+  MOT.channels = anim.channels.length;
+  MOT.poses = poses;
+  MOT.time = 0; MOT.drawnT = -1;
+  setPlaying(true);
+  // playhead triangle + wireframe index unions (one flat vertex pool)
+  let vo = 0;
+  const triI = [], wireI = [];
+  for (const p of prims){
+    p.base = vo;
+    for (let i=0;i<p.idx.length;i++) triI.push(p.idx[i]+vo);
+    const nTri = p.idx.length/3|0;
+    for (let t=0;t<nTri;t++){
+      const a=p.idx[t*3]+vo, b=p.idx[t*3+1]+vo, c=p.idx[t*3+2]+vo;
+      wireI.push(a,b, b,c, c,a);
+    }
+    vo += p.vcount;
+  }
+  MOT.wireI32 = vo > 65535;
+  const WireArr = MOT.wireI32 ? Uint32Array : Uint16Array;
+  MOT.wireFlat = wireI;
+  MOT.playTriCount = triI.length;
+  MOT.playWireCount = wireI.length;
+  MOT.playTriIbo = MOT.playTriCount ? mIBuf(new WireArr(triI)) : null;
+  MOT.playWireIbo = (MOT.playWireCount && MOT.playWireCount <= 24e6) ? mIBuf(new WireArr(wireI)) : null;
+  if (!MOT.playWireIbo) MOT.playWireCount = 0;
+  // motion bbox: coarse scan across the whole clip (frames camera + grid)
+  const scratch = skinnable ? new Float32Array(totalV*3) : null;
+  const bb = {min:[Infinity,Infinity,Infinity], max:[-Infinity,-Infinity,-Infinity]};
+  for (let s=0;s<24;s++){
+    const t = anim.duration * s/23;
+    const world = poseWorlds(scene.json, md.parents, anim, t);
+    let pts, pn;
+    if (skinnable){
+      skinPrimsInto(prims, jointMatrices(md.skin, world), world, scratch);
+      pts = scratch; pn = totalV;
+    } else { pts = jointPoints(world, joints); pn = joints.length; }
+    for (let i=0;i<pn;i++) for (let k=0;k<3;k++){
+      const v = pts[i*3+k];
+      if (v < bb.min[k]) bb.min[k] = v;
+      if (v > bb.max[k]) bb.max[k] = v;
+    }
+  }
+  const ctr = [(bb.min[0]+bb.max[0])/2, (bb.min[1]+bb.max[1])/2, (bb.min[2]+bb.max[2])/2];
+  const diag = Math.hypot(bb.max[0]-bb.min[0], bb.max[1]-bb.min[1], bb.max[2]-bb.min[2]) || 1;
+  MOT.cam = { yaw:0.85, pitch:0.28, dist: diag*1.35 + 0.001, center: ctr };
+  MOT.grid = mMakeGrid(bb);
+  // buffers: playhead skeleton always exists; skinned mesh only when skinnable
+  MOT.sk = {
+    jpts: mBuf(new Float32Array(joints.length*3), true),
+    jcol: mBuf(flatFill(joints.length, MOT_GOLD), false),
+    blines: mBuf(new Float32Array(bones.length*6), true),
+    bcol: mBuf(flatFill(bones.length*2, MOT_CYAN), false),
+  };
+  MOT.skinned = skinnable ? new Float32Array(totalV*3) : null;
+  MOT.skinnedN = skinnable ? new Float32Array(totalV*3) : null;
+  MOT.play = skinnable ? {
+    vbo: mBuf(MOT.skinned, true),
+    nbo: mBuf(MOT.skinnedN, true),
+    wcol: mBuf(flatFill(totalV, MOT_CYAN), false),
+  } : null;
+  buildOnion();
+  // readouts — the motion calibrator's chair
+  const interps = {};
+  for (const c of anim.channels){ const k = c.interp; interps[k] = (interps[k]||0)+1; }
+  const interpSummary = Object.keys(interps).map(k=>k+"\u00d7"+interps[k]).join(" \u00b7 ");
+  const rows = [
+    ["file", name],
+    ["animation", MOT.animName + (MOT.animTotal>1 ? " (playing 1/"+MOT.animTotal+")" : "")],
+    ["frames", String(MOT.frames)],
+    ["joints", String(joints.length)],
+    ["channels", String(MOT.channels)],
+    ["duration", MOT.duration.toFixed(3)+" s"],
+    ["fps", MOT.fps ? "~"+MOT.fps.toFixed(2) : "—"],
+    ["keys", anim.keys+" (max channel)"],
+    ["interpolation", interpSummary],
+    ["influences/vertex", skinnable ? "4" : "—"],
+    ["skinned verts", skinnable ? totalV.toLocaleString()+" (CPU/frame)" : "skeleton-only"],
+    ["onion poses", poses+" (gold\u2192cyan)"],
+  ];
+  mstatsEl.innerHTML = rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join("");
+  mstatusEl.innerHTML = W.map(w=>`<span class="warn">! ${w}</span>`).join("<br>");
+  mSlider.max = String(MOT.frames-1);
+  mSlider.value = "0";
+  mSlider.disabled = false;
+  mhudEl.textContent = name;
+  memptyEl.style.display = "none";
+  document.querySelectorAll("#motionSec .poseBtn").forEach(b=>b.classList.toggle("on", Number(b.textContent)===12));
+  MOT.ready = true;
+}
+// onion ghosts: N sampled poses, wireframe + skeleton, gold->cyan by time
+function buildOnion(){
+  if (MOT.onion && MOT.onion.free) for (const b of MOT.onion.free) mgl.deleteBuffer(b);
+  const N = MOT.poses, totalV = MOT.totalV, dur = MOT.duration;
+  const wireLen = MOT.playWireCount;
+  const showMeshLines = MOT.skinnable && wireLen > 0 && N*totalV <= 2e6;
+  const linePos = showMeshLines ? new Float32Array(N*totalV*3) : null;
+  const lineCol = showMeshLines ? new Float32Array(N*totalV*3) : null;
+  const wireI = showMeshLines ? new (N*totalV > 65535 ? Uint32Array : Uint16Array)(N*wireLen) : null;
+  const ptPos = new Float32Array(N*MOT.joints.length*3);
+  const ptCol = new Float32Array(N*MOT.joints.length*3);
+  const bnPos = new Float32Array(N*MOT.bones.length*6);
+  const bnCol = new Float32Array(N*MOT.bones.length*6);
+  const scratch = MOT.skinnable ? new Float32Array(totalV*3) : null;
+  for (let k=0;k<N;k++){
+    const t = dur * (N > 1 ? k/(N-1) : 0);
+    const world = poseWorlds(MOT.json, MOT.parents, MOT.anim, t);
+    const col = poseColor(k, N);
+    if (showMeshLines){
+      skinPrimsInto(MOT.prims, jointMatrices(MOT.skin, world), world, scratch);
+      linePos.set(scratch, k*totalV*3);
+      for (let v=0;v<totalV;v++) lineCol.set(col, (k*totalV+v)*3);
+      for (let i=0;i<wireLen;i++) wireI[k*wireLen+i] = MOT.wireFlat[i] + k*totalV;
+    }
+    const jp = jointPoints(world, MOT.joints);
+    ptPos.set(jp, k*MOT.joints.length*3);
+    for (let j=0;j<MOT.joints.length;j++) ptCol.set(col, (k*MOT.joints.length+j)*3);
+    for (let b=0;b<MOT.bones.length;b++){
+      const ia = MOT.joints.indexOf(MOT.bones[b][0]), ib = MOT.joints.indexOf(MOT.bones[b][1]);
+      bnPos.set([jp[ia*3],jp[ia*3+1],jp[ia*3+2], jp[ib*3],jp[ib*3+1],jp[ib*3+2]], (k*MOT.bones.length+b)*6);
+      bnCol.set([col[0],col[1],col[2],col[0],col[1],col[2]], (k*MOT.bones.length+b)*6);
+    }
+  }
+  const onion = { free: [], meshCount: 0, meshI32: false };
+  if (showMeshLines){
+    onion.meshPos = mBuf(linePos, false); onion.meshCol = mBuf(lineCol, false);
+    onion.meshIbo = mIBuf(wireI); onion.meshCount = wireI.length;
+    onion.meshI32 = N*totalV > 65535;
+    onion.free.push(onion.meshPos, onion.meshCol, onion.meshIbo);
+  }
+  onion.ptPos = mBuf(ptPos, false); onion.ptCol = mBuf(ptCol, false);
+  onion.ptCount = MOT.joints.length*N;
+  onion.bnPos = mBuf(bnPos, false); onion.bnCol = mBuf(bnCol, false);
+  onion.bnCount = MOT.bones.length*N*2;
+  onion.free.push(onion.ptPos, onion.ptCol, onion.bnPos, onion.bnCol);
+  MOT.onion = onion;
+}
+function motionFrame(){
+  return Math.max(0, Math.min(MOT.frames-1, Math.round(MOT.time*MOT.fps)));
+}
+function fillFlatNormals(){
+  // flat normals from the freshly skinned positions (cheap at preview scale)
+  const P = MOT.skinned, Nr = MOT.skinnedN;
+  let vo = 0;
+  for (const p of MOT.prims){
+    if (p.skinnable && p.idx.length >= 3){
+      for (let t3=0; t3<p.idx.length; t3+=3){
+        const a = p.idx[t3]+vo, b2 = p.idx[t3+1]+vo, c = p.idx[t3+2]+vo;
+        const ax=P[a*3],ay=P[a*3+1],az=P[a*3+2], bx=P[b2*3],by=P[b2*3+1],bz=P[b2*3+2], cx=P[c*3],cy=P[c*3+1],cz=P[c*3+2];
+        const ux=bx-ax,uy=by-ay,uz=bz-az, vx2=cx-ax,vy2=cy-ay,vz2=cz-az;
+        let nx=uy*vz2-uz*vy2, ny=uz*vx2-ux*vz2, nz=ux*vy2-uy*vx2;
+        const L=Math.hypot(nx,ny,nz)||1; nx/=L; ny/=L; nz/=L;
+        for (const i of [a,b2,c]){ Nr[i*3]=nx; Nr[i*3+1]=ny; Nr[i*3+2]=nz; }
+      }
+    }
+    vo += p.vcount;
+  }
+}
+function renderMotion(dt){
+  if (!mgl || !MOT.ready) return;
+  if (MOT.playing && MOT.duration > 0){
+    MOT.time = (MOT.time + dt) % MOT.duration;
+  }
+  if (MOT.time !== MOT.drawnT){
+    MOT.drawnT = MOT.time;
+    const world = poseWorlds(MOT.json, MOT.parents, MOT.anim, MOT.time);
+    const jp = jointPoints(world, MOT.joints);
+    mgl.bindBuffer(mgl.ARRAY_BUFFER, MOT.sk.jpts);
+    mgl.bufferSubData(mgl.ARRAY_BUFFER, 0, jp);
+    const bl = new Float32Array(MOT.bones.length*6);
+    for (let b=0;b<MOT.bones.length;b++){
+      const ia = MOT.joints.indexOf(MOT.bones[b][0]), ib = MOT.joints.indexOf(MOT.bones[b][1]);
+      bl.set([jp[ia*3],jp[ia*3+1],jp[ia*3+2], jp[ib*3],jp[ib*3+1],jp[ib*3+2]], b*6);
+    }
+    mgl.bindBuffer(mgl.ARRAY_BUFFER, MOT.sk.blines);
+    mgl.bufferSubData(mgl.ARRAY_BUFFER, 0, bl);
+    if (MOT.skinnable){
+      skinPrimsInto(MOT.prims, jointMatrices(MOT.skin, world), world, MOT.skinned);
+      fillFlatNormals();
+      mgl.bindBuffer(mgl.ARRAY_BUFFER, MOT.play.vbo);
+      mgl.bufferSubData(mgl.ARRAY_BUFFER, 0, MOT.skinned);
+      mgl.bindBuffer(mgl.ARRAY_BUFFER, MOT.play.nbo);
+      mgl.bufferSubData(mgl.ARRAY_BUFFER, 0, MOT.skinnedN);
+    }
+  }
+  drawMotion(dt);
+  const f = motionFrame();
+  if (MOT.playing || f !== MOT.lastLiveFrame){
+    MOT.lastLiveFrame = f;
+    mSlider.value = String(f);
+    mliveEl.textContent = "t="+MOT.time.toFixed(3)+"s \u00b7 frame "+String(f).padStart(3,"0")+"/"+(MOT.frames-1) +
+      (MOT.playing ? " \u00b7 playing" : " \u00b7 paused");
+  }
+}
+function drawMotion(dt){
+  const dpr = window.devicePixelRatio||1;
+  const w = mcanvas.clientWidth, h = mcanvas.clientHeight;
+  const W2 = w*dpr|0, H2 = h*dpr|0;
+  if (W2 > 0 && (mcanvas.width !== W2 || mcanvas.height !== H2)){ mcanvas.width = W2; mcanvas.height = H2; }
+  mgl.viewport(0, 0, mcanvas.width, mcanvas.height);
+  mgl.clear(mgl.COLOR_BUFFER_BIT|mgl.DEPTH_BUFFER_BIT);
+  if (MOT.turn && !MOT.dragging) MOT.cam.yaw += dt*0.4;
+  const c = MOT.cam;
+  const eye = [
+    c.center[0] + c.dist*Math.cos(c.pitch)*Math.cos(c.yaw),
+    c.center[1] + c.dist*Math.sin(c.pitch),
+    c.center[2] + c.dist*Math.cos(c.pitch)*Math.sin(c.yaw)];
+  const aspect = mcanvas.width/Math.max(mcanvas.height,1);
+  const proj = perspective(0.9, aspect, c.dist*0.01, c.dist*20);
+  const view = lookAt(eye, c.center, [0,1,0]);
+  const wireIdxType = MOT.wireI32 ? mgl.UNSIGNED_INT : mgl.UNSIGNED_SHORT;
+  const bindLine = (pos, col) => {
+    mgl.bindBuffer(mgl.ARRAY_BUFFER, pos);
+    mgl.enableVertexAttribArray(0); mgl.vertexAttribPointer(0,3,mgl.FLOAT,false,0,0);
+    mgl.bindBuffer(mgl.ARRAY_BUFFER, col);
+    mgl.enableVertexAttribArray(2); mgl.vertexAttribPointer(2,3,mgl.FLOAT,false,0,0);
+    mgl.disableVertexAttribArray(1);
+  };
+  mgl.useProgram(lineProg);
+  mgl.uniformMatrix4fv(lineLoc.uProj, false, proj);
+  mgl.uniformMatrix4fv(lineLoc.uView, false, view);
+  mgl.uniform1f(lineLoc.uPtSize, 3*dpr);
+  mgl.uniform1f(lineLoc.uAlpha, 1);
+  if (MOT.grid){
+    bindLine(MOT.grid.vbo, MOT.grid.cbo);
+    mgl.bindBuffer(mgl.ELEMENT_ARRAY_BUFFER, MOT.grid.ibo);
+    mgl.drawElements(mgl.LINES, MOT.grid.count, mgl.UNSIGNED_SHORT, 0);
+  }
+  // ---- onion ghosts: blended, no depth writes ----
+  if (MOT.onion){
+    mgl.enable(mgl.BLEND);
+    mgl.blendFunc(mgl.SRC_ALPHA, mgl.ONE_MINUS_SRC_ALPHA);
+    mgl.depthMask(false);
+    mgl.uniform1f(lineLoc.uAlpha, 0.55);
+    if (MOT.onion.meshCount){
+      bindLine(MOT.onion.meshPos, MOT.onion.meshCol);
+      mgl.bindBuffer(mgl.ELEMENT_ARRAY_BUFFER, MOT.onion.meshIbo);
+      mgl.drawElements(mgl.LINES, MOT.onion.meshCount, MOT.onion.meshI32 ? mgl.UNSIGNED_INT : mgl.UNSIGNED_SHORT, 0);
+    }
+    if (MOT.bonesOn){
+      if (MOT.onion.bnCount){
+        bindLine(MOT.onion.bnPos, MOT.onion.bnCol);
+        mgl.drawArrays(mgl.LINES, 0, MOT.onion.bnCount);
+      }
+      if (MOT.onion.ptCount){
+        bindLine(MOT.onion.ptPos, MOT.onion.ptCol);
+        mgl.drawArrays(mgl.POINTS, 0, MOT.onion.ptCount);
+      }
+    }
+    mgl.depthMask(true);
+    mgl.disable(mgl.BLEND);
+  }
+  // ---- playhead: solid skinned mesh, same shading as the main stage ----
+  if (MOT.skinnable && MOT.meshOn && MOT.play && MOT.playTriCount){
+    mgl.useProgram(triProg);
+    mgl.uniformMatrix4fv(triLoc.uProj, false, proj);
+    mgl.uniformMatrix4fv(triLoc.uView, false, view);
+    mgl.uniformMatrix4fv(triLoc.uModel, false, new Float32Array(M4.I()));
+    mgl.uniformMatrix3fv(triLoc.uNMat, false, normalMat3(M4.I()));
+    mgl.uniform3f(triLoc.uEye, eye[0], eye[1], eye[2]);
+    mgl.uniform1f(triLoc.uUnlit, 0);
+    mgl.uniform3f(triLoc.uTint, 1, 1, 1);
+    mgl.bindBuffer(mgl.ARRAY_BUFFER, MOT.play.vbo);
+    mgl.enableVertexAttribArray(0); mgl.vertexAttribPointer(0,3,mgl.FLOAT,false,0,0);
+    mgl.bindBuffer(mgl.ARRAY_BUFFER, MOT.play.nbo);
+    mgl.enableVertexAttribArray(1); mgl.vertexAttribPointer(1,3,mgl.FLOAT,false,0,0);
+    mgl.disableVertexAttribArray(2); mgl.vertexAttrib3f(2, 0, 0, 0);
+    mgl.bindBuffer(mgl.ELEMENT_ARRAY_BUFFER, MOT.playTriIbo);
+    mgl.drawElements(mgl.TRIANGLES, MOT.playTriCount, wireIdxType, 0);
+    mgl.useProgram(lineProg);
+    mgl.uniformMatrix4fv(lineLoc.uProj, false, proj);
+    mgl.uniformMatrix4fv(lineLoc.uView, false, view);
+  }
+  // ---- playhead wire + bright skeleton on top ----
+  mgl.enable(mgl.BLEND);
+  mgl.blendFunc(mgl.SRC_ALPHA, mgl.ONE_MINUS_SRC_ALPHA);
+  mgl.depthMask(false);
+  if (MOT.skinnable && MOT.meshOn && MOT.playWireCount){
+    mgl.uniform1f(lineLoc.uAlpha, 0.9);
+    bindLine(MOT.play.vbo, MOT.play.wcol);
+    mgl.bindBuffer(mgl.ELEMENT_ARRAY_BUFFER, MOT.playWireIbo);
+    mgl.drawElements(mgl.LINES, MOT.playWireCount, wireIdxType, 0);
+  }
+  if (MOT.bonesOn){
+    mgl.uniform1f(lineLoc.uAlpha, 1);
+    bindLine(MOT.sk.blines, MOT.sk.bcol);
+    mgl.drawArrays(mgl.LINES, 0, MOT.bones.length*2);
+    mgl.uniform1f(lineLoc.uPtSize, 5*dpr);
+    bindLine(MOT.sk.jpts, MOT.sk.jcol);
+    mgl.drawArrays(mgl.POINTS, 0, MOT.joints.length);
+  }
+  mgl.depthMask(true);
+  mgl.disable(mgl.BLEND);
+}
+
+// ------------------------------ motion controls ------------------------------
+bPlay.addEventListener("click", ()=>{ if (MOT.ready) setPlaying(!MOT.playing); });
+[[bOnion,"onion"],[bBones,"bonesOn"],[bMesh,"meshOn"],[bMTurn,"turn"]].forEach(([btn,key])=>{
+  btn.addEventListener("click", ()=>{ MOT[key] = !MOT[key]; btn.classList.toggle("on", MOT[key]); });
+});
+mSlider.addEventListener("input", ()=>{
+  if (!MOT.ready) return;
+  MOT.time = MOT.frames > 1 ? (Number(mSlider.value)/(MOT.frames-1))*MOT.duration : 0;
+  setPlaying(false); // scrubbing pauses: the slider steps frames, honestly
+});
+[6,12,24].forEach(n=>{
+  const btn = document.getElementById("bPoses"+n);
+  if (!btn) return;
+  btn.addEventListener("click", ()=>{
+    if (!MOT.ready) return;
+    MOT.poses = n;
+    document.querySelectorAll("#motionSec .poseBtn").forEach(b=>b.classList.toggle("on", b===btn));
+    buildOnion();
+  });
+});
+// ------------------------------ motion interaction ------------------------------
+let mLastX=0, mLastY=0;
+mcanvas.addEventListener("mousedown", e=>{ MOT.dragging=true; mLastX=e.clientX; mLastY=e.clientY; mcanvas.classList.add("dragging"); });
+window.addEventListener("mouseup", ()=>{ MOT.dragging=false; mcanvas.classList.remove("dragging"); });
+window.addEventListener("mousemove", e=>{
+  if (!MOT.dragging || !MOT.ready) return;
+  MOT.cam.yaw += (e.clientX-mLastX)*0.008;
+  MOT.cam.pitch = Math.max(-1.45, Math.min(1.45, MOT.cam.pitch + (e.clientY-mLastY)*0.008));
+  mLastX=e.clientX; mLastY=e.clientY;
+});
+mcanvas.addEventListener("wheel", e=>{
+  e.preventDefault();
+  if (!MOT.ready) return;
+  const k = e.deltaY > 0 ? 1.1 : 1/1.1;
+  MOT.cam.dist = Math.max(0.2, Math.min(200, MOT.cam.dist*k));
+}, {passive:false});
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

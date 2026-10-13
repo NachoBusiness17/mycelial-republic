@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# P0 secrets containment (audit 2026-09-30 finding #1): block any commit whose
+# staged blobs contain a live .env value (substring match, values never printed).
+#
+# Wired HERE, not .git/hooks/pre-commit, because core.hooksPath=githooks makes
+# .git/hooks inert on this machine — an inert hook file would be a fake fix.
+# If core.hooksPath is ever unset, re-point this gate before relying on it.
+# Gate: tools/precommit_secret_check.py · Receipt: watch/inbox/last_mile_20260930/AG1_SECRETS_CONTAINMENT.md
+set -euo pipefail
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PY="$REPO_ROOT/.venv/Scripts/python.exe"
+command -v "$PY" >/dev/null 2>&1 || PY="python3"
+exec "$PY" "$REPO_ROOT/tools/precommit_secret_check.py"

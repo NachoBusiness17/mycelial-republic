@@ -1,0 +1,23 @@
+{
+  "schema": "seat_contract.v1",
+  "job_id": "vast-verbosity",
+  "goal": "Make the vast lifecycle VERBOSE in the room and PLANNED instead of guessed. Three deliverables: (1) watch/blade_room_bridge.py — a tiny run-once bridge that tails state/vast/blade_buyer.log + state/vast/boot_watch.log and posts new lifecycle lines into watch/room.jsonl as seat='blade_buyer' thread='blades' (contract-signed / gate-passed / proxy-dark / READY / reap events); (2) state/vast/launch_plan.schema.json + a generator mag/blade_plan.py: `python -m mag.blade_plan <template-name> <work-description>` writes state/vast/launch_plans/<ts>_<template>.json with template, dph (from blade_templates.json), EXPECTED boot minutes (median pull+ready from boot_watch.log history), ttl_h from covenant, est_cost = dph*ttl; (3) tests/test_blade_plan.py. The rule it encodes: NO launch without a plan file, and every phase speaks in the room.",
+  "invariants": [
+    "boot-time expectations come ONLY from boot_watch.log history — no guessed numbers; if history <3 boots for a template, expected_boot_min = null with note 'no history yet'",
+    "bridge is run-once (like codex_room.py) — no daemon; the buyer/cadence invokes it per pass",
+    "covenant caps read-only; buyer_enabled stays false",
+    "Edit tool for source; no docker; no instances"
+  ],
+  "forbidden_moves": ["spending", "editing covenant.json", "daemons"],
+  "acceptance_commands": [
+    ".venv/Scripts/python.exe -m mag.blade_plan qwen3-8b-ollama 'test drain batch' && ls state/vast/launch_plans/ | head -2",
+    ".venv/Scripts/python.exe -m pytest tests/test_blade_plan.py -q",
+    ".venv/Scripts/python.exe watch/blade_room_bridge.py; echo EXIT:$?"
+  ],
+  "checkpoint_schema": {"required": ["completed","artifacts","failures","budget_used_pct","next_action_one_line"]},
+  "handoff_schema": {"required": ["done","untested","blocked","resume_command"]},
+  "resume_command": "codex exec --skip-git-repo-check -C <repo> 'read jobs/vast-verbosity/seat_contract.json + latest trail_core, do next_action, run acceptance_commands, write trail_core_N'",
+  "driver": "codex-exec",
+  "opened": "2026-08-29",
+  "opened_by": "zcode (operator: know what we launch, how long, verbose in our surface)"
+}

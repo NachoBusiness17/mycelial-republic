@@ -1,0 +1,27 @@
+{
+  "schema": "seat_contract.v1",
+  "job_id": "vast-templates-redo",
+  "goal": "Redo the vast blade defaults+templates: replace the single hand-rolled ollama/qwen3:8b onstart with a TEMPLATE REGISTRY so blades boot into useful serving endpoints. Source the options from vast.ai's model library (https://vast.ai/model-library — one-click entries incl. GLM 5.2, Qwen3.8 27B, Kimi K3, Gemma 4 31B IT) and our own docs/ref/GLM53_ARCHITECTURE_PRO.md. Deliver state/vast/blade_templates.json + a patch to state/vast/blade_buyer.py that selects a template per launch.",
+  "invariants": [
+    "covenant.json caps are LAW: never raise floor/caps; buyer_enabled stays false until operator GO",
+    "NO instance creation, NO asks, NO spending — this job is files+code only (dry-run market reads via launch_vast.py probe are allowed)",
+    "each template entry: name, docker image, onstart_cmd, env, expected port, VRAM floor, notes — all fields read from real sources (model-library pages, our docs), none invented",
+    "bind don't invent: reuse launch_vast.py's contract body shape as the base template"
+  ],
+  "forbidden_moves": [
+    "creating/destroying any vast instance",
+    "editing covenant.json",
+    "wiring the buyer to auto-launch the new templates (selection lands behind the existing gates; arming awaits operator GO)"
+  ],
+  "acceptance_commands": [
+    ".venv/Scripts/python.exe -c \"import json; d=json.load(open('state/vast/blade_templates.json')); assert len(d['templates'])>=3 and all(all(k in t for k in ('name','image','onstart_cmd','env','port','vram_gb')) for t in d['templates']); print('TEMPLATES OK', [t['name'] for t in d['templates']])\"",
+    ".venv/Scripts/python.exe -c \"import ast; ast.parse(open('state/vast/blade_buyer.py').read()); print('buyer parses')\"",
+    ".venv/Scripts/python.exe -m pytest tests/ -q -k template 2>&1 | tail -1"
+  ],
+  "checkpoint_schema": {"required": ["completed", "artifacts", "failures", "budget_used_pct", "next_action_one_line"]},
+  "handoff_schema": {"required": ["done", "untested", "blocked", "resume_command"]},
+  "resume_command": "grok: read jobs/vast-templates-redo/seat_contract.json + latest trail_core, do next_action, verify acceptance_commands, write trail_core_N",
+  "driver": "desktop:grok1",
+  "opened": "2026-08-29",
+  "opened_by": "zcode (operator order: redo vasts defaults and templates; grok has 30% and runs this)"
+}

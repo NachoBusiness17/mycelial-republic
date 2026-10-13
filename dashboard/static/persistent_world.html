@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>THE PERSISTENT WORLD — glyph edition v0 · an interface to the hive</title>
+<style>
+  body{margin:0;background:#05080a;color:#c8d8d0;font-family:Consolas,Menlo,monospace;text-align:center}
+  #err{display:none;position:fixed;top:0;left:0;right:0;background:#5c1010;color:#ffd9d9;font:12px monospace;padding:6px;white-space:pre-wrap;z-index:9}
+  h1{color:#d8b856;font-size:15px;letter-spacing:2px;margin:8px 0 2px}
+  .mut{color:#5a7a6e;font-size:11px;margin:2px 8px}
+  canvas{display:block;margin:4px auto;background:#070b09;border:1px solid #234}
+  #panel{max-width:960px;margin:4px auto;font-size:11px;text-align:left;white-space:pre-wrap;color:#9ab8ac}
+</style>
+</head>
+<body>
+<div id="err"></div>
+<h1>THE PERSISTENT WORLD — the tie together</h1>
+<div class="mut">a playable interface to the hive · sprite style after DFHack/DF tilesets (borrowed, credited — good artists borrow) · no art yet: glyphs are notation · districts are the minigames · the head museum is staffed · the beacon walks the law tour · the hive is behind the screen</div>
+<canvas id="cv" width="960" height="560"></canvas>
+<div id="panel"></div>
+<div class="mut" id="cred">sprite grammar: DF-homage (glyphs-as-sprites, colored letters, honest ASCII) — in the lineage of Dwarf Fortress and the DFHack tileset community · live state read from the house every 15s · the player seat is carved and parked</div>
+<script>
+window.addEventListener('error',function(e){var b=document.getElementById('err');if(!b)return;b.style.display='block';b.textContent+='ERR: '+e.message+' @ '+(e.lineno||'?')+'\n';});
+
+// ==== WORLD GRID ====
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+const W=cv.width,H=cv.height;
+const TS=16,CW=Math.floor(W/TS),CH=Math.floor(H/TS); // 60x35 tiles
+let T=0;
+
+// ==== REAL STATE (live from the house; fallback seeded) ====
+let STATE={chain_leaves:8024,breaker:"clear",gaps:33,openwire:2,certified:2,tokens_burned:0};
+async function pullState(){
+  try{
+    const r=await fetch('/static/overseer.json');if(!r.ok)return;
+    const j=await r.json();if(j&&j.updated)STATE.overseer=j.updated;
+  }catch(e){}
+}
+
+// ==== THE LAW TOUR (the beacon's center line — from rounds_real) ====
+const TOUR=[[0.46,0.569],[0.78,0.569],[1.1,0.569],[1.42,0.569],[1.74,0.569],[0.46,1.106],[0.78,1.106],[1.1,1.106],[1.42,1.106],[1.74,1.106],[0.46,1.644],[0.78,1.644],[1.1,1.644],[1.42,1.644],[1.74,1.644],[0.46,2.181],[0.78,2.181],[1.1,2.181],[1.42,2.181],[1.74,2.181]];
+const LAWS=["I CONSULT FIRST","II TWO-STRIKE BAIL","III","IV","V","VI","VII","VIII","IX","X","XI","XII","XIII","XIV","XV","XVI","XVII","XVIII","XIX THE STONE","XX THE INFINITY RULE"];
+const DEGREE=[0,31,7,12,5,9,3,6,4,8,2,7,3,5,2,4,1,2,0,1]; // co-citation degrees, real order
+let wp=1;
+const BEACON={x:TOUR[0][0],y:TOUR[0][1]};
+const TRAIL=[];
+
+// ==== DISTRICTS (the minigames, as halls around the law field) ====
+const DISTRICTS=[
+ {name:"THE RAID HALL",   glyph:'R',color:'#ff9d5c',x:2, y:2, w:10,h:5, sub:"50-wide waves · dispatches"},
+ {name:"THE MINE",        glyph:'M',color:'#b8a86a',x:46,y:2, w:10,h:5, sub:"Kanerva SDM · the chain, mined"},
+ {name:"THE DUNGEON",     glyph:'D',color:'#7dfab0',x:2, y:26,w:12,h:6, sub:"the law maze · dwell in the gaze"},
+ {name:"THE WALLS",       glyph:'W',color:'#c8a2ff',x:44,y:26,w:12,h:6, sub:"vampire layer · breaker defense"},
+ {name:"THE FACTORY",     glyph:'F',color:'#6ec6b5',x:16,y:27,w:12,h:4, sub:"tokens · power grid · sediment"},
+ {name:"THE FARM",        glyph:'A',color:'#9fd48a',x:16,y:2, w:10,h:4, sub:"stardew district · the deep journey"},
+ {name:"HEAD MUSEUM",     glyph:'H',color:'#c8a2ff',x:28,y:27,w:10,h:4, sub:"STAFFED — the ractors walk"},
+];
+
+// ==== THE HEAD MUSEUM STAFF (ractors as NPCs — jarred heads, real memory) ====
+const STAFF=[
+ {g:'S',c:'#7dfab0',name:"Sancho",            post:"the send · the spec · the stones"},
+ {g:'J',c:'#e8c96a',name:"the storyteller",   post:"pacing · the raids · the weather"},
+ {g:'B',c:'#c8a2ff',name:"the breaker",       post:"the fuse · the trip · the rope"},
+ {g:'K',c:'#00e5ff',name:"kanerva",           post:"the room that remembers"},
+ {g:'L',c:'#ff9d5c',name:"the ledger",        post:"armed promises expire loudly"},
+ {g:'G',c:'#d8b856',name:"the gate",          post:"listing is not servable"},
+];
+
+// ==== GLYPH SPRITES (DF-homage: letters are sprites, color is state) ====
+function drawGlyph(g,x,y,color){ctx.fillStyle=color;ctx.font='bold '+TS+'px monospace';ctx.textAlign='center';ctx.fillText(g,x+TS/2,y+TS-4);}
+function drawRect(x,y,w,h,color,label,sub){
+  ctx.strokeStyle=color;ctx.lineWidth=1;ctx.strokeRect(x*TS,y*TS,w*TS,h*TS);
+  ctx.fillStyle=color;ctx.font='bold 11px monospace';ctx.textAlign='left';
+  ctx.fillText(label,x*TS+4,y*TS+12);
+  if(sub){ctx.fillStyle='#4a6a5e';ctx.font='9px monospace';ctx.fillText(sub,x*TS+4,y*TS+24);}
+}
+
+// ==== THE PLAYER SEAT (carved and parked — WASD) ====
+const player={gx:30,gy:18,keys:{}};
+window.addEventListener('keydown',e=>{const k=e.key.toLowerCase();if('wasd'.includes(k))player.keys[k]=true;});
+window.addEventListener('keyup',e=>{player.keys[e.key.toLowerCase()]=false;});
+
+// ==== RENDER ====
+function render(){
+  ctx.fillStyle='#070b09';ctx.fillRect(0,0,W,H);
+  // district halls
+  for(const d of DISTRICTS)drawRect(d.x,d.y,d.w,d.h,d.color,d.name,d.sub);
+  // the law field: nodes + threads
+  const cx0=20*TS,cy0=10*TS,cw=20*TS,chh=14*TS;
+  ctx.strokeStyle='rgba(232,201,106,0.25)';ctx.lineWidth=0.7;
+  for(let i=0;i<TOUR.length;i++)for(let j2=i+1;j2<TOUR.length;j2++){
+    const a=TOUR[i],b=TOUR[j2];
+    ctx.beginPath();ctx.moveTo(cx0+a[0]/2*cw*0.9,cy0+a[1]/2.7*chh*0.95);ctx.lineTo(cx0+b[0]/2*cw*0.9,cy0+b[1]/2.7*chh*0.95);ctx.stroke();
+  }
+  for(let i=0;i<TOUR.length;i++){
+    const p=TOUR[i],px=cx0+p[0]/2*cw*0.9,py=cy0+p[1]/2.7*chh*0.95,r=5+Math.min(DEGREE[i],31)*0.3;
+    const g=ctx.createRadialGradient(px,py,1,px,py,r*2);
+    g.addColorStop(0,'rgba(232,201,106,0.9)');g.addColorStop(1,'rgba(232,201,106,0)');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(px,py,r*2,0,7);ctx.fill();
+    ctx.fillStyle='#ffe9a8';ctx.font='8px monospace';ctx.textAlign='center';ctx.fillText('L'+(i+1),px,py-r-2);
+  }
+  // sherpa trail
+  ctx.strokeStyle='rgba(232,201,106,0.5)';ctx.lineWidth=1.2;ctx.beginPath();
+  for(let i=0;i<TRAIL.length;i++){const px=TRAIL[i][0]/2*W*0.92+W*0.04,py=TRAIL[i][1]/2.7*H*0.9+H*0.03;i?ctx.lineTo(px,py):ctx.moveTo(px,py);}
+  ctx.stroke();
+  // beacon + gaze
+  const bx=(BEACON.x/2)*(W*0.92)+W*0.04,by=(BEACON.y/2.7)*(H*0.9)+H*0.03;
+  ctx.fillStyle='#e8c96a';ctx.beginPath();ctx.arc(bx,by,6,0,7);ctx.fill();
+  ctx.fillStyle='rgba(255,240,180,0.15)';ctx.beginPath();ctx.moveTo(bx,by);ctx.arc(bx,by,60,aim-0.96,aim+0.96);ctx.closePath();ctx.fill();
+  // staff NPCs
+  for(const s of STAFF)drawGlyph(s.g,(s.post.length*7)% (W-40)+40, H*0.5+(s.name.length*3)%(H*0.4), s.c);
+  // player
+  const ppx=player.gx*TS+TS/2,ppy=player.gy*TS+TS/2;
+  ctx.fillStyle='#ffffff';ctx.fillRect(ppx-2,ppy-2,4,4);
+  ctx.fillStyle='#fff';ctx.font='10px monospace';ctx.textAlign='left';
+  ctx.fillText('YOU (the seat is parked — the world runs)',10,H-6);
+  // panel
+  document.getElementById('panel').textContent=
+    'CHAIN '+STATE.chain_leaves+' leaves · BREAKER '+STATE.breaker+' · GAPS '+STATE.gaps+' (sensors) · OPEN-WIRE '+STATE.openwire+' · CERTIFIED '+STATE.certified+'\n'+
+    'TOKENS BURNED THIS WINDOW: '+STATE.tokens_burned.toLocaleString()+' · WIDTH 8 → the gate → the breaker → the ledger · the museum is staffed';
+}
+
+// ==== BEACON WALK + TRAIL ====
+function beaconTick(){
+  const wpP=TOUR[wp],dx=wpP[0]-BEACON.x,dy=(wpP[1]-BEACON.y)/1.35,d=Math.hypot(dx,dy),sp=0.004;
+  if(d<sp*2){wp=(wp+1)%TOUR.length;return;}
+  BEACON.x+=dx/d*sp;BEACON.y+=dy/d*sp;
+  if(T%10===0){TRAIL.push([BEACON.x,BEACON.y]);if(TRAIL.length>500)TRAIL.shift();}
+}
+
+let aim=0;
+function frame(){
+  T++;
+  beaconTick();
+  // player walk (the carved seat — parked for the operator)
+  const sp=1;
+  if(player.keys['a']&&player.gx>1)player.gx--;
+  if(player.keys['d']&&player.gx<CW-2)player.gx++;
+  if(player.keys['w']&&player.gy>1)player.gy--;
+  if(player.keys['s']&&player.gy<CH-2)player.gy++;
+  aim+=0.004;
+  render();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+setInterval(pullState,15000);
+</script>
+</body>
+</html>

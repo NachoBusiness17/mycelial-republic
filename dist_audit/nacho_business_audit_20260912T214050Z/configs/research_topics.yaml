@@ -1,0 +1,55 @@
+# Research topics — the preemptive-steal agenda (tesuji-everywhere)
+# Each topic maps to already-cloned steal forests + a Mag slot. The topic runner
+# (tools/topic_research.py) picks the next steal item, runs T1 focused research,
+# archives a pack, classifies it, and folds to the knowledge base + training rows.
+# Priority order (locked 2026-08-07): routing-economics -> memory-context ->
+# observability -> tool-design -> self-correction. Bound: 1 topic/tick, <=2 steals.
+
+schema: research_topics.v1
+as_of: "2026-08-07"
+
+topics:
+  - id: routing-economics
+    title: "Routing / model-selection / cascade economics"
+    priority: 1
+    source_forest: mine/raw/steal_protocol
+    sources: [subagent-router, leeroo_orchestrator, ms-conductor, moa]
+    mag_slot: skill_ledger decisions target (1000) + router.py + tier_probe
+    steal_focus: "cost routing, budget caps, model picker, layered proposer-aggregator, deterministic jinja routing"
+    status: seeded
+
+  - id: memory-context
+    title: "Memory & context engineering"
+    priority: 2
+    source_forest: mine/raw/agent_bleeding_edge
+    sources: [letta, mem0, agent-replay]
+    mag_slot: context_pack / repack_vs_cache_analysis + operator_inbox displacement
+    steal_focus: "core-vs-archival memory split, self-editing memory, context compression, late chunking"
+    status: seeded
+
+  - id: observability
+    title: "Agent observability / self-monitoring"
+    priority: 3
+    source_forest: mine/raw/agent_bleeding_edge
+    sources: [agentops, phoenix, trajectory-visualizer]
+    mag_slot: cost_ledger + run_worth + spider + attention_ranker
+    steal_focus: "span/session-span grammar, anomaly detection, trajectory replay, failure attribution"
+    status: seeded
+
+  - id: tool-design
+    title: "Tool-design / tool-serialization patterns"
+    priority: 4
+    source_forest: mine/raw/agent_platform
+    sources: [OpenHands, Aider, SWE-agent]
+    mag_slot: job_floor + spec_execute + capability_manifest + tool-serialization-collapse bug
+    steal_focus: "tool discipline, serialization contracts, edit formats, MCP integration"
+    status: seeded
+
+  - id: self-correction
+    title: "Self-correction & verification (test-time compute)"
+    priority: 5
+    source_forest: mine/raw/steal_protocol
+    sources: [c3, moa]
+    mag_slot: spec_gate + false-success guard + pro_library aimbot + verkle proofs
+    steal_focus: "credit assignment, transcript checkpoint, leave-one-out credit, verifier loops"
+    status: seeded

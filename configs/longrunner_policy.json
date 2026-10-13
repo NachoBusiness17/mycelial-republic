@@ -1,0 +1,71 @@
+{
+  "law": "longrunners-caged",
+  "minted": "2026-10-07",
+  "founding_receipt": "watch/inbox/LONGRUNNER_LAW_20261007.md",
+  "founding_incident": "PID 18044 run_armC.py (memory/runs/interference_replication_20260925/) burned 24.4 CPU-hours across 11 days at 0.96 live cores before a human noticed CPU at 100 percent; killed 2026-10-07T00:30Z, receipt in memory/attention.md",
+  "statement": "Any process expected to outlive one sitting runs inside a compose service with resource caps. Bare-host long-runners are violations, detected by the patrol, not forgiven by prose.",
+  "tiers": {
+    "A_caged_by_default": [
+      "mag dashboard/lab (mag-sovereign)",
+      "redis",
+      "openclaw + tailscale + cloudflared sidecars",
+      "gstd-node (reference/gstdcoin/gstdbot compose service, capped Memory=536870912 verified by docker inspect 2026-10-09; docker compose is the only control surface; alerts-never-kills: patrol findings go to memory/attention.md, the patrol never stops the container)",
+      "mcp surface",
+      "worker beat loop (drain_worker)",
+      "scheduled burn cycles (fleet, gauntlet, hermes_247, lawpack, patrols) - staged migration: the Task Scheduler clock stays host-side, the WORK moves into `docker compose run --rm --entrypoint python burners <cmd>`",
+      "experiment arms (run_arm.py class) - must carry hard cpu/mem/pids caps and a timeout, making an 11-day runaway structurally impossible"
+    ],
+    "B_host_by_necessity": [
+      "Task Scheduler (the clock itself)",
+      "Docker Desktop + WSL2 vmmem (the cage's walls)",
+      "ZCode / opencode / seat processes (host FS, GUI, credentials)",
+      "LM Studio / Bionic GPU seat (GUI app)"
+    ],
+    "C_violations": [
+      "any interpreter process older than bare_longrunner_max_age_min whose cmdline is not allowlisted"
+    ]
+  },
+  "gstd_tunnel_amendment": {
+    "added": "2026-10-09",
+    "run": "gstd-desktop-buildout",
+    "law": "the gstd quick-tunnel cloudflared (bare-host, log logs/gstd_quicktunnel.log) is a THIS-SITTING exception: trycloudflare URLs are ephemeral so the process has no reboot-survival value; cloudflared.exe is not in watch_process_names so the patrol never kills it and only this row alerts; the persistent form (named tunnel, or compose sidecar mirroring reference/gstdcoin/gstdbot/tunnel.sh) is an operator call; when the tunnel dies the stale GSTD_PUBLIC_URL in docker-compose.override.yml must be refreshed (docker exec gstd-node write of /tmp/gstd_tunnel_url.txt is the no-restart lever) or cleared",
+    "receipt": "watch/inbox/gstd_desktop_buildout_20260109.md"
+  },
+  "bare_longrunner_max_age_min": 120,
+  "disk_free_floor_gb": {
+    "added": "2026-10-08",
+    "run": "disk-crisis-20261008",
+    "floor_gb": 15,
+    "watch_paths": ["."],
+    "law": "the patrol fails exit 1 and appends memory/attention.md when a watch path's volume free space is below floor_gb; founding incident: C: hit 6.1GB free at 100 percent on 2026-10-08 with ledgers live while the operator asked twice what was happening (receipt watch/inbox/DISK_INVENTORY_20261008.md); relief came from ollama rotation, not luck",
+    "reversible_relief_playbook": "docker builder prune -f (cache only), then ollama rotation of registry models with modelfile receipts banked (watch/inbox/model_modelfiles_20261008/), then cloud offload of cold artifacts - never delete live ledgers"
+  },
+  "watch_process_names": ["python.exe", "python3.11.exe", "pythonw.exe", "powershell.exe", "pwsh.exe", "node.exe", "ollama.exe", "llama-server.exe"],
+  "allowlist_cmdline_regex": [
+    "docker",
+    "container",
+    "drain_worker",
+    "ZCode",
+    "opencode"
+  ],
+  "alert_surface": "memory/attention.md",
+  "patrol_task": "MagLongrunnerPatrolDaily 08:45",
+  "ml_advisory_head": {
+    "added": "2026-10-07",
+    "run": "ml-moonshot-20261007",
+    "law": "advisory only: ML rows go to stdout plus logs/longrunner_ml_advisory.jsonl and never append to memory/attention.md and never change the patrol exit code; the rule-based scan stays the enforcement surface",
+    "classes": {
+      "storm": "sklearn over windowed ledger features: GBM supervised on the labeled storm day or IsolationForest one-class; labeled positive: the 2026-09-24 FullScan 429 burst (18,489 failing events in one day vs a 50-431/day baseline)",
+      "hung": "per-key silence at ml-hung-mult x median cadence; labeled positive: the 5h hung cycle (fleet --cycle twins age 295min vs a 10min design cadence, attention.md 2026-10-07T00:38Z)",
+      "dead": "per-key span past ml-dead-horizon-min; labeled positive: the 11-day runaway (run_armC.py alive 11 days vs an hour-scale arm, attention.md 2026-10-07T00:30Z)"
+    },
+    "default_ledger": "state/fuel/full_scan_ledger.jsonl",
+    "labeled_storm_day": "2026-09-24"
+  },
+  "migration_rows_staged": [
+    {"row": "R1", "what": "new compose service `burners` (same image, watch/ + queue/ + memory/runs volumes, cpus 2.0, mem_limit 2g, pids_limit 64, no-new-privileges, cap_drop ALL)", "sitting": "one"},
+    {"row": "R2", "what": "MagFreeLaneFleet + MagGauntletFree30 task actions become `docker compose run --rm --entrypoint python burners -m tools.free_lane_fleet --cycle` / `-m tools.gauntlet_grade`+`gauntlet_feed`", "sitting": "one"},
+    {"row": "R3", "what": "MagHermesBurn247 action becomes the same spell against tools/hermes_burn.py queue/hermes_247", "sitting": "one"},
+    {"row": "R4", "what": "experiment arms refire through the burners cage with --timeout, never bare again", "sitting": "per arm"}
+  ]
+}

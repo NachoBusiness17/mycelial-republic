@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIRFLOW HOME — the house is the prompt</title>
+<style>
+  :root { --ink:#6ec6b5; --dim:#3a6a60; --hot:#e05555; --txt:#cfe8e2; --bg:#060a09; }
+  html,body { background:var(--bg); color:var(--txt); font-family:Consolas,Menlo,monospace; margin:0; }
+  header { text-align:center; padding:10px 4px 2px; }
+  header h1 { color:var(--ink); font-size:17px; letter-spacing:2px; margin:0; }
+  header .sub { color:var(--dim); font-size:11px; }
+  main { max-width:1000px; margin:0 auto; padding:6px 10px 40px; }
+  .law { border:1px solid var(--dim); padding:8px 12px; margin:8px 0; font-size:12px; }
+  .law b { color:var(--ink); letter-spacing:1px; }
+  canvas { display:block; margin:6px auto; background:#0a100e; border:1px solid var(--dim); max-width:100%; }
+  .bar { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; font-size:12px; }
+  button { background:#0d1512; color:var(--ink); border:1px solid var(--dim);
+           font-family:inherit; font-size:12px; padding:6px 10px; cursor:pointer; }
+  button.on { color:var(--hot); border-color:var(--hot); }
+  button:disabled { opacity:.35; cursor:default; }
+  .hud { text-align:center; color:var(--dim); font-size:11px; margin-top:4px; white-space:pre-line; }
+  .proof { border:1px dashed var(--dim); padding:10px 12px; margin:10px 0; font-size:12px; }
+  .proof b { color:var(--ink); }
+  input[type=text] { background:#0d1512; color:var(--txt); border:1px solid var(--dim);
+                     font-family:inherit; font-size:12px; padding:5px 8px; width:70%; }
+  .stamp { color:var(--ink); font-size:13px; letter-spacing:2px; }
+  .verdict { color:var(--hot); }
+  .ok { color:var(--ink); }
+</style>
+</head>
+<body>
+<header>
+  <h1>AIRFLOW HOME — the house is the prompt</h1>
+  <div class="sub">game-prompt-lab room #1 · LAW / PLAY / PROOF / RESTATEMENT · smoke never despawns — it dilutes, drifts, and leaves a plume, like real air does</div>
+</header>
+<main>
+  <div class="law"><b>THE LAW (read it once, it never changes):</b>
+  smoke is stuff, not pixels — it never vanishes where it stands. fresh air comes in,
+  mixes, and thins it; the same air carries it out and the plume lives on outside.
+  wind and openings decide which room breathes first.</div>
+
+  <canvas id="cv" width="960" height="560"></canvas>
+
+  <div class="bar">
+    <button id="bKitchen">FILL KITCHEN</button>
+    <button id="bFillAll">FILL EVERY ROOM</button>
+    <button id="bWinK">KITCHEN WINDOW: CLOSED</button>
+    <button id="bWinB">BEDROOM WINDOW: CLOSED</button>
+    <button id="bDoorK">KITCHEN-DOOR: OPEN</button>
+    <button id="bDoorB">HALL-DOOR: OPEN</button>
+    <button id="bFan">FAN: OFF</button>
+    <button id="bWind">WIND: WEST →</button>
+    <button id="bReset">RESET AIR</button>
+  </div>
+  <div class="hud" id="hud">click anywhere to puff smoke · smoke % per room shown on the floor</div>
+
+  <div class="proof">
+    <b>THE PROOF — predict before you play (no prediction, no verdict):</b><br>
+    set openings + wind · fill rooms · click the room you predict <b>clears first</b> ·
+    a run only scores when a prediction was logged first.
+    <div style="margin-top:6px">
+      <button id="bPredict" disabled>PREDICT FIRST-CLEAR: (pick a room)</button>
+      <button id="bRun" disabled>START TIMED RUN</button>
+      <span id="predictState"></span>
+    </div>
+    <div id="verdict" style="margin-top:8px"></div>
+  </div>
+
+  <div class="proof">
+    <b>THE RESTATEMENT — the wall asks, you answer, the record keeps:</b><br>
+    <span id="askLine">after a scored run: why did that room clear first — one sentence.</span><br>
+    <input type="text" id="restate" placeholder="type your one sentence…" disabled>
+    <button id="bRestate" disabled>SEAL IT</button>
+    <span id="stamp"></span>
+  </div>
+
+  <div class="hud" id="ledger"></div>
+  <div class="hud" style="color:#33504a">v0 honest scope: the wall records your retelling, it does not grade it yet —
+  a keyword gate would be bluffable, and bluffable checks teach bluffing. grading organ comes with the judge pass.
+  physics: well-mixed zone model (the one HVAC engineers use) — dilution by fresh-air exchange,
+  transport by pressure through doors, exhaust plumes visible outside.</div>
+</main>
+
+<script>
+"use strict";
+// ---- geometry: three rooms, openings on the walls; outside = the margins ----
+const cv = document.getElementById("cv"), cx = cv.getContext("2d");
+const W = cv.width, H = cv.height, T = 10;
+const ROOMS = {
+  K: { name:"KITCHEN", x:20,  y:20, w:300, h:520 },
+  H: { name:"HALL",    x:330, y:20, w:300, h:520 },
+  B: { name:"BEDROOM", x:640, y:20, w:300, h:520 },
+};
+const state = {
+  winK:false, winB:false, doorK:true, doorB:true, fan:false,
+  wind:-1, // -1 west (into kitchen window), 0 calm, +1 east (into bedroom window)
+  smoke:[], run:null, predicted:null,
+};
+const roomOf = p => { for (const k in ROOMS) { const r = ROOMS[k];
+  if (p.x>=r.x && p.x<=r.x+r.w && p.y>=r.y && p.y<=r.y+r.h) return k; } return "X"; };
+
+// openings. exterior gaps bypass the wall clamp — a particle that walks the gap
+// keeps existing outside as the plume. nothing despawns at a line.
+const OPENINGS = [
+  { id:"doorK", kind:"door", a:"K", b:"H", vert:true,  x:320, y0:200, y1:360, get open(){return state.doorK} },
+  { id:"doorB", kind:"door", a:"H", b:"B", vert:true,  x:640, y0:200, y1:360, get open(){return state.doorB} },
+  { id:"winK",  kind:"win",  a:"K", b:"OUT", vert:false, y:20,  x0:80,  x1:220, get open(){return state.winK} },
+  { id:"winB",  kind:"win",  a:"B", b:"OUT", vert:false, y:550, x0:700, x1:860, get open(){return state.winB} },
+  { id:"fan",   kind:"fan",  a:"H", b:"OUT", vert:false, y:20,  x0:440, x1:560, get open(){return state.fan} },
+];
+
+// ---- the law, executable: pressure pushes, fresh air dilutes, plumes persist
+function step(dt){
+  const P = { K:pressure("K"), H:pressure("H"), B:pressure("B") };
+  // fresh-air dilution per room (well-mixed zone model). wind picks which window inhales.
+  const fresh = { K:0, H:0, B:0 };
+  if (state.winK) fresh.K = state.wind < 0 ? 0.16 : state.wind > 0 ? 0.045 : 0.085;
+  if (state.winB) fresh.B = state.wind > 0 ? 0.16 : state.wind < 0 ? 0.045 : 0.085;
+  for (const p of state.smoke){
+    if (p.zone === "X"){ // outside: the plume drifts on and fades, never pops
+      p.vx *= 0.995; p.vy *= 0.995;
+      p.x += p.vx*dt*60; p.y += p.vy*dt*60;
+      p.s *= (1 - 0.9*dt);
+      if (p.s < 0.04) p.dead = true;
+      continue;
+    }
+    let ax = 0, ay = 0;
+    // pressure pushes through interior doors (through-flow, both sides same direction)
+    for (const o of OPENINGS){
+      if (!o.open || o.kind !== "door") continue;
+      const d = P[o.a] - P[o.b];
+      if (Math.abs(d) < 0.01) continue;
+      if (p.y > o.y0 && p.y < o.y1 && Math.abs(p.x - o.x) < 60)
+        ax += Math.sign(d) * Math.min(Math.abs(d)*0.9, 1.4) * 0.5;
+    }
+    // convection: anywhere in the room, drift toward the opening that will carry it out
+    for (const o of OPENINGS){
+      if (!o.open || o.a !== p.zone) continue;
+      const other = o.b === "OUT" ? 0 : P[o.b];
+      const d = P[p.zone] - other;
+      const exitBias = o.b === "OUT"
+        ? (o.id === "winK" ? (state.wind > 0 ? 1.5 : 1)   // leeward window exhales harder
+                           : o.id === "winB" ? (state.wind < 0 ? 1.5 : 1)
+                           : 1.6)                          // the fan always exhausts
+        : 1;
+      const wants = d > 0.02 || (o.b === "OUT" && exitBias > 1.2);
+      if (!wants) continue;
+      const gx = o.vert ? o.x : (o.x0+o.x1)/2, gy = o.vert ? (o.y0+o.y1)/2 : o.y;
+      const dx = gx - p.x, dy = gy - p.y, dist = Math.hypot(dx, dy) || 1;
+      if (dist > 56){
+        const s = Math.min(Math.abs(d)*0.09*exitBias, 2.2*exitBias);
+        ax += dx/dist * s; ay += dy/dist * s;
+      }
+    }
+    // bulk currents follow the path graph — air routes through openings, never walls.
+    // wind draft: windward window in, across the house, out the leeward window.
+    // fan draft: exhaust pulls every connected room's air door-by-door toward it.
+    const draftTo = (tx, ty, k) => {
+      const dx = tx - p.x, dy = ty - p.y, dist = Math.hypot(dx, dy) || 1;
+      ax += dx/dist * 0.55; ay += dy/dist * 0.55;
+    };
+    if (state.wind !== 0 && state.winK && state.winB){
+      if (state.wind < 0){ // west: K->H->B, out bedroom window
+        if (p.zone === "K" && state.doorK) draftTo(320, 280);
+        else if (p.zone === "H" && state.doorB) draftTo(640, 280);
+        else if (p.zone === "B") draftTo(780, 550);
+      } else {             // east: B->H->K, out kitchen window
+        if (p.zone === "B" && state.doorB) draftTo(640, 280);
+        else if (p.zone === "H" && state.doorK) draftTo(320, 280);
+        else if (p.zone === "K") draftTo(150, 20);
+      }
+    }
+    if (state.fan){
+      if (p.zone === "K" && state.doorK) draftTo(320, 280);
+      else if (p.zone === "B" && state.doorB) draftTo(640, 280);
+      else if (p.zone === "H") draftTo(500, 20);
+    }
+    p.vx = (p.vx + ax*dt) * 0.985 + (Math.random()-0.5)*0.12;
+    p.vy = (p.vy + ay*dt) * 0.985 + (Math.random()-0.5)*0.12;
+    p.x += p.vx*dt*60; p.y += p.vy*dt*60;
+    constrain(p);
+    const z = roomOf(p);
+    if (z === "X"){ p.zone = "X"; continue; }
+    p.zone = z;
+    // dilution: fresh air mixes into the whole zone (the well-mixed law)
+    p.s *= (1 - Math.min(fresh[z], 0.3)*dt);
+    if (p.s < 0.015) p.dead = true; // fully thinned into the room air
+  }
+  state.smoke = state.smoke.filter(q => !q.dead);
+}
+function pressure(k){
+  let n = 0; for (const p of state.smoke) if (p.zone === k) n++;
+  return n / (ROOMS[k].w * ROOMS[k].h) * 1e4;
+}
+function avgSmoke(k){
+  let n = 0, sum = 0;
+  for (const p of state.smoke) if (p.zone === k){ n++; sum += p.s; }
+  return n ? sum/n : 0;
+}
+function constrain(p){ // walls; exterior gaps bypass the clamp so the plume can leave
+  if (p.x < ROOMS.K.x+2) { p.x = ROOMS.K.x+2; p.vx = Math.abs(p.vx)*0.4; }
+  if (p.x > ROOMS.B.x+ROOMS.B.w-2) { p.x = ROOMS.B.x+ROOMS.B.w-2; p.vx = -Math.abs(p.vx)*0.4; }
+  const inWinK = state.winK && p.x > 80 && p.x < 220;
+  const inWinB = state.winB && p.x > 700 && p.x < 860;
+  const inFan  = state.fan && p.x > 440 && p.x < 560;
+  if (p.y < ROOMS.K.y+2 && !inWinK && !inFan) { p.y = ROOMS.K.y+2; p.vy = Math.abs(p.vy)*0.4; }
+  if (p.y > ROOMS.K.y+ROOMS.K.h-2 && !inWinB) { p.y = ROOMS.K.y+ROOMS.K.h-2; p.vy = -Math.abs(p.vy)*0.4; }
+  if (p.y < 6 || p.y > H-6){ // already outside: keep the plume on the canvas
+    p.y = Math.max(6, Math.min(H-6, p.y)); p.vy = -Math.abs(p.vy)*0.3;
+  }
+  for (const wx of [320, 640])
+    if (Math.abs(p.x - wx) < T){
+      const o = OPENINGS.find(q => q.x === wx);
+      if (!(o.open && p.y > o.y0 && p.y < o.y1)){
+        p.x = p.x < wx ? wx - T : wx + T; p.vx = -Math.sign(p.vx || 1) * Math.abs(p.vx)*0.4;
+      }
+    }
+}
+
+// ---- the run: contamination-aware clearance (was smoked, now thin) ---------
+function startRun(){
+  if (!state.predicted) return;
+  state.run = { t0:performance.now(), clear:{}, peak:{K:0,H:0,B:0} };
+}
+const contaminated = r => Object.keys(r.peak).filter(k => r.peak[k] > 0.45);
+function finishRun(){
+  const r = state.run, order = Object.keys(r.clear).sort((a,b)=>r.clear[a]-r.clear[b]);
+  if (order.length < 2){
+    document.getElementById("verdict").innerHTML =
+      '<span class="verdict">only one room held smoke — the call was never live. FILL EVERY ROOM, then predict.</span>';
+    state.run = null; return;
+  }
+  const hit = state.predicted === order[0];
+  const log = JSON.parse(localStorage.getItem("airflow_ledger") || "[]");
+  log.push({ ts:new Date().toISOString(), wind:state.wind,
+    openings:{winK:state.winK, winB:state.winB, doorK:state.doorK, doorB:state.doorB, fan:state.fan},
+    predicted:ROOMS[state.predicted].name, actual:ROOMS[order[0]].name,
+    order:order.map(k=>ROOMS[k].name), times:r.clear, hit });
+  localStorage.setItem("airflow_ledger", JSON.stringify(log));
+  const v = document.getElementById("verdict");
+  v.innerHTML = hit
+    ? `<span class="stamp ok">VERDICT: ${ROOMS[order[0]].name} cleared first in ${(r.clear[order[0]]/1000).toFixed(1)}s — YOUR CALL STOOD. order: ${order.map(k=>ROOMS[k].name).join(" → ")}</span>`
+    : `<span class="verdict">VERDICT: the house disagrees — ${ROOMS[order[0]].name} cleared first (${(r.clear[order[0]]/1000).toFixed(1)}s), you called ${ROOMS[state.predicted].name}. order: ${order.map(k=>ROOMS[k].name).join(" → ")}</span>`;
+  ledgerLine();
+  document.getElementById("restate").disabled = false;
+  document.getElementById("bRestate").disabled = false;
+  state.run = null;
+}
+function ledgerLine(){
+  const log = JSON.parse(localStorage.getItem("airflow_ledger") || "[]");
+  const n = log.length, hits = log.filter(e => e.hit).length;
+  document.getElementById("ledger").textContent =
+    `LEDGER: ${n} scored runs · predictions right: ${hits}/${n} (${n?Math.round(100*hits/n):0}%) · chance on 3 rooms ≈ 33% · kept in this browser only`;
+}
+
+// ---- render ----------------------------------------------------------------
+function draw(){
+  cx.clearRect(0,0,W,H);
+  cx.strokeStyle = "#3a6a60"; cx.lineWidth = T;
+  cx.strokeRect(ROOMS.K.x, ROOMS.K.y, ROOMS.K.w, ROOMS.K.h);
+  for (const wx of [320, 640]){
+    const o = OPENINGS.find(q => q.x === wx);
+    cx.beginPath();
+    if (o.open){ cx.moveTo(wx, 20); cx.lineTo(wx, o.y0); cx.moveTo(wx, o.y1); cx.lineTo(wx, 540); }
+    else { cx.moveTo(wx, 20); cx.lineTo(wx, 540); }
+    cx.stroke();
+  }
+  for (const o of OPENINGS){ if (!o.open || o.b !== "OUT") continue;
+    cx.strokeStyle = o.kind === "fan" ? "#e05555" : "#7fd4ff";
+    cx.beginPath(); cx.moveTo(o.x0, o.y); cx.lineTo(o.x1, o.y); cx.stroke();
+    cx.strokeStyle = "#3a6a60";
+  }
+  if (state.wind !== 0){ // wind arrows along the top margin
+    cx.fillStyle = "rgba(127,212,255,0.5)"; cx.font = "12px Consolas";
+    const dir = state.wind < 0 ? "→" : "←";
+    for (let i=0;i<8;i++) cx.fillText(dir, 40+i*115, 12);
+  }
+  for (const p of state.smoke){
+    cx.fillStyle = `rgba(200,200,200,${(0.12 + 0.5*p.s).toFixed(3)})`;
+    cx.fillRect(p.x-1.5, p.y-1.5, 3, 3);
+  }
+  cx.font = "12px Consolas";
+  let x0 = 40; for (const k in ROOMS){
+    const pct = Math.round(avgSmoke(k)*100);
+    cx.fillStyle = pct > 40 ? "#e05555" : pct > 12 ? "#c9a86a" : "#6ec6b5";
+    cx.fillText(`${ROOMS[k].name} smoke:${pct}%${state.run && state.run.clear[k] ? " CLEARED "+(state.run.clear[k]/1000).toFixed(1)+"s" : ""}`, x0, 300);
+    if (state.predicted === k){ cx.strokeStyle = "#e05555"; cx.lineWidth = 2;
+      cx.strokeRect(ROOMS[k].x+6, ROOMS[k].y+6, ROOMS[k].w-12, ROOMS[k].h-12); cx.lineWidth = T; }
+    x0 += 310;
+  }
+  if (state.run){
+    const t = performance.now() - state.run.t0;
+    for (const k in ROOMS){
+      state.run.peak[k] = Math.max(state.run.peak[k], avgSmoke(k));
+      if (!state.run.clear[k] && state.run.peak[k] > 0.45 && avgSmoke(k) < 0.12)
+        state.run.clear[k] = t;
+    }
+    const smoke = contaminated(state.run);
+    if (smoke.length && smoke.every(k => state.run.clear[k])) finishRun();
+    else if (t > 75000){
+      const anyExit = OPENINGS.some(o => o.open && o.b === "OUT");
+      document.getElementById("verdict").innerHTML =
+        '<span class="verdict">the run timed out at 75s — the house holds its smoke. ' +
+        (anyExit ? 'the exit is too weak for this smoke. that IS the verdict.' : 'no exit, no dilution, no clearance — smoke is stuff, and stuff has to go somewhere.') +
+        ' predict again.</span>';
+      state.run = null;
+    }
+  }
+}
+let last = performance.now();
+(function loop(now){ const dt = Math.min((now-last)/1000, 0.05); last = now;
+  if (state.smoke.length || state.run) step(dt); draw(); requestAnimationFrame(loop); })(last);
+
+// ---- controls --------------------------------------------------------------
+function toggle(key, el, onTxt, offTxt){ el.onclick = () => { state[key] = !state[key];
+  el.textContent = state[key] ? onTxt : offTxt; el.classList.toggle("on", state[key]); }; }
+toggle("winK",  bWinK, "KITCHEN WINDOW: OPEN", "KITCHEN WINDOW: CLOSED");
+toggle("winB",  bWinB, "BEDROOM WINDOW: OPEN", "BEDROOM WINDOW: CLOSED");
+toggle("doorK", bDoorK, "KITCHEN-DOOR: OPEN", "KITCHEN-DOOR: CLOSED");
+toggle("doorB", bDoorB, "HALL-DOOR: OPEN", "HALL-DOOR: CLOSED");
+toggle("fan",   bFan,  "FAN: ON", "FAN: OFF");
+bWind.onclick = () => { state.wind = state.wind === -1 ? 0 : state.wind === 0 ? 1 : -1;
+  bWind.textContent = state.wind === -1 ? "WIND: WEST →" : state.wind === 0 ? "WIND: CALM" : "WIND: ← EAST";
+  bWind.classList.toggle("on", state.wind !== 0); };
+function sprinkle(){ document.getElementById("bPredict").disabled = false;
+  document.getElementById("bRun").disabled = !state.predicted; }
+bKitchen.onclick = () => { for (let i=0;i<420;i++)
+  state.smoke.push({ x:60+Math.random()*220, y:80+Math.random()*400, vx:0, vy:0, s:1, zone:"K" });
+  sprinkle(); };
+bFillAll.onclick = () => { for (const k in ROOMS){ const r = ROOMS[k];
+  for (let i=0;i<130;i++) state.smoke.push({ x:r.x+20+Math.random()*(r.w-40),
+    y:r.y+40+Math.random()*(r.h-80), vx:0, vy:0, s:1, zone:k }); }
+  sprinkle(); };
+bReset.onclick = () => { state.smoke = []; state.run = null;
+  document.getElementById("verdict").textContent = ""; state.predicted = null;
+  predictState.textContent = ""; document.getElementById("bRun").disabled = true; };
+cv.onclick = e => { const r = cv.getBoundingClientRect();
+  const x = (e.clientX-r.left) * (cv.width/r.width), y = (e.clientY-r.top) * (cv.height/r.height);
+  for (let i=0;i<24;i++) state.smoke.push({ x:x+Math.random()*14-7, y:y+Math.random()*14-7,
+    vx:0, vy:0, s:1, zone:roomOf({x,y}) }); };
+bPredict.onclick = () => { const keys = ["K","H","B"];
+  const cur = keys.indexOf(state.predicted); state.predicted = keys[(cur+1)%3];
+  predictState.textContent = "→ " + ROOMS[state.predicted].name + " (click to cycle)";
+  document.getElementById("bRun").disabled = !state.smoke.length; };
+bRun.onclick = () => { if (state.predicted && state.smoke.length) startRun(); };
+bRestate.onclick = () => { const t = document.getElementById("restate").value.trim();
+  if (!t) return;
+  const log = JSON.parse(localStorage.getItem("airflow_ledger") || "[]");
+  if (log.length) log[log.length-1].restatement = t;
+  localStorage.setItem("airflow_ledger", JSON.stringify(log));
+  document.getElementById("stamp").innerHTML = '<span class="stamp">◼ SEALED — the wall keeps your telling</span>';
+  document.getElementById("restate").value = ""; };
+ledgerLine();
+</script>
+</body>
+</html>

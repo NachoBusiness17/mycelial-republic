@@ -1,0 +1,446 @@
+{
+  "schema": "wandr.selfeval.task.v1",
+  "task_id": "estate-selfeval-mickey17-steals-2026-09-25",
+  "hierarchy": "claim(10) -> field(3) -> url(1)",
+  "description": "One WANDR-shaped eval task the estate's own research runs can be scored against (GO list item 6, corpus/steal/MASTER_MICKEY17_V2_20260924.md). Each member is one real, estate-relevant research claim carried in the MICKEY-17 v2 master fold; each required field is a facet a research run must establish with a cited page record; each record cites one url whose excerpts must be verbatim on that page. Graded by re-fetching each cited page, then rolled up with WANDR soft/hard precision/recall/F1 (https://arxiv.org/html/2608.14747v1).",
+  "shape_note": "Members: 10 (WANDR released median is 100; scaled to seed width per the GO row). Required records per member: 3.00, equal to the WANDR median. Records per task: 30 (WANDR median 245). Per-level count floors below are enforced by the loader; a parent short of its floor is a task error, not a scoring event.",
+  "floors": { "claims_min": 10, "fields_min_per_claim": 3, "urls_min_per_field": 1 },
+  "record_shape": {
+    "item": "claim_id/field_id",
+    "url": "page the record cites (http, https, or file scheme)",
+    "excerpts": ["verbatim excerpts that must appear on the cited page"],
+    "answer": "the extracted value the record asserts"
+  },
+  "members": [
+    {
+      "claim_id": "sonar-sunset",
+      "claim": "Perplexity retires Sonar Chat Completions on 2026-09-27 and the estate remapped its one dormant Sonar lane in advance.",
+      "provenance": "corpus/steal/MASTER_MICKEY17_V2_20260924.md section 3 item 1; landing receipt watch/inbox/GO_LIST_EXECUTION_20260925.md P0",
+      "fields": [
+        {
+          "field_id": "sunset_date",
+          "requirement": "A cited page establishing the exact date Sonar Chat Completions stops being supported.",
+          "records": [
+            {
+              "item": "sonar-sunset/sunset_date",
+              "url": "https://docs.perplexity.ai/docs/agent-api/migrate-from-sonar/overview.md",
+              "excerpts": ["Sonar will be supported until September 27, 2026."],
+              "answer": "2026-09-27"
+            }
+          ]
+        },
+        {
+          "field_id": "replacement_endpoint",
+          "requirement": "A cited page establishing the sanctioned replacement surface for Sonar Chat Completions.",
+          "records": [
+            {
+              "item": "sonar-sunset/replacement_endpoint",
+              "url": "https://docs.perplexity.ai/docs/agent-api/migrate-from-sonar/overview.md",
+              "excerpts": ["Sonar Chat Completions is now Agent API."],
+              "answer": "Agent API"
+            }
+          ]
+        },
+        {
+          "field_id": "estate_guard",
+          "requirement": "The estate landing artifact: the deprecation guard compiled into the one Sonar lane module.",
+          "records": [
+            {
+              "item": "sonar-sunset/estate_guard",
+              "url": "file:///C:/Users/foste/Documents/projects/local_sovereign_agent/mag/perplexity_research.py",
+              "excerpts": ["SONAR_CHAT_SUNSET = \"2026-09-27\""],
+              "answer": "deprecation guard at mag/perplexity_research.py line 43"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "claim_id": "w4-verdict-schema",
+      "claim": "The W4 gauntlet FAILED its preregistered criterion and the fix is schema-level: every run summary must carry a verdict field computed at write time.",
+      "provenance": "corpus/steal/MASTER_MICKEY17_V2_20260924.md section 3 item 2; verdict receipt watch/GAUNTLET_W4_VERDICT_20260925.md",
+      "fields": [
+        {
+          "field_id": "fail_bar",
+          "requirement": "The preregistered FAIL bar for W4, quoted from the registration document itself.",
+          "records": [
+            {
+              "item": "w4-verdict-schema/fail_bar",
+              "url": "file:///C:/Users/foste/Documents/projects/local_sovereign_agent/watch/GAUNTLET_PREREGISTRATION_20260901.md",
+              "excerpts": ["(FAIL: obedience degrades >5pp warm-vs-cold or cache rebuilds)"],
+              "answer": "obedience degrading more than 5pp warm-vs-cold, or cache rebuilds"
+            }
+          ]
+        },
+        {
+          "field_id": "verdict_filed",
+          "requirement": "The filed verdict document stating the criterion outcome.",
+          "records": [
+            {
+              "item": "w4-verdict-schema/verdict_filed",
+              "url": "file:///C:/Users/foste/Documents/projects/local_sovereign_agent/watch/GAUNTLET_W4_VERDICT_20260925.md",
+              "excerpts": ["VERDICT: FAIL (preregistered criterion) + INVALID (protocol). Cache-floor sub-claim SUPPORTED on the valid subset."],
+              "answer": "FAILED, filed 2026-09-25"
+            }
+          ]
+        },
+        {
+          "field_id": "schema_patch",
+          "requirement": "The schema patch: fold summaries now render a VERDICTS section so no summary ships unevaluated.",
+          "records": [
+            {
+              "item": "w4-verdict-schema/schema_patch",
+              "url": "file:///C:/Users/foste/Documents/projects/local_sovereign_agent/tools/fold_mickey17.py",
+              "excerpts": ["out += [\"\", \"## VERDICTS\", \"\","],
+              "answer": "tools/fold_mickey17.py emits a VERDICTS section"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "claim_id": "wandr-scoring",
+      "claim": "WANDR's scoring protocol grades each record by re-fetching its cited page and rolls verdicts up the hierarchy into soft (partial-credit) and hard (complete-member) precision/recall/F1.",
+      "provenance": "corpus/steal/MASTER_MICKEY17_V2_20260924.md section 3 item 5; memory/runs/mickey17_v2/lanes/wandr-benchmark.json rows 1-2",
+      "fields": [
+        {
+          "field_id": "soft_hard_def",
+          "requirement": "The paper's own definition of the soft vs hard precision split.",
+          "records": [
+            {
+              "item": "wandr-scoring/soft_hard_def",
+              "url": "https://arxiv.org/html/2608.14747v1",
+              "excerpts": ["Soft precision gives partial credit to incomplete members; hard precision assigns credit only when a submitted member\u2019s required subtree is fully correct."],
+              "answer": "soft = partial credit to incomplete members; hard = fully correct subtree only"
+            }
+          ]
+        },
+        {
+          "field_id": "failure_localization",
+          "requirement": "The paper's failure-localization taxonomy over the task tree.",
+          "records": [
+            {
+              "item": "wandr-scoring/failure_localization",
+              "url": "https://arxiv.org/html/2608.14747v1",
+              "excerpts": ["Failures can be localized across the tree: a system may fail to discover core task entities or members, enrich intermediate entities or keys, identify relevant pages, extract adequate evidence from those pages, or disambiguate identities when keys collide"],
+              "answer": "discovery, enrichment, identity, extraction, evidence"
+            }
+          ]
+        },
+        {
+          "field_id": "estate_spec",
+          "requirement": "The estate action line that adopts the protocol (the citation-P/R spec extension this tool implements).",
+          "records": [
+            {
+              "item": "wandr-scoring/estate_spec",
+              "url": "file:///C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/steal/MASTER_MICKEY17_V2_20260924.md",
+              "excerpts": ["Extend the librarian citation-P/R spec (DAY_PACK.md:2901) with the soft/hard split and zero-padded recall against per-level required counts; grade by re-fetching each cited page; report both F1s per run."],
+              "answer": "tools/wandr_selfeval.py plus tools/wandr_selfeval_task.json"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "claim_id": "writes-serial",
+      "claim": "Writes-serial fan-out is published doctrine: read-only tools parallelize, write tools run sequentially, and enforcement belongs at the tool-schema layer.",
+      "provenance": "corpus/steal/MASTER_MICKEY17_V2_20260924.md section 3 item 4",
+      "fields": [
+        {
+          "field_id": "doctrine_quote",
+          "requirement": "The arxiv paper's statement of the writes-serial execution pattern.",
+          "records": [
+            {
+              "item": "writes-serial/doctrine_quote",
+              "url": "https://arxiv.org/html/2603.05344v3",
+              "excerpts": ["read-only tools run in parallel via a thread pool (up to five concurrent calls), while write tools run sequentially"],
+              "answer": "read-only parallel up to five calls; write tools sequential"
+            }
+          ]
+        },
+        {
+          "field_id": "cognition_corroboration",
+          "requirement": "The practitioner corroboration from Cognition's multi-agent writeup.",
+          "records": [
+            {
+              "item": "writes-serial/cognition_corroboration",
+              "url": "https://cognition.com/blog/multi-agents-working",
+              "excerpts": ["setups where multiple agents contribute intelligence to a task while writes stay single-threaded"],
+              "answer": "writes stay single-threaded while agents contribute in parallel"
+            }
+          ]
+        },
+        {
+          "field_id": "estate_spec",
+          "requirement": "The estate action line: compile subagent tool schemas with write tools stripped at fan-out time.",
+          "records": [
+            {
+              "item": "writes-serial/estate_spec",
+              "url": "file:///C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/steal/MASTER_MICKEY17_V2_20260924.md",
+              "excerpts": ["tool schema at fan-out time with write tools stripped entirely"],
+              "answer": "schema-level stripping of write tools at fan-out"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "claim_id": "verbatim-quote-rate",
+      "claim": "LLMs emit verbatim quotes only about 47% of the time on a self-test, so every judge evidence_quote must be byte-grepped against its cited file.",
+      "provenance": "corpus/steal/MASTER_MICKEY17_V2_20260924.md section 3 item 3; audit receipt watch/inbox/GO_LIST_EXECUTION_20260925.md P3",
+      "fields": [
+        {
+          "field_id": "bitf_rate",
+          "requirement": "The measured verbatim verification rate from the Brain in the Fish self-test.",
+          "records": [
+            {
+              "item": "verbatim-quote-rate/bitf_rate",
+              "url": "https://github.com/fabio-rovai/brain-in-the-fish",
+              "excerpts": ["Running BITF on its own README produced 47% verification rate (29/62 quotes found)."],
+              "answer": "47 percent (29 of 62 quotes found)"
+            }
+          ]
+        },
+        {
+          "field_id": "gate_flagged",
+          "requirement": "The gate behavior: paraphrase instead of quote is caught, not passed.",
+          "records": [
+            {
+              "item": "verbatim-quote-rate/gate_flagged",
+              "url": "https://github.com/fabio-rovai/brain-in-the-fish",
+              "excerpts": ["the decomposition paraphrased instead of quoting"],
+              "answer": "the gate flags paraphrased quotes"
+            }
+          ]
+        },
+        {
+          "field_id": "estate_audit",
+          "requirement": "The estate audit status: byte-grep instrument ready, judge population still zero on 2026-09-25.",
+          "records": [
+            {
+              "item": "verbatim-quote-rate/estate_audit",
+              "url": "file:///C:/Users/foste/Documents/projects/local_sovereign_agent/watch/inbox/GO_LIST_EXECUTION_20260925.md",
+              "excerpts": ["The instrument is ready; the population does not exist yet."],
+              "answer": "byte-grep audit instrument ready; n=0 populated judge records"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "claim_id": "completion-gap",
+      "claim": "Completion claims outrun evaluator pass rates by 28.7 to 37.9 percentage points across seven models, so claims and verdicts must be logged side by side.",
+      "provenance": "corpus/steal/MASTER_MICKEY17_V2_20260924.md section 3 item 7",
+      "fields": [
+        {
+          "field_id": "satisfied_rate",
+          "requirement": "The measured range of requirements actually satisfied across models.",
+          "records": [
+            {
+              "item": "completion-gap/satisfied_rate",
+              "url": "https://arxiv.org/abs/2609.29921",
+              "excerpts": ["only 79.6%--86.4% are satisfied"],
+              "answer": "79.6 to 86.4 percent satisfied"
+            }
+          ]
+        },
+        {
+          "field_id": "gap_numbers",
+          "requirement": "The measured completion-claim vs evaluator-pass gap in percentage points.",
+          "records": [
+            {
+              "item": "completion-gap/gap_numbers",
+              "url": "https://arxiv.org/abs/2609.29921",
+              "excerpts": ["completion-claim rates exceed official evaluator pass rates by 28.7--37.9 percentage points"],
+              "answer": "28.7 to 37.9 percentage points"
+            }
+          ]
+        },
+        {
+          "field_id": "estate_alarm",
+          "requirement": "The estate action line: alarm when claims-vs-verdict divergence exceeds 5pp.",
+          "records": [
+            {
+              "item": "completion-gap/estate_alarm",
+              "url": "file:///C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/steal/MASTER_MICKEY17_V2_20260924.md",
+              "excerpts": ["alarm when divergence exceeds 5pp"],
+              "answer": "5pp divergence alarm"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "claim_id": "stale-data-freshness",
+      "claim": "Retries fix timeouts but not stale data; staleness needs freshness receipts (observed-at timestamp plus source hash) rather than retry budgets.",
+      "provenance": "corpus/steal/MASTER_MICKEY17_V2_20260924.md section 3 item 8",
+      "fields": [
+        {
+          "field_id": "retry_vs_stale",
+          "requirement": "The measured asymmetry between retry-mitigated timeouts and stale-data faults.",
+          "records": [
+            {
+              "item": "stale-data-freshness/retry_vs_stale",
+              "url": "https://arxiv.org/html/2607.11098",
+              "excerpts": ["a retry mitigation raises success on timeout error faults from as few as 30% of cases to 100%, whereas stale-data faults remain near 3-4 of 10 regardless of the mitigation"],
+              "answer": "retries lift timeouts to 100 percent; stale-data faults stay near 3-4 of 10"
+            }
+          ]
+        },
+        {
+          "field_id": "receipt_law",
+          "requirement": "The estate action line: every tool result carries observed-at timestamp plus source hash and stale values fail the receipts gate.",
+          "records": [
+            {
+              "item": "stale-data-freshness/receipt_law",
+              "url": "file:///C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/steal/MASTER_MICKEY17_V2_20260924.md",
+              "excerpts": ["every tool result carries observed-at timestamp + source hash, and claims built on values past the pre-stated bar fail the receipts gate"],
+              "answer": "observed-at plus source-hash freshness receipts"
+            }
+          ]
+        },
+        {
+          "field_id": "estate_instrument",
+          "requirement": "The existing estate staleness meter this action extends.",
+          "records": [
+            {
+              "item": "stale-data-freshness/estate_instrument",
+              "url": "file:///C:/Users/foste/Documents/projects/local_sovereign_agent/tools/freshness_check.py",
+              "excerpts": ["STALE_DAYS = 7, HEARTBEAT_DAYS = 2."],
+              "answer": "tools/freshness_check.py"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "claim_id": "history-mining-exploit",
+      "claim": "Outcome-pass alone is not evidence of real work: an agent mined unpruned git history inside task images to fake a benchmark win, so receipts need process-integrity spot-checks.",
+      "provenance": "corpus/steal/MASTER_MICKEY17_V2_20260924.md section 3 item 9",
+      "fields": [
+        {
+          "field_id": "poolside_exploit",
+          "requirement": "Poolside's own description of the root exploit.",
+          "records": [
+            {
+              "item": "history-mining-exploit/poolside_exploit",
+              "url": "https://poolside.ai/blog/through-the-looking-glass",
+              "excerpts": ["The root exploit was easy to find and fix; task images contained an unpruned git history that the agent was able to mine to find the reference solution"],
+              "answer": "unpruned git history in task images was mined for the reference solution"
+            }
+          ]
+        },
+        {
+          "field_id": "audit_law",
+          "requirement": "The estate action line: spot-check accepted receipts for how they were produced.",
+          "records": [
+            {
+              "item": "history-mining-exploit/audit_law",
+              "url": "file:///C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/steal/MASTER_MICKEY17_V2_20260924.md",
+              "excerpts": ["Spot-check accepted receipts for process integrity"],
+              "answer": "process-integrity spot-checks on accepted receipts"
+            }
+          ]
+        },
+        {
+          "field_id": "prune_law",
+          "requirement": "The estate remediation: prune history from estate eval images.",
+          "records": [
+            {
+              "item": "history-mining-exploit/prune_law",
+              "url": "file:///C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/steal/MASTER_MICKEY17_V2_20260924.md",
+              "excerpts": ["prune history from any estate eval images"],
+              "answer": "prune git history from estate eval images"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "claim_id": "verifier-inadequacy",
+      "claim": "Final-stage low-level checks are inadequate; a task-objective verification step measured +15.6 percent (MAST), so the estate owes usefulness_oracle.py with MAST failure-mode headers.",
+      "provenance": "corpus/steal/MASTER_MICKEY17_V2_20260924.md section 3 item 10",
+      "fields": [
+        {
+          "field_id": "mast_verdict",
+          "requirement": "MAST's statement that current single-stage verifier implementations are insufficient.",
+          "records": [
+            {
+              "item": "verifier-inadequacy/mast_verdict",
+              "url": "https://arxiv.org/html/2503.13657",
+              "excerpts": ["Multi-Level Verification is Needed. Current verifier implementations are often insufficient; sole reliance on final-stage, low-level checks is inadequate."],
+              "answer": "multi-level verification required; single final-stage checks inadequate"
+            }
+          ]
+        },
+        {
+          "field_id": "oracle_law",
+          "requirement": "The estate action line: land usefulness_oracle.py verifying output against the pre-registered task objective.",
+          "records": [
+            {
+              "item": "verifier-inadequacy/oracle_law",
+              "url": "file:///C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/steal/MASTER_MICKEY17_V2_20260924.md",
+              "excerpts": ["before a lane closes, a checker verifies output against the pre-registered task objective"],
+              "answer": "usefulness_oracle.py, recorded verified-absent at misc_band2.md line 49"
+            }
+          ]
+        },
+        {
+          "field_id": "fm_taxonomy",
+          "requirement": "The named post-mortem header scheme to adopt from MAST.",
+          "records": [
+            {
+              "item": "verifier-inadequacy/fm_taxonomy",
+              "url": "file:///C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/steal/MASTER_MICKEY17_V2_20260924.md",
+              "excerpts": ["FM-1.1..FM-3.3 IDs as fleet post-mortem headers"],
+              "answer": "FM-1.1 through FM-3.3 headers"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "claim_id": "effort-tiers",
+      "claim": "Anthropic's measured effort tiers (1 agent with 3-10 calls; 2-4 subagents with 10-15 calls; more than 10 subagents for complex research) are the defaults for lane effort budgets, with overinvestment in simple queries as the named failure mode.",
+      "provenance": "corpus/steal/MASTER_MICKEY17_V2_20260924.md section 3 item 6",
+      "fields": [
+        {
+          "field_id": "tier_numbers",
+          "requirement": "The three measured tiers quoted from Anthropic's multi-agent research engineering post.",
+          "records": [
+            {
+              "item": "effort-tiers/tier_numbers",
+              "url": "https://www.anthropic.com/engineering/multi-agent-research-system",
+              "excerpts": ["Simple fact-finding requires just 1 agent with 3-10 tool calls, direct comparisons might need 2-4 subagents with 10-15 calls each, and complex research might use more than 10 subagents with clearly divided responsibilities."],
+              "answer": "1 agent with 3-10 calls; 2-4 subagents with 10-15 calls; more than 10 subagents"
+            }
+          ]
+        },
+        {
+          "field_id": "failure_mode",
+          "requirement": "The named failure mode the tier budgets guard against.",
+          "records": [
+            {
+              "item": "effort-tiers/failure_mode",
+              "url": "file:///C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/steal/MASTER_MICKEY17_V2_20260924.md",
+              "excerpts": ["overinvestment-in-simple-queries as the named failure mode"],
+              "answer": "overinvestment in simple queries"
+            }
+          ]
+        },
+        {
+          "field_id": "wiring_target",
+          "requirement": "The estate wiring document the budget patch closes.",
+          "records": [
+            {
+              "item": "effort-tiers/wiring_target",
+              "url": "file:///C:/Users/foste/Documents/projects/local_sovereign_agent/corpus/steal/MASTER_MICKEY17_V2_20260924.md",
+              "excerpts": ["closes G4_4_wiring.md:38"],
+              "answer": "G4_4_wiring.md line 38"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LIGHT MAZE — what you see is what you know</title>
+<style>
+  html,body{background:#05070a;color:#cfe8e2;font-family:Consolas,Menlo,monospace;margin:0;overflow:hidden}
+  #hud{position:fixed;top:8px;left:12px;font-size:12px;z-index:2;text-shadow:0 0 4px #000}
+  #hud b{color:#6ec6b5;letter-spacing:1px}
+  #stat{position:fixed;bottom:8px;left:12px;font-size:11px;color:#8ab8ae;z-index:2}
+  #verdict{position:fixed;top:8px;right:12px;font-size:13px;color:#ffd76a;z-index:2;text-align:right}
+  #hand{position:fixed;bottom:30px;left:12px;font-size:11px;color:#7fd4ff;z-index:2}
+  canvas{display:block;margin:0 auto}
+</style>
+</head>
+<body>
+<div id="hud"><b>LIGHT MAZE</b> — LAW: light travels straight; walls end it; what you see is what you know.
+Collect every glyph while it is LIT, then reach the door. <span style="color:#7fd4ff">H = the helping hand</span> (a wall that shows the way — the Sherpa organ).</div>
+<div id="verdict"></div>
+<div id="stat"></div>
+<div id="hand"></div>
+<canvas id="cv" width="1280" height="720"></canvas>
+<script>
+"use strict";
+// R3-preview: the light-maze the operator wants. Ray-cast visibility polygon,
+// glyphs lit only inside the light, the Sherpa hand (H) instead of dead ends.
+const cv = document.getElementById("cv"), cx = cv.getContext("2d");
+const W = cv.width, H = cv.height;
+
+// walls: [x1,y1,x2,y2] — a hand-placed maze (outer box + corridors + pillars)
+const WALLS = [];
+function wall(x1,y1,x2,y2){ WALLS.push({x1,y1,x2,y2}); }
+// outer box (with a door gap handled by the exit zone, walls solid)
+wall(40,60,1240,60); wall(40,60,40,660); wall(40,660,1240,660); wall(1240,60,1240,660);
+// inner structure: corridors and pillars
+wall(200,60,200,300);  wall(200,380,200,660);
+wall(380,200,640,200); wall(380,200,380,420); wall(540,420,540,300);
+wall(640,60,640,180);  wall(760,260,760,520); wall(760,520,980,520);
+wall(980,60,980,300);  wall(980,420,980,660); wall(860,60,860,180);
+wall(420,520,700,520); wall(200,480,340,480); wall(1080,180,1080,420); wall(1080,420,1240,420);
+wall(60,340,160,340);  wall(300,600,460,600); wall(620,620,900,620); wall(1120,540,1240,540);
+
+// glyphs: 7 stars scattered in the maze (lit only when inside the light)
+const GLYPHS = [
+  {x:130,y:150},{x:300,y:120},{x:470,y:320},{x:590,y:560},
+  {x:850,y:150},{x:1080,y:260},{x:1150,y:600}
+].map((p,i)=>({...p, id:i, litTime:0, lit:false}));
+
+const EXIT = {x:1200,y:620,r:26};
+const player = { x:110, y:110, speed:3.2 };
+const keys = {};
+let glyphsLit = 0, started = null, finished = null, handPulse = null;
+
+addEventListener("keydown", e => {
+  keys[e.key.toLowerCase()] = true;
+  if (e.key.toLowerCase() === "h") fireHand();
+});
+addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
+
+// ---- the Sherpa organ: H fires a hand — a light pulse toward the nearest unlit glyph
+function fireHand(){
+  const un = GLYPHS.filter(g => !g.lit);
+  if (!un.length) return;
+  let best = un[0], bd = 1e9;
+  for (const g of un){ const d = Math.hypot(g.x-player.x, g.y-player.y); if (d < bd){ bd = d; best = g; } }
+  handPulse = { x: player.x, y: player.y, tx: best.x, ty: best.y, t: 0 };
+  document.getElementById("hand").textContent =
+    "the hand points: a glyph waits " + Math.round(bd) + " pixels away";
+  setTimeout(()=>{ document.getElementById("hand").textContent = ""; }, 2600);
+}
+
+// ---- visibility polygon: cast rays to every wall endpoint (±0.0001 rad) ----
+function castRay(px, py, ang){
+  const dx = Math.cos(ang), dy = Math.sin(ang);
+  let bestT = 2000, hit = null;
+  for (const w of WALLS){
+    const sx=w.x1, sy=w.y1, ex=w.x2, ey=w.y2;
+    const rLen = ex-sx, rDy = ey-sy;
+    const denom = dx*rDy - dy*rLen;
+    if (Math.abs(denom) < 1e-9) continue;
+    const t2 = (dx*(sy-py) - dy*(sx-px)) / denom;      // along wall
+    const t1 = Math.abs(rLen) > Math.abs(rDy)
+      ? ((sx + t2*rLen) - px) / (dx || 1e-9)
+      : ((sy + t2*rDy) - py) / (dy || 1e-9);
+    if (t2 >= 0 && t2 <= 1 && t1 > 0 && t1 < bestT){
+      bestT = t1; hit = { x: px + dx*t1, y: py + dy*t1 };
+    }
+  }
+  return hit || { x: px + dx*bestT, y: py + dy*bestT };
+}
+function visibilityPolygon(px, py){
+  const angles = [];
+  for (const w of WALLS){
+    for (const [x,y] of [[w.x1,w.y1],[w.x2,w.y2]]){
+      const a = Math.atan2(y-py, x-px);
+      angles.push(a-0.0001, a, a+0.0001);
+    }
+  }
+  for (let i=0;i<24;i++) angles.push(i/24*Math.PI*2);
+  angles.sort((a,b)=>a-b);
+  const pts = angles.map(a => castRay(px, py, a));
+  return pts;
+}
+function pointInPoly(px, py, pts){
+  let inside = false;
+  for (let i=0, j=pts.length-1; i<pts.length; j=i++){
+    const xi=pts[i].x, yi=pts[i].y, xj=pts[j].x, yj=pts[j].y;
+    if (((yi>py)!==(yj>py)) && (px < (xj-xi)*(py-yi)/(yj-yi)+xi)) inside = !inside;
+  }
+  return inside;
+}
+
+// ---- game loop --------------------------------------------------------------
+let litThisFrame = new Set();
+function update(){
+  let dx=0, dy=0;
+  if (keys["w"]||keys["arrowup"]) dy-=1;
+  if (keys["s"]||keys["arrowdown"]) dy+=1;
+  if (keys["a"]||keys["arrowleft"]) dx-=1;
+  if (keys["d"]||keys["arrowright"]) dx+=1;
+  if (dx||dy){
+    const len = Math.hypot(dx,dy);
+    const nx = player.x + dx/len*player.speed, ny = player.y + dy/len*player.speed;
+    // block only if the move crosses a wall
+    let blocked = false;
+    for (const w of WALLS){
+      if (segCircle(w.x1,w.y1,w.x2,w.y2, nx,ny, 6)) { blocked = true; break; }
+    }
+    if (!blocked){ player.x = nx; player.y = ny; }
+    else {
+      // slide: try axes separately
+      const nx2 = player.x + dx/len*player.speed;
+      let b2 = false; for (const w of WALLS) if (segCircle(w.x1,w.y1,w.x2,w.y2,nx2,player.y,6)){b2=true;break;}
+      if (!b2) player.x = nx2;
+      const ny2 = player.y + dy/len*player.speed;
+      let b3 = false; for (const w of WALLS) if (segCircle(w.x1,w.y1,w.x2,w.y2,player.x,ny2,6)){b3=true;break;}
+      if (!b3) player.y = ny2;
+    }
+  }
+  if (started === null && (dx||dy)) started = performance.now();
+  // glyph lighting
+  const pts = visibilityPolygon(player.x, player.y);
+  litThisFrame = new Set();
+  for (const g of GLYPHS){
+    if (pointInPoly(g.x, g.y, pts) && lineClear(player.x,player.y,g.x,g.y)) litThisFrame.add(g.id);
+  }
+  for (const g of GLYPHS){
+    if (litThisFrame.has(g.id) && !g.lit){
+      g.lit = true; glyphsLit++;
+    }
+  }
+  if (glyphsLit === GLYPHS.length){
+    const d = Math.hypot(player.x-EXIT.x, player.y-EXIT.y);
+    if (d < EXIT.r && finished === null){
+      finished = ((performance.now()-started)/1000).toFixed(1);
+      document.getElementById("verdict").innerHTML =
+        `<span style="color:#6ec6b5">VERDICT: the maze is lit in ${finished}s — every glyph seen by its own light. the room remembers.</span>`;
+    }
+  }
+}
+function lineClear(x1,y1,x2,y2){
+  for (const w of WALLS){
+    if (segSeg(x1,y1,x2,y2,w.x1,w.y1,w.x2,w.y2)) return false;
+  }
+  return true;
+}
+function segSeg(a1,b1,a2,b2,c1,d1,c2,d2){
+  const den = (c2-c1)*(b2-b1)-(d2-d1)*(a2-a1);
+  if (Math.abs(den)<1e-9) return false;
+  const t = ((c1-a1)*(b2-b1)-(d1-b1)*(a2-a1))/den;
+  const u = ((c1-a1)*(d2-d1)-(d1-b1)*(c2-c1))/den;
+  return t>=0&&t<=1&&u>=0&&u<=1;
+}
+function segCircle(x1,y1,x2,y2,px,py,r){
+  const dx=x2-x1, dy=y2-y1, l2=dx*dx+dy*dy;
+  let t = l2 ? ((px-x1)*dx+(py-y1)*dy)/l2 : 0;
+  t = Math.max(0, Math.min(1, t));
+  return Math.hypot(px-(x1+t*dx), py-(y1+t*dy)) < r;
+}
+
+// ---- render -----------------------------------------------------------------
+function draw(){
+  cx.fillStyle = "#04060a"; cx.fillRect(0,0,W,H);
+  // the light polygon
+  const pts = visibilityPolygon(player.x, player.y);
+  cx.save();
+  cx.beginPath(); cx.moveTo(pts[0].x, pts[0].y);
+  for (const p of pts) cx.lineTo(p.x, p.y);
+  cx.closePath();
+  const grad = cx.createRadialGradient(player.x,player.y,10,player.x,player.y,560);
+  grad.addColorStop(0,"rgba(255,225,160,0.30)");
+  grad.addColorStop(1,"rgba(255,225,160,0.02)");
+  cx.fillStyle = grad; cx.fill();
+  cx.restore();
+  // walls
+  cx.strokeStyle = "#2a4a52"; cx.lineWidth = 3;
+  for (const w of WALLS){ cx.beginPath(); cx.moveTo(w.x1,w.y1); cx.lineTo(w.x2,w.y2); cx.stroke(); }
+  // glyphs: visible always as faint dust, bright when lit
+  for (const g of GLYPHS){
+    const lit = litThisFrame.has(g.id);
+    cx.beginPath(); cx.arc(g.x, g.y, lit?7:3.5, 0, 7);
+    cx.fillStyle = lit ? "#ffe178" : "rgba(160,160,160,0.25)";
+    cx.fill();
+    if (lit){ cx.strokeStyle="rgba(255,225,120,0.5)"; cx.beginPath(); cx.arc(g.x,g.y,12,0,7); cx.stroke(); }
+  }
+  // exit door: opens only when all glyphs lit
+  const open = glyphsLit === GLYPHS.length;
+  cx.beginPath(); cx.arc(EXIT.x, EXIT.y, EXIT.r, 0, 7);
+  cx.strokeStyle = open ? "#6ec6b5" : "#333f44"; cx.lineWidth = 3; cx.stroke();
+  cx.fillStyle = open ? "#6ec6b5" : "#3a434a";
+  cx.font = "11px Consolas"; cx.fillText(open ? "DOOR OPEN" : "DOOR", EXIT.x-26, EXIT.y+34);
+  // the player: a small light
+  cx.beginPath(); cx.arc(player.x, player.y, 5, 0, 7);
+  cx.fillStyle = "#fff2cf"; cx.fill();
+  // the hand pulse
+  if (handPulse){
+    handPulse.t += 0.03;
+    const p = handPulse;
+    cx.strokeStyle = `rgba(127,212,255,${1-p.t})`; cx.lineWidth = 2;
+    cx.beginPath(); cx.moveTo(p.x,p.y);
+    cx.lineTo(p.x+(p.tx-p.x)*p.t, p.y+(p.ty-p.y)*p.t); cx.stroke();
+    if (p.t >= 1) handPulse = null;
+  }
+  document.getElementById("stat").textContent =
+    `glyphs lit: ${glyphsLit}/${GLYPHS.length}${finished ? " · LIT IN "+finished+"s" : ""} · WASD to move · H for the hand`;
+}
+setInterval(() => { update(); draw(); }, 33);
+</script>
+</body>
+</html>

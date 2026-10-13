@@ -1,0 +1,123 @@
+[[File:NH Stalk Market Buying Turnips.jpg|thumb|Daisy Mae selling turnips for 98 Bells in {{NH|short|nolink}}]]
+[[File:NH Stalk Market Prices.jpg|thumb|Timmy and Tommy buying turnips for 377 Bells each in {{NH|short|nolink}}]]
+The '''Stalk Market''' refers to the system of buying and selling [[turnip]]s in the {{SER}}. In the Stalk Market, players can buy and sell turnips in order to turn a profit, based on its fluctuating value as determined by the town store. The name is a pun on the real-life {{wp|Stock Market|stock market}}, though the two are only superficially similar.
+
+== Overview ==
+Turnips can be bought from [[Joan]] prior to {{NH}}, or [[Daisy Mae]] in {{NH|short|nolink}}, during Sunday mornings before 12 PM. They will sell turnips at a different price each week, generally between 90 to 110 Bells each, but will only sell them in batches of ten. From Monday to Saturday, the player can sell their turnips to Tom Nook (prior to {{NL|short|nolink}}), [[Reese]] (in {{NL|short|nolink}}), or the [[Timmy and Tommy|Nooklings]] (in {{NH|short|nolink}}) at their respective shops. The sell price changes every day and follows one of various patterns. Starting in {{WW}}, '''two''' prices per day are offered: one before noon and one after noon.  If the sell price is higher than what the player bought their turnips for, they can turn a profit. Turnips spoil the next Sunday after being purchased, so the player loses their entire investment if they are not sold by Saturday.
+
+In {{WW|nolink}} and {{CF}}, the player can only buy a maximum of 990 turnips at a time. This limit is dropped in subsequent titles, where the player is only limited to how many they can afford and how many slots they have in their pockets.
+
+== Turnip prices ==
+=== In {{PG|nolink}} ===
+In {{PG}}, turnips can be sold to Tom Nook every day Monday through Saturday. Each day, turnip prices change, and the price of turnips is fixed throughout the day. The prices follow one of three schedules during each week, with the probability of a schedule occurring depending on the previous week's schedule.<ref>{{Cite web|author=ACreTeam|url=https://github.com/ACreTeam/ac-decomp/blob/master/src/game/m_kabu_manager.c|title=m_kabu_manager.c|site=GitHub|retrieved=November 25, 2024}}</ref>
+
+{| class="styled color-gameplay" style="text-align:center; width:45%; min-width:500px;"
+|+Probability for this week's prices to follow a particular pattern
+|-
+! rowspan="2" | Previous week's pattern
+! colspan="3" | This week's pattern
+|-
+! Random spike !! Random no spike !! Decreasing
+|-
+! Random spike
+| 50% || 30% || 20%
+|-
+! Random no spike
+| 60% || 20% || 20%
+|-
+! Decreasing
+| 60% || 30% || 10%
+|}
+Each Sunday, or when the game is played since the previous Sunday, a Sunday sell price is randomly and uniformly selected between 70 Bells and 129 Bells; then, a random schedule type is chosen; and finally, the prices for each day of the week are determined based on the schedule type.
+
+==== Random schedule ====
+Each day, the turnip price will either increase or decrease. The odds of a decreasing occurring, as well as the rates at which prices rise and fall, change over the week, according to the following rules:
+* Each day, the prices will either fall by 30%, or rise by a rate ''R<sub>+</sub>'', which begins at 5% but increasing by 1% (linearly) every times prices rise.
+* If turnip prices fall, they must fall to 80% or less of the price on Sunday. If they would otherwise fall to a price above 80% of the Sunday price, they will be reset to that 80% of the Sunday price.
+* The odds of prices decreasing begins at 10%, goes up by 14% (linearly) every time prices rise, and goes down by 70% (multiplicatively) when prices fall; but if this causes the odds of a decrease to still be at least 10%, it will be instead set to 10%.
+Here is an example of price calculations for a random schedule through one week, where turnips sold on Sunday for 100 Bells per turnip. The "Roll (Result)" row shows a random number between 0 (inclusive) and 1 (exclusive); when that number is less than or equal to the odds of a decreasing occurring, prices will fall.
+{| class="styled color-gameplay" style="text-align:center; width:45%; min-width:500px;"
+|+Calculations for example prices during a random schedule week
+|-
+! rowspan="2" | Data
+! colspan="7" | Day of the week
+|-
+! Sunday !! Monday !! Tuesday !! Wednesday !! Thursday !! Friday !! Saturday
+|-
+! ''R<sub>+</sub>''
+| -- || 5% || 6% || 7% || 7% || 7% || 8%
+|-
+! Decrease %Odds
+| -- || 10% || 24% || 38% || 11% || 10% || 24%
+|-
+! Roll (Result)
+| -- || 0.38 (Rise) || 0.82 (Rise) || 0.37 (Fall) || 0.08 (Fall) || 0.73 (Rise) || 0.64 (Rise)
+|-
+! New Price
+| '''100''' || '''105''' || '''111''' || '''78''' || '''55''' || '''59''' || '''64'''
+|}
+
+====Price spikes====
+Every week when a spike is set to occur, a random day between Monday and Friday is chosen on which prices are exactly 8x what they were on Sunday.
+
+====Falling schedule====
+When a week has a falling schedule, prices will fall each day by between 5% and 20%, chosen uniformly and at random for each day.
+
+===In {{NH|short|nolink}}===
+The price of turnips changes per "period" for the entire week. For each day, there are two "periods": morning (before 12 PM) and afternoon (after 12 PM). The player can ask [[Tom Nook]] (prior to {{NL|short|nolink}}), [[Reese]] (in {{NL|short|nolink}}), or [[Timmy and Tommy]] (in {{NH|short|nolink}}) how much they will buy turnips at that particular period. The prices can go from as low as 20 Bells to as high as 660 in a "large spike" pattern. In ''Animal Crossing'', the price could be as high as 990 Bells.
+
+The prices also follow a specific pattern. In addition, the pattern for the current week may be influenced partly by last week's pattern.
+
+{| class="styled color-gameplay" style="text-align:center; width:45%; min-width:500px;"
+|+Probability for this week's prices to follow a particular pattern
+|-
+! rowspan="2" | Previous week's pattern
+! colspan="4" | This week's pattern
+|-
+! Large spike !! Small spike !! Decreasing !! Random
+|-
+! Large spike 
+| 5% || 25% || 20% || 50%
+|-
+! Small spike
+| 25% || 15% || 15% || 45%
+|-
+! Decreasing 
+| 45% || 25% || 5% || 25%
+|-
+! Random 
+| 30% || 35% || 15% || 20%
+|}
+
+Finally, the pattern prices are all relative to the purchase price in the same island. For example 200% purchase price means 180 Bells if Daisy Mae was selling them for 90 Bells or 220 Bells if Daisy Mae was selling them for 110 Bells.
+
+==== Decreasing pattern ====
+Prices start with 85%-90% purchase price on Monday morning, and will continue to decrease bit by bit after that. The only way to turn a profit is to go [[Multiplayer|on a different town]] to sell.
+
+==== Small spike pattern ====
+Prices usually start with 40%-90% and usually decrease until it gets interrupted (90%-140%). "Usually" because the interruption may occur on the Monday morning or afternoon.
+
+The week's highest price will be three periods after that. For instance, if the interruption was reported on a Tuesday afternoon, the peak will occur on Thursday morning. The peak will always be between 140% and 200% purchase price. Prices will decrease after this peak.
+
+It is possible for the price to decrease a bit in the first or second period following the interruption. 
+
+==== Large spike pattern ====
+Prices start with 85%-90% purchase price on Monday morning and may continue to decrease exactly like the Decreasing pattern. The spike starts Monday afternoon at the earliest, and Thursday afternoon at the latest. The peak occurs two periods after that (Thursday afternoon to Friday afternoon). The pattern is characterized by its really large peak which can range between 200% and 600% purchase price. The prices will decrease rapidly after this peak.
+
+==== Random pattern ====
+There will be two or three peaks that will never pass 140% purchase price. They can occur at any moment along the week and could easily be confused with all other patterns. It is usually safe to assume early peaks are the Random pattern, but because the player is guaranteed at least two peaks, it is usually worth it to wait it out.
+
+== Screenshots ==
+<gallery>
+CF High Turnip Sell Price.jpg|{{CF}}
+NL Stalk Market price.jpg|{{NL}}
+</gallery>
+
+==See also==
+*[[Joan]] and [[Daisy Mae]]
+*[[Turnips]]
+
+==References==
+{{Reflist}}
+
+{{Navbox Gameplay elements}}

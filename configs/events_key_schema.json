@@ -1,0 +1,300 @@
+{
+  "schema": "events_key_schema.v1",
+  "purpose": "Writer-key schema registry for watch/inbox/index_events.jsonl, the append-only log that INDEX.json is folded from (scripts/index_fold_host.mjs). The B2-329 dump purity law makes the writer-key vocabulary load-bearing: a strict downstream consumer of the `events` dump rejects any key outside it. This file is the spec that owns the vocabulary. Law: the registry is a CLOSED VOCABULARY of top-level event keys, NOT a required-fields spec; any registered key may be omitted on any line. An event carrying a key NOT registered here is named by mag.shared_surface validate (ERROR) and by the fold warning channel (WARN + exit 2); the operator response is to register the key by NAME with first-seen evidence and a carries note, or fix the writer. Never erase log lines to silence this check.",
+  "reserved": "The underscore prefix is reserved for fold-internal fields (B2-329 dump purity: _outside, _unresolved are attached in memory by readEvents and were written by NO writer). Underscore keys must never appear in log bytes and are exempt from the key scan.",
+  "seq_encoding": "first_seq values are recorded as decimal STRINGS (or null) per the B2-40 seq scheme, so past-2^53 seq literals never truncate through float64. first_seq mirrors the FIRST-SEEN event's seq; many later events carrying the same key carry other seq forms.",
+  "census": {
+    "log": "watch/inbox/index_events.jsonl",
+    "sha256": "ab7f6cdebb2748d5391d2815fad08d82e32100be2ac3153483ecab940fe939fb",
+    "non_blank_lines": 3484,
+    "parseable_lines": 3481,
+    "malformed_lines": 3,
+    "malformed_note": "lines 94, 95, 96; grandfathered by content sha256 in configs/events_malformed_baseline.json (no-erase law)",
+    "distinct_keys": 30,
+    "census_tool": "B2-342 census, 2026-09-26T17:23Z, strict json.loads with NaN/Infinity rejected (matches JSON.parse and mag.shared_surface scan_events_log)",
+    "raw_dump": "watch/inbox/burn_wave_20260926/B2_342_key_census_raw.json"
+  },
+  "drift_note": "count, first_line and first_seq are point-in-time census facts at the recorded sha256; appends never invalidate an entry, only NEW keys do. Register a new key by appending it to keys[] with fresh first-seen evidence.",
+  "registered_by": "B2-342 (2026-09-26 flash-lane burn); receipt watch/inbox/burn_wave_20260926/B2_342_schema_registry_20260926.md",
+  "keys": [
+    {
+      "key": "seq",
+      "count": 3046,
+      "first_line": 1,
+      "first_seq": "1",
+      "first_ts": "2026-09-01T03:18:00Z",
+      "first_writer": null,
+      "carries": "Monotone event counter; plain JSON number while it fits 2^53-1, decimal STRING beyond (B2-40). The fold's total-order key compares it exactly (B2-279)."
+    },
+    {
+      "key": "ts",
+      "count": 3480,
+      "first_line": 1,
+      "first_seq": "1",
+      "first_ts": "2026-09-01T03:18:00Z",
+      "first_writer": null,
+      "carries": "RFC3339 event timestamp; the fold's tie-breaker under the total-order key."
+    },
+    {
+      "key": "op",
+      "count": 3400,
+      "first_line": 1,
+      "first_seq": "1",
+      "first_ts": "2026-09-01T03:18:00Z",
+      "first_writer": null,
+      "carries": "Event verb. register and invalidate move index state, note is a log-only marker; amend, repair, windowseal and consume (the wave-3 read op, tools/inbox_consume.py) appear in the census and are log-only to the fold today."
+    },
+    {
+      "key": "file",
+      "count": 3395,
+      "first_line": 1,
+      "first_seq": "1",
+      "first_ts": "2026-09-01T03:18:00Z",
+      "first_writer": null,
+      "carries": "Inbox-relative target of register/invalidate/amend; canonicalized by the fold reader (board/app strip, absolute-root strip B2-149/B2-157)."
+    },
+    {
+      "key": "sha256",
+      "count": 3259,
+      "first_line": 1,
+      "first_seq": "1",
+      "first_ts": "2026-09-01T03:18:00Z",
+      "first_writer": null,
+      "carries": "Content hash of the registered bytes (whole file, or the first `size` bytes when living)."
+    },
+    {
+      "key": "class",
+      "count": 2957,
+      "first_line": 1,
+      "first_seq": "1",
+      "first_ts": "2026-09-01T03:18:00Z",
+      "first_writer": null,
+      "carries": "Board class of a register (COMMIT, RECEIPT, BOARD, FIX, ...); a register without class folds as UNPROVEN."
+    },
+    {
+      "key": "purpose",
+      "count": 3310,
+      "first_line": 1,
+      "first_seq": "1",
+      "first_ts": "2026-09-01T03:18:00Z",
+      "first_writer": null,
+      "carries": "Free-text purpose line of the event."
+    },
+    {
+      "key": "writer",
+      "count": 1286,
+      "first_line": 27,
+      "first_seq": "27",
+      "first_ts": "2026-09-01T03:18:01Z",
+      "first_writer": "EXP-002A",
+      "carries": "Writer identity; namespaces the per-writer nonce counter. First appears with the EXP-002A genesis note; earlier events predate the writer convention."
+    },
+    {
+      "key": "nonce",
+      "count": 1089,
+      "first_line": 27,
+      "first_seq": "27",
+      "first_ts": "2026-09-01T03:18:01Z",
+      "first_writer": "EXP-002A",
+      "carries": "Per-writer replay counter; the fold warns on nonce gaps (concurrent-writer or skipped-nonce signal)."
+    },
+    {
+      "key": "reason",
+      "count": 143,
+      "first_line": 29,
+      "first_seq": "29",
+      "first_ts": "2026-09-01T03:20:06.372Z",
+      "first_writer": "exp002a",
+      "carries": "Reason text on invalidate (and amend) events; first use is the EXP002A race-kill proof invalidate."
+    },
+    {
+      "key": "prev_sha256",
+      "count": 12,
+      "first_line": 48,
+      "first_seq": "48",
+      "first_ts": "2026-09-01T04:36:18.232Z",
+      "first_writer": "sancho-pid2315",
+      "carries": "Prior content hash on amend events (hash-refresh chain)."
+    },
+    {
+      "key": "text",
+      "count": 1,
+      "first_line": 27,
+      "first_seq": "27",
+      "first_ts": "2026-09-01T03:18:01Z",
+      "first_writer": "EXP-002A",
+      "carries": "Note body on the exp002a genesis note (event log becomes source of truth)."
+    },
+    {
+      "key": "note",
+      "count": 5,
+      "first_line": 42,
+      "first_seq": "42",
+      "first_ts": "2026-09-01T04:15Z",
+      "first_writer": "sancho",
+      "carries": "Note body on sancho note events (first use: HASH GATE CATCH on seq 32 registration)."
+    },
+    {
+      "key": "t",
+      "count": 1,
+      "first_line": 55,
+      "first_seq": "1788238807095",
+      "first_ts": "2026-09-01T05:00:07.095Z",
+      "first_writer": "sancho",
+      "carries": "Timestamp alias on the sancho heartbeat register at line 55 (that line carries no ts key). Legacy writer extra; do not adopt in new writers, use ts."
+    },
+    {
+      "key": "path",
+      "count": 1,
+      "first_line": 55,
+      "first_seq": "1788238807095",
+      "first_ts": "2026-09-01T05:00:07.095Z",
+      "first_writer": "sancho",
+      "carries": "Path alias where file is expected, on the same line-55 heartbeat register (which also carries no op, so it folds as a log-only marker). Legacy writer extra; do not adopt in new writers, use file."
+    },
+    {
+      "key": "kind",
+      "count": 21,
+      "first_line": 216,
+      "first_seq": null,
+      "first_ts": "2026-09-18T11:52:00Z",
+      "first_writer": null,
+      "carries": "Row kind on the seq-less arc-burn note rows (kind/item/card/ts shape, no op/seq; first use: adv_arc_burn)."
+    },
+    {
+      "key": "item",
+      "count": 21,
+      "first_line": 216,
+      "first_seq": null,
+      "first_ts": "2026-09-18T11:52:00Z",
+      "first_writer": null,
+      "carries": "Summary text of the arc-burn note row."
+    },
+    {
+      "key": "card",
+      "count": 21,
+      "first_line": 216,
+      "first_seq": null,
+      "first_ts": "2026-09-18T11:52:00Z",
+      "first_writer": null,
+      "carries": "Receipt-card pointer of the arc-burn note row."
+    },
+    {
+      "key": "bytes",
+      "count": 334,
+      "first_line": 338,
+      "first_seq": "1789823567015749400",
+      "first_ts": "2026-09-19T13:05:00+00:00",
+      "first_writer": null,
+      "carries": "Registered file size in bytes (writer extras of the 09-19 bulk-registration era; the first-seen seq literal is a B2-279 quantization-band double)."
+    },
+    {
+      "key": "files",
+      "count": 61,
+      "first_line": 1408,
+      "first_seq": "0",
+      "first_ts": "2026-09-22T12:17:38.848886+00:00",
+      "first_writer": null,
+      "carries": "List of touched files on repair and beacon rows (first use: the seq-0 09-22 repair op)."
+    },
+    {
+      "key": "source",
+      "count": 61,
+      "first_line": 1408,
+      "first_seq": "0",
+      "first_ts": "2026-09-22T12:17:38.848886+00:00",
+      "first_writer": null,
+      "carries": "Source label on repair and beacon rows."
+    },
+    {
+      "key": "url",
+      "count": 16,
+      "first_line": 1421,
+      "first_seq": null,
+      "first_ts": "2026-09-22T13:20:18.200081+00:00",
+      "first_writer": null,
+      "carries": "External URL on the seq-less beacon rows (first use: BEACON_LIVE)."
+    },
+    {
+      "key": "commit",
+      "count": 1,
+      "first_line": 930,
+      "first_seq": "1790017614588397",
+      "first_ts": "2026-09-21T19:06:54.588397+00:00",
+      "first_writer": null,
+      "carries": "Git commit sha on the single windowseal event."
+    },
+    {
+      "key": "repaired",
+      "count": 2,
+      "first_line": 1408,
+      "first_seq": "0",
+      "first_ts": "2026-09-22T12:17:38.848886+00:00",
+      "first_writer": null,
+      "carries": "Repair-op marker naming what was repaired."
+    },
+    {
+      "key": "repair_note",
+      "count": 2,
+      "first_line": 1408,
+      "first_seq": "0",
+      "first_ts": "2026-09-22T12:17:38.848886+00:00",
+      "first_writer": null,
+      "carries": "Explanation text on repair ops (container mount hang root-cause note)."
+    },
+    {
+      "key": "living",
+      "count": 17,
+      "first_line": 3090,
+      "first_seq": "1789823567015749403",
+      "first_ts": "2026-09-26T13:30:36.554Z",
+      "first_writer": "zcode-b2-156-living-hash-law",
+      "carries": "B2-156 living-file law flag; with size:N seals the first N bytes, with seal:\"open\" declares an edit-shaped board. Spec: watch/inbox/LIVING_HASH_LAW_20260926.md."
+    },
+    {
+      "key": "size",
+      "count": 14,
+      "first_line": 3090,
+      "first_seq": "1789823567015749403",
+      "first_ts": "2026-09-26T13:30:36.554Z",
+      "first_writer": "zcode-b2-156-living-hash-law",
+      "carries": "Sealed-prefix byte count for living registers (sha256 seals exactly the first size bytes)."
+    },
+    {
+      "key": "seal",
+      "count": 3,
+      "first_line": 3094,
+      "first_seq": "1789823567015749407",
+      "first_ts": "2026-09-26T13:38:03.644Z",
+      "first_writer": "zcode-b2-156-living-hash-law",
+      "carries": "Living seal shape marker; \"open\" = edit-shaped board with no byte seal (log-carried integrity)."
+    },
+    {
+      "key": "cls",
+      "count": 14,
+      "first_line": 3139,
+      "first_seq": "17904373817661",
+      "first_ts": "2026-09-26T15:43:01Z",
+      "first_writer": "zcode-seat-20260926",
+      "carries": "Class alias emitted by the zcode-seat-20260926 registration writer. The fold reads class only, so cls registers fold as UNPROVEN (INDEX.json: play_as_work_20260926/BRIEF_v4_full_20260926.md). Registered so the historical lines carry no unknown key; fix the writer, do not adopt the alias."
+    },
+    {
+      "key": "cls_key_disclosed",
+      "count": 2,
+      "first_line": 3141,
+      "first_seq": "17904374175693",
+      "first_ts": "2026-09-26T15:43:37Z",
+      "first_writer": "zcode-seat-20260926",
+      "carries": "The same writer's disclosure that cls is an alias of class (disclosed-not-edited under the no-erase law)."
+    },
+    {
+      "key": "consumer",
+      "count": 3,
+      "first_line": 7037,
+      "first_seq": null,
+      "first_ts": "2026-09-30T00:24:19+00:00",
+      "first_writer": null,
+      "carries": "Who read a receipt: the reader identity on op=consume events (tools/inbox_consume.py, Mickey17 wave 3, 2026-09-29). The log had zero read ops before this (return-5 census: 96 percent write-only). First seen on the three wave-3 consume events for INDEX.json, SHARED_SURFACE_CONTRACT.json and MICKEY17_WAVE_LEDGER_20260929.md; registered same day with that first-seen evidence. Events carry consumer instead of writer because a reader is not a state-mutating writer (no nonce/seq appended; ts-keyed like the md_record_seal hook lines)."
+    }
+  ]
+}

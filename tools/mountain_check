@@ -1,0 +1,64 @@
+#!/bin/bash
+# THE MOUNTAIN headless check: structural lint (advisory) -> sourcemap ->
+# semantic analyze (luau-lsp is the AUTHORITATIVE parser; the python
+# block-balance heuristic is advisory only — it false-positives on
+# keyword-looking words inside strings) -> place build.
+# Accepted noise classes (documented 2026-09-25): "Unknown require" without
+# sourcemap, "number | unknown"/"number?" on GetAttribute reads (all writes
+# numeric, reads defaulted), "Unknown type used in" (new-solver strictness),
+# Instance?/Model? from WaitForChild chains.
+cd "$(dirname "$0")/.."
+
+echo "== structural lint (advisory) =="
+.venv/Scripts/python.exe tools/luau_lint.py || true
+
+echo "== sourcemap =="
+(cd roblox && ../tools/bin/rojo/rojo.exe sourcemap default.project.json -o sourcemap.json)
+
+echo "== semantic analyze =="
+# Fix 2026-09-26 (t24), receipt: watch/inbox/gala_20260925/afterparty/lanes/t1d.check.txt
+# The rojo sourcemap step above runs (cd roblox), so sourcemap.json filePaths are
+# relative to roblox/ (src/shared/...). Analyze previously ran from the repo root
+# with roblox/src/... args, which never matched sourcemap keys: module requires
+# failed to load (Unknown require .../local_sovereign_agent/src/shared/Soul.luau,
+# missing the roblox/ prefix) and phantom TypeErrors appeared, e.g.
+# HeadMuseum.luau(16,26) "Unknown type 'Soul.Soul'". Repro in t1d runs 1-4:
+# repo-root 4 errors on HeadMuseum alone vs exit 0 from roblox/. Run analyze from roblox/.
+(cd roblox && ../tools/bin/luaulsp/luau-lsp.exe analyze --definitions="../tools/bin/globalTypes.d.luau" --sourcemap="sourcemap.json" src/shared src/server src/server/zones_extra src/client > /tmp/mountain_analyze.txt 2>&1)
+PARSE_FAILS=$(grep -cE "SyntaxError|Incomplete" /tmp/mountain_analyze.txt || true)
+echo "parse-level failures: $PARSE_FAILS"
+# Fix 2026-09-26 (t30), receipt: watch/inbox/gala_20260925/afterparty/lanes/t24.check.txt
+# luau-lsp reports each finding on two paths (absolute roblox/... line and a
+# relative src/... copy, t24's dual-path discovery), so the noise-filtered
+# stream carried 62 lines for only 20 unique locations on t24's run, and
+# head -20 showed duplicate copies while real findings fell under the cap
+# (HardwarePrimerZone(10,7), IncidentDungeonZone(12,7), LightmapRoomsZone(17,7)
+# were hidden). Dedupe on unique basename(line,col) locations BEFORE the cap,
+# print the unique count, then cap at 40: duplicates can no longer eat slots,
+# and the count line makes anything still hidden visible.
+grep -E "TypeError|LocalUnused" /tmp/mountain_analyze.txt \
+  | grep -v "Unknown require" \
+  | grep -v "number | unknown" \
+  | grep -v "'number?'" \
+  | grep -v "but got 'unknown'\|got 'unknown?'" \
+  | grep -v "Unknown type used in" \
+  | grep -v "could be nil" \
+  | awk '{
+      key = $0
+      if (match($0, /[^\\\/]+\.luau( +\[[^]]*\])?\([0-9]+,[0-9]+\)/)) {
+        key = substr($0, RSTART, RLENGTH)
+        sub(/ +\[.*\]/, "", key)
+      }
+      if (!seen[key]++) print
+    }' > /tmp/mountain_findings.txt
+echo "unique findings: $(wc -l < /tmp/mountain_findings.txt) (display cap 40)"
+head -40 /tmp/mountain_findings.txt
+
+echo "== place build =="
+(cd roblox && ../tools/bin/rojo/rojo.exe build default.project.json -o the_mountain.rbxlx)
+
+if [ "$PARSE_FAILS" != "0" ]; then
+  echo "== GATE FAIL: parse errors present =="
+  exit 1
+fi
+echo "== GATE PASS: the_mountain.rbxlx rebuilt =="

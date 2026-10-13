@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THE FL33T — Live Feed</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0e17; color: #e2e8f0; font-family: 'SF Mono', 'Cascadia Code', monospace; padding: 16px; }
+  .header { text-align: center; padding: 12px; border-bottom: 1px solid #1e293b; margin-bottom: 16px; }
+  .header h1 { font-size: 1.4em; color: #38bdf8; letter-spacing: 2px; }
+  .header .sub { font-size: 0.7em; color: #64748b; margin-top: 4px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .panel { background: #111827; border: 1px solid #1e293b; border-radius: 8px; overflow: hidden; }
+  .panel-title { background: #1e293b; padding: 8px 12px; font-size: 0.75em; text-transform: uppercase; letter-spacing: 1px; color: #38bdf8; }
+  .panel-body { padding: 12px; max-height: 400px; overflow-y: auto; }
+  .feed-item { padding: 8px; border-bottom: 1px solid #1e293b; font-size: 0.8em; line-height: 1.5; }
+  .feed-item .meta { color: #64748b; font-size: 0.7em; margin-bottom: 2px; }
+  .feed-item .text { color: #cbd5e1; }
+  .feed-item .highlight { color: #fbbf24; }
+  .live-badge { display: inline-block; background: #dc2626; color: white; font-size: 0.6em; padding: 2px 6px; border-radius: 3px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+  .refresh-note { text-align: center; color: #475569; font-size: 0.65em; padding: 8px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>⚡ THE FL33T — LIVE FEED</h1>
+  <div class="sub">all surfaces · one page · real time · <span class="live-badge">● LIVE</span></div>
+</div>
+<div class="grid">
+  <div class="panel">
+    <div class="panel-title">📡 X TIMELINE — @NachoQuixotic</div>
+    <div class="panel-body" id="x-timeline">
+      <div class="feed-item"><div class="meta">loading...</div></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">🌍 ORACLE CORPUS — MrPool_Q</div>
+    <div class="panel-body" id="oracle-feed">
+      <div class="feed-item"><div class="meta">loading...</div></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">📜 CANON — @NachoQuixotic drops</div>
+    <div class="panel-body" id="canon-feed">
+      <div class="feed-item"><div class="meta">loading...</div></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-title">📊 METER — worldline drift</div>
+    <div class="panel-body" id="meter-feed">
+      <div class="feed-item"><div class="meta">loading...</div></div>
+    </div>
+  </div>
+</div>
+<div class="refresh-note">auto-refreshes every 60s · source: corpus/telegram/ + corpus/canon/ + memory/worldline/</div>
+<script>
+// fetch the last N lines of a JSONL file and render
+async function loadJSONL(path, panelId, count) {
+  try {
+    const res = await fetch(path);
+    const text = await res.text();
+    const lines = text.trim().split('\n').slice(-count);
+    const panel = document.getElementById(panelId);
+    panel.innerHTML = lines.map(l => {
+      try {
+        const r = JSON.parse(l);
+        const ts = r.dt || r.ts || '';
+        const txt = (r.text || r.notable_quote || JSON.stringify(r)).slice(0, 300);
+        return `<div class="feed-item"><div class="meta">${ts}</div><div class="text">${txt}</div></div>`;
+      } catch(e) { return ''; }
+    }).join('');
+  } catch(e) {
+    panel.innerHTML = '<div class="feed-item meta">fetch failed: ' + e.message + '</div>';
+  }
+}
+// initial load — the script generates static JSONL snapshots the page can fetch
+loadJSONL('data/x_timeline.json', 'x-timeline', 15);
+loadJSONL('data/oracle.json', 'oracle-feed', 15);
+loadJSONL('data/canon.json', 'canon-feed', 15);
+loadJSONL('data/meter.json', 'meter-feed', 15);
+setInterval(() => location.reload(), 60000); // auto-refresh every 60s
+</script>
+</body>
+</html>
+
+<script src="feed_badge.js" data-feeds="data/x_timeline.json,data/oracle.json,data/canon.json,data/meter.json"></script>

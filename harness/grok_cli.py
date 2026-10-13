@@ -1,0 +1,207 @@
+"""Call Grok's open agentic harness (CLI headless mode).
+
+Uses the same `grok` binary as Grok Build TUI:
+  grok -p "..." --cwd ... --output-format plain|json [--max-turns N]
+
+This is the specialist lane for Mag escalations — not a replacement for local Ollama.
+"""
+from __future__ import annotations
+
+import json
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+from config import RESULTS_DIR, ROOT
+
+
+def find_grok() -> str | None:
+    env = os.environ.get("GROK_BIN")
+    if env and Path(env).is_file():
+        return env
+    which = shutil.which("grok")
+    if which:
+        return which
+    # Windows default install
+    cand = Path.home() / ".grok" / "bin" / "grok.exe"
+    if cand.is_file():
+        return str(cand)
+    return None
+
+
+def harness_available() -> bool:
+    return find_grok() is not None
+
+
+def escalate_via_harness(
+    *,
+    goal: str,
+    context: str = "",
+    warm: bool = True,
+    cwd: Path | None = None,
+    max_turns: int = 12,
+    yolo: bool = False,
+    output_format: str = "plain",
+    handoff_id: str | None = None,
+    timeout: int = 600,
+    model: str | None = None,
+    reasoning_effort: str | None = None,
+) -> dict[str, Any]:
+    """Run one headless Grok harness turn. Returns structured result dict.
+
+    warm=True (default) mounts the WARM CACHE RIB (mag.grok_warm_rib) on the call: the same frozen
+    standing prefix every call, so the grok CLI cache stays hot and each ask is only the delta.
+    Falls back silently if the warm rib is unavailable — never breaks a call.
+    """
+    grok = find_grok()
+    if not grok:
+        return {
+            "ok": False,
+            "error": "grok binary not found (install Grok CLI / open harness)",
+            "exit_code": 127,
+        }
+
+    cwd = cwd or ROOT
+    handoff_id = handoff_id or datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S-harness")
+
+    # WARM CACHE RIB — mount the frozen standing prefix (stable across calls = the cache hit).
+    if warm:
+        try:
+            sys.path.insert(0, str(ROOT))
+            from mag.grok_warm_rib import inject as _warm_inject
+            warm_block = _warm_inject(context)
+            if warm_block and warm_block.strip():
+                context = warm_block
+        except Exception:
+            pass  # warm rib unavailable -> keep current behavior, never break a call
+    prompt = f"""You are the specialist lane for Sovereign Mag (local companion).
+
+## Goal
+{goal}
+
+## Context (from Mag / local clerk)
+{context[:12000]}
+
+## Rules
+- One job. Substance. No flattery theater.
+- DO NOT load any framework, tool, skill, compass, or file as a preamble. Do NOT narrate your
+  process. Answer the goal DIRECTLY. (ROOT-CAUSE FIX 2026-08-16: framework-loading burned the
+  turn budget and never answered — the swarm->grok lane was failing 83%. Forbidden.)
+- Prefer writing concrete files under the cwd when useful.
+- Respect private data: do not exfiltrate secrets.
+- End with a short SUMMARY of what you did or what is blocked.
+
+When done, structure your final answer with:
+SUMMARY: ...
+DELIVERABLE: ...
+"""
+
+    # Prefer --prompt-file for long prompts / Windows quoting
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(
+        mode="w",
+        suffix=".txt",
+        delete=False,
+        encoding="utf-8",
+        dir=str(RESULTS_DIR),
+    ) as tf:
+        tf.write(prompt)
+        prompt_path = tf.name
+
+    cmd = [
+        grok,
+        "--prompt-file",
+        prompt_path,
+        "--cwd",
+        str(cwd),
+        "--output-format",
+        output_format if output_format in {"plain", "json", "streaming-json"} else "plain",
+        "--max-turns",
+        str(max_turns),
+        "--no-auto-update",
+    ]
+    if yolo:
+        cmd.append("--always-approve")
+    # Safer default: deny destructive shell patterns when not yolo
+    if not yolo:
+        cmd.extend(["--deny", "Bash(rm*)", "--deny", "Bash(*Remove-Item*)"])
+    # Model pin (e.g. "grok-4.7" during the 09-25 window); default config otherwise
+    if model:
+        cmd.extend(["-m", model])
+    # Reasoning-effort lever (low cuts billed reasoning tokens on cheap judgment lanes)
+    if reasoning_effort:
+        cmd.extend(["--reasoning-effort", reasoning_effort])
+
+    t0 = time.monotonic()
+    try:
+        proc = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            cwd=str(cwd),
+        )
+        latency_ms = int((time.monotonic() - t0) * 1000)
+        stdout = (proc.stdout or "")[-50000:]
+        stderr = (proc.stderr or "")[-8000:]
+        result: dict[str, Any] = {
+            "ok": proc.returncode == 0,
+            "exit_code": proc.returncode,
+            "handoff_id": handoff_id,
+            "summary": _extract_summary(stdout),
+            "deliverable": stdout,
+            "stderr": stderr,
+            "cmd": " ".join(cmd[:6]) + " …",
+            "harness": "grok-cli-headless",
+            "model": model,
+            "latency_ms": latency_ms,
+        }
+        # json output carries proxy-side cost accounting: lift it into the receipt
+        if output_format == "json":
+            try:
+                payload = json.loads(stdout)
+                if isinstance(payload, dict):
+                    result["usage"] = payload.get("usage")
+                    result["cost_usd"] = payload.get("total_cost_usd")
+                    result["model_used"] = list((payload.get("modelUsage") or {}).keys())
+                    result["session_id"] = payload.get("sessionId")
+                    result["stop_reason"] = payload.get("stopReason")
+                    if isinstance(payload.get("text"), str):
+                        result["deliverable"] = payload["text"]
+                        result["summary"] = _extract_summary(payload["text"])
+            except (json.JSONDecodeError, ValueError):
+                result["json_parse"] = "stdout was not valid json; raw kept in deliverable"
+        out_path = RESULTS_DIR / f"{handoff_id}.json"
+        out_path.write_text(json.dumps(result, indent=2)[:200000], encoding="utf-8")
+        result["result_path"] = str(out_path)
+        return result
+    except subprocess.TimeoutExpired:
+        return {
+            "ok": False, "error": "harness timeout", "exit_code": 124,
+            "handoff_id": handoff_id, "latency_ms": int((time.monotonic() - t0) * 1000),
+        }
+    except Exception as e:
+        return {
+            "ok": False, "error": str(e), "exit_code": 1,
+            "handoff_id": handoff_id, "latency_ms": int((time.monotonic() - t0) * 1000),
+        }
+    finally:
+        try:
+            Path(prompt_path).unlink(missing_ok=True)
+        except OSError:
+            pass
+
+
+def _extract_summary(text: str) -> str:
+    for line in text.splitlines():
+        if line.strip().upper().startswith("SUMMARY:"):
+            return line.split(":", 1)[-1].strip()
+    # last non-empty paragraph snippet
+    parts = [p.strip() for p in text.strip().split("\n\n") if p.strip()]
+    return (parts[-1] if parts else text[:500])[:1500]

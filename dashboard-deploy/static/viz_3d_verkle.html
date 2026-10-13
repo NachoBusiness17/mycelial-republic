@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verkle Chain — 3D</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;background:#0a0e14;overflow:hidden;font-family:system-ui}
+  #scene{position:absolute;inset:0}
+  #meta{position:absolute;top:12px;left:14px;color:#8b949e;font-size:12px;line-height:1.7;pointer-events:none}
+  #meta b{color:#e6edf3}
+  #legend{position:absolute;left:14px;bottom:14px;color:#8b949e;font-size:11px;line-height:1.7;
+    background:rgba(10,14,20,.7);padding:8px 10px;border-radius:8px;border:1px solid #21262d;pointer-events:none}
+  #readout{position:absolute;top:12px;right:14px;min-width:230px;color:#e6edf3;font-size:12px;line-height:1.6;
+    background:rgba(10,14,20,.85);border:1px solid #2f7a4a;border-radius:8px;padding:10px 12px;display:none}
+  #readout .th{font-weight:bold;font-size:13px;margin-bottom:2px}
+  #readout .m{color:#8b949e;font-size:11px;font-family:monospace;margin-bottom:6px}
+  #readout .r{display:flex;justify-content:space-between;gap:10px}
+  #readout .r span:first-child{color:#8b949e}
+</style>
+</head>
+<body>
+  <div id="scene"></div>
+  <div id="meta">🧬 <b>Verkle chain — 3D</b><br>drag to orbit · scroll to zoom · hover a knot to read it</div>
+  <div id="legend"></div>
+  <div id="readout"></div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+<script src="game_verkle_knots.js"></script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0e14);
+const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, 0.1, 2000);
+camera.position.set(0, 60, 130);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+document.getElementById('scene').appendChild(renderer.domElement);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+const sun = new THREE.DirectionalLight(0xffffff, 1.1); sun.position.set(60, 80, 40); scene.add(sun);
+scene.add(new THREE.HemisphereLight(0x223, 0x020, 0.6));
+
+// ── real knots from the chain, placed on a 3D helix (golden-angle spiral in 3D) ──
+const N = VERKLE_KNOTS.length;
+const R = 34, STEP = 1.05, TWIST = 0.42;
+const meshByIndex = new Map();
+const pos = [];
+for (let i=0;i<N;i++){
+  const k = VERKLE_KNOTS[i];
+  const a = i*TWIST;
+  const x = Math.cos(a)*(R - i*0.02), z = Math.sin(a)*(R - i*0.02), y = i*STEP - N*STEP/2;
+  const r = 0.6 + (k.tension||0)*1.4;
+  const geo = new THREE.SphereGeometry(r, 14, 14);
+  const mat = new THREE.MeshStandardMaterial({ color: k.color, emissive: k.color, emissiveIntensity: 0.35 });
+  const m = new THREE.Mesh(geo, mat); m.position.set(x,y,z); scene.add(m);
+  m.userData = { i, k, x, y, z };
+  meshByIndex.set(i, m); pos.push({x,y,z});
+}
+// the chain (links between consecutive knots) + a faint spiral guide
+const linePts = pos.map(p=>new THREE.Vector3(p.x,p.y,p.z));
+scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(linePts),
+  new THREE.LineBasicMaterial({ color: 0x2e3b52, transparent:true, opacity:0.5 })));
+// chain tip marker
+const tip = meshByIndex.get(N-1);
+if(tip){ const g = new THREE.SphereGeometry(1.6, 16,16); const tm = new THREE.Mesh(g, new THREE.MeshStandardMaterial({color:0xffffff, emissive:0xffffff, emissiveIntensity:0.7})); tm.position.copy(tip.position); scene.add(tm); }
+
+// ── the standing wave: a traveling pulse (idea propagating via steal) ──
+const pulse = new THREE.Mesh(new THREE.SphereGeometry(3, 16,16),
+  new THREE.MeshBasicMaterial({ color: 0x7dffb0, transparent:true, opacity:0.85 }));
+scene.add(pulse);
+
+// ── representative: hover a knot -> read its real identity ──
+const raycaster = new THREE.Raycaster(); const pointer = new THREE.Vector2();
+const readout = document.getElementById('readout');
+function show(i){
+  const k = VERKLE_KNOTS[i];
+  readout.style.display='block';
+  readout.innerHTML = `<div class="th" style="color:${k.color}">${k.theme}</div>`+
+    `<div class="m">knot ${i+1}/${N} · leaf ${k.hash} · ${k.ts}</div>`+
+    `<div class="r"><span>session</span><span>${k.session}</span></div>`+
+    `<div class="r"><span>tension</span><span>${(k.tension||0).toFixed(3)}</span></div>`+
+    `<div class="r"><span>dirichlet</span><span>${(k.dirichlet||0).toFixed(3)}</span></div>`+
+    `<div class="r"><span>Q</span><span>${(k.q||0).toFixed(2)}</span></div>`+
+    `<div class="r"><span>residual</span><span>${(k.residual||0).toFixed(3)}</span></div>`;
+}
+renderer.domElement.addEventListener('pointermove', e=>{
+  pointer.x = (e.clientX/innerWidth)*2-1; pointer.y = -(e.clientY/innerHeight)*2+1;
+  raycaster.setFromCamera(pointer, camera);
+  const hits = raycaster.intersectObjects([...meshByIndex.values()]);
+  if(hits.length){ const i = hits[0].object.userData.i; show(i); }
+  else readout.style.display='none';
+});
+renderer.domElement.addEventListener('pointerleave', ()=>readout.style.display='none');
+
+const themes = {}; VERKLE_KNOTS.forEach(k=>{ themes[k.theme]=themes[k.theme]||k.color; });
+document.getElementById('legend').innerHTML =
+  Object.keys(themes).map(t=>`<span style="color:${themes[t]}">■</span> ${t}`).join(' · ')+
+  ` <b>| the pulse is an idea traveling the chain</b>`;
+document.getElementById('meta').innerHTML =
+  `🧬 <b>Verkle chain — 3D</b> · ${N} knots · ${VERKLE_TIP.n_leaves} leaves · root ${VERKLE_TIP.root.slice(0,10)}…<br>drag to orbit · scroll to zoom · hover a knot to read it`;
+
+// ── the wave oscillates at the FREQUENCY OF OUR SYSTEM PROCESSES (live /api/v1/local-pulse) ──
+let live = { system_pct: null, ollama_proc_pct: null, ok: false, state: '' };
+async function pollPulse(){
+  try {
+    const r = await fetch('http://127.0.0.1:8765/api/v1/local-pulse');
+    const j = await r.json(); const c = (j && j.cpu) || {};
+    live = {
+      system_pct: typeof c.system_pct === 'number' ? c.system_pct : null,
+      ollama_proc_pct: typeof c.ollama_proc_pct === 'number' ? c.ollama_proc_pct : null,
+      ok: true, state: (j && j.state) || '',
+    };
+  } catch(e){ live.ok = false; }
+  try { await pollPulseTick(); } catch(e){}
+  setTimeout(pollPulse, 2000);
+}
+const metaEl = document.getElementById('meta');
+function pollPulseTick(){
+  const sys = live.system_pct, oll = live.ollama_proc_pct;
+  metaEl.innerHTML =
+    `🧬 <b>Verkle chain — 3D</b> · ${N} knots · ${VERKLE_TIP.n_leaves} leaves · root ${VERKLE_TIP.root.slice(0,10)}…<br>` +
+    `⏱ wave beats at <b>${sys==null?'—':sys+'%'} system cpu</b> · ${oll==null?'—':oll+'%'} on our processes` +
+    (live.ok ? ` · ${live.state}` : ' · (pulse offline)') +
+    `<br>drag to orbit · scroll to zoom · hover a knot to read it`;
+}
+pollPulse();
+
+// ── animate: standing wave (knots breathe) + traveling pulse, driven by live process load ──
+let t = 0;
+function animate(){
+  requestAnimationFrame(animate);
+  // frequency = live system cpu (our processes running -> faster); amplitude = our process cpu
+  const sys = live.system_pct ?? 15, oll = live.ollama_proc_pct ?? 0;
+  const freq = 0.006 + (sys/100)*0.05;          // higher load -> faster wave
+  const amp = 1 + (oll/100)*1.6;                // our LLM processes -> stronger breathing
+  t += freq;
+  // standing wave: knots pulse in place, stronger when our processes are active
+  for(let i=0;i<N;i++){ const m=meshByIndex.get(i);
+    const o = Math.sin(t*2 + i*0.35);
+    m.scale.setScalar(1 + Math.max(0,o)*0.5*amp);
+    m.material.emissiveIntensity = 0.2 + 0.4*Math.abs(o)*amp;
+  }
+  // traveling pulse (idea propagating via steal), its glow = our process activity
+  const wf=(t/1.6)%1; const wi=wf*(N-1); const p=pos[Math.floor(wi)]||pos[0];
+  pulse.position.set(p.x, p.y + Math.sin(t*3)*1.5, p.z);
+  pulse.scale.setScalar(0.8 + (oll/100)*1.2);
+  controls.update(); renderer.render(scene, camera);
+}
+window.addEventListener('resize', ()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+animate();
+</script>
+</body>
+</html>

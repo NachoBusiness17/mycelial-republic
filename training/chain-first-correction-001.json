@@ -1,0 +1,41 @@
+{
+  "schema": "training_event.v1",
+  "ts": "2026-08-08T23:30:00Z",
+  "event_id": "train-chain-discipline-001",
+  "type": "operator_correction",
+  "severity": "high",
+
+  "problem": {
+    "symptom": "Assistant defaulted to file_search/grep to answer 'what do we know?' instead of querying the Verkle chain.",
+    "root_cause": "No structural enforcement of chain-first query discipline. The chain exists but modules are not required to use it as their primary read surface. Assistant's default tool selection favors familiarity (grep) over correctness (chain query).",
+    "pattern_match": "Same class as Grok-4 misroute: defaulting to familiar/expensive tool instead of correct/cheap tool. Assistant tool selection is biased toward what the assistant knows, not what the architecture provides.",
+    "detection_gap": "Ghost autonomous loop does not monitor tool selection patterns. Doctor does not check chain query discipline. No automatic flag when a module reads the chain file directly instead of through chain_query."
+  },
+
+  "solution": {
+    "immediate": "Built mag/chain_query.py — canonical read surface. All 14 modules should import chain and use chain.tail(), chain.by_theme(), chain.breadcrumb() etc.",
+    "structural": "Added doctor check: scan all mag/*.py for direct verkle_chain.jsonl reads that bypass chain_query.",
+    "behavioral": "Assistant now defaults to chain query for 'what do we know?' questions. This log entry is the training record of the correction.",
+    "steer_vector": "CHAIN_FIRST: When asking 'what do we know?', query the Verkle chain through chain_query before any file search, grep, or live function call. The chain is the canonical source. Files are fallback."
+  },
+
+  "operator_context": {
+    "what_triggered": "User asked about John Titor in research archives. Assistant ran file_search('*titor*') and grep instead of chain.by_theme('titor'). User asked 'why aren't you default logic to the chain first questioning?'",
+    "what_was_missed": "The Titor research pack (20260807T_speculative-tool-deep-dive-titor-pool-cognitopolis.md) was already in the research archives. The Verkle chain contained the theme. Assistant reached for the wrong tool.",
+    "user_correction": "Direct: 'why aren't you default logic to the chain first questioning' and 'that query discipline should be baked in.'"
+  },
+
+  "compoundable": true,
+  "compound_as": "pro_library: CHAIN_FIRST steer vector. skill_ledger: chain-first query discipline. fkb: grep-over-chain anti-pattern.",
+
+  "fold_targets": ["skill_ledger", "pro_library", "fkb", "improve_loop"],
+
+  "ghost_steer": {
+    "vector_id": "CHAIN_FIRST_v1",
+    "trigger": "Module attempts file_search, grep, or os.listdir for questions answerable by the Verkle chain.",
+    "action": "Redirect to chain.by_theme(), chain.by_type(), or chain.tail(). Log the redirect as a discipline_event.",
+    "priority": 5,
+    "compoundable": true,
+    "test": "Monitor chain_query.fallback_rate. Target < 5%. Current: unknown (just deployed)."
+  }
+}

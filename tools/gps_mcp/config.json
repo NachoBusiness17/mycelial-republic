@@ -1,0 +1,78 @@
+{
+  "tier_order": ["local", "mid", "frontier"],
+  "exploration_model": "flash-mid-1",
+  "providers": [
+    {
+      "model_id": "yesno-tiny",
+      "base_url": "http://localhost:11434/v1",
+      "model": "yesno-tiny:latest",
+      "tier": "local",
+      "cost_usd_per_call": 0.00002,
+      "latency_ms": 60,
+      "test_double": true,
+      "confidence_default": 0.95,
+      "confidence_by_task_shape": {
+        "code_review": 0.2,
+        "design_judgment": 0.1
+      }
+    },
+    {
+      "model_id": "scut-2b",
+      "base_url": "http://localhost:11434/v1",
+      "model": "gemma2:2b",
+      "tier": "local",
+      "cost_usd_per_call": 0.00005,
+      "latency_ms": 120,
+      "test_double": true,
+      "confidence_default": 0.6,
+      "confidence_by_task_shape": {
+        "summarize": 0.88,
+        "yes_no_decision": 0.91
+      }
+    },
+    {
+      "model_id": "gemma-worker-4b",
+      "base_url": "http://localhost:11435/v1",
+      "model": "gemma4-short-worker",
+      "tier": "local",
+      "cost_usd_per_call": 0.0002,
+      "latency_ms": 350,
+      "test_double": true,
+      "confidence_default": 0.75
+    },
+    {
+      "model_id": "flash-mid-1",
+      "base_url": "http://localhost:4000/v1",
+      "model": "vendor/flash-cheap",
+      "tier": "mid",
+      "cost_usd_per_call": 0.004,
+      "latency_ms": 800,
+      "test_double": true,
+      "confidence_default": 0.92,
+      "confidence_by_task_shape": {
+        "design_judgment": 0.55
+      }
+    },
+    {
+      "model_id": "flash-mid-2",
+      "base_url": "http://localhost:4000/v1",
+      "model": "vendor/flash-fast",
+      "tier": "mid",
+      "cost_usd_per_call": 0.009,
+      "latency_ms": 500,
+      "test_double": true,
+      "confidence_default": 0.93
+    },
+    {
+      "model_id": "frontier-opus",
+      "base_url": "https://frontier.example.internal/v1",
+      "model": "opus-class",
+      "tier": "frontier",
+      "cost_usd_per_call": 0.12,
+      "latency_ms": 4000,
+      "test_double": true,
+      "confidence_default": 0.97,
+      "api_key_env": "FRONTIER_API_KEY"
+    }
+  ]
+}

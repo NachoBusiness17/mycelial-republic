@@ -1,0 +1,273 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>EROSION FIELD — B1 v1</title>
+<!--
+  B1 v1 — EROSION FIELD (2026-09-03)
+
+  PROVENANCE (tri-state, per law):
+  - Technique credited to Rune Skovbo Johansen (runevision), Shadertoy sf23W1,
+    "GPU-friendly terrain erosion filter — paint eroded mountains and islands
+    with your mouse". Identity SUPPORTED via web search receipt (Shadertoy
+    direct fetch 403s behind Cloudflare — wall pre-documented 2026-08-11 and
+    2026-08-24); source text UNPROVEN (never fetched). This file is our OWN
+    implementation of the family: double-buffered (ping-pong) state plus an
+    order-free per-cell material-transport operator (talus-limited thermal
+    slide + slope-proportional creep) that EMULATES erosion locally — no
+    global hydrological simulation, exactly the nuance the search receipt
+    carries. License family CC BY-NC-SA: technique stolen, code ours, credited.
+  - Fleet arc: shadow-fields layer 9 -> watch/SHADERTOY_SHADOW_FIELDS_20260903.md
+    -> intake 21/25 BUILD NOW (watch/INTAKE_EROSION_FIELD_20260903.md, operator
+    B1 GO). Marble Madness on hand-painted eroded terrain: occluders become
+    mesas, lights become hills, walkers become marbles under gravity-along-grad-h.
+  - Data: watch/steer_field/FIELD.json (schema field.v1, ts
+    2026-09-03T18:26:13Z) inlined as the snapshot below — ZERO FETCH, STATIC
+    RENDER LAW. Same shape the steer field reads: lights, occluders, walkers,
+    seat_tails, schema/ts/law.
+
+  GPU-ISH, HONESTLY: the sim is structured as a pass graph the way the GPU
+  version runs — PASS 0 paint (strokes in), PASS 1 erode x2 (ping-pong
+  buffers, gather-form operator that drops into a GLSL fragment shader on an
+  FBO pair), PASS 2 marbles (needs exact height readback, so the operator runs
+  on typed arrays here — this dodges the salon's first runtime wall,
+  GPU->CPU readback latency, instead of paying it; the FBO port is the v1 GPU
+  step and is UNBUILT in this file). Det spine = erosion operator; stochastic
+  flesh = paint strokes + marble jitter.
+
+  THE LIGHT CODEC LAW: the operator writes on the film, the field steers the
+  interior (canon/bubbles). L-drag raises terrain, R/shift-drag carves;
+  engines upwell material; the rim drains to sea; marbles roll and abrade.
+  Keys: [R] reset field, [E] pause/resume erosion.
+--><style>
+body{margin:0;background:#07080c;color:#cfd6e4;font:13px/1.5 Consolas,monospace}
+#wrap{position:relative;width:960px;margin:0 auto}
+h1{font-size:14px;letter-spacing:2px;color:#9fb0cc;margin:10px 0 4px}
+.sub{color:#5c6a82;font-size:11px;margin-bottom:6px}
+#stage{position:relative;width:960px;height:600px}
+#field{display:block;background:#07080c}
+#film{position:absolute;left:0;top:0;cursor:crosshair}
+#hud{position:absolute;left:8px;bottom:8px;font-size:11px;color:#8a97ad;background:rgba(7,8,12,.6);padding:2px 6px;border:1px solid #1c2230}
+.legend{position:absolute;top:34px;right:8px;text-align:right;font-size:11px;color:#8a97ad}
+</style></head><body><div id="wrap">
+<h1>EROSION FIELD — B1 v1</h1>
+<div class="sub">field.v1 ts 2026-09-03T18:26:13Z · technique: runevision (Rune Skovbo Johansen, Shadertoy sf23W1) · 7 engines upwell · 4 failure mesas · 6 marbles roll · law: steer the interior by writing on the film (canon/bubbles)</div>
+<div id="stage">
+<canvas id="field" width="960" height="600"></canvas>
+<canvas id="film" width="960" height="600"></canvas>
+<div class="legend"><span style='color:#ffb347'>● glm-flash-free</span><br><span style='color:#7dffa8'>● openclaw</span><br><span style='color:#6fd8ff'>● zai-opencode</span></div>
+<div id="hud">loading</div>
+</div></div>
+<script>
+// ---- FIELD.v1 snapshot, inlined from watch/steer_field/FIELD.json (zero fetch) ----
+const F = {"schema": "field.v1", "ts": "2026-09-03T18:26:13Z", "law": "steer the interior by writing on the film (canon/bubbles); one field, consumers rightsized: render/operator, walkers/dumb, tails/steered", "lights": [{"id": "eng_A.1", "x": 140, "y": 90, "nm": 610, "color": "#ffb347", "lane": "glm-flash-free", "kind": "engine", "label": "A.1 \u00b7 glm-flash-free \u00b7 sess~1 \u00b7 TURN-FAIL sp_60400550", "intensity": 0.1}, {"id": "eng_A.2", "x": 420, "y": 80, "nm": 610, "color": "#ffb347", "lane": "glm-flash-free", "kind": "engine", "label": "A.2 \u00b7 glm-flash-free \u00b7 sess~2", "intensity": 0.43}, {"id": "eng_E.1", "x": 700, "y": 90, "nm": 540, "color": "#7dffa8", "lane": "openclaw", "kind": "engine", "label": "E.1 \u00b7 openclaw \u00b7 sess~2", "intensity": 0.43}, {"id": "eng_Z.1", "x": 180, "y": 330, "nm": 470, "color": "#6fd8ff", "lane": "zai-opencode", "kind": "engine", "label": "Z.1 \u00b7 zai-opencode \u00b7 sess~11", "intensity": 0.51}, {"id": "eng_Z.2", "x": 430, "y": 460, "nm": 470, "color": "#6fd8ff", "lane": "zai-opencode", "kind": "engine", "label": "Z.2 \u00b7 zai-opencode \u00b7 sess~11", "intensity": 0.59}, {"id": "eng_Z.3", "x": 760, "y": 380, "nm": 470, "color": "#6fd8ff", "lane": "zai-opencode", "kind": "engine", "label": "Z.3 \u00b7 zai-opencode \u00b7 sess~2", "intensity": 0.51}, {"id": "eng_Z.4", "x": 870, "y": 200, "nm": 470, "color": "#6fd8ff", "lane": "zai-opencode", "kind": "engine", "label": "Z.4 \u00b7 zai-opencode \u00b7 sess~3", "intensity": 0.43}], "occluders": [{"id": "oc_freeflap", "x": 200, "y": 130, "w": 44, "h": 150, "label": "free-lane flap"}, {"id": "oc_collapse", "x": 460, "y": 330, "w": 44, "h": 170, "label": "model collapse"}, {"id": "oc_mount", "x": 700, "y": 110, "w": 44, "h": 150, "label": "mount mismatch"}, {"id": "oc_fold", "x": 620, "y": 430, "w": 44, "h": 120, "label": "boilerplate fold"}], "walkers": [{"i": 0, "x": 40, "y": 300}, {"i": 1, "x": 70, "y": 300}, {"i": 2, "x": 100, "y": 300}, {"i": 3, "x": 40, "y": 420}, {"i": 4, "x": 70, "y": 420}, {"i": 5, "x": 100, "y": 420}], "seat_tails": [{"seat": "seat-e1", "engine": "E.1", "wing": "", "health": "quiet", "age_h": -1, "target": "eng_E.1", "tail": "[seat-e1] steer\u2192eng_E.1 \u03bb540 \u00b7 openclaw \u00b7 sess~2"}, {"seat": "seat-g1", "engine": "A.1", "wing": "sp_60400550", "health": "failed", "age_h": 99, "target": "eng_A.1", "tail": "[seat-g1] steer\u2192eng_A.1 \u03bb610 \u00b7 glm-flash-free \u00b7 TURN-FAIL sp_60400550"}, {"seat": "seat-g2", "engine": "A.2", "wing": "sp_21720914", "health": "ok", "age_h": 99, "target": "eng_A.2", "tail": "[seat-g2] steer\u2192eng_A.2 \u03bb610 \u00b7 glm-flash-free \u00b7 sess~2"}, {"seat": "seat-z1", "engine": "Z.1", "wing": "sp_56382190", "health": "ok", "age_h": 99, "target": "eng_Z.1", "tail": "[seat-z1] steer\u2192eng_Z.1 \u03bb470 \u00b7 zai-opencode \u00b7 sess~11"}, {"seat": "seat-z2", "engine": "Z.2", "wing": "sp_71829890", "health": "ok", "age_h": 99, "target": "eng_Z.2", "tail": "[seat-z2] steer\u2192eng_Z.2 \u03bb470 \u00b7 zai-opencode \u00b7 sess~11"}, {"seat": "seat-z3", "engine": "Z.3", "wing": "sp_96570772", "health": "ok", "age_h": 99, "target": "eng_Z.3", "tail": "[seat-z3] steer\u2192eng_Z.3 \u03bb470 \u00b7 zai-opencode \u00b7 sess~2"}, {"seat": "seat-z4", "engine": "Z.4", "wing": "sp_14701973", "health": "ok", "age_h": 99, "target": "eng_Z.4", "tail": "[seat-z4] steer\u2192eng_Z.4 \u03bb470 \u00b7 zai-opencode \u00b7 sess~3"}]};
+
+// ---- grid: 240x150 cells at 4 film-px per cell == the 960x600 film space ----
+const GW=240, GH=150, CELL=4;
+let H = new Float32Array(GW*GH);   // ping
+let H2 = new Float32Array(GW*GH);  // pong
+let steps=0, erodeOn=true;
+
+// erosion constants (talus-limited transport + creep)
+const TALUS=0.010, KF=0.125, CREEP=0.045, DRAIN=0.985;
+
+function seedField(){
+  // det spine: deterministic rolling base (sine relief, no RNG)
+  for(let j=0;j<GH;j++)for(let i=0;i<GW;i++){
+    const x=i/GW, y=j/GH;
+    let h=0.30 + 0.10*Math.sin(x*7.3+y*3.1) + 0.07*Math.sin(x*13.7-y*9.2+1.7) + 0.05*Math.sin(x*23+y*31+4.1);
+    H[j*GW+i]=Math.max(0.02,h);
+  }
+  // occluders -> failure mesas: obstacles stand as high ground (plateau + skirt)
+  for(const o of F.occluders){
+    const cx=(o.x+o.w/2)/CELL, cy=(o.y+o.h/2)/CELL, rw=o.w/(2*CELL), rh=o.h/(2*CELL);
+    const i0=Math.max(1,Math.floor(cx-rw-8)), i1=Math.min(GW-2,Math.ceil(cx+rw+8));
+    const j0=Math.max(1,Math.floor(cy-rh-8)), j1=Math.min(GH-2,Math.ceil(cy+rh+8));
+    for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++){
+      const dx=Math.max(Math.abs(i-cx)-rw,0), dy=Math.max(Math.abs(j-cy)-rh,0);
+      const w=Math.max(0,1-Math.hypot(dx,dy)/8), k=j*GW+i;
+      H[k]+=w*w*0.85;
+    }
+  }
+  // lights -> engine hills: elevation and radius scale with intensity
+  for(const L of F.lights){
+    const cx=L.x/CELL, cy=L.y/CELL, rad=(40+130*L.intensity)/CELL, hh=0.2+0.8*L.intensity;
+    const i0=Math.max(1,Math.floor(cx-rad)), i1=Math.min(GW-2,Math.ceil(cx+rad));
+    const j0=Math.max(1,Math.floor(cy-rad)), j1=Math.min(GH-2,Math.ceil(cy+rad));
+    for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++){
+      const d=Math.hypot(i-cx,j-cy)/rad;
+      if(d<1){const w=1-d; H[j*GW+i]+=w*w*hh;}
+    }
+  }
+}
+
+// PASS 1 — ERODE. Gather-form, order-free per-cell operator: each cell pulls
+// spill from higher neighbors and loses to lower ones past the talus angle,
+// plus slope-proportional sub-talus creep (the emulated hydraulic carry).
+// This body is the GLSL fragment shader; H/H2 are the FBO ping-pong pair.
+function erodePass(src,dst){
+  for(let j=0;j<GH;j++){
+    const jm=j>0, jp=j<GH-1;
+    for(let i=0;i<GW;i++){
+      const k=j*GW+i, h=src[k];
+      const im=i>0, ip=i<GW-1;
+      const hL=im?src[k-1]:h, hR=ip?src[k+1]:h, hU=jm?src[k-GW]:h, hD=jp?src[k+GW]:h;
+      let fin=0, fout=0, d;
+      d=hL-h; if(d>TALUS)fin+=d-TALUS; else if(d<-TALUS)fout+=-d-TALUS;
+      d=hR-h; if(d>TALUS)fin+=d-TALUS; else if(d<-TALUS)fout+=-d-TALUS;
+      d=hU-h; if(d>TALUS)fin+=d-TALUS; else if(d<-TALUS)fout+=-d-TALUS;
+      d=hD-h; if(d>TALUS)fin+=d-TALUS; else if(d<-TALUS)fout+=-d-TALUS;
+      let nh=h+(fin-fout)*KF;
+      nh+=((hL+hR+hU+hD)*0.25-h)*CREEP;      // creep: gentle leveling below talus
+      if(!im||!jm||!ip||!jp) nh*=DRAIN;      // rim drain: the world's edge sinks to sea
+      dst[k]=nh;
+    }
+  }
+}
+
+// PASS 1b — engines upwell material (balanced by the rim drain: living steady state)
+function upwell(){
+  for(const L of F.lights){
+    const cx=L.x/CELL, cy=L.y/CELL, r=3.5, a=0.00007*L.intensity;
+    const i0=Math.max(1,Math.floor(cx-r)), i1=Math.min(GW-2,Math.ceil(cx+r));
+    const j0=Math.max(1,Math.floor(cy-r)), j1=Math.min(GH-2,Math.ceil(cy+r));
+    for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++){
+      const q=1-((i-cx)*(i-cx)+(j-cy)*(j-cy))/(r*r);
+      if(q>0)H[j*GW+i]+=a*q*q;
+    }
+  }
+}
+
+// PASS 0 — the operator writes on the film: strokes are steering packets
+const brush={fx:-99,fy:-99,on:false,down:false,mode:1,r:9};
+function paintAt(fx,fy,mode){
+  const cx=fx/CELL, cy=fy/CELL, r=brush.r, a=mode*0.06;
+  const i0=Math.max(1,Math.floor(cx-r)), i1=Math.min(GW-2,Math.ceil(cx+r));
+  const j0=Math.max(1,Math.floor(cy-r)), j1=Math.min(GH-2,Math.ceil(cy+r));
+  for(let j=j0;j<=j1;j++)for(let i=i0;i<=i1;i++){
+    const q=1-((i-cx)*(i-cx)+(j-cy)*(j-cy))/(r*r);
+    if(q>0)H[j*GW+i]+=a*q*q;
+  }
+}
+
+// PASS 2 — marbles: gravity along -grad(h) with momentum; the roll abrades.
+// Spawned from the FIELD walkers (the dumb consumers, rightsized: they roll).
+let marbles=[];
+function resetMarbles(){ marbles=F.walkers.map(w=>({x:w.x,y:w.y,vx:0,vy:0,i:w.i})); }
+function sampleH(fx,fy){
+  let gx=fx/CELL-0.5, gy=fy/CELL-0.5;
+  gx=Math.max(0,Math.min(GW-1.001,gx)); gy=Math.max(0,Math.min(GH-1.001,gy));
+  const i=gx|0, j=gy|0, u=gx-i, v=gy-j, k=j*GW+i;
+  return H[k]*(1-u)*(1-v)+H[k+1]*u*(1-v)+H[k+GW]*(1-u)*v+H[k+GW+1]*u*v;
+}
+function stepMarbles(){
+  for(const m of marbles){
+    const gx=sampleH(m.x+2.5,m.y)-sampleH(m.x-2.5,m.y);
+    const gy=sampleH(m.x,m.y+2.5)-sampleH(m.x,m.y-2.5);
+    m.vx-=gx*2.8; m.vy-=gy*2.8;                       // gravity along -grad h
+    m.vx=m.vx*0.986+(Math.random()-0.5)*0.05;         // stochastic flesh: jitter
+    m.vy=m.vy*0.986+(Math.random()-0.5)*0.05;
+    const sp=Math.hypot(m.vx,m.vy); if(sp>6){m.vx*=6/sp; m.vy*=6/sp;}
+    m.x+=m.vx; m.y+=m.vy;
+    if(m.x<6){m.x=6;m.vx*=-0.5;} if(m.x>954){m.x=954;m.vx*=-0.5;}
+    if(m.y<6){m.y=6;m.vy*=-0.5;} if(m.y>594){m.y=594;m.vy*=-0.5;}
+    const ki=Math.min(GW-1,Math.max(0,(m.x/CELL)|0)), kj=Math.min(GH-1,Math.max(0,(m.y/CELL)|0));
+    const kk=kj*GW+ki; H[kk]-=0.0025; if(H[kk]<0.02)H[kk]=0.02;  // abrasion: dust leaves
+  }
+}
+
+// PASS 3 — RENDER: hypsometric palette + NW lambert shade + iso contours.
+const off=document.createElement('canvas'); off.width=GW; off.height=GH;
+const octx=off.getContext('2d'), img=octx.createImageData(GW,GH);
+const STOPS=[[0.00,10,24,46],[0.12,18,44,78],[0.20,40,78,110],[0.24,126,116,82],[0.32,56,82,50],[0.52,76,106,62],[0.70,104,99,90],[0.88,128,123,113],[1.05,226,232,240]];
+function pal(h){
+  if(h<=STOPS[0][0]) return [STOPS[0][1],STOPS[0][2],STOPS[0][3]];
+  for(let s=0;s<STOPS.length-1;s++){
+    const a=STOPS[s], b=STOPS[s+1];
+    if(h<=b[0]){const t=(h-a[0])/(b[0]-a[0]);
+      return [a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t, a[3]+(b[3]-a[3])*t];}
+  }
+  return [STOPS[STOPS.length-1][1],STOPS[STOPS.length-1][2],STOPS[STOPS.length-1][3]];
+}
+const fcv=document.getElementById('field'), fctx=fcv.getContext('2d');
+function renderField(){
+  const d=img.data, SX=5;
+  for(let j=0;j<GH;j++)for(let i=0;i<GW;i++){
+    const k=j*GW+i, h=H[k];
+    const hl=H[i>0?k-1:k], hr=H[i<GW-1?k+1:k], hu=H[j>0?k-GW:k], hd=H[j<GH-1?k+GW:k];
+    const sx=(hr-hl)*SX, sy=(hd-hu)*SX;
+    const nl=Math.hypot(sx,sy,1);
+    const lam=Math.max(0,(-sx*-0.55 - sy*-0.65 + 0.52)/nl);   // NW-top light
+    let b=0.45+0.75*lam, c=pal(h);
+    if(h<0.205){ b=0.7+0.3*lam; }                              // water sits flatter
+    else{ const f=h*8; if(Math.abs(f-Math.round(f))<0.07) b*=0.85; } // contours on land
+    const o=k*4;
+    d[o]=Math.min(255,c[0]*b); d[o+1]=Math.min(255,c[1]*b); d[o+2]=Math.min(255,c[2]*b); d[o+3]=255;
+  }
+  octx.putImageData(img,0,0);
+  fctx.imageSmoothingEnabled=true;
+  fctx.drawImage(off,0,0,960,600);
+}
+
+// PASS 4 — THE FILM: entities, labels, brush ring. The film sits above the field.
+const xcv=document.getElementById('film'), xctx=xcv.getContext('2d');
+function drawFilm(){
+  xctx.clearRect(0,0,960,600);
+  xctx.font='10px Consolas'; xctx.textAlign='left';
+  for(const o of F.occluders){   // failure mesas: dashed outline + rotated label
+    xctx.strokeStyle='#39445c'; xctx.setLineDash([4,3]);
+    xctx.strokeRect(o.x+.5,o.y+.5,o.w,o.h); xctx.setLineDash([]);
+    xctx.save(); xctx.translate(o.x+o.w/2,o.y+o.h/2); xctx.rotate(-Math.PI/2);
+    xctx.fillStyle='#7c89a3'; xctx.textAlign='center'; xctx.fillText(o.label,0,3);
+    xctx.restore(); xctx.textAlign='left';
+  }
+  for(const L of F.lights){      // engines: ring in lane color + label
+    xctx.strokeStyle=L.color; xctx.beginPath(); xctx.arc(L.x,L.y,5,0,7); xctx.stroke();
+    xctx.fillStyle=L.color; xctx.fillText(L.label,L.x+9,L.y+3);
+  }
+  for(const s of F.seat_tails){  // seat tails: health-colored under their engine
+    const L=F.lights.find(q=>q.id==='eng_'+s.engine); if(!L)continue;
+    xctx.fillStyle=s.health==='ok'?'#7dffa8':s.health==='failed'?'#ff6b6b':'#8a97ad';
+    xctx.fillText(s.seat+'\u00b7'+s.health,L.x+9,L.y+14);
+  }
+  for(const m of marbles){       // the marbles
+    xctx.fillStyle='#0b0d13'; xctx.beginPath(); xctx.arc(m.x,m.y+1.2,3.4,0,7); xctx.fill();
+    xctx.fillStyle='#eef2f8'; xctx.beginPath(); xctx.arc(m.x,m.y,3,0,7); xctx.fill();
+  }
+  if(brush.on){                  // brush ring: raise white / carve red
+    xctx.strokeStyle=brush.mode<0?'#ff6b6b':'#e8ecf5';
+    xctx.beginPath(); xctx.arc(brush.fx,brush.fy,brush.r*CELL,0,7); xctx.stroke();
+  }
+}
+
+// ---- input ----
+function evPos(e){const r=xcv.getBoundingClientRect();
+  return [(e.clientX-r.left)*960/r.width,(e.clientY-r.top)*600/r.height];}
+xcv.addEventListener('mousemove',e=>{const p=evPos(e); brush.fx=p[0]; brush.fy=p[1];
+  brush.on=true; if(brush.down)paintAt(p[0],p[1],brush.mode);});
+xcv.addEventListener('mousedown',e=>{e.preventDefault(); const p=evPos(e);
+  brush.down=true; brush.mode=(e.button===2||e.shiftKey)?-1:1; paintAt(p[0],p[1],brush.mode);});
+window.addEventListener('mouseup',()=>{brush.down=false;});
+xcv.addEventListener('mouseleave',()=>{brush.on=false;});
+xcv.addEventListener('contextmenu',e=>e.preventDefault());
+window.addEventListener('keydown',e=>{
+  if(e.key==='r'||e.key==='R'){seedField(); resetMarbles(); steps=0;}
+  if(e.key==='e'||e.key==='E'){erodeOn=!erodeOn;}
+});
+
+// ---- HUD ----
+const hud=document.getElementById('hud');
+setInterval(()=>{hud.textContent='steps '+steps+' \u00b7 brush '+(brush.r*CELL)+'px '
+  +(brush.mode<0?'carve':'raise')+' \u00b7 erosion '+(erodeOn?'on':'PAUSED')
+  +' \u00b7 engines upwell \u00b7 rim drains \u00b7 L-drag raise \u00b7 R/shift-drag carve \u00b7 [R]eset [E]rosion';},250);
+
+// ---- main loop: the pass graph ----
+seedField(); resetMarbles();
+function frame(){ // paint strokes applied on mousemove events (strokes = packets)
+  if(erodeOn){
+    for(let n=0;n<2;n++){ erodePass(H,H2); const t=H; H=H2; H2=t; steps++; } // ping-pong
+    upwell();
+  }
+  stepMarbles();
+  renderField();
+  drawFilm();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script></body></html>

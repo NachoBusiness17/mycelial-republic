@@ -1,0 +1,256 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>SMITH CHART — the fold law</title>
+<!--
+  SMITH CHART — EXHIBIT: THE FOLD LAW (2026-09-03)
+
+  PROVENANCE:
+  - The object: Phillip H. Smith, Bell Telephone Laboratories, 1939
+    ("Transmission Line Calculator", Electronics, Jan 1939); independently
+    T. Mizuhashi, 1937. The chart is the Mobius (bilinear) map
+    Gamma = (z-1)/(z+1) applied to the half-plane of passive impedances.
+  - The spark: the operator's pasted hand-annotated 1939-style Smith chart —
+    a full-page pencil working (matching trajectory walked along constant-r /
+    constant-x arcs, "(r-1)/(r+1)" inversion notes in the margin, series/shunt
+    element sketches, "toward generator / toward load" rims). Someone's paper
+    used as a computer. This exhibit copies that grammar, not that drawing.
+  - The trigger: @anish2good X post 2026-09-03 17:51, "The Smith Chart:
+    Folding an Infinite Plane Into One Circle, Line by Line" — intake card
+    watch/INTAKE_SMITH_CHART_20260903.md, score 20/25 BUILD NOW (operator GO).
+    Replies/video content of that post remain UNPROVEN (walled); the math
+    needs no receipt from them.
+  - Date: 2026-09-03. Exhibit — the fold law.
+
+  ZERO FETCH LAW: no network calls, no external fonts, no CDNs, no images.
+  Single file. Canvas + inline JS only.
+
+  THE LAW this exhibit instantiates: the Smith chart takes the INFINITE
+  half-plane of impedances (every z = r + jx, r > 0 — unbounded in both
+  coordinates) and folds it by a Mobius transform into ONE bounded circle.
+  The map precedes the territory: the infinite becomes navigable by changing
+  coordinates, not by shrinking it. Fleet resonance:
+    the standing wave  — det spine + stoch flesh; this chart IS the standing wave's map
+    the Light Codec    — infinite field -> discrete film
+    the verkle chain   — infinite state -> one root
+    cache prefixes     — infinite prompts -> byte-stable heads
+-->
+<style>
+body{margin:0;background:#07080c;color:#cfd6e4;font:13px/1.5 Consolas,monospace}
+#wrap{width:960px;margin:0 auto}
+h1{font-size:14px;letter-spacing:2px;color:#9fb0cc;margin:12px 0 4px}
+.sub{color:#5c6a82;font-size:11px;margin-bottom:8px}
+.law{border:1px solid #1c2230;background:#0b0d13;padding:8px 12px;margin-bottom:10px;font-size:12px;color:#aab6cc}
+.law b{color:#e8d9a0;font-weight:normal}
+.law .res{color:#5c6a82;font-size:11px;line-height:1.7}
+#stage{position:relative;width:960px}
+canvas{display:block;cursor:crosshair}
+#hud{font-size:11px;color:#8a97ad;margin:8px 0 24px}
+#hud .warn{color:#c98f5a}
+.hand{font-family:"Segoe Print","Bradley Hand","Comic Sans MS",cursive}
+</style></head><body><div id="wrap">
+<h1>SMITH CHART — EXHIBIT: THE FOLD LAW</h1>
+<div class="sub">Phillip Smith 1939 (Bell Labs; Mizuhashi 1937) · the operator's hand-annotated chart · @anish2good post 2026-09-03 (intake 20/25 BUILD NOW) · zero fetch · 2026-09-03</div>
+<div class="law">
+<b>THE FOLD LAW.</b> The chart takes the infinite half-plane of impedances — every z&nbsp;=&nbsp;r&nbsp;+&nbsp;jx with r&nbsp;&gt;&nbsp;0, unbounded in both coordinates — and folds it, by the Mobius map &Gamma;&nbsp;=&nbsp;(z&minus;1)/(z+1), into ONE bounded circle. Nothing was discarded: every impedance that can exist sits inside the rim, pre-solved into printed circles. The map precedes the territory; the infinite becomes navigable by changing coordinates.
+<div class="res">the standing wave — det spine + stoch flesh, the chart is the standing wave's own map &nbsp;·&nbsp; the Light Codec — infinite field &rarr; discrete film &nbsp;·&nbsp; the verkle chain — infinite state &rarr; one root &nbsp;·&nbsp; cache prefixes — infinite prompts &rarr; byte-stable heads</div>
+</div>
+<div id="stage"><canvas id="c" width="960" height="780"></canvas></div>
+<div id="hud">drag the marble anywhere inside the circle — it is a normalized impedance z = r + jx, and the dashed circle it rides is |&Gamma;| = const &nbsp;·&nbsp; <span class="warn">the rim is r &rarr; 0 (pure reactance); beyond it is no map — negative resistance lives outside the fold</span></div>
+</div>
+<script>
+'use strict';
+// ---------- geometry ----------
+const CW = 960, CH = 780, CX = 480, CY = 360, R = 300;
+const cv = document.getElementById('c');
+const dpr = window.devicePixelRatio || 1;
+cv.width = CW * dpr; cv.height = CH * dpr;
+cv.style.width = CW + 'px'; cv.style.height = CH + 'px';
+const ctx = cv.getContext('2d');
+ctx.scale(dpr, dpr);
+
+// fold + unfold (verified: these two are mutual inverses on r>0)
+const zToG = (r, x) => { const d = (r + 1) * (r + 1) + x * x;
+  return { u: (r * r + x * x - 1) / d, v: 2 * x / d }; };
+const gToZ = (u, v) => { const d = (1 - u) * (1 - u) + v * v;
+  return { r: (1 - u * u - v * v) / d, x: 2 * v / d }; };
+const W = (u, v) => [CX + u * R, CY - v * R];      // Gamma -> screen (y flips: +x inductive is UP)
+const RW = (px, py) => { const u = (px - CX) / R, v = (CY - py) / R;
+  const m = Math.hypot(u, v); const k = m > 0.9995 ? 0.9995 / m : 1;
+  return { u: u * k, v: v * k }; };                // screen -> Gamma, clamped to the fold
+
+const R_FAM = [0.2, 0.5, 1, 2, 5];
+const X_FAM = [0.2, 0.5, 1, 2, 5, -0.2, -0.5, -1, -2, -5];
+const INK = '#3a352c', PAPER = '#efe6d0', GREEN = 'rgba(74,122,90,0.75)',
+      RED = 'rgba(160,82,82,0.75)', LEAD = 'rgba(74,68,58,0.85)', BLUE = '#3d6b8f';
+const HAND = '"Segoe Print","Bradley Hand","Comic Sans MS",cursive';
+
+// ---------- paper (drawn once, seeded noise = deterministic) ----------
+const paper = document.createElement('canvas');
+paper.width = CW * dpr; paper.height = CH * dpr;
+(function paintPaper(){
+  const p = paper.getContext('2d'); p.scale(dpr, dpr);
+  p.fillStyle = PAPER; p.fillRect(0, 0, CW, CH);
+  let s = 1939;                                        // seed = the year
+  const rnd = () => (s = (s * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+  p.fillStyle = 'rgba(120,100,70,0.05)';
+  for (let i = 0; i < 2600; i++) p.fillRect(rnd() * CW, rnd() * CH, 1.3, 1.3);
+  p.strokeStyle = 'rgba(90,80,60,0.5)'; p.lineWidth = 1.5;
+  rr(p, 14, 12, CW - 28, CH - 26, 6); p.stroke();
+  function rr(c, x, y, w, h, r){ c.beginPath(); c.moveTo(x + r, y);
+    c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
+    c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+})();
+
+// ---------- printed chart families ----------
+function rCircle(r){                                   // center r/(1+r), radius 1/(1+r) — inside the fold
+  const c = r / (1 + r), rad = 1 / (1 + r);
+  ctx.beginPath(); ctx.arc(CX + c * R, CY, rad * R, 0, 2 * Math.PI); ctx.stroke(); }
+function xArc(x){                                      // center (1,1/x), radius 1/|x| — pokes OUT of the disk,
+  ctx.beginPath();                                     // so trace z = r + jx over r in (0, 500]: the trace is
+  const N = 360;                                       // exactly the visible arc, no clipping needed
+  for (let i = 0; i <= N; i++){
+    const rr = Math.exp(-9 + 18 * i / N);              // log-spaced, dense near both ends; |G| < 1
+    const g = zToG(rr, x), p = W(g.u, g.v);            // always, so the trace IS the visible arc
+    i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]); }
+  ctx.stroke(); }
+
+function printedChart(){
+  ctx.save();
+  ctx.lineWidth = 1.4; ctx.strokeStyle = INK;
+  ctx.beginPath(); ctx.arc(CX, CY, R, 0, 2 * Math.PI); ctx.stroke();   // the fold: |Gamma| = 1
+  ctx.beginPath(); ctx.moveTo(CX - R, CY); ctx.lineTo(CX + R, CY); ctx.stroke(); // real axis
+  ctx.lineWidth = 1; ctx.strokeStyle = GREEN; R_FAM.forEach(rCircle);
+  ctx.strokeStyle = RED; X_FAM.forEach(xArc);
+  // printed labels
+  ctx.fillStyle = INK; ctx.font = '10px Consolas, monospace'; ctx.textAlign = 'center';
+  ctx.fillText('SHORT  z = 0', CX - R + 2, CY - 8);
+  ctx.fillText('OPEN  z = \u221E', CX + R - 2, CY - 8);
+  ctx.fillText('1', CX, CY + 13);
+  R_FAM.forEach(r => { if (r !== 1){ const c = r / (1 + r);
+    ctx.fillText('r=' + r, CX + c * R, CY + 25); } });
+  X_FAM.forEach(x => { const g = zToG(0.028, x), p = W(g.u, g.v);
+    const toward = Math.atan2(CY - p[1], p[0] - CX);
+    ctx.fillText('x=' + (x > 0 ? '+' : '') + x,
+      p[0] + 20 * Math.cos(toward), p[1] + 20 * Math.sin(toward) + 3); });
+  // printed rims, as on the 1939 sheet
+  rimText('WAVELENGTHS TOWARD GENERATOR \u2192', 2.35, true);
+  rimText('\u2190 WAVELENGTHS TOWARD LOAD', 0.80, false);
+  ctx.restore();
+}
+function rimText(t, ang, cw){ const p = W(Math.cos(ang) * 1.09, Math.sin(ang) * 1.09);
+  ctx.save(); ctx.translate(p[0], p[1]); ctx.rotate(cw ? 0.45 : -0.45);
+  ctx.font = '10px Consolas, monospace'; ctx.fillStyle = 'rgba(58,53,44,0.8)';
+  ctx.textAlign = 'center'; ctx.fillText(t, 0, 0); ctx.restore(); }
+
+// ---------- the worked example, in pencil ----------
+function pencil(fn){                                   // double-stroke, jittered = graphite feel
+  [[-0.7, 0.50], [0.7, 0.30]].forEach(([dx, al]) => {
+    ctx.globalAlpha = al; fn(dx); ctx.globalAlpha = 1; }); }
+function Pencil(){ ctx.strokeStyle = LEAD; ctx.lineCap = 'round'; ctx.setLineDash([7, 5]); }
+function hand(t, x, y, size, ang){ ctx.save();
+  ctx.font = (size || 14) + 'px ' + HAND; ctx.fillStyle = LEAD;
+  if (ang){ ctx.translate(x, y); ctx.rotate(ang); ctx.fillText(t, 0, 0); }
+  else ctx.fillText(t, x, y); ctx.restore(); }
+
+function workedExample(){
+  // z_L = 0.5+j0.5 -> (1) series line, rotate on |G|=sqrt(0.2) by 53.13 deg -> z = 1+j1
+  //                 -> (2) series C, x = -1, slide the r = 1 circle -> z = 1. MATCHED.
+  const gL = zToG(0.5, 0.5), a1 = Math.atan2(gL.v, gL.u), a2 = Math.atan2(0.4, 0.2);
+  const rho = Math.hypot(gL.u, gL.v);
+  ctx.save(); Pencil();
+  pencil(dx => { const p0 = W(gL.u + dx * 0.002, gL.v);          // the load point
+    ctx.beginPath(); ctx.arc(p0[0], p0[1], 5, 0, 2 * Math.PI); ctx.stroke(); });
+  pencil(dx => { ctx.beginPath();                                // move 1: constant |G|
+    for (let i = 0; i <= 60; i++){ const a = a1 + (a2 - a1) * i / 60;
+      const p = W(Math.cos(a) * rho + dx * 0.002, Math.sin(a) * rho);
+      i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]); }
+    ctx.stroke(); });
+  pencil(dx => { ctx.beginPath();                                // move 2: constant r = 1
+    for (let i = 0; i <= 60; i++){ const x = 1 - i / 60;
+      const g = zToG(1, x), p = W(g.u + dx * 0.002, g.v);
+      i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]); }
+    ctx.stroke(); });
+  ctx.setLineDash([]);
+  const mid1 = W(Math.cos((a1 + a2) / 2) * rho, Math.sin((a1 + a2) / 2) * rho);
+  hand('\u2460 series line \u03B8 = 26.6\u00B0 \u2014 rotate on |G| = 0.45', mid1[0] - 130, mid1[1] - 14);
+  const mid2 = W(zToG(1, 0.55).u, zToG(1, 0.55).v);
+  hand('\u2461 series C, x = \u22121 \u2014 slide the r = 1 circle', mid2[0] + 14, mid2[1] - 12);
+  const pL = W(gL.u, gL.v);
+  hand('load z\u2097 = 0.5 + j0.5', pL[0] - 160, pL[1] + 26);
+  ctx.beginPath(); ctx.arc(CX, CY, 4, 0, 2 * Math.PI);
+  ctx.moveTo(CX - 7, CY); ctx.lineTo(CX + 7, CY);
+  ctx.moveTo(CX, CY - 7); ctx.lineTo(CX, CY + 7); ctx.stroke();
+  hand('MATCHED  z = 1', CX + 12, CY + 24);
+  ctx.restore();
+}
+
+// ---------- margins: the pencil grammar ----------
+function margins(){
+  ctx.save(); ctx.textAlign = 'left';
+  hand('constant r \u2192 green circles', 24, 96, 13);
+  hand('constant x \u2192 red arcs', 24, 118, 13);
+  hand('(all of them meet at the OPEN point)', 24, 140, 11);
+  hand('\u0393 = (z\u22121)/(z+1)', 30, CH - 74, 16);
+  hand('z = (1+\u0393)/(1\u2212\u0393)', 30, CH - 48, 16);
+  hand('the fold: half-plane \u2192 one disk', 30, CH - 24, 12);
+  // series / shunt sketches, bottom right (the composition law, handwritten)
+  const bx = CW - 250, by = CH - 60;
+  ctx.strokeStyle = LEAD; ctx.lineWidth = 1.5; ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx + 96, by); ctx.stroke();
+  ctx.strokeRect(bx + 34, by - 12, 28, 24);
+  hand('series: slide along r', bx, by - 22, 12);
+  ctx.beginPath(); ctx.moveTo(bx, by + 42); ctx.lineTo(bx + 96, by + 42); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(bx + 34, by + 42); ctx.lineTo(bx + 34, by + 26);
+  ctx.moveTo(bx + 52, by + 42); ctx.lineTo(bx + 52, by + 26); ctx.stroke();
+  hand('shunt: slide along g (mirror chart)', bx, by + 64, 12);
+  ctx.restore();
+}
+
+// ---------- live layer: the marble ----------
+let marble = zToG(0.5, 0.5);                            // starts on the worked example's load
+let dragging = false, clamped = false;
+
+function liveLayer(){
+  const z = gToZ(marble.u, marble.v), m = Math.hypot(marble.u, marble.v);
+  // the |G| circle this point rides
+  ctx.save(); ctx.strokeStyle = LEAD; ctx.lineWidth = 1.6; ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.arc(CX, CY, m * R, 0, 2 * Math.PI); ctx.stroke();
+  // exact coordinate arcs through the point (the two families it belongs to)
+  ctx.setLineDash([]); ctx.lineWidth = 2.2;
+  ctx.strokeStyle = 'rgba(61,107,143,0.9)'; rCircle(z.r);
+  ctx.beginPath();
+  for (let i = 0; i <= 200; i++){ const rr = Math.exp(-9 + 18 * i / 200);
+    const g = zToG(rr, z.x), p = W(g.u, g.v);
+    i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]); }
+  ctx.stroke();
+  // the marble
+  const p = W(marble.u, marble.v);
+  ctx.fillStyle = '#1f4f7a'; ctx.strokeStyle = '#0e2740'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(p[0], p[1], 7, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
+  // readout, printed on the paper's top-left margin
+  const swr = (1 + m) / (1 - m), rl = -20 * Math.log10(Math.max(m, 1e-6));
+  const fx = n => n >= 50 ? '\u2192\u221E' : (Math.round(n * 100) / 100).toString();
+  ctx.font = '13px Consolas, monospace'; ctx.fillStyle = '#20313f'; ctx.textAlign = 'left';
+  ctx.fillText('z = ' + fx(z.r) + ' ' + (z.x < 0 ? '\u2212' : '+') + ' j' + fx(Math.abs(z.x)) +
+    '    |G| = ' + (Math.round(m * 1000) / 1000) +
+    '    SWR = ' + (Math.round(swr * 100) / 100) +
+    '    RL = ' + (Math.round(rl * 10) / 10) + ' dB', 30, 52);
+  if (clamped){ ctx.fillStyle = '#8a3d2a';
+    ctx.fillText('rim reached \u2014 r \u2192 0, the fold ends here', 30, 70); }
+  ctx.restore();
+}
+
+function draw(){
+  ctx.clearRect(0, 0, CW, CH);
+  ctx.drawImage(paper, 0, 0, CW, CH);
+  printedChart(); workedExample(); margins(); liveLayer();
+}
+
+// ---------- input ----------
+function pos(e){ const b = cv.getBoundingClientRect();
+  return RW(e.clientX - b.left, e.clientY - b.top); }
+cv.addEventListener('pointerdown', e => { dragging = true; clamped = false;
+  marble = pos(e); draw(); cv.setPointerCapture(e.pointerId); });
+cv.addEventListener('pointermove', e => { const g = pos(e);
+  const m = Math.hypot(g.u, g.v); clamped = m > 0.9995; marble = { u: g.u, v: g.v }; draw(); });
+cv.addEventListener('pointerup', () => { dragging = false; });
+draw();
+</script></body></html>

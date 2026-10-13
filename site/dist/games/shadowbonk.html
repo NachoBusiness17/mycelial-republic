@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SHADOWBONK — tony mczoom vs the shadow volume</title>
+<style>
+  html,body{margin:0;background:#070b10;color:#c9d3e0;font:13px/1.4 ui-monospace,Consolas,monospace;overflow:hidden}
+  #c{display:block;width:100vw;height:100vh;background:#0a0d12;cursor:crosshair}
+  #hud{position:fixed;top:0;left:0;right:0;padding:8px 12px;display:flex;gap:14px;align-items:center;
+       background:linear-gradient(#070b10ee,#070b1000);pointer-events:none;font-size:11px}
+  .bar{height:8px;background:#111a24;border:1px solid #1b2532;border-radius:4px;overflow:hidden;flex:1}
+  .bar>i{display:block;height:100%;background:#7cf5ff;width:0%}
+  #xpb{position:fixed;bottom:0;left:0;right:0;height:6px;background:#111a24}
+  #xpb>i{display:block;height:100%;background:#e8b45a;width:0%}
+  #lvl{position:fixed;inset:0;display:none;background:#070b10e0;z-index:5}
+  #lvl h2{color:#e8b45a;letter-spacing:2px;text-align:center;margin:8vh 0 4vh}
+  #lvl .opts{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+  #lvl .opt{width:230px;background:#0d141d;border:1px solid #e8b45a;border-radius:10px;padding:14px;cursor:pointer}
+  #lvl .opt:hover{background:#16202c}
+  #lvl .opt b{color:#7cf5ff}
+  #lvl .opt .r{font-size:10px;color:#66738a;margin-top:6px}
+  #lvl .opt.epic{border-color:#ff6bd6} #lvl .opt.epic b{color:#ff6bd6}
+  #lvl .opt.rare{border-color:#7cf5ff}
+  #over{position:fixed;inset:0;display:none;background:#070b10f0;z-index:6;text-align:center;padding-top:18vh}
+  #over h1{color:#e8b45a}
+  .home{position:fixed;bottom:10px;right:12px;z-index:7}
+  .home a{color:#66738a;text-decoration:none}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud">
+  <b style="color:#e8b45a">TONY MCZOOM</b>
+  <div class="bar" style="max-width:180px"><i id="hp" style="background:#7cf5ff"></i></div>
+  <span id="lvlt">LV 1</span>
+  <span id="timer">0:00</span>
+  <span id="kills">0 bonks</span>
+  <span id="zoom">zoom 100%</span>
+  <span style="color:#66738a">WASD move · everything else is automatic · T superhot · R retry</span>
+</div>
+<div id="xpb"><i id="xpf"></i></div>
+<div id="lvl"><h2>LEVEL UP — CHOOSE</h2><div class="opts" id="opts"></div></div>
+<div id="over"><h1>THE VOLUME CLOSED</h1><div id="ostats"></div><p style="color:#66738a">press R to run it again</p></div>
+<div class="home"><a href="/">⌂ home</a></div>
+<script>
+const cv=document.getElementById('c'),cx=cv.getContext('2d');
+addEventListener('error',e=>{document.title='ERR: '+e.message+' @ line '+(e.lineno||'?');});
+function fit(){cv.width=innerWidth;cv.height=innerHeight} fit();addEventListener('resize',fit);
+const W=2800,H=2000;
+const fetchJSON=u=>Promise.race([fetch(u).then(r=>r.json()),new Promise((_,rej)=>setTimeout(()=>rej(new Error('fetch timeout')),3000))]).catch(()=>null);
+
+/* ---------- content: byte-driven from the audit's typed doctrine ---------- */
+const FALLBACK_UP=[{name:"Chain Punches",desc:"the next strike launches from where the last landed",stat:"projectiles",delta:1,rarity:"rare",source:"wing chun"},
+ {name:"Eikonal Lens",desc:"the field says least-time is a straight lie",stat:"zoom",delta:25,rarity:"common",source:"shadow physics"},
+ {name:"Truth Gate",desc:"bolts pass through the first lie",stat:"pierce",delta:1,rarity:"rare",source:"grounding wave"},
+ {name:"Bug Jacket",desc:"handler jackets, but wearable",stat:"armor",delta:1,rarity:"common",source:"bug-jacket watch"},
+ {name:"Warm Prefix",desc:"already loaded. already fast.",stat:"cooldown",delta:-12,rarity:"common",source:"KV cache"},
+ {name:"Overmind Seed",desc:"planted 2026-03-02. still drawing things in.",stat:"pickup",delta:40,rarity:"rare",source:"test chord"}];
+const FALLBACK_EN={enemies:[
+ {name:"BOM Golem",hp:10,speed:40,r:13,color:"#7a5c3e",flavor:"never ran"},
+ {name:"Zero-Knot Shade",hp:9,speed:46,r:11,color:"#233240",flavor:"unwritten"},
+ {name:"Stale Pointer Wisp",hp:12,speed:52,r:10,color:"#3d6b8f",flavor:"points at nothing"},
+ {name:"Refusal Wraith",hp:70,speed:30,r:20,color:"#8f3d52",flavor:"elite"}],
+ waves:{interval_sec:1.0,count_base:3,count_add_per_wave:1.6,hp_mult_per_wave:1.17,speed_mult_per_wave:1.02,boss_every_wave:8,
+   boss:{name:"UNFALSIFIED ASSUMPTION",hp:600,speed:26,r:36,color:"#e8b45a",flavor:"its HP bar is its remaining credibility"}}};
+
+let UPG=[],EN=[],WAVES=null,STARS=[];
+let POOL=[];
+async function loadContent(){
+  const [a,b,e,st]=await Promise.all([fetchJSON('sb_upgrades_a.json'),fetchJSON('sb_upgrades_b.json'),fetchJSON('sb_enemies.json'),fetchJSON('/static/state/shadow_work/projection_3d.json')]);
+  UPG=[...(a||[]),...(b||[]),...FALLBACK_UP];
+  if(e&&e.enemies){EN=e.enemies;WAVES=e.waves;}else{EN=FALLBACK_EN.enemies;WAVES=FALLBACK_EN.waves;}
+  POOL=UPG.slice();
+  try{const p=st.points||st;const arr=Array.isArray(p)?p:[];
+    for(let i=0;i<arr.length&&i<1200;i+=3){const q=arr[i];const pt=Array.isArray(q)?q:[q.x,q.y,q.z];
+      STARS.push({x:(pt[0]%1)*W,y:(pt[1]%1)*H,a:.04+(pt[2]%1)*.10});}}catch(err){}
+}
+
+/* ---------- state ---------- */
+const P={x:W/2,y:H/2,r:11,hp:100,maxhp:100,zoom:170,dmg:8,cool:.55,cd:0,proj:1,pierce:0,pickup:42,armor:0,lvl:1,xp:0,xpn:4};
+let ENS=[],GEMS=[],BOLTS=[],NUMS=[],kills=0,t=0,running=false,dead=false,superhot=false,shake=0,wave=0,spawnT=0,bossAlive=false;
+const keys={};
+addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;
+function startGame(){running=true;
+  const o=document.getElementById('over');
+  if(!o){setTimeout(startGame,250);return;}   // fleetbar injection races the DOM — retry, never die
+  for(let i=0;i<8;i++)spawnEnemy();
+  o.style.display='none';last=performance.now();requestAnimationFrame(loop);}
+const i1=i=>['press 1','press 2','press 3'][i];
+function pick(i){
+  const u=PICKS[i];if(!u)return;
+  if(u.stat==='zoom')P.zoom+=u.delta;else if(u.stat==='cooldown')P.cool*=(1+u.delta/100);
+  else if(u.stat==='maxhp'){P.maxhp+=u.delta;P.hp+=u.delta;}else P[u.stat]+=u.delta;
+  const lv=gid('lvl');if(lv)lv.style.display='none';running=true;last=performance.now();
+}
+let PICKS=[];
+function pick3(){
+  const picks=[];const pool=POOL.slice();
+  const picks=[];const pool=POOL.slice();
+  while(picks.length<3&&pool.length){
+    const roll=Math.random(),want=roll<.12?'epic':roll<.42?'rare':'common';
+    let idx=pool.findIndex(u=>u.rarity===want);if(idx<0)idx=Math.floor(Math.random()*pool.length);
+    picks.push(pool.splice(idx,1)[0]);
+  }return picks;
+}
+function renderChoices(picks){
+  const box=gid('opts');if(!box)return;
+  box.innerHTML='';
+  picks.forEach((u,i)=>{
+    const d=document.createElement('div');d.className='opt '+u.rarity;
+    const dd=u.stat==='cooldown'?('cooldown '+u.delta+'%'):('+'+u.delta+' '+u.stat);
+    d.innerHTML='<b>'+u.name+'</b><div>'+u.desc+'</div><div style="color:#e8b45a;margin-top:6px">'+dd+'</div><div class="r">'+u.rarity+' · '+i1(i)+'</div>';
+    box.appendChild(d);
+  });
+  const lv=gid('lvl');if(lv)lv.style.display='block';
+}
+
+function spawnEnemy(){
+  const roll=Math.random(),elite=wave>3&&roll<.06;
+  const pool=EN.filter(e=>elite?e.hp>=60:e.hp<60);
+  const base=(pool.length?pool:EN)[Math.floor(Math.random()*(pool.length||EN.length))];
+  const m=Math.pow(Math.min(WAVES.hp_mult_per_wave,1.12),wave);
+  const side=Math.floor(Math.random()*4);
+  const cam=camPos();
+  const x=side===0?cam.x-40:side===1?cam.x+cv.width+40:cam.x+Math.random()*cv.width;
+  const y=side<2?cam.y+Math.random()*cv.height:(side===2?cam.y-40:cam.y+cv.height+40);
+  ENS.push({x:Math.max(0,Math.min(W,x)),y:Math.max(0,Math.min(H,y)),
+    hp:base.hp*m*(elite?1:1),maxhp:base.hp*m,speed:base.speed*Math.pow(WAVES.speed_mult_per_wave,wave),
+    r:base.r,color:base.color,name:base.name,hit:0});
+}
+function spawnBoss(){
+  const cam=camPos();const b=WAVES.boss;
+  EN.push({x:cam.x+cv.width/2+60,y:cam.y+80,hp:b.hp,maxhp:b.hp,speed:b.speed,r:b.r,color:b.color,name:b.name,boss:true,hit:0});
+  bossAlive=true;
+}
+function camPos(){return {x:P.x-cv.width/2,y:P.y-cv.height/2};}
+
+let last=performance.now();
+function loop(now){
+  if(!running){
+    cx.fillStyle='#070b10';cx.fillRect(0,0,cv.width,cv.height);
+    if(hidePause&&!dead){cx.fillStyle='#e8b45a';cx.font='14px monospace';cx.fillText('PAUSED — the volume waits. click to resume.',cv.width/2-160,cv.height/2);}
+    requestAnimationFrame(loop);return;
+  }
+  let dt=Math.min((now-last)/1000,.05);last=now;
+  if(superhot){const moving=keys['w']||keys['a']||keys['s']||keys['d']||keys['arrowup']||keys['arrowdown']||keys['arrowleft']||keys['arrowright'];dt*=moving?1:.06;}
+  t+=dt;
+
+  // tony moves
+  let dx=(keys['d']||keys['arrowright']?1:0)-(keys['a']||keys['arrowleft']?1:0);
+  let dy=(keys['s']||keys['arrowdown']?1:0)-(keys['w']||keys['arrowup']?1:0);
+  const m=Math.hypot(dx,dy)||1;
+  P.x=Math.max(20,Math.min(W-20,P.x+dx/m*P.zoom*dt));
+  P.y=Math.max(20,Math.min(H-20,P.y+dy/m*P.zoom*dt));
+
+  // waves: a wave every 18s — burst on wave change, trickle between
+  const wv=Math.floor(t/18);
+  if(wv>wave){wave=wv;
+    for(let i=0;i<3+wave*2;i++)spawnEnemy();
+    if(wave%4===3&&!bossAlive)spawnBoss();
+  }
+  spawnT-=dt;
+  if(spawnT<=0){spawnT=0.9;spawnEnemy();}
+
+  // auto-fire nearest
+  P.cd-=dt;
+  if(P.cd<=0&&ENS.length){
+    let n=null,nd=1e9;for(const e of ENS){const d=(e.x-P.x)**2+(e.y-P.y)**2;if(d<nd){nd=d;n=e;}}
+    for(let k=0;k<P.proj;k++){
+      const spread=(k-(P.proj-1)/2)*.18;
+      BOLTS.push({x:P.x,y:P.y,vx:Math.cos(Math.atan2(n.y-P.y,n.x-P.x)+spread)*420,vy:Math.sin(Math.atan2(n.y-P.y,n.x-P.x)+spread)*420,dmg:P.dmg,pierce:P.pierce,life:1.4});
+    }
+    P.cd=Math.max(.08,P.cool);
+  }
+  for(let i=BOLTS.length-1;i>=0;i--){const b=BOLTS[i];b.x+=b.vx*dt;b.y+=b.vy*dt;b.life-=dt;
+    if(b.life<=0||b.x<0||b.x>W||b.y<0||b.y>H){BOLTS.splice(i,1);continue;}
+    for(const e of ENS){if(e.hp>0&&(e.x-b.x)**2+(e.y-b.y)**2<(e.r+4)**2){
+      e.hp-=b.dmg;e.hit=.08;NUMS.push({x:e.x,y:e.y-e.r,t:.6,v:b.dmg});
+      if(e.hp<=0){kills++;GEMS.push({x:e.x,y:e.y,v:1});if(e.boss)bossAlive=false;}
+      if(b.pierce>0)b.pierce--;else BOLTS.splice(i,1);
+      break;}}}
+
+  // enemies seek
+  for(const e of ENS){
+    const d=Math.hypot(P.x-e.x,P.y-e.y)||1;
+    e.x+=(P.x-e.x)/d*e.speed*dt;e.y+=(P.y-e.y)/d*e.speed*dt;
+    if(e.hit>0)e.hit-=dt;
+    if(d<e.r+P.r){
+      const px=(P.x-e.x)/d,py=(P.y-e.y)/d;
+      e.x-=px*44*dt;e.y-=py*44*dt;   // the horde cannot stack on tony — no melt-through
+      P.hp-=Math.max(.5,4-P.armor*1.5)*dt;shake=Math.min(10,shake+2);
+      if(P.hp<=0)die();
+    }
+  }
+  if(ENS.length>260)ENS.splice(0,ENS.length-260);
+
+  // gems
+  for(let i=GEMS.length-1;i>=0;i--){const g=GEMS[i];
+    const d=Math.hypot(P.x-g.x,P.y-g.y);
+    if(d<P.pickup){g.x+=(P.x-g.x)/d*300*dt;g.y+=(P.y-g.y)/d*300*dt;}
+    if(d<P.r+6){GEMS.splice(i,1);P.xp+=g.v;
+      if(P.xp>=P.xpn){P.xp-=P.xpn;P.lvl++;P.xpn=4+P.lvl*2;running=false;PICKS=pick3();renderChoices(PICKS);}}
+  }
+
+  // draw
+  const cam=camPos();const shx=(Math.random()-.5)*shake,shy=(Math.random()-.5)*shake;shake*=.88;
+  cx.fillStyle='#0a0d12';cx.fillRect(0,0,cv.width,cv.height);
+  cx.save();cx.translate(-cam.x+shx,-cam.y+shy);
+  cx.fillStyle='#7cf5ff';
+  for(const s of STARS){const sx=s.x,sy=s.y;if(sx>cam.x-10&&sx<cam.x+cv.width+10&&sy>cam.y-10&&sy<cam.y+cv.height+10){cx.globalAlpha=s.a;cx.fillRect(sx,sy,2,2);}}
+  cx.globalAlpha=1;
+  cx.strokeStyle='#141c27';for(let gx=0;gx<W;gx+=200){cx.beginPath();cx.moveTo(gx,0);cx.lineTo(gx,H);cx.stroke();}
+  for(let gy=0;gy<H;gy+=200){cx.beginPath();cx.moveTo(0,gy);cx.lineTo(W,gy);cx.stroke();}
+  cx.fillStyle='#0f1822';cx.fillRect(0,0,W,8);cx.fillRect(0,H-8,W,8);cx.fillRect(0,0,8,H);cx.fillRect(W-8,0,8,H);
+  for(const g of GEMS){cx.fillStyle='#e8b45a';cx.fillRect(g.x-3,g.y-3,6,6);}
+  for(const e of ENS){cx.fillStyle=e.hit>0?'#fff':e.color;cx.beginPath();cx.arc(e.x,e.y,e.r,0,7);cx.fill();
+    if(e.boss){cx.fillStyle='#e8b45a';cx.fillRect(e.x-40,e.y-e.r-12,80*(e.hp/e.maxhp),5);}}
+  cx.fillStyle='#7cf5ff';
+  for(const b of BOLTS){cx.beginPath();cx.arc(b.x,b.y,4,0,7);cx.fill();}
+  // tony + zoom trail
+  cx.strokeStyle='rgba(124,245,255,.25)';cx.beginPath();cx.moveTo(P.x-dx*26,P.y-dy*26);cx.lineTo(P.x,P.y);cx.stroke();
+  cx.fillStyle='#e8b45a';cx.beginPath();cx.arc(P.x,P.y,P.r,0,7);cx.fill();
+  cx.fillStyle='#070b10';cx.font='9px monospace';cx.fillText('0',P.x-3,P.y+3);
+  cx.fillStyle='#c9d3e0';cx.font='10px monospace';
+  for(const n of NUMS){n.t-=dt;n.y-=30*dt;cx.globalAlpha=Math.max(0,n.t);cx.fillText(n.v,n.x,n.y);cx.globalAlpha=1;}
+  NUMS=NUMS.filter(n=>n.t>0);
+  cx.restore();
+
+  // hud
+  $('hp').style.width=Math.max(0,P.hp/P.maxhp*100)+'%';
+  $('xpf').style.width=(P.xp/P.xpn*100)+'%';
+  $('lvlt').textContent='LV '+P.lvl;
+  $('timer').textContent=Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0');
+  $('kills').textContent=kills+' bonks';
+  $('zoom').textContent='zoom '+P.zoom+'%'+(superhot?' · SUPERHOT':'');
+  requestAnimationFrame(loop);
+}
+function die(){dead=true;running=false;
+  $('ostats').innerHTML='<div style="font-size:15px;margin:12px">'+Math.floor(t/60)+':'+String(Math.floor(t%60)).padStart(2,'0')+
+  ' · level '+P.lvl+' · '+kills+' bonks · zoom '+P.zoom+'%</div>';
+  $('over').style.display='block';}
+/* boot-proof: start on fallback data immediately, merge real content whenever it lands */
+UPG=FALLBACK_UP.slice();EN=FALLBACK_EN.enemies;WAVES=FALLBACK_EN.waves;POOL=UPG.slice();
+startGame();
+loadContent().then(()=>{POOL=UPG.slice();}).catch(()=>{});
+setInterval(()=>{POOL=UPG.slice();},5000);
+</script>
+</body>
+</html>

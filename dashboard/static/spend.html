@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SPEND — one wall</title>
+<style>
+  :root { --bg:#060d0b; --panel:#0a1412; --line:rgba(0,240,255,.22); --cyan:#7cf5ff; --gold:#e8c96a; --red:#ff6b6b; --green:#7dffa8; --dim:#5b8a85; }
+  * { box-sizing:border-box; }
+  body { background:var(--bg); color:#cfeeea; font:13px/1.5 ui-monospace,Consolas,monospace; margin:0; padding:14px; }
+  h1 { font-size:15px; letter-spacing:.14em; color:var(--cyan); margin:0 0 2px; }
+  .sub { color:var(--dim); font-size:11px; margin-bottom:14px; }
+  .cards { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:16px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px 14px; min-width:170px; }
+  .card .k { color:var(--dim); font-size:10px; letter-spacing:.12em; text-transform:uppercase; }
+  .card .v { font-size:22px; color:var(--gold); }
+  .card .d { color:var(--dim); font-size:10px; }
+  h2 { font-size:12px; letter-spacing:.12em; color:var(--cyan); margin:18px 0 6px; }
+  table { border-collapse:collapse; width:100%; max-width:900px; }
+  th,td { text-align:left; padding:3px 10px; border-bottom:1px solid rgba(0,240,255,.08); font-size:12px; }
+  th { color:var(--dim); font-weight:normal; letter-spacing:.08em; text-transform:uppercase; font-size:10px; }
+  td.num,th.num { text-align:right; }
+  .bar { height:5px; background:#0f2019; border-radius:3px; overflow:hidden; margin-top:3px; }
+  .bar i { display:block; height:100%; background:var(--cyan); }
+  .bar i.hot { background:var(--red); }
+  .caps { display:flex; flex-wrap:wrap; gap:14px; max-width:900px; }
+  .cap { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px 14px; min-width:200px; flex:1; }
+  .foot { margin-top:22px; padding:10px 12px; border:1px dashed rgba(232,201,106,.4); border-radius:8px; color:var(--dim); font-size:11px; max-width:900px; }
+  .err { border:1px solid var(--red); color:var(--red); padding:10px 14px; border-radius:8px; max-width:900px; }
+  .ok { color:var(--green); }
+  details { max-width:1100px; margin-top:16px; }
+  pre { font-size:11px; color:var(--dim); white-space:pre-wrap; word-break:break-all; }
+</style>
+</head>
+<body>
+<h1>⚔ SPEND — ONE WALL</h1>
+<div class="sub">cost_truth.v1 + cost_enforcer.v1 via /api/v1/cost · refreshed in background, page polls every 5s · <span id="asof">—</span></div>
+<div id="errbox"></div>
+<div class="cards" id="periods"></div>
+<h2>CAPS (cost_enforcer — hard, auto-kill)</h2>
+<div class="caps" id="caps"></div>
+<h2>BY MODEL</h2>
+<table id="models"><thead><tr><th>model</th><th class="num">calls</th><th class="num">billable tok</th><th class="num">est usd</th></tr></thead><tbody></tbody></table>
+<h2>BY PROVIDER</h2>
+<table id="providers"><thead><tr><th>provider</th><th class="num">calls</th><th class="num">est usd</th></tr></thead><tbody></tbody></table>
+<h2>PLANS (flat monthly — quota is the scarce unit)</h2>
+<table id="plans"><thead><tr><th>plan</th><th class="num">monthly</th><th>note</th></tr></thead><tbody></tbody></table>
+<h2>PREPAID CREDITS (the float on the street)</h2>
+<div class="sub" id="creditSummary">—</div>
+<table id="credits"><thead><tr><th>key / lane</th><th class="num">balance</th><th>as of</th><th>note</th></tr></thead><tbody></tbody></table>
+<h2>RECHARGES (money actually moved)</h2>
+<table id="recharges"><thead><tr><th>date</th><th class="num">amount</th><th>target</th><th>note</th></tr></thead><tbody></tbody></table>
+<details><summary>raw feed</summary><pre id="raw"></pre></details>
+<div class="foot">
+  HONEST GAPS: dollar figures are <b>calculated</b> (receipt token counts × joined rate), not invoices;
+  subscription/coding-plan spend (zcode, autoclaw, copilot, chatgpt) is NOT metered here — it's in the
+  provider dashboards; vast/blade charges are tracked separately; local energy not included.
+  The enforcer's own tape only counts calls routed through it — truth's numbers are the wider net.
+</div>
+<script>
+function money(x){ if(x==null) return "—"; return "$" + (+x).toFixed(x < 1 ? 4 : 2); }
+function fmt(n){ return (+n||0).toLocaleString(); }
+function rowsInto(tb, list, cols){
+  tb.innerHTML = "";
+  (list||[]).slice(0, 25).forEach(function(m){
+    var tr = document.createElement("tr");
+    cols.forEach(function(c){ var td=document.createElement("td"); if(c.num) td.className="num"; td.textContent = c.f(m); tr.appendChild(td); });
+    tb.appendChild(tr);
+  });
+}
+function cap(name, c){
+  var pct = c && c.cap ? (c.spent/c.cap*100) : 0;
+  var hot = pct >= 80 ? " hot" : "";
+  return '<div class="cap"><div class="k">'+name+'</div><div class="v" style="font-size:16px">'+money(c&&c.spent)+' / '+money(c&&c.cap)+'</div>'
+    + '<div class="bar"><i class="'+hot+'" style="width:'+Math.min(100,pct)+'%"></i></div><div class="d">'+pct.toFixed(1)+'%</div></div>';
+}
+function toList(x){
+  if(Array.isArray(x)) return x;
+  return Object.keys(x||{}).map(function(k){ return Object.assign({name:k}, x[k]); });
+}
+function unknownCell(v){
+  var td = document.createElement("td"); td.className = "num";
+  if(v === null || v === undefined){ td.textContent = "UNKNOWN"; td.style.color = "var(--red)"; }
+  else { td.textContent = money(v); }
+  return td;
+}
+async function load(){
+  try {
+    var r = await fetch("/api/v1/cost", {cache:"no-store"});
+    if(r.status === 202) {
+      document.getElementById("errbox").innerHTML = '<div class="err" style="border-color:var(--gold);color:var(--gold)">warming the meter — first wall build takes ~30s, retrying…</div>';
+      return;
+    }
+    var j = await r.json();
+    if(!r.ok || j.error) throw new Error(j.error || ("HTTP "+r.status));
+    document.getElementById("errbox").innerHTML = "";
+    var t = j.truth || {}, e = j.enforcer || {};
+    document.getElementById("asof").textContent = "as of " + (t.as_of || "?");
+
+    var pc = document.getElementById("periods"); pc.innerHTML = "";
+    Object.keys(t.periods||{}).sort().forEach(function(p){
+      var d = t.periods[p];
+      pc.insertAdjacentHTML("beforeend",
+        '<div class="card"><div class="k">'+p+'</div><div class="v">'+money(d.calculated_api_cost_usd)+'</div>'
+        + '<div class="d">'+fmt(d.calls)+' calls · '+fmt(d.billable_tokens)+' billable tok'
+        + (d.cache_hit_ratio!=null ? ' · cache '+(d.cache_hit_ratio*100).toFixed(1)+'%' : '') + '</div></div>');
+    });
+    if(t.vast && (t.vast.balance!=null || t.vast.total_spend!=null))
+      pc.insertAdjacentHTML("beforeend",
+        '<div class="card"><div class="k">vast balance</div><div class="v">'+money(t.vast.balance!=null?t.vast.balance:t.vast.total_spend)+'</div><div class="d">blade spend tracked separately</div></div>');
+
+    var caps = (e.caps && e.caps.spend) || {};
+    document.getElementById("caps").innerHTML =
+      cap("daily", caps.daily) + cap("hourly", caps.hourly) + cap("grok daily", caps.grok)
+      + '<div class="cap"><div class="k">guard</div><div class="v" style="font-size:14px" class="ok">'
+      + ((e.caps && e.caps.ok) ? '<span class="ok">OK — no violations</span>' : '<span style="color:var(--red)">' + ((e.caps&&e.caps.violations||[]).length + ' violations') + '</span>')
+      + '</div><div class="d">auto_kill ' + ((e.spend&&e.spend.caps&&e.spend.caps.auto_kill)?"armed":"off") + ' · ' + ((e.spend&&e.spend.running_agents)||0) + ' agents running</div></div>';
+
+    var ml = toList(t.models).map(function(m){ m.name = m.model || m.name || '?'; return m; })
+      .sort(function(a,b){ return (b.calculated_api_cost_usd||0)-(a.calculated_api_cost_usd||0); });
+    rowsInto(document.querySelector("#models tbody"), ml, [
+      {f:function(m){return m.name;}},
+      {num:true, f:function(m){return fmt(m.calls);}},
+      {num:true, f:function(m){return fmt(m.billable_tokens);}},
+      {num:true, f:function(m){return money(m.calculated_api_cost_usd);}}
+    ]);
+    var pl = toList(t.providers).map(function(p){ p.name = p.provider || p.name || '?'; return p; })
+      .sort(function(a,b){ return (b.calculated_api_cost_usd||0)-(a.calculated_api_cost_usd||0); });
+    rowsInto(document.querySelector("#providers tbody"), pl, [
+      {f:function(p){return p.name;}},
+      {num:true, f:function(p){return fmt(p.calls);}},
+      {num:true, f:function(p){return money(p.calculated_api_cost_usd);}}
+    ]);
+    var ov = j.overlay || {};
+    if(ov.error) {
+      document.getElementById("creditSummary").textContent = "overlay unreadable: " + ov.error;
+    } else {
+      var subs = ov.subscriptions || [], creds = ov.prepaid_credits || [], rech = ov.recharges || [];
+      var subKnown = subs.filter(function(s){ return typeof s.monthly_usd === "number"; });
+      var subSum = subKnown.reduce(function(a,s){ return a + s.monthly_usd; }, 0);
+      var credKnown = creds.filter(function(c){ return typeof c.balance_usd === "number"; });
+      var credSum = credKnown.reduce(function(a,c){ return a + c.balance_usd; }, 0);
+      var rechSum = rech.reduce(function(a,r){ return a + (typeof r.amount_usd === "number" ? r.amount_usd : 0); }, 0);
+      pc.insertAdjacentHTML("beforeend",
+        '<div class="card"><div class="k">subs run-rate (known)</div><div class="v">'+money(subSum)+(subKnown.length<subs.length?'+':'')+'</div>'
+        + '<div class="d">'+subKnown.length+'/'+subs.length+' plans priced</div></div>'
+        + '<div class="card"><div class="k">credit float (known)</div><div class="v">'+money(credSum)+(credKnown.length<creds.length?'+':'')+'</div>'
+        + '<div class="d">'+credKnown.length+'/'+creds.length+' balances known</div></div>'
+        + '<div class="card"><div class="k">recharges logged</div><div class="v">'+money(rechSum)+'</div><div class="d">'+rech.length+' events</div></div>');
+
+      var ptb = document.querySelector("#plans tbody"); ptb.innerHTML = "";
+      subs.forEach(function(s){
+        var tr = document.createElement("tr");
+        var td1 = document.createElement("td"); td1.textContent = s.name || "?"; tr.appendChild(td1);
+        tr.appendChild(unknownCell(s.monthly_usd));
+        var td3 = document.createElement("td"); td3.textContent = s.note || ""; td3.style.color = "var(--dim)"; tr.appendChild(td3);
+        ptb.appendChild(tr);
+      });
+      var ctb = document.querySelector("#credits tbody"); ctb.innerHTML = "";
+      var now = Date.now();
+      creds.forEach(function(c){
+        var tr = document.createElement("tr");
+        var td1 = document.createElement("td"); td1.textContent = (c.key||"?") ; tr.appendChild(td1);
+        tr.appendChild(unknownCell(c.balance_usd));
+        var td3 = document.createElement("td");
+        if(c.as_of){ td3.textContent = c.as_of; var age = (now - new Date(c.as_of).getTime()) / 86400000; if(age > 14){ td3.style.color = "var(--gold)"; td3.textContent += " (stale)"; } }
+        else { td3.textContent = "—"; td3.style.color = "var(--red)"; }
+        tr.appendChild(td3);
+        var td4 = document.createElement("td"); td4.textContent = c.note || ""; td4.style.color = "var(--dim)"; tr.appendChild(td4);
+        ctb.appendChild(tr);
+      });
+      document.getElementById("creditSummary").textContent =
+        (creds.length - credKnown.length) + " of " + creds.length + " balances UNKNOWN — write each one into configs/spend_overlay.yaml once you check its dashboard; red = never recorded, gold = stale (>14d).";
+      var rtb = document.querySelector("#recharges tbody"); rtb.innerHTML = "";
+      rech.forEach(function(r){
+        var tr = document.createElement("tr");
+        var td1 = document.createElement("td"); td1.textContent = r.ts || "?"; tr.appendChild(td1);
+        tr.appendChild(unknownCell(r.amount_usd));
+        var td3 = document.createElement("td"); td3.textContent = r.target || "?"; tr.appendChild(td3);
+        var td4 = document.createElement("td"); td4.textContent = r.note || ""; td4.style.color = "var(--dim)"; tr.appendChild(td4);
+        rtb.appendChild(tr);
+      });
+    }
+
+    document.getElementById("raw").textContent = JSON.stringify(j, null, 2);
+  } catch(ex) {
+    document.getElementById("errbox").innerHTML = '<div class="err">wound, not green lie: ' + ex.message + '</div>';
+  }
+}
+load(); setInterval(load, 5000);
+</script>
+</body>
+</html>

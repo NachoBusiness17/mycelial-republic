@@ -1,0 +1,39 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ASTRA SALON — research steal, live</title>
+<style>
+:root{--bg:#0a0a0a;--panel:#111114;--line:#232328;--ink:#d8d8dc;--mut:#8a8a92;--gold:#e8c96a;--accent:#7cf5ff}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-monospace,Consolas,monospace}
+header{padding:14px 22px;border-bottom:1px solid var(--line)}
+header h1{font-size:.85rem;letter-spacing:.14em;margin:0;color:var(--accent)}
+#wrap{max-width:980px;margin:0 auto;padding:18px}
+section{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:14px}
+section h2{font-size:.7rem;letter-spacing:.14em;margin:0 0 8px;color:var(--gold);text-transform:uppercase}
+pre{white-space:pre-wrap;word-wrap:break-word;font-size:.72rem;line-height:1.5;color:var(--ink);margin:0}
+.status{color:var(--mut);font-size:.68rem}
+</style></head><body>
+<header><h1>ASTRA SALON — research steal · the model, the seat, the phenomenon</h1>
+<div class="status" id="st">loading…</div></header>
+<div id="wrap">
+<section><h2>Brief</h2><pre id="brief">…</pre></section>
+<section><h2>Astra — blind self-review (the author on the bench)</h2><pre id="astra">…pending…</pre></section>
+<section><h2>Agent findings (4-agent fan-out)</h2><pre id="agents">…pending…</pre></section>
+<section><h2>Lane bench</h2><pre id="lanes">…pending…</pre></section>
+<section><h2>Fold</h2><pre id="fold">…pending…</pre></section>
+</div>
+<script src="/static/nav.js"></script>
+<script>
+const get = async (u, el) => { try { const r = await fetch(u + '?t=' + Date.now()); if (!r.ok) throw 0; document.getElementById(el).textContent = await r.text(); } catch (e) { document.getElementById(el).textContent = '…not yet filed…'; } };
+(async () => {
+  await get('./BRIEF.md', 'brief');
+  await get('./post_ASTRA.md', 'astra');
+  const files = ['agent1_product_identity.md','agent2_capabilities.md','agent3_ops_quotas.md','agent4_reception.md'];
+  let ag = '';
+  for (const f of files) { try { const r = await fetch('../../../memory/runs/astra_world/research/' + f); ag += '\n### ' + f + '\n' + (await r.text()).slice(0, 3000) + '\n'; } catch (e) { ag += '\n### ' + f + '\n…pending…\n'; } }
+  document.getElementById('agents').textContent = ag;
+  await get('./lane_fold.md', 'lanes');
+  await get('./FOLD.md', 'fold');
+  document.getElementById('st').textContent = 'live · refreshes on reload · salon: research steal astra 2026-09-05';
+})();
+</script>
+</body></html>

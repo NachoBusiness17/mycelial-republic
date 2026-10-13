@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>WHALE PATROL — live feed (fl33t)</title>
+<meta http-equiv="refresh" content="120">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { background:#0b0e14; color:#d7dce6; font:14px/1.5 ui-monospace,Consolas,monospace; margin:0; padding:22px; max-width:1000px; }
+  h1 { font-size:19px; color:#ffd166; margin:0 0 4px; }
+  .sub { color:#7d8590; font-size:12px; margin-bottom:14px; }
+  .ping { background:#33220a; border:1px solid #9e6a03; color:#ffd166; border-radius:8px; padding:12px 14px; margin-bottom:16px; font-size:13.5px; }
+  .ping:empty { display:none; }
+  .card { background:#111722; border:1px solid #1c2431; border-radius:8px; padding:12px 14px; margin:10px 0; }
+  .fresh { border-color:#238636; }
+  .who { font-weight:bold; color:#e6edf3; }
+  .who a { color:#58a6ff; text-decoration:none; }
+  .age { float:right; color:#7d8590; font-size:11px; }
+  .freshage { color:#3fb950; font-weight:bold; }
+  .txt { color:#9aa4b2; font-size:12.5px; margin:6px 0; }
+  .counts { font-size:11.5px; color:#7d8590; }
+  .draft { background:#0b0e14; border:1px dashed #2d3a52; border-radius:6px; padding:8px 10px; font-size:12.5px; margin:8px 0; white-space:pre-wrap; }
+  .badge { display:inline-block; border-radius:4px; padding:1px 7px; font-size:10.5px; margin-right:6px; }
+  .fired { background:#12331c; color:#3fb950; }
+  .unfired { background:#33220a; color:#ffd166; }
+  .none { background:#1c2431; color:#7d8590; }
+  a.btn { display:inline-block; background:#1f6feb; color:#fff; border-radius:6px; padding:5px 12px; font-size:12px; text-decoration:none; margin-top:6px; }
+  .watched { color:#7d8590; font-size:11.5px; margin-top:20px; border-top:1px solid #1c2431; padding-top:8px; }
+</style>
+</head>
+<body>
+<h1>WHALE PATROL — live feed</h1>
+<div class="sub">watched channels → tracked posts → our replies → what the algo does to us · refreshes every 2 min · 🤸🚗</div>
+<div class="ping" id="ping"></div>
+<div id="app">loading…</div>
+<div class="watched" id="watched"></div>
+<script>
+fetch("data/whale_feed.json", { cache: "no-store" }).then(r => r.json()).then(d => {
+  const app = document.getElementById("app");
+  document.getElementById("ping").textContent = d.ping ? "🔔 PING — " + d.ping : "";
+  if (!d.tracked.length) app.innerHTML = '<div class="card">tracker empty — patrol hasn\'t banked any posts yet</div>';
+  d.tracked.forEach(t => {
+    const fresh = t.age_h >= 0 && t.age_h < 6;
+    const c = t.counts_now || t.counts_at_track || {};
+    const b = t.counts_at_track || {};
+    const delta = (k) => (c[k] ?? 0) - (b[k] ?? 0);
+    const card = document.createElement("div");
+    card.className = "card" + (fresh ? " fresh" : "");
+    const badge = t.we_replied ? '<span class="badge fired">WE REPLIED</span>' : (t.our_draft ? '<span class="badge unfired">DRAFT READY</span>' : '<span class="badge none">WATCHED</span>');
+    card.innerHTML =
+      '<div class="who"><a href="' + t.url + '" target="_blank">' + t.handle + "</a>" +
+      '<span class="age ' + (fresh ? "freshage" : "") + '">' + (t.age_h >= 0 ? t.age_h + "h old" : "age ?") + "</span></div>" +
+      '<div style="margin-top:4px">' + badge + '</div>' +
+      '<div class="txt">' + t.text.slice(0, 260) + "</div>" +
+      '<div class="counts">at track: ' + (b.likes ?? 0) + " likes / " + (b.reposts ?? 0) + " RT / " + (b.replies ?? 0) + " replies" +
+      (t.we_replied ? " → now: " + (c.likes ?? 0) + " likes (+" + delta("likes") + ") / " + (c.reposts ?? 0) + " RT (+" + delta("reposts") + ") / " + (c.replies ?? 0) + " replies (+" + delta("replies") + ")" : "") + "</div>" +
+      (t.our_draft ? '<div class="draft">' + t.our_draft.slice(0, 400) + "</div>" : "") +
+      '<a class="btn" href="' + t.url + '" target="_blank">OPEN ↗</a>';
+    app.appendChild(card);
+  });
+  document.getElementById("watched").textContent = "watching: " + (d.watched || []).join(" · ");
+}).catch(e => { document.getElementById("app").textContent = "feed error: " + e; });
+</script>
+</body>
+</html>

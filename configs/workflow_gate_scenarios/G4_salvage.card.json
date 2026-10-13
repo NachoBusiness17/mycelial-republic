@@ -1,0 +1,22 @@
+{
+  "gate_id": "G4-salvage",
+  "clause": "LAW-12 genesis clause, watch/inbox/BURN_rsi-harness_20260926.md falsifier: one scenario card per G1-G7 minted from real REGISTRY.jsonl FAIL rows within 14 days of registration",
+  "cited_fail_row": {
+    "registry": "memory/workflows/REGISTRY.jsonl",
+    "line": 5,
+    "ts": "2026-09-26T02:32:14Z",
+    "name": "the-gala.dwf.ts",
+    "digest": "2a9ae3707582"
+  },
+  "citation_provenance": "Real fleet FAIL row: the gate run of .zcode/workflows/the-gala.dwf.ts at 2026-09-26T02:32:14Z returned verdict FAIL with G4-salvage as the single fault; the amend at 02:32:43 (digest 0ad57dc88296) shows the single-check repair path. Cited because it is the cleanest one-fault G4 observation in the registry.",
+  "scenario_input": "configs/workflow_gate_scenarios/fixtures/fail_g4.dwf.ts",
+  "scenario_description": "Per-item work completes but nothing is published incrementally inside the fan-out (no report(actor) call): if the run dies mid-flight, all completed item work is lost with no salvage trail.",
+  "expected_verdict": {
+    "overall": "FAIL",
+    "failed_checks": ["G4-salvage"],
+    "warn_checks": [],
+    "exit_code": 2
+  },
+  "regression_criterion": "tools/workflow_gate.py check --scenarios configs/workflow_gate_scenarios exits 0 with this card green. The card goes red if (a) the gate stops flagging fail_g4.dwf.ts (G4 report(x); salvage regex weakened or removed), (b) the fixture starts failing gates beyond expected_verdict.failed_checks, or (c) the cited row disappears from REGISTRY.jsonl. Card and fixture are immutable inputs: a G4 semantics change requires a new dated card filed alongside, never a silent edit.",
+  "rollback_note": "Scenario mode is read-only: it writes no registry row and touches no file. Rollback of a G4 gate change is a git revert of tools/workflow_gate.py to the pre-change blob, then re-run check --scenarios expecting green. The cited fleet FAIL row (line 5) is history and is never erased; the fixture stays so the reverted gate can be re-proven."
+}

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Home &mdash; the six destinations</title>
+<style>
+  :root{color-scheme:dark}
+  body{margin:0;background:#070d0c;color:#cfe8e4;font:14px/1.5 ui-monospace,Consolas,monospace}
+  a{color:#7cf5ff;text-decoration:none}a:hover{text-decoration:underline}
+  .wrap{max-width:1180px;margin:0 auto;padding:18px 16px 60px}
+  h1{font-size:15px;letter-spacing:.14em;color:#e8c96a;margin:14px 0 4px;text-transform:uppercase}
+  .because{font-size:clamp(17px,2.6vw,26px);color:#eaf6f2;margin:10px 0 2px;font-weight:bold}
+  .because.bad{color:#ff9d9d}
+  .stamp{color:#5f7a75;font-size:11px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:14px;margin-top:18px}
+  .card{border:1px solid rgba(0,240,255,.22);border-radius:10px;background:#0a1412;padding:14px 16px}
+  .card h2{margin:0;font-size:13px;letter-spacing:.1em;color:#7cf5ff;text-transform:uppercase}
+  .card h2 a{color:#7cf5ff}
+  .q{color:#8aa39e;font-size:11px;margin:2px 0 10px;font-style:italic}
+  ul{margin:6px 0;padding-left:16px}
+  li{margin:3px 0}
+  .num{color:#e8c96a;font-weight:bold}
+  .dash{color:#5f7a75}
+  details{margin-top:8px;border-top:1px dashed rgba(0,240,255,.18);padding-top:6px}
+  summary{cursor:pointer;color:#e8c96a;font-size:12px}
+  details li{font-size:11px;word-break:break-all}
+  .grave{color:#5f7a75;font-size:10px;margin-top:10px;border-top:1px dashed rgba(255,255,255,.08);padding-top:6px}
+  .banner{display:none;position:fixed;top:0;left:0;right:0;z-index:99;background:#5c1010;color:#ffd9d9;
+          font:12px ui-monospace,monospace;padding:6px 10px;white-space:pre-wrap}
+</style>
+</head>
+<body>
+<div id="errbanner" class="banner"></div>
+<script>
+window.addEventListener('error',function(e){var b=document.getElementById('errbanner');if(!b)return;
+  b.style.display='block';b.textContent+='ERR: '+e.message+' @ '+(e.lineno||'?')+':'+(e.colno||'?')+'\n';});
+window.addEventListener('unhandledrejection',function(e){var b=document.getElementById('errbanner');if(!b)return;
+  b.style.display='block';b.textContent+='REJ: '+e.reason+'\n';});
+</script>
+
+<div class="wrap">
+  <h1>Home &mdash; what matters now</h1>
+  <div class="because" id="because">Reading the operating sentence&hellip;</div>
+  <div class="stamp" id="because_stamp">source: /api/home &middot; live bytes, not a badge (T2)</div>
+
+  <div class="grid">
+
+    <div class="card" id="card-home">
+      <h2><a href="#card-home">Home</a></h2>
+      <div class="q">What matters now, and what should I do?</div>
+      <ul>
+        <li>latest verified outcome: <span id="home_outcome" class="dash">&mdash;</span>
+            <a href="/static/live_feed.html">evidence: live feed</a></li>
+        <li>next recommended action: <span id="home_next" class="dash">&mdash;</span>
+            <a href="/static/control.html">Direct Mag</a></li>
+        <li>operating checks: <span id="home_verify" class="dash">&mdash;</span>
+            <a href="/static/health.html">evidence: health</a></li>
+      </ul>
+    </div>
+
+    <div class="card" id="card-projects">
+      <h2><a href="#card-projects">Projects</a></h2>
+      <div class="q">What are we building, where are we, and what remains?</div>
+      <ul>
+        <li><span class="num" id="proj_loops">0</span> open loops (bonds)
+            &mdash; <a href="/static/decisions.html">evidence: decisions</a></li>
+        <li id="proj_loop1" class="dash"></li>
+        <li>maze lineage (open RQ1): <a href="/static/maze_arena.html?lineage=memory/graph/session_maze.json">the assembled maze &mdash; memory/graph/session_maze.json</a></li>
+        <li>B7 spectral, cited: <a href="/static/spectral_maze.html?spec=watch/SELF_STEAL_LIGHT_MAZE_SPECTRAL_20260906.md" title="repo: watch/SELF_STEAL_LIGHT_MAZE_SPECTRAL_20260906.md">watch/SELF_STEAL_LIGHT_MAZE_SPECTRAL_20260906.md</a> (spec + six falsifiers; build claim DISPUTED)</li>
+        <li>keeper narrator: <a href="/static/keeper_voice.html?pack=watch/maze_world/">the pack &mdash; watch/maze_world/</a> &middot; <a href="/static/keeper_voice.html?world=state/keeper_world/world.json">world state via its page (state/keeper_world/world.json)</a></li>
+      </ul>
+    </div>
+
+    <div class="card" id="card-history">
+      <h2><a href="#card-history">History</a></h2>
+      <div class="q">How did we get here and what did we learn?</div>
+      <ul>
+        <li>chain tip: <span class="num" id="hist_tip">&mdash;</span>
+            &mdash; <a href="/static/chain_check.html">evidence: chain check</a></li>
+        <li>latest bead: <span id="hist_bead" class="dash">&mdash;</span>
+            <a href="/static/live_feed.html">evidence: live feed</a></li>
+        <li>maze lineage: <a href="/static/maze_arena.html?lineage=memory/graph/session_maze.json">memory/graph/session_maze.json</a>
+            &middot; probe: <a href="/static/maze_arena.html?probe=mag/session_maze.py">mag/session_maze.py</a>
+            &mdash; <a href="/static/maze_arena.html">evidence: maze arena</a></li>
+      </ul>
+    </div>
+
+    <div class="card" id="card-run">
+      <h2><a href="#card-run">Run</a></h2>
+      <div class="q">What do I want done, who is doing it, and can I intervene?</div>
+      <ul>
+        <li>in-flight workers: <span class="num" id="run_workers">&mdash;</span>
+            <a href="/static/agents.html">evidence: agents</a></li>
+        <li>held in flight (overseer): <span class="num" id="run_held">&mdash;</span>
+            <a href="/static/live.html">evidence: live / overseer strip</a></li>
+        <li>lanes &amp; right-sizing: <a href="/static/lanes.html">lanes</a>
+            &middot; intervene: <a href="/static/control.html">Direct Mag</a></li>
+      </ul>
+    </div>
+
+    <div class="card" id="card-library">
+      <h2><a href="#card-library">Library</a></h2>
+      <div class="q">What research, skills, prompts, and external systems can Mag use?</div>
+      <ul>
+        <li><span class="num" id="lib_cells">&mdash;</span> tesuji cells on the field
+            &mdash; <a href="/static/tesuji_map.html">evidence: tesuji map</a></li>
+        <li><a href="#fleetnav">the wall &mdash; full surface index</a> (every tab; spectacle and tools demoted but reachable)</li>
+        <li>registry: research/orphan_registry/today_dogfood.md &sect;3 (the 37 audited cards, linked below)</li>
+      </ul>
+      <details>
+        <summary>the 37 research cards &mdash; each linked to the field</summary>
+        <ul>
+          <li><a href="/static/tesuji_map.html?card=research/corpus_triangulation/R1_gaming_canon.md">research/corpus_triangulation/R1_gaming_canon.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=research/corpus_triangulation/R3_training.md">research/corpus_triangulation/R3_training.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=research/gaming_corpus/baroque_vs_fleet.md">research/gaming_corpus/baroque_vs_fleet.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=research/gaming_corpus/basecamp_fulfilled.md">research/gaming_corpus/basecamp_fulfilled.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=research/gaming_corpus/berlin_interpretation_intake_004.md">research/gaming_corpus/berlin_interpretation_intake_004.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=research/gaming_corpus/codex_ontology_proven.md">research/gaming_corpus/codex_ontology_proven.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=research/gaming_corpus/deadzone_internals_intake_006.md">research/gaming_corpus/deadzone_internals_intake_006.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=research/gaming_corpus/engines_race_sowing.md">research/gaming_corpus/engines_race_sowing.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=research/gaming_corpus/l0_contract_crossmap.md">research/gaming_corpus/l0_contract_crossmap.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=research/gaming_corpus/marathon_archive_intake_005.md">research/gaming_corpus/marathon_archive_intake_005.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=research/gaming_corpus/primer_vs_fleet.md">research/gaming_corpus/primer_vs_fleet.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=watch/inbox/AGENT_MOCK_DOSSIER_20260906.md">watch/inbox/AGENT_MOCK_DOSSIER_20260906.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=watch/inbox/CITE_GATE_BUILD_20260906.md">watch/inbox/CITE_GATE_BUILD_20260906.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=watch/inbox/ELEVATION_RICE_20260906.md">watch/inbox/ELEVATION_RICE_20260906.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=watch/inbox/FLEET_LIGHTMAP_V2_20260906.md">watch/inbox/FLEET_LIGHTMAP_V2_20260906.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=watch/inbox/FRONTIER_DISPATCH_001_20260905.md">watch/inbox/FRONTIER_DISPATCH_001_20260905.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=watch/inbox/FRONTIER_DISPATCH_001_20260905_COMPLETE.md">watch/inbox/FRONTIER_DISPATCH_001_20260905_COMPLETE.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=watch/inbox/FRONTIER_SIGNAL_INCIDENT_SPACE_20260906.md">watch/inbox/FRONTIER_SIGNAL_INCIDENT_SPACE_20260906.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=watch/inbox/HOME_API_FIX_20260906.md">watch/inbox/HOME_API_FIX_20260906.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=watch/inbox/MARATHON_HARVEST_20260906.md">watch/inbox/MARATHON_HARVEST_20260906.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=watch/inbox/MAZE_ARENA_B1_20260906.md">watch/inbox/MAZE_ARENA_B1_20260906.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=watch/inbox/NAV_WIRING_20260906.md">watch/inbox/NAV_WIRING_20260906.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=watch/inbox/RESTFUL_WATCH_059_20260906.md">watch/inbox/RESTFUL_WATCH_059_20260906.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=watch/inbox/REVEAL_FIVE_REHEARSALS_20260906.md">watch/inbox/REVEAL_FIVE_REHEARSALS_20260906.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=watch/inbox/SALON_CONCURRENCY_CHAIR4_ASTRA_20260906.md">watch/inbox/SALON_CONCURRENCY_CHAIR4_ASTRA_20260906.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=watch/inbox/SALON_LIGHTMAP_B2_20260906.md">watch/inbox/SALON_LIGHTMAP_B2_20260906.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=watch/inbox/SHADOW_PHYSICS_LAB_20260906.md">watch/inbox/SHADOW_PHYSICS_LAB_20260906.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=watch/inbox/SHADOW_WALK_V2_RUN_20260906.md">watch/inbox/SHADOW_WALK_V2_RUN_20260906.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=watch/inbox/SHADOW_WORK_WEIGHTS_VOLUME_20260906.md">watch/inbox/SHADOW_WORK_WEIGHTS_VOLUME_20260906.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=watch/inbox/SOWING_ROOM_20260906.md">watch/inbox/SOWING_ROOM_20260906.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=watch/inbox/TESUJI_A6_LOCAL_DIFF_20260906.md">watch/inbox/TESUJI_A6_LOCAL_DIFF_20260906.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=watch/inbox/TESUJI_GRIDDER_20260906.md">watch/inbox/TESUJI_GRIDDER_20260906.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=watch/inbox/TESUJI_PAGER_20260906.md">watch/inbox/TESUJI_PAGER_20260906.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=watch/inbox/TESUJI_T0_RECEIPTER_20260906.md">watch/inbox/TESUJI_T0_RECEIPTER_20260906.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=watch/inbox/TOPIC_INDEX_BUILD_20260906.md">watch/inbox/TOPIC_INDEX_BUILD_20260906.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=watch/inbox/VISION_PASS_SWEEP1_20260906.md">watch/inbox/VISION_PASS_SWEEP1_20260906.md</a></li>
+          <li><a href="/static/tesuji_map.html?card=watch/inbox/bad_apple/PROVENANCE.md">watch/inbox/bad_apple/PROVENANCE.md</a></li>
+        </ul>
+      </details>
+    </div>
+
+    <div class="card" id="card-system">
+      <h2><a href="#card-system">System</a></h2>
+      <div class="q">Is Mag healthy, economical, learning, and safe?</div>
+      <ul>
+        <li>fleet: <span class="num" id="sys_fleet">&mdash;</span>
+            &mdash; <a href="/static/fleet.html">evidence: fleet</a></li>
+        <li>phone-door: <span id="sys_phone" class="dash">&mdash;</span>
+            &mdash; <a href="/static/live.html">evidence: live / overseer</a></li>
+        <li>health checks &amp; economics: <a href="/static/health.html">health</a>
+            &middot; <a href="/static/fleet.html">fleet</a></li>
+      </ul>
+      <div class="grave">graveyard (orphans-astra salon): sealed verdicts are cited in the record &mdash; nothing here links to them. Dead surfaces stay dead.</div>
+    </div>
+
+  </div>
+
+  <p class="stamp">destinations per docs/DASHBOARD_REORIENTATION_V2.md &middot; interaction rules per docs/DASHBOARD_INFORMATION_ARCHITECTURE.md &middot; verdicts per research/surface_audit/df1&ndash;df6.json &middot; the nav wall above stays as the depth index</p>
+</div>
+
+<script src="/static/nav.js"></script>
+<script>
+'use strict';
+function $(id){return document.getElementById(id);}
+function fetchT(u,ms){
+  var c=('AbortController' in window)?new AbortController():null;
+  var timer=c?setTimeout(function(){c.abort();},ms):null;
+  return fetch(u,{cache:'no-store',signal:c?c.signal:undefined}).then(function(r){
+    if(timer)clearTimeout(timer);
+    if(!r.ok)throw new Error('HTTP '+r.status+' '+u);
+    return r.json();
+  });
+}
+function txt(id,s){var e=$(id);if(e)e.textContent=s;}
+
+function becauseSentence(d){
+  var ship=d.ship||{}, health=d.health||{};
+  var why=(ship.why&&ship.why.length)?ship.why.join('; '):'all declared checks pass';
+  var st=String(ship.status||health.status||'').toUpperCase();
+  if(st==='DOWN'||health.up===false)return {t:'Mag cannot operate because '+why+'.',bad:true};
+  if(st==='CAVEATS'||health.status==='degraded')return {t:'Mag can operate, with caveats, because '+why+'.',bad:false};
+  return {t:'Mag can operate because '+why+'.',bad:false};
+}
+
+fetchT('/api/home',20000).then(function(d){
+  var b=becauseSentence(d);
+  var el=$('because');el.textContent=b.t;if(b.bad)el.className='because bad';
+  txt('because_stamp','source: /api/home · read live '+new Date().toISOString());
+  var v=d.verify||{};
+  txt('home_verify',(typeof v.pass==='number'&&v.n)?(v.pass+'/'+v.n+' checks pass'):'—');
+  var lb=d.latest_bead||{};
+  txt('home_outcome',lb.title?('“'+String(lb.title).slice(0,110)+'”'):'—');
+  txt('hist_bead',lb.end_minute?('"'+String(lb.title||'').slice(0,90)+'" · '+lb.end_minute):'—');
+  var px=(d.phoenix&&d.phoenix.fixes&&d.phoenix.fixes[0])?d.phoenix.fixes[0]:((d.open_loops&&d.open_loops[0])||'file the next card');
+  txt('home_next',String(px).slice(0,140));
+  var ol=Array.isArray(d.open_loops)?d.open_loops:[];
+  txt('proj_loops',String(ol.length));
+  if(ol[0])txt('proj_loop1','first loop: '+String(ol[0]).slice(0,140));
+}).catch(function(e){
+  var el=$('because');el.textContent='Mag is being repaired — the office is open, the records are safe.';
+  el.className='because bad';
+  txt('because_stamp','source: /api/home UNREACHABLE — honest fallback shown');
+  var b=$('errbanner');if(b){b.style.display='block';b.textContent+='ERR: /api/home failed ('+e+') — fallback sentence rendered\n';}
+});
+
+fetchT('/static/overseer.json',8000).then(function(d){
+  var fl=Array.isArray(d.fleet)?d.fleet:[];
+  var up=fl.filter(function(f){return String(f.status||'').indexOf('Up')===0;}).length;
+  txt('sys_fleet',up+'/'+(d.fleet_n||fl.length)+' up'+(d.ts?(' · '+d.ts):''));
+  var pd=d.phone_door||{};
+  txt('sys_phone',pd.ok?('ok ('+String(pd.phone||'?')+', '+String(pd.latency||'?')+')'):(pd.ok===false?'DOWN':'—'));
+  var held=d.in_flight_held||{};
+  txt('run_held',String(Object.keys(held).length));
+  var ct=d.chain_tip||{};
+  txt('hist_tip',ct.leaf?(ct.leaf+' · '+(ct.rows||'?')+' knots'):'—');
+}).catch(function(e){
+  ['sys_fleet','sys_phone','run_held','hist_tip'].forEach(function(i){txt(i,'—');});
+  var b=$('errbanner');if(b){b.style.display='block';b.textContent+='ERR: /static/overseer.json failed ('+e+') — System/Run/History show honest dashes\n';}
+});
+
+fetchT('/api/v1/status',6500).then(function(d){
+  var keys=['workers','in_flight','active','running','lanes','seats'],found=null;
+  for(var i=0;i<keys.length&&!found;i++){
+    var v=d?d[keys[i]]:null;
+    if(Array.isArray(v))found={k:keys[i],n:v.length};
+    else if(v&&typeof v==='object')found={k:keys[i],n:Object.keys(v).length};
+  }
+  txt('run_workers',found?(found.n+' ('+found.k+' door live)'):'—');
+}).catch(function(e){
+  txt('run_workers','— (status door slow or down: '+String(e).slice(0,60)+')');
+});
+
+fetchT('/static/tesuji_map.json',8000).then(function(d){
+  txt('lib_cells',(typeof d.total==='number'?d.total:'—')+(d.ts?(' · '+d.ts):''));
+}).catch(function(e){
+  txt('lib_cells','—');
+  var b=$('errbanner');if(b){b.style.display='block';b.textContent+='ERR: /static/tesuji_map.json failed ('+e+')\n';}
+});
+</script>
+</body>
+</html>

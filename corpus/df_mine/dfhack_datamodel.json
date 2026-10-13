@@ -1,0 +1,297 @@
+{
+  "meta": {
+    "stratum": "engine_exposed_data_model",
+    "source_of_truth": "LOCAL clone corpus/dfhack_full (DFHack = community reverse-engineering of Dwarf Fortress engine)",
+    "primary_sources": [
+      "docs/dev/Lua API.rst (7930 lines: wrapper semantics + world/units/items/military/modules)",
+      "library/modules/Units.cpp (dreams/needs/stress/goal accessors)",
+      "library/modules/Items.cpp (artifact resolution via general_refs)",
+      "plugins/misery.cpp (emotion struct fields, personality_moodst)",
+      "plugins/manipulator.cpp (soul.skills, personality.stress_level)",
+      "plugins/strangemood.cpp (artifact naming, unit->status.artifact_name, item fields)",
+      "plugins/embark-assistant/survey.cpp (world_data/region_map fields)",
+      "plugins/fastdwarf.cpp, zone.cpp, siege-engine.cpp, preserve-rooms.cpp (relationship_ids, hf spouse links)",
+      "docs/dev/data-identity.rst (type_identity metadata system)",
+      "test/structures/*.lua (runtime introspection contract)"
+    ],
+    "caveat": "df-structures XML submodule (library/xml) is EMPTY in this clone; field lists are reconstructed from C++/Lua accessor usage in-repo plus the Lua API doc. Fields marked confirmed = directly referenced in source. Fields marked inferred = exposed via documented API functions rather than direct field access.",
+    "date": "2026-09-25"
+  },
+  "wrapper_meta": {
+    "note": "The data model is runtime-introspectable: every named type exposes _fields (name/offset/count/mode/type_name/index_enum/ref_target), _kind, _type, pairs() over real fields in memory order, type.find()/get_vector() for instance-vector classes.",
+    "fold": "any engine worth stealing exposes its own schema to its scripts"
+  },
+  "structures": {
+    "unit": {
+      "df_type": "df::unit (df.units.xml)",
+      "description": "The living, simulated creature present on the map. Flesh-level identity; links to its eternal record via hist_figure_id.",
+      "fields": {
+        "id": "int32 unique unit id, stable for lookups (df.unit.find)",
+        "name": "language_name struct (has_name, language, words[] parts-of-speech) - names are generative word data, not display strings",
+        "race": "int race id into creature_raws",
+        "caste": "int caste id",
+        "sex": "int",
+        "pos": "coord x,y,z - current tile",
+        "profession": "df.profession enum (accounts for false identity via API)",
+        "custom_profession": "player-set string label overriding profession name",
+        "hist_figure_id": "id of the eternal historical_figure this body is the current incarnation of",
+        "civ_id": "id of owning civilization entity",
+        "flags": "flagarray (flags1/2/3: on_ground, hungry, thirsty, tired, artifact-mood, etc.)",
+        "status": {
+          "current_soul": "pointer to unit_soul (see below)",
+          "labors": "enum-indexed labor flags (mining, hauling, medicine...)",
+          "misc_traits": "vector of timed misc traits",
+          "artifact_name": "language_name PRE-NAMING the artifact the unit is destined to create in a strange mood",
+          "hungry/thirsty/tired": "via flags"
+        },
+        "body": {
+          "physical_attrs": "strength/agility/toughness... attribute vector",
+          "size_info": "current size vs base",
+          "wounds": "injury records (body parts, bleeding, paralysis)",
+          "spatters": "contaminants on body (blood, ichor, goo)",
+          "body_plan": "reference to race-level body template",
+          "components": "per body part: layers, statuses"
+        },
+        "appearance": {
+          "body_modifiers / bp_modifiers": "scalar body-shape genes",
+          "tissue_style / tissue_style_type / tissue_length": "hair/beard style records",
+          "colors": "eye/hair/skin color indices",
+          "size_modifier": "scaling",
+          "genes": "raw allele pairs (caste-colored appearance genetics)"
+        },
+        "counters": {
+          "unconscious": "ticks unconscious",
+          "job_counter": "job reassignment cooldown",
+          "death_id": "id of death event/report",
+          "think_counter": "AI tick counters"
+        },
+        "job": "current job pointer (job_type, item targets)",
+        "military": {"squad_id": "...", "squad_pos": "slot index"},
+        "path": "pathfinding state",
+        "inventory": "vector of carried items with inv_item_role_type (Hauled/Worn/Weapon/StuckIn) + body_part",
+        "relationship_ids": "ENUM-INDEXED id map: unit_relationship_type -> unit id (PetOwner, RiderMount, Dragger, Dragee, Mother, Father, Spouse, Child, Lover...). Typed edge table, not a name field.",
+        "relations": {"group_leader_id": "id of social/chain leader", "note": "further int ids for the social graph"},
+        "curse": {"name_visible": "...", "speed_mul_percent": "...", "speed_add": "...", "undead/vampire/zombie flags": "supernatural state overlay"},
+        "pregnancy_timer": "reproduction timer",
+        "histfig_id / general_refs / specific_refs": "typed links out to world graph"
+      }
+    },
+    "unit_soul": {
+      "df_type": "df::unit_soul",
+      "description": "The psychological record, held separately from the body. One per unit (unit->status.current_soul). This is the engine's inner-life table.",
+      "fields": {
+        "name/race/caste/sex": "mirrors of the unit identity",
+        "skills": "vector of unit_skill {id: job_skill enum, rating: 0-normalized level, experience: raw xp, rustiness, last_used_timestamp} - skill decay tracked via timestamps",
+        "personality": "unit_personality (see below)",
+        "preferences": "vector of typed likes (materials, creatures, colors, foods, poetic forms...)",
+        "mental_attributes": "analytical/willpower/creativity/intuition/patience/memory/linguistic/spatial/social (unit MentalAttributeType)"
+      }
+    },
+    "unit_personality": {
+      "df_type": "df::unit_personality",
+      "description": "Stress, emotions, dreams, needs, values, beliefs, traits - the deepest inner-life structure in the engine.",
+      "fields": {
+        "stress_level": "int32 (confirmed manipulator.cpp) - short-term stress meter",
+        "stress": "long-term accumulated stress (confirmed Units.cpp getStressCategoryRaw uses it; 7 stress cutoff buckets 0-6)",
+        "longterm_stress": "secondary bucket (confirmed misery.cpp)",
+        "emotions": "vector of personality_moodst (see below) - each an event row with cause + timestamp",
+        "dreams": "vector of personality_goalst {type: df.goal_type (STAY_ALIVE, CREATE_MASTERWORK...), flags.bits.accomplished: bool} - a life goal with achievement state (attrs: short_name 'Stay Alive', achieved_short_name 'Stayed Alive')",
+        "needs": "vector of personality_needst {id: df.need_type, need_level: intensity, focus_level: negative=deprived, deity_id, prayer/sphere} - drives that gate focus; focus penalties up to 400+ when unmet",
+        "traits": "16-facet personality (nervousness, rage, depression...) 0-100 each",
+        "values": "belief strengths per df.value_type (law, tradition, nature, craft...)",
+        "beliefs": "cultural belief profile"
+      }
+    },
+    "personality_moodst_emotion": {
+      "df_type": "df::personality_moodst",
+      "description": "One emotional event on a dwarf. Confirmed field-by-field in plugins/misery.cpp.",
+      "fields": {
+        "type": "df.emotion_type (MISERY, JOY...)",
+        "thought": "df.unit_thought_type - the CAUSE (SoapyBath, complained about rain, admired a fine door...)",
+        "strength": "int intensity",
+        "severity": "int (can be negative)",
+        "flags": "bitfield (misery.cpp uses bit30 to mark synthetic emotions)",
+        "year": "world year it happened",
+        "year_tick": "tick within year - emotions are TIMESTAMPTED"
+      }
+    },
+    "historical_figure": {
+      "df_type": "df::historical_figure",
+      "description": "The eternal record of a person: survives death, lives in world history, referenced by units, artifacts, events. The engine tracks NPCs BEYOND their gameplay lifetime.",
+      "fields": {
+        "id": "int32 permanent id",
+        "name": "language_name",
+        "race/sex/caste": "identity basics",
+        "civ_id": "home civilization",
+        "unit_id": "live unit incarnation link (confirmed preserve-rooms.cpp spouse_hf->unit_id)",
+        "birth_year/birth_second, death_year/death_second": "lifespan bookends (hf->died_year confirmed)",
+        "profession": "historic profession (can differ from fort-mode profession, e.g. Monk)",
+        "info": "hf->info: spheres, secrets (necromancy), skills snapshot, biography facets",
+        "histfig_links": "vector of typed links to OTHER figures (spouse, mother, father, child, lover, rival, master/apprentice, prisoner, hero/protector)",
+        "entity_links": "typed membership links to civilizations/groups (member, former member, enemy, prisoner, slave, mercenary, position claims)",
+        "site_links": "habitat/homeowner/seat of power links to world sites",
+        "artifact links": "created/holds/holds-artifact-somewhere links (general_ref IS_ARTIFACT from the artifact side)",
+        "relationship via API": "Units::getKillCount(unit) - kill ledger; getAge(unit, true_age) ignores false identities; getNoblePositions returns {entity, assignment, position} triples",
+        "agitation": "adventure-mode agitation status (API-inferred)"
+      }
+    },
+    "historical_entity": {
+      "df_type": "df::historical_entity",
+      "description": "A civilization/organization: has positions (nobility), resources, relations, its own history.",
+      "fields": {
+        "id/name": "identity (world.entities.all[i].name.language confirmed in docs example)",
+        "type": "civilization/site-government/religion/guild/merchant company...",
+        "positions": "vector of entity_position: noble TITLES with duties (law enforcement, bookkeeping), succession rules, required links (land for holder, spouse title)",
+        "assignments": "entity_position_assignment: which histfig currently holds which position, with precedence",
+        "resources": "entity->resources (confirmed): race/caste breads, metals, items the civ produces/trades - economic fingerprint",
+        "relationships": "stance/rep per other civ + item/creature values for trade pricing (caravan value modifier in items.getValue)",
+        "meeting_events / transactions": "diplomatic history",
+        "figures": "roster of member histfigs"
+      }
+    },
+    "artifact_record": {
+      "df_type": "df::artifact_record",
+      "description": "Named unique objects with a myth-history. world.artifacts.all; resolved from an item via item.flags.bits.artifact + general_ref IS_ARTIFACT (Items.cpp).",
+      "fields": {
+        "id": "permanent id",
+        "name": "language_name (has_name; generated with word_table Artifact/ArtifactEvil categories per strangemood.cpp)",
+        "item": "the physical item it is bound to (item -> artifact, one-way body + back-ref)",
+        "hist_figure_id": "creator figure",
+        "site_id / original_site": "where made / where lost",
+        "subtype": "artifact class",
+        "mythic/mystery facets": "legends-mode story hooks (inferred from docs)",
+        "unit->status.artifact_name": "the maker PRE-DREAMS the artifact's name before mooding (confirmed strangemood.cpp) - destiny is a stored field"
+      }
+    },
+    "item": {
+      "df_type": "df::item (base class + ~90 subclasses)",
+      "fields": {
+        "id": "unique id",
+        "pos": "last position ON GROUND (true position via API items.getPosition when held)",
+        "item_type/subtype": "type enum + raw-defined subtype (ITEM_TOOL_HIVE...)",
+        "mat_type/mat_index": "material reference pair (creature/inorganic/plant/builtin)",
+        "quality": "df.item_quality enum",
+        "wear": "degradation 0-3",
+        "quantity/stack_size": "stack count",
+        "flags": "bitfield: artifact, owned, forbid, in_inventory, melted-designate, trade-mark (39+ flags)",
+        "general_refs": "TYPED EDGE VECTOR: CONTAINED_IN_ITEM, CONTAINS_ITEM, UNIT_ITEMOWNER, UNIT_HOLDER, BUILDING_HOLDER, BUILDING_CIVZONE_ASSIGNED, BUILDING_CAGED, BUILDING_CHAIN, UNIT_WORKER, IS_ARTIFACT, WRITTEN_CONTENT, PROJECTILE, UNIT_KIDNAPEE, UNIT_PATIENT, UNIT_MILKEE, UNIT_SHEAREE, UNIT_SUCKEE...",
+        "specific_refs": "transient contextual references (mandates, jobs)",
+        "improvements": "decoration layers (images, rings, bands - each with own creator histfig)",
+        "contents": "container item lists",
+        "world_data_id / age / origin": "provenance"
+      }
+    },
+    "building": {
+      "df_type": "df::building base + subclasses (workshop, bridge, cage, civzone...)",
+      "fields": {
+        "id/x/y/z/centerx/centery": "position + footprint",
+        "building_type/subtype/custom_type": "classification triple",
+        "mat_type/mat_index": "construction material",
+        "getBuildStage/getMaxBuildStage": "CONSTRUCTION PROGRESS as data (0..max)",
+        "jobs": "active work orders attached",
+        "contained_items": "items incorporated (building_item_role TEMP/PERM)",
+        "relations": "room adjacency graph - rooms know their neighbors (confirmed probe.cpp: 'bld->relations.size() rooms')",
+        "is_room": "bool",
+        "flags": "exists/inside/room/active bitfield",
+        "owner": "ownership via UNIT_ITEMOWNER-style refs + zone assigned_unit_id",
+        "settings/stockpile_number": "stockpile/civzone config",
+        "name": "settable name (squad barracks etc.)"
+      }
+    },
+    "job": {
+      "df_type": "df::job",
+      "fields": {
+        "job_type": "enum (394 refs in codebase)",
+        "job_items": "required input item filters (job_item: item_type, material, quantity)",
+        "general_refs": "links to workshop, worker unit, items",
+        "pos": "work location",
+        "completion penalty/improvement_value": "job economics"
+      }
+    },
+    "world": {
+      "df_type": "df::world (df.global.world)",
+      "description": "The root container of a running world. Everything hangs off it.",
+      "fields": {
+        "frame_counter": "tick clock since year start (calendar: 12 months x 28 days, ReadCurrentYear/Month/Day/Tick)",
+        "units.all / units.bad / units.active": "unit vectors",
+        "items.all / build_items / bad": "item vectors",
+        "buildings.all / other[] typed vectors by function": "buildings",
+        "jobs / job_list / manager_orders.all / occupations.all": "job queues",
+        "entities.all": "all historical_entity records",
+        "history": {"events": "APPEND-ONLY world event log (history_event_hist_figure_diedst, history_event_change_hf_moodst, history_event_remove_hf_entity_linkst...) - event-sourced world history", "figures": "all historical_figure records", "event_collections": "eras/ages"},
+        "artifacts.all": "artifact_record vector",
+        "sites.all / world_site": "site records (id, name, type, civ_id owner, cur_owner_id, created_year, rgn_min/max_x/y world-coord bbox, global_min/max bbox, buildings[], subtype_info, realization - the site is ALSO simulated at two granularities)",
+        "world_data": {
+          "world_width/world_height": "map dimensions",
+          "region_map": "per world-tile region_map_entry {region_id, geo_index, elevation, rainfall, drainage, savagery, evilness, vegetation, temperature, salinity, flags} - the PERSONALITY OF THE LAND as data per tile",
+          "regions": "world_region records (type: df.world_region_type, weather, flowers/trees populations)",
+          "geo_biomes": "geology strata",
+          "underground_regions": "cavern layers + HFS",
+          "feature_map / midmap_data": "hidden features per tile",
+          "flip_latitude": "projection"
+        },
+        "raws": {"creatures.all": "creature_raw/caste definitions", "inorganics.all / plants.all/grasses": "material raws", "itemdefs.all + per-class vectors": "item prototypes", "buildings.workshops/furnaces/all + reactions.reactions": "production recipes", "language.word_table[2][category]": "generated-name word banks by good/evil x name-part", "mat_table.builtin": "builtin materials"},
+        "status": {"reports": "announcement/report log (world.status.reports)", "slots": "announcement slots"},
+        "stocks / control / physical_layer / ingested_poisons": "misc sim state"
+      }
+    },
+    "language_name": {
+      "df_type": "df::language_name",
+      "description": "Names are STRUCTURED DATA: words + language + form, translatable to string on demand (Translation::translateName). Uniqueness enforced per language.",
+      "fields": {
+        "has_name": "bool",
+        "language": "int language id (dwarvish/elvish...)",
+        "first_name / nickname": "direct strings",
+        "words[7]": "dwarven-style full name = 7 word slots (front compound, rear compound, first, last, translation of first, translation of last, era)",
+        "parts_of_speech[7]": "word grammar role per slot"
+      }
+    },
+    "squad": {
+      "df_type": "df::squad",
+      "fields": {
+        "id": "...",
+        "name": "language_name + player nickname",
+        "positions[i].occupant": "histfig id per slot (confirmed Military.cpp)",
+        "orders/schedules": "per-month duty schedules",
+        "room flags": "barracks use flags (sleep/train/indiv_eq/squad_eq)"
+      }
+    },
+    "activity": {
+      "df_type": "df::activity_entry / activity_event",
+      "description": "Social life is scheduled data: a unit's current social activity (getMainSocialActivity) is an entry containing ordered events (getMainSocialEvent returns last). 'Purple' vs 'green' socialize states gate job availability.",
+      "fields": {"entry.events": "ordered activity_event list", "event type": "conversation/practice/performance variants"}
+    }
+  },
+  "identity_graph": {
+    "general_refs": "Every object carries a vector of typed references. Reference TYPES are semantic verbs: owns, contained-in, holds, built-into, caged-in, chained-to, created, killed, kidnapped, married-to, worshiped, written-about. The graph IS the social/material world.",
+    "specific_refs": "short-lived contextual edges (a job's target, a mandate)",
+    "id_spaces": "separate id spaces per record class (unit, item, building, hf, entity, site, artifact, art_image, written_content, poetric_form, interaction...) all resolvable via Type.find(id) and general_ref hops"
+  },
+  "engine_event_stream": {
+    "eventful/EventManager events": [
+      "onUnitDeath(unit_id)", "onItemCreated(item_id)", "onBuildingCreatedDestroyed(building_id)",
+      "onConstructionCreatedDestroyed", "onJobInitiated(job)", "onJobCompleted(job copy)",
+      "onSyndrome(unit_id, syndrome_index)", "onInvasion(invasion_id)",
+      "onInventoryChange(unit_id, item_id, old_equip, new_equip)", "onReport(reportId)",
+      "onUnitAttack(attackerId, defenderId, woundId)", "onInteraction(attackVerb, defendVerb, attackerId, defenderId, ...)",
+      "history_event subscriptions (eventful): react to the world-history event log as it appends"
+    ],
+    "fold": "the engine has a first-class event bus with per-type frequency tuning"
+  },
+  "engine_persistence": {
+    "dfhack.persistent": {
+      "getSiteData/getWorldData(key[,default])": "save-file-attached key-value store, scoped per site or per world",
+      "getUnsavedSeconds()": "track how stale the save is"
+    },
+    "fold": "the engine itself provides durable KV scoped to place and world - exactly the DataStore pattern"
+  },
+  "top_deepest_observations": [
+    "1. Emotions are timestamped rows with a causal thought enum, strength, severity, and flags - not a mood scalar. A 2006 game logs WHAT CAUSED each feeling and WHEN.",
+    "2. Dual identity: the living unit and the eternal historical_figure are separate records joined by hist_figure_id; the figure outlives the unit and accrues history. Death does not delete a person.",
+    "3. The relationship system is an enum-indexed typed edge map (unit.relationship_ids + general_refs + hf entity/site/hf links) - relations are queryable edges, never denormalized names.",
+    "4. False identity is supported at engine level: getAge(unit, true_age), getProfession 'accounting for false identity' - NPCs can lie about who they are, and the truth is still stored.",
+    "5. Destiny is stored: unit->status.artifact_name pre-names the artifact a dwarf will create; dreams[] carry accomplishment flags; needs[] carry focus_level that decays unmet. The engine tracks intention, not just behavior.",
+    "6. Names are generative word-vectors (7 word slots + parts of speech + language), not strings - any name can be decomposed and regenerated.",
+    "7. Region map entries carry evilness/savagery/drainage/rainfall per world tile - geography itself has a personality profile."
+  ]
+}

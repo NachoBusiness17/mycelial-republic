@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PONG — the classics ladder, rung 1</title>
+<style>
+  html,body{background:#04060a;color:#cfe8e2;font-family:Consolas,Menlo,monospace;margin:0;overflow:hidden}
+  #hud{position:fixed;top:8px;left:12px;font-size:12px;color:#6ec6b5;z-index:2}
+  canvas{display:block;margin:0 auto}
+</style>
+</head>
+<body>
+<div id="hud"><b>PONG</b> — the classics ladder, rung 1 · two seats rally · the recorder watches ·
+skill taught this rung: motion + collision + score + autonomous play</div>
+<canvas id="cv" width="800" height="500"></canvas>
+<script>
+"use strict";
+// THE CLASSICS LADDER, rung 1. Two AI paddles, honest collision, first to 5.
+// The ladder: pong -> breakout -> invaders -> snake -> our rooms -> shot-by-shot cinema.
+const cv = document.getElementById("cv"), cx = cv.getContext("2d");
+const W = cv.width, H = cv.height;
+const PAD_H = 70, PAD_W = 10;
+let scoreL = 0, scoreR = 0;
+const ball = { x: W/2, y: H/2, vx: 5 * (Math.random()<0.5?-1:1), vy: (Math.random()-0.5)*6, r: 6 };
+const L = { y: H/2 - PAD_H/2 }, R = { y: H/2 - PAD_H/2 };
+// the AI: predictive tracking with error — each seat reads the ball and moves
+function aiPaddle(pad, ballComing, targetY){
+  if (ballComing){
+    const err = (Math.random()-0.5) * 30;
+    const want = targetY + err - PAD_H/2;
+    pad.y += Math.max(-6.2, Math.min(6.2, want - pad.y));
+  } else {
+    pad.y += Math.max(-2, Math.min(2, H/2 - PAD_H/2 - pad.y));
+  }
+  pad.y = Math.max(4, Math.min(H - PAD_H - 4, pad.y));
+}
+function reset(who){
+  ball.x = W/2; ball.y = H/2;
+  ball.vx = 5.6 * (who === "L" ? -1 : 1);
+  ball.vy = (Math.random()-0.5)*7;
+}
+function step(){
+  // left seat tracks when the ball travels toward it
+  aiPaddle(L, ball.vx < 0, ball.y + ball.vy * ((L.x+PAD_W - ball.x)/ball.vx > 0 ? (L.x+PAD_W-ball.x)/ball.vx : 0));
+  aiPaddle(R, ball.vx > 0, ball.y);
+  ball.x += ball.vx; ball.y += ball.vy;
+  if (ball.y < ball.r || ball.y > H-ball.r){ ball.vy *= -1; ball.y = Math.max(ball.r, Math.min(H-ball.r, ball.y)); }
+  // honest paddle collision: only off the front face, angle by hit position
+  if (ball.vx < 0 && ball.x - ball.r < 30 + PAD_W && ball.x > 30 && ball.y > L.y && ball.y < L.y+PAD_H){
+    ball.vx = Math.abs(ball.vx)*1.04;
+    ball.vy += ((ball.y - (L.y+PAD_H/2)) / (PAD_H/2)) * 3.4;
+  }
+  if (ball.vx > 0 && ball.x + ball.r > W-30-PAD_W && ball.x < W-30 && ball.y > R.y && ball.y < R.y+PAD_H){
+    ball.vx = -Math.abs(ball.vx)*1.04;
+    ball.vy += ((ball.y - (R.y+PAD_H/2)) / (PAD_H/2)) * 3.4;
+  }
+  if (ball.x < 0){ scoreR++; reset("R"); }
+  if (ball.x > W){ scoreL++; reset("L"); }
+}
+function draw(){
+  cx.fillStyle = "#04060a"; cx.fillRect(0,0,W,H);
+  cx.setLineDash([8,10]); cx.strokeStyle = "#1d332c";
+  cx.beginPath(); cx.moveTo(W/2,0); cx.lineTo(W/2,H); cx.stroke(); cx.setLineDash([]);
+  cx.font = "42px Consolas"; cx.fillStyle = "#24443c";
+  cx.fillText(scoreL, W/2-70, 60); cx.fillText(scoreR, W/2+46, 60);
+  cx.fillStyle = "#cfe8e2";
+  cx.fillRect(30, L.y, PAD_W, PAD_H); cx.fillRect(W-30-PAD_W, R.y, PAD_W, PAD_H);
+  cx.beginPath(); cx.arc(ball.x, ball.y, ball.r, 0, 7); cx.fill();
+}
+setInterval(() => { step(); draw(); }, 16);
+</script>
+</body>
+</html>

@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>COMMAND DECK — local_sovereign_agent</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{--bg:#07090d;--panel:#0b1017;--line:#1c2a3d;--txt:#8fa3b8;--hi:#d8e6f2;--dim:#5c7186;--accent:#6fd6ff;--bad:#ff5d5d;--good:#8dff7a;--warn:#ffb347}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--txt);font:13px/1.5 ui-monospace,Consolas,monospace}
+  a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+  header{padding:26px 22px 10px;border-bottom:1px solid var(--line)}
+  header h1{margin:0;font-size:16px;letter-spacing:.35em;color:var(--hi);font-weight:600}
+  header .sub{margin-top:6px;font-size:11px;color:var(--dim)}
+  nav{display:flex;flex-wrap:wrap;gap:6px;padding:12px 22px;border-bottom:1px solid var(--line);position:sticky;top:0;background:rgba(7,9,13,.94);backdrop-filter:blur(4px);z-index:5}
+  nav a{font-size:11px;letter-spacing:.12em;padding:4px 10px;border:1px solid var(--line);border-radius:3px;color:var(--txt)}
+  nav a:hover{border-color:var(--accent);color:var(--accent);text-decoration:none}
+  main{max-width:1240px;margin:0 auto;padding:18px 22px 60px}
+  section{margin-top:26px}
+  h2{font-size:12px;letter-spacing:.3em;color:var(--hi);font-weight:600;border-bottom:1px solid var(--line);padding-bottom:6px}
+  h2 .n{color:var(--dim);letter-spacing:0}
+  .grid{display:grid;gap:12px}
+  .cards{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 14px}
+  .card h3{margin:0 0 4px;font-size:12px;letter-spacing:.14em;color:var(--hi)}
+  .chip{display:inline-block;font-size:10px;letter-spacing:.14em;padding:1px 8px;border-radius:3px;border:1px solid var(--line);margin-left:6px;vertical-align:1px}
+  .chip.gate{color:var(--warn);border-color:#5c4a22}
+  .chip.ok{color:var(--good);border-color:#2c4a22}
+  .chip.bad{color:var(--bad);border-color:#5a2222}
+  .card .st{font-size:11px;color:var(--accent);margin:4px 0}
+  .card p{margin:6px 0;font-size:12px}
+  ul{margin:6px 0 0;padding-left:16px}
+  li{margin:3px 0;font-size:12px}
+  .src{margin-top:8px;font-size:10px;color:var(--dim)}
+  .strip{display:flex;flex-wrap:wrap;gap:10px}
+  .kpi{flex:1 1 170px;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 12px}
+  .kpi .k{font-size:10px;letter-spacing:.18em;color:var(--dim)}
+  .kpi .v{margin-top:4px;font-size:15px;color:var(--hi);word-break:break-word}
+  .kpi .v.small{font-size:11px;color:var(--txt)}
+  .bad{color:var(--bad)}.good{color:var(--good)}.warn{color:var(--warn)}
+  table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+  th{font-size:10px;letter-spacing:.18em;color:var(--dim);text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+  td{padding:7px 10px;border-bottom:1px solid #101823;font-size:12px;vertical-align:top}
+  tr:last-child td{border-bottom:0}
+  .lane{font-weight:600}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+  .wrap{word-break:break-all}
+  footer{margin-top:40px;padding-top:12px;border-top:1px solid var(--line);font-size:11px;color:var(--dim)}
+  @media (max-width:720px){.cards{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>COMMAND DECK</h1>
+  <div class="sub">local_sovereign_agent · wave_20260916 · generated 2026-09-28T18:40:50Z · refresh: <code>.venv\Scripts\python.exe scripts\build_deck.py</code></div>
+</header>
+<nav id="nav"></nav>
+<main id="main"></main>
+<script id="deck-data" type="application/json">{
+ "meta": {
+  "generated": "2026-09-28T18:40:50Z",
+  "wave": "wave_20260916",
+  "builder": "scripts/build_deck.py",
+  "note": "regenerate with .venv/Scripts/python.exe scripts/build_deck.py"
+ },
+ "wave": {
+  "receipts_indexed": 60,
+  "requeued_summary": "6 hard (G2, G3, G1, X_MINE_FIGURES verdict, 0-byte W1 draft, misfiled usage json) + 4 soft (B13 defect, D20 gates, fossil headers, D23 fossil line)",
+  "requeue": [
+   {
+    "item": "`receipts/G2_STATIC_INFRA_AUDIT.md`",
+    "why": "STUB — plan written, zero findings appended",
+    "ask": "run the 6 checks (builders, broken refs, INDEX backlog, dead weight, :8765 smoke), fill Findings"
+   },
+   {
+    "item": "`receipts/G3_SHADER_AUDIT.md`",
+    "why": "STUB — sweep checklist unchecked, Findings empty",
+    "ask": "full shader inventory + dead uniforms + ranked fix table"
+   },
+   {
+    "item": "`receipts/G1_GAMES_AUDIT.md`",
+    "why": "PARTIAL — inventory/structure landed, per-game findings never appended",
+    "ask": "per-game findings pass (audit only; fixes are a later lane)"
+   },
+   {
+    "item": "`receipts/X_MINE_FIGURES_20260916.md`",
+    "why": "PARTIAL — closing \"most stealable mechanism\" verdict left \"(pending)\"",
+    "ask": "one-paragraph fill from already-gathered body"
+   },
+   {
+    "item": "`wave_20260916/drafts/W1_union_alpha_draft.py`",
+    "why": "ORPHAN — 0 bytes, lane died to upstream 429 (meta.json ok:false)",
+    "ask": "archive/delete; superseded by landed `mag/wow_world.py`"
+   },
+   {
+    "item": "`physical_computing/receipts/watch/inbox/physical_computing/receipts/HERMES_REDTEAM_USAGE_20260916.json`",
+    "why": "MISFILED — usage record written down a nested accidental path",
+    "ask": "relocate to `physical_computing/receipts/` root, delete empty `watch/` tree"
+   },
+   {
+    "item": "`receipts/B13_CODETAUR_KAN.md` defect",
+    "why": "operator's status ID points at wrong post (marble maze, not KAN)",
+    "ask": "operator re-supplies true ID (or confirms reply) → one-call fxtwitter verify"
+   },
+   {
+    "item": "`receipts/D20_BONES_ADAPTER.md`",
+    "why": "OPERATOR-BLOCKED (not lane failure)",
+    "ask": "rotate DISCORD_BOT_TOKEN + grant #game-c-overview permission; only then live boot"
+   },
+   {
+    "item": "Fossil headers: COLLECTION_ORIGINS / HERMES_REDTEAM / X_MINE_PHYSICAL",
+    "why": "bodies closed, header status stale",
+    "ask": "cosmetic one-line status fix next time each is touched"
+   },
+   {
+    "item": "D23 \"50/50 attempted, 49/50 answered\" line",
+    "why": "contradicts canonical receipt.json (39/50)",
+    "ask": "annotate with the 39/50 correction; do not re-quote 50/50"
+   }
+  ],
+  "path": "watch/inbox/wave_20260916/WAVE_STATE_20260916.md"
+ },
+ "context_pack": {
+  "tip": "caa866cbbc9c…",
+  "leaves": 8244,
+  "knot": "2026-09-28_1819_autonomous-janitor_autonomo_tc3851ff.knot.json"
+ },
+ "world": {
+  "sessions": 3,
+  "complete": 2,
+  "first_walk": {
+   "session_id": "wworld-e924e95aadcd",
+   "seed": "lantern-01",
+   "world": "atrium-ring",
+   "route": [
+    "atrium",
+    "torch_hall",
+    "vault"
+   ],
+   "verdict": "COMPLETE",
+   "moves": 8,
+   "sha256_12": "5b4592c8fbc7"
+  },
+  "players": [
+   {
+    "name": "t",
+    "player_id": "ply-6f93762afaa7",
+    "room": "vault",
+    "ledger_rows": 7,
+    "inventory": 2
+   },
+   {
+    "name": "lantern-01",
+    "player_id": "ply-da9cfc91a7d7",
+    "room": "vault",
+    "ledger_rows": 4,
+    "inventory": 1
+   }
+  ],
+  "path": "memory/runs/wow_world/receipts"
+ },
+ "lanes": [
+  {
+   "name": "android_surface",
+   "color": "#9aa7b5",
+   "state": "NO-RUNNER",
+   "age_days": null,
+   "last_run": "—",
+   "last_result": "—",
+   "trail_rows": 12,
+   "last_event": "SHIFT_RECEIPT-006: fire-13 shift: census OK (body up); walked the LAW LATTICE at 55/55 on glass (button label fixed - hardcoded count removed, summary line carr"
+  },
+  {
+   "name": "bard_ledger",
+   "color": "#c98bff",
+   "state": "LIVE",
+   "age_days": 0.94,
+   "last_run": "2026-09-27T20:00:59.571313+00:00",
+   "last_result": "row",
+   "trail_rows": 35,
+   "last_event": "CYCLE: ledger row appended (2 cards today)"
+  },
+  {
+   "name": "builder",
+   "color": "#8dff7a",
+   "state": "LIVE",
+   "age_days": 0.02,
+   "last_run": "2026-09-28T18:11:21.245984+00:00",
+   "last_result": "gated=0",
+   "trail_rows": 1104,
+   "last_event": "CYCLE: drops gated=0; queue on surface"
+  },
+  {
+   "name": "day_work",
+   "color": "#fff2c8",
+   "state": "LIVE",
+   "age_days": 0.02,
+   "last_run": "2026-09-28T18:11:21.873673+00:00",
+   "last_result": "mirrored, stalled=7",
+   "trail_rows": 1608,
+   "last_event": "CYCLE: mirrored 10 lanes; STALLED: handshake:autoclaw_seat, economist(12.2h), bard_ledger(22.2h), elder(6.2h), prose(12.6h), forge(6.2h), harvest(11.7h)"
+  },
+  {
+   "name": "economist",
+   "color": "#7adcc8",
+   "state": "LIVE",
+   "age_days": 0.53,
+   "last_run": "2026-09-28T06:01:00.822092+00:00",
+   "last_result": "hunger rc=0, sweep_flags=6",
+   "trail_rows": 38,
+   "last_event": "CYCLE: hunger rc=0; sweep=USAGE_SWEEP_20260906.md flags=6; ch/HUNGER_LEDGER.md\n{\"date\": \"2026-09-28\", \"new\": 1, \"intake\": 0, \"disp\": 1, \"gap\": 0, \"btouch\": 9, \""
+  },
+  {
+   "name": "elder",
+   "color": "#ffb347",
+   "state": "LIVE",
+   "age_days": 0.28,
+   "last_run": "2026-09-28T12:00:35.792952+00:00",
+   "last_result": "lane-down",
+   "trail_rows": 31,
+   "last_event": "CYCLE_FAIL: lane-down: HTTP Error 429: Too Many Requests"
+  },
+  {
+   "name": "forge",
+   "color": "#ff7a4d",
+   "state": "LIVE",
+   "age_days": 0.28,
+   "last_run": "2026-09-28T12:00:36.005249+00:00",
+   "last_result": "forged=0 left=0 err=0",
+   "trail_rows": 26,
+   "last_event": "CYCLE: forged=0 errors=0"
+  },
+  {
+   "name": "harvest",
+   "color": "#d9b96f",
+   "state": "LIVE",
+   "age_days": 0.51,
+   "last_run": "2026-09-28T06:30:29.244942+00:00",
+   "last_result": "EXC HTTPError: HTTP Error 429: Too Many Requests",
+   "trail_rows": 26,
+   "last_event": "CYCLE_FAIL: EXC HTTPError: HTTP Error 429: Too Many Requests"
+  },
+  {
+   "name": "jev",
+   "color": "#8fa3b8",
+   "state": "NO-RUNNER",
+   "age_days": null,
+   "last_run": "—",
+   "last_result": "—",
+   "trail_rows": 6,
+   "last_event": ": "
+  },
+  {
+   "name": "night",
+   "color": "#8b9dff",
+   "state": "LIVE",
+   "age_days": 0.82,
+   "last_run": "2026-09-27T23:01:06.285403+00:00",
+   "last_result": "monitor rc=0; march rc=1",
+   "trail_rows": 24,
+   "last_event": "CYCLE: night composite: monitor rc=0; march rc=1"
+  },
+  {
+   "name": "prose",
+   "color": "#ff9ec2",
+   "state": "LIVE",
+   "age_days": 0.54,
+   "last_run": "2026-09-28T05:36:28.415885+00:00",
+   "last_result": "census files=23425 stale=2883 fossil=0 ghost=4901 launchers=322",
+   "trail_rows": 24,
+   "last_event": "CYCLE: census files=23425 stale=2883 fossil=0 ghost=4901 launchers=322"
+  },
+  {
+   "name": "research",
+   "color": "#6fd6ff",
+   "state": "LIVE",
+   "age_days": 0.01,
+   "last_run": "2026-09-28T18:27:05.827105+00:00",
+   "last_result": "monitor rc=0, drops gated=0",
+   "trail_rows": 2186,
+   "last_event": "MONITOR: monitor_lane rc=0: alex); spool watch/scout/MONITOR_LANE_2026-09-28.md\n[monitor_lane] source down: arxiv for 'agent swarm concurrency': HTTP Error 406:"
+  }
+ ],
+ "ledgers": {
+  "links": {
+   "rows": 322,
+   "events": 55,
+   "markers": 1,
+   "total_lines": 378,
+   "last5": [
+    {
+     "ts": "2026-09-28T10:29:49+00:00",
+     "url": "https://x.com/Qivshi1/status/2103856150592545225"
+    },
+    {
+     "ts": "2026-09-28T10:29:49+00:00",
+     "url": "https://x.com/NachoQuixotic/status/2104514162940330276"
+    },
+    {
+     "ts": "2026-09-28T10:55:36+00:00",
+     "url": "https://www.nature.com/articles/s41467-026-68648-1"
+    },
+    {
+     "ts": "2026-09-28T10:55:36+00:00",
+     "url": "https://x.com/JensenHuang/status/2104499465055023424"
+    },
+    {
+     "ts": "2026-09-28T18:29:00+00:00",
+     "url": "https://github.com/browser-use/jev-ultrafast"
+    }
+   ],
+   "path": "watch/inbox/LINKS.jsonl"
+  },
+  "grounding": {
+   "rows": 137,
+   "verify_line": "FAIL LINKAGE-PASS: 137 posts intact, tip=fc3c32be6f26 | truth-gate: 11 witnessed SUPPORTED, 49 legacy-unwitnessed | row 122: hashless defect contained by void; row 123: prev defect contained by void; row 129: re-anchored past voided stretch; row 130: re-anchored past voided stretch; row 131: prev defect contained by void; row 132: re-anchored past voided stretch | ADMISSION: 3 voided, 0 contested, 0 corroborated, 0 pending voids, 3 propagation-flagged | EVIDENCE-MISSING row 75:swarm_20260912/smoke_driver.js, row 76:suno/flat_beat_loop.mp3, row 86:flygomoku_20260912/hermes_mirror_summary.json",
+   "verify_ok": false,
+   "path": "watch/GROUNDING_WAVE.jsonl"
+  },
+  "index": {
+   "ok": false,
+   "files": 1246,
+   "indexed": 1415,
+   "unindexed": 90,
+   "errors": 5,
+   "warnings": 1,
+   "path": "watch/inbox/INDEX.json (mag.shared_surface validate)"
+  }
+ },
+ "receipts": [
+  {
+   "date": "2026-09-28 18:27",
+   "name": "VC2_CHAIN_STATE",
+   "title": "VC2_CHAIN_STATE — verkle crawl, knotted-state half",
+   "status": "",
+   "path": "watch/inbox/wave_20260916/receipts/VC2_CHAIN_STATE.md"
+  },
+  {
+   "date": "2026-09-17 04:20",
+   "name": "COMMIT8_20260916",
+   "title": "COMMIT 8 — night-closing checkpoint receipt (2026-09-16)",
+   "status": "",
+   "path": "watch/inbox/physical_computing/receipts/COMMIT8_20260916.md"
+  },
+  {
+   "date": "2026-09-17 04:10",
+   "name": "LINKS_TRUMPO_20260917",
+   "title": "LINKS_TRUMPO_20260917 — wave receipt",
+   "status": "",
+   "path": "watch/inbox/wave_20260916/receipts/LINKS_TRUMPO_20260917.md"
+  },
+  {
+   "date": "2026-09-17 04:03",
+   "name": "COMMIT7_20260916",
+   "title": "COMMIT7 — checkpoint 7 receipt (2026-09-16, final minimal checkpoint)",
+   "status": "",
+   "path": "watch/inbox/physical_computing/receipts/COMMIT7_20260916.md"
+  },
+  {
+   "date": "2026-09-17 03:56",
+   "name": "FX5_SYNC_DIRECTION_FIX",
+   "title": "FX5 — sync_games() direction fix (rollback incident permanent fix)",
+   "status": "",
+   "path": "watch/inbox/wave_20260916/receipts/FX5_SYNC_DIRECTION_FIX.md"
+  },
+  {
+   "date": "2026-09-17 03:47",
+   "name": "INCIDENT_ROLLBACK_20260916",
+   "title": "INCIDENT_ROLLBACK_20260916 — receipt (append-as-you-go)",
+   "status": "",
+   "path": "watch/inbox/wave_20260916/receipts/INCIDENT_ROLLBACK_20260916.md"
+  },
+  {
+   "date": "2026-09-17 03:46",
+   "name": "COMMIT6_20260916",
+   "title": "COMMIT6 checkpoint receipt — 2026-09-16",
+   "status": "",
+   "path": "watch/inbox/physical_computing/receipts/COMMIT6_20260916.md"
+  },
+  {
+   "date": "2026-09-17 03:40",
+   "name": "W4_GHOST_PERSONALITIES",
+   "title": "W4 — GHOST PERSONALITIES (mud champions remember their killers)",
+   "status": "",
+   "path": "watch/inbox/wave_20260916/receipts/W4_GHOST_PERSONALITIES.md"
+  }
+ ],
+ "programs": [
+  {
+   "id": "referee-chain",
+   "title": "REFEREE CHAIN / BLIND EPISTEMICS",
+   "gate": "operator-click",
+   "status": "NEXT STONE: Clear the 2 operator clicks — rotate DISCORD_BOT_TOKEN + grant #game-c-overview (403) — then live /bones boot before Sep-20 (D20 OPERATOR GATES: 'The adapter does not go live until both gates clear')",
+   "detail": "",
+   "facts": [],
+   "sources": [
+    "watch/inbox/wave_20260916/receipts/D20_BONES_ADAPTER.md",
+    "watch/inbox/wave_20260916/receipts/W1_WORLD_SKELETON.md",
+    "watch/inbox/HERMES_DIRECTIVE_BONES_REFEREE_20260916.md"
+   ],
+   "health": "green",
+   "ledger_updated": "2026-09-16"
+  },
+  {
+   "id": "cube-program",
+   "title": "CUBE PROGRAM (instrumented mycelium cube)",
+   "gate": "funding",
+   "status": "NEXT STONE: Operator $31 GO on the stage-0 order (electronics only); assembly proposed 2026-09-22, fallback 09-29; CONCERT amendments (dead twin, SHT31, grown barrage zones) still unmerged into the plan (R3 byte-finding)",
+   "detail": "",
+   "facts": [],
+   "sources": [
+    "watch/inbox/physical_computing/receipts/C17_CUBE_INSTRUMENT_PLAN.md",
+    "watch/inbox/wave_20260916/receipts/CONCERT001_20260916.md",
+    "watch/inbox/wave_20260916/receipts/R3_GAP_ANALYSIS_SOCRATIC.md",
+    "watch/inbox/physical_computing/CUBE1_SHOPPING_LIST.md"
+   ],
+   "health": "amber",
+   "ledger_updated": "2026-09-16"
+  },
+  {
+   "id": "ractor-salon",
+   "title": "RACTOR PLUGIN (open-source, standalone)",
+   "gate": "operator-click",
+   "status": "NEXT STONE: Human scrub review of the 19 files (automated sweep clean; 2 OWNER placeholders await the GitHub username), then the OPERATOR-executed publish checklist: venv tests, git init+tag, repo create/push/release, catalog PR vs NousResearch/hermes-agent",
+   "detail": "",
+   "facts": [],
+   "sources": [
+    "watch/inbox/wave_20260916/receipts/P1_RACTOR_PACKAGE.md",
+    "watch/inbox/wave_20260916/receipts/P2_DEMO_SALON.md"
+   ],
+   "health": "amber",
+   "ledger_updated": "2026-09-16"
+  },
+  {
+   "id": "grounding-wave",
+   "title": "GROUNDING WAVE (evidence chain)",
+   "gate": "decision",
+   "status": "NEXT STONE: Operator cross-signed void of row 122 (MALFORMED_ROW) and the orphaned repair fork at 123 — canonical tip is 1-121 to 123 to 124, 122 dangles; v4 is built and the void is staged as PROPOSAL (dry-run only, nothing appended); no migration — fail-to-pass happens only through the operator's cross-signed void",
+   "detail": "",
+   "facts": [],
+   "sources": [
+    "watch/inbox/wave_20260916/receipts/V4_GROUNDING_ADMISSION.md",
+    "watch/inbox/wave_20260916/receipts/VC2_CHAIN_STATE.md"
+   ],
+   "health": "red",
+   "ledger_updated": "2026-09-16"
+  },
+  {
+   "id": "ractor-engine",
+   "title": "RACTOR ENGINE (diffusion witnesses)",
+   "gate": "none",
+   "status": "NEXT STONE: Run the Q3 OCEAN falsifier: zero-coupling placebo (trait adjectives in prompt, ALL graph gains neutral — the neutral-gain twin), parameter-level with prompt frozen, verdict-flip significance vs placebo; spec amendments landed (decoder bridge is load-bearing, not optional)",
+   "detail": "",
+   "facts": [],
+   "sources": [
+    "watch/inbox/wave_20260916/receipts/RS_RACTOR_ENGINE_SALON.md",
+    "watch/inbox/wave_20260916/receipts/N5_RACTOR_DOGFOOD.md"
+   ],
+   "health": "amber",
+   "ledger_updated": "2026-09-16"
+  },
+  {
+   "id": "blind-challenge-set",
+   "title": "BLIND CHALLENGE SET (BCS-20260916)",
+   "gate": "none",
+   "status": "NEXT STONE: Open the prediction window: one-line pointer in queue/todo.md ('BCS-20260916 open'), then first non-claimant predictor row for C-01; set is SEALED, window dark, keys hash-committed outside every contract surface",
+   "detail": "",
+   "facts": [],
+   "sources": [
+    "watch/inbox/wave_20260916/receipts/A1_BLIND_CHALLENGE_SET.md"
+   ],
+   "health": "green",
+   "ledger_updated": "2026-09-16"
+  },
+  {
+   "id": "mud-replay-law",
+   "title": "MUD REPLAY LAW",
+   "gate": "none",
+   "status": "NEXT STONE: Rebuild the stale dist copies (site/dist/games/mud.html is byte-stale vs canonical 105,849 B); law holds: 18-seed-site port, replay 11/11, fifty-lane 51/51 x10, harness extended to 58/58 green x4 (N10 vault lanes)",
+   "detail": "",
+   "facts": [],
+   "sources": [
+    "watch/inbox/wave_20260916/receipts/FX4_MUD_REPLAY_PORT.md",
+    "watch/inbox/wave_20260916/receipts/N10_PUZZLE_VAULT_CONSUMER.md"
+   ],
+   "health": "green",
+   "ledger_updated": "2026-09-16"
+  }
+ ],
+ "programs_source": "watch/inbox/wave_20260916/PROGRAMS.json",
+ "git": [
+  "4706d5a04 Q-008: spider FKB blindspot fixed - thresholds were flat count>=3 twice plus a [:5] rank slice; real 2026-09-28 index census showed 5 of 15 signatures emitted while 2,502 of 3,958 real trail ticks ran at n_signals=0. Now: no rank cut, ordinary kinds at count>=2 (surface_hits bar), collapse/fake_success at count>=1 severity=error; count-1 ordinary stays log-only per FKB law. Proof: 13 of 15 emitted after (probe + live dry tick 14 signals); tests 9 passed; full suite 2 runs + stash A/B attributes the 7 failures to sibling-lane tree state, not this change",
+  "4b5a4ab37 Q-031: tags v2 owner column + held-out 50-question retrieval eval on catalog.jsonl: owner=owning top-level surface of the stored path (repo dir after the projects-parent prefix strip, sibling project name outside the repo, root for top-level files; distinct from zone which buckets intake/code and truncates ext tops at 16 chars) written by mag/catalog_tags.py owner_of into all 581,477 rows (0 missing, 99 distinct owners, top: memory 311518, mine 97867, corpus 59222), kind rules untouched, TAG_REPORT gains By-owner section, kind/age deltas attributed to this morning's 07:33Z rescan (catalog sha256 eb08f218...1ae8); eval via tools/corpus.py corpus_search unchanged since its 2026-09-26 landing, seed 20260928 draw of 50 rows after code freeze, questions built only from gold row title/basename-stem tokens, all 50 gold ids published: accuracy@1 0.48 (24/50), accuracy@10 0.76 (38/50) on fts5/fresh for all 50 queries, all 12 misses are generic-token questions losing to earlier catalog-order lines (agent/auth/2023/2024/templates class); tests: touched-surface 23 passed, full suite 10F/2368P/7S in 2480.99s with all 10 failures attributed to other lanes' surfaces (headless bare-spawn offenders list excludes my files, my code spawns nothing); mining NOT done per ask; receipt watch/inbox/burn_reset_20260927/queue/Q-031.md",
+  "76e91d93c Q-043: games polish banked - SectionStream.luau (GnomeCode ep.1 streamed sections: Ossuary builds floor 1 eager + floors 2-3 ordered-streamed with one-floor lookahead, SeedRng draw order preserved so streamed == eager; RiddleMaze ~1400-part wall grid streams in 8x8-cell chunks radius 120 budget 4, gameplay-bearing geometry stays eager); Trove.luau (RbxUtil-shape scoped cleanup + local Loop extension) and all six hand-rolled task.spawn loops converted to ownership (HeadMuseum flush, LedgerExchange conveyor, LightMaze wisp, MudBasecamp terror, Swarm enemy, TheAnswerBoss fight as raw tracked thread); cooldown chips UI pass (fill bar drain, active-window stroke glow, Carrying dim, courier law kept); ARCHITECTURE_NEXT moves 1+3 marked LANDED; checks: mountain_check GATE PASS before and after (0 parse fails, same 8 pre-existing findings, rbxlx rebuilt 441175->451445 landed per b2-108), luau.exe SectionStream semantics check 12/12 PASS (receipt watch/inbox/burn_reset_20260927/queue/Q-043.md)",
+  "4930e90c0 Q-050: frontier gap task-shape audit banked - both Q-049-era demotions audited from byte-level ledger mining (2305 rows): audit shape verdict starved (3 rows all 0 actual calls, tier filler, goal-substring label, purged 2026-08-10; unmeasured not gapped, no re-promotion either way), route shape verdict ledger-artifact (all-history 0.224 is August-dominated 0.125 vs September 0.604 real-call recovery; re-promotion marginal, elevation contradicted grok 0/32 glm 0/44 xai 0/4; instrument fix recommended: windowed + calls>0 aggregate); briefs 6+7 artifacts filed (audit_gap_diagnosis.md cites tec805beaff/t69d813769c/tfc4f1e0826 + starved; route_gap_diagnosis.md cites 16 failure task_ids + ledger-artifact), HELP_WANTED briefs marked RESOLVED; Q-049 disposition recommendation: close as superseded-by-delivery not vacuous; receipt watch/inbox/burn_reset_20260927/queue/Q-050.md",
+  "e9fbabf15 Q-039: commit-race addendum - the Q-039 payload (roblox_npc_gateway.py host+secret auth, Q_039_bind_proof.py 12/12, this receipt) rode Q-047 commit 453c743d8 via the shared-index sweep; no rewrite per Q-041 precedent 07d88af18; tree at HEAD verified carrying final bytes (diff empty on all three paths, NPC_GATEWAY_SECRET x5, fixed receipt signature x1); landed via pathspec commit per the fleet fix"
+ ],
+ "games": [
+  {
+   "href": "games/toy.html",
+   "name": "TOY",
+   "desc": "the core-verb toy (U1, 12/12 lanes green)"
+  },
+  {
+   "href": "games/mud.html",
+   "name": "MUD",
+   "desc": "the persistent world / bones referee home"
+  },
+  {
+   "href": "games/maze_arena.html",
+   "name": "MAZE ARENA",
+   "desc": "arena combat"
+  },
+  {
+   "href": "games/swarm.html",
+   "name": "SWARM",
+   "desc": "swarm board (FX1 storage/audio fixes)"
+  },
+  {
+   "href": "games/arrakis.html",
+   "name": "ARRAKIS",
+   "desc": "desert surface"
+  },
+  {
+   "href": "games/frontier_souls.html",
+   "name": "FRONTIER SOULS",
+   "desc": "U6 souls + NPC voices"
+  },
+  {
+   "href": "games/arena_operator_field.html",
+   "name": "OPERATOR FIELD",
+   "desc": "arena operator view"
+  }
+ ],
+ "surfaces": [
+  {
+   "href": "tide.html",
+   "name": "TIDE",
+   "desc": "nightly compaction card + amendment strike clock (scripts/tide_dashboard.py)",
+   "exists": true
+  },
+  {
+   "href": "estate_walk.html",
+   "name": "ESTATE WALK",
+   "desc": "the repo as a dark navigable space",
+   "exists": true
+  },
+  {
+   "href": "estate_walk.lod.html",
+   "name": "ESTATE LOD",
+   "desc": "zone-index spectator (D21)",
+   "exists": false
+  },
+  {
+   "href": "vislab/catalog.html",
+   "name": "VISLAB CATALOG",
+   "desc": "render catalog (build_vislab_catalog.py)",
+   "exists": true
+  },
+  {
+   "href": "vislab/play.html",
+   "name": "VISLAB PLAY",
+   "desc": "catalog playback",
+   "exists": true
+  },
+  {
+   "href": "pipeline.html",
+   "name": "PIPELINE",
+   "desc": "the pipeline surface",
+   "exists": true
+  },
+  {
+   "href": "decks.html",
+   "name": "DECKS",
+   "desc": "deck index",
+   "exists": true
+  }
+ ],
+ "next_stones": [
+  {
+   "kind": "GEN-2",
+   "item": "`receipts/G2_STATIC_INFRA_AUDIT.md`",
+   "ask": "run the 6 checks (builders, broken refs, INDEX backlog, dead weight, :8765 smoke), fill Findings"
+  },
+  {
+   "kind": "GEN-2",
+   "item": "`receipts/G3_SHADER_AUDIT.md`",
+   "ask": "full shader inventory + dead uniforms + ranked fix table"
+  },
+  {
+   "kind": "GEN-2",
+   "item": "`receipts/G1_GAMES_AUDIT.md`",
+   "ask": "per-game findings pass (audit only; fixes are a later lane)"
+  },
+  {
+   "kind": "GEN-2",
+   "item": "`receipts/X_MINE_FIGURES_20260916.md`",
+   "ask": "one-paragraph fill from already-gathered body"
+  },
+  {
+   "kind": "GEN-2",
+   "item": "`wave_20260916/drafts/W1_union_alpha_draft.py`",
+   "ask": "archive/delete; superseded by landed `mag/wow_world.py`"
+  },
+  {
+   "kind": "GEN-2",
+   "item": "`physical_computing/receipts/watch/inbox/physical_computing/receipts/HERMES_REDTEAM_USAGE_20260916.json`",
+   "ask": "relocate to `physical_computing/receipts/` root, delete empty `watch/` tree"
+  },
+  {
+   "kind": "OPERATOR-GATE",
+   "item": "`receipts/B13_CODETAUR_KAN.md` defect",
+   "ask": "operator re-supplies true ID (or confirms reply) → one-call fxtwitter verify"
+  },
+  {
+   "kind": "OPERATOR-GATE",
+   "item": "`receipts/D20_BONES_ADAPTER.md`",
+   "ask": "rotate DISCORD_BOT_TOKEN + grant #game-c-overview permission; only then live boot"
+  },
+  {
+   "kind": "GEN-2",
+   "item": "Fossil headers: COLLECTION_ORIGINS / HERMES_REDTEAM / X_MINE_PHYSICAL",
+   "ask": "cosmetic one-line status fix next time each is touched"
+  },
+  {
+   "kind": "GEN-2",
+   "item": "D23 \"50/50 attempted, 49/50 answered\" line",
+   "ask": "annotate with the 39/50 correction; do not re-quote 50/50"
+  },
+  {
+   "kind": "CLOSURE",
+   "item": "sampler falsifier closure receipt",
+   "ask": "file threshold provenance + variable definitions in ONE closure receipt before the word 'refuted' is earned (p=0.052 graze; U5 witness)"
+  },
+  {
+   "kind": "OPERATOR-GATE",
+   "item": "ractor publish checklist",
+   "ask": "repo create / push / release + catalog PR vs NousResearch/hermes-agent (operator account, operator call)"
+  },
+  {
+   "kind": "THIS-WEEK",
+   "item": "cube stage-0 order + assembly",
+   "ask": "order the $31 ear; assembly proposed 2026-09-22 (fallback 09-29)"
+  },
+  {
+   "kind": "THIS-WEEK",
+   "item": "union-alpha window",
+   "ask": "free window closes ~2026-09-23 — spend it (pin 'Disputed' referent in tri-state asks; call non-streaming ≥180s)"
+  },
+  {
+   "kind": "THIS-WEEK",
+   "item": "Extropic Z1 replication seat",
+   "ask": "point the fleet at the public simulator; measure ESS/compute vs digital baseline under DAD accounting ($0)"
+  },
+  {
+   "kind": "LATER",
+   "item": "CONCERT 002",
+   "ask": "schedule after the grown-boundary assay"
+  }
+ ],
+ "fleet": {
+  "date": "2026-09-28",
+  "seed": 3673175605,
+  "games": [
+   "games/mud.html",
+   "games/frontier_souls.html",
+   "games/toy.html"
+  ],
+  "law": "fleet-YYYY-MM-DD -> FNV-1a 32 -> LCG seed; explicit seeds always win"
+ }
+}</script>
+<script>
+"use strict";
+const D = JSON.parse(document.getElementById('deck-data').textContent);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const chip = (t, cls) => `<span class="chip ${cls}">${esc(t)}</span>`;
+
+function kpi(k, v, cls) {
+  return `<div class="kpi"><div class="k">${esc(k)}</div><div class="v ${cls || 'small'}">${v}</div></div>`;
+}
+
+function standingWave() {
+  const g = D.ledgers.grounding, ix = D.ledgers.index, w = D.wave, cp = D.context_pack;
+  const vCls = g.verify_ok ? 'good' : 'bad';
+  return `<section id="standing-wave"><h2>STANDING WAVE <span class="n">// era 003 · THE POUR</span></h2>
+  <div class="strip">
+    ${kpi('GROUNDING WAVE VERIFY', `<span class="${vCls}">${esc(g.verify_line)}</span>`)}
+    ${kpi('GROUNDING ROWS', g.rows)}
+    ${kpi('WAVE RECEIPTS INDEXED', w.receipts_indexed == null ? '?' : w.receipts_indexed)}
+    ${kpi('INDEX HEALTH (the F)', ix.ok === true ? '<span class="good">OK</span>' : ix.ok === false ? '<span class="bad">NOT OK</span>' : '<span class="warn">UNKNOWN</span>',
+         ix.ok ? 'good' : 'bad')}
+    ${kpi('INDEX ERRORS', ix.errors == null ? esc(ix.error || '?') : ix.errors, ix.errors ? 'bad' : '')}
+    ${kpi('GIT TIP', esc((D.git[0] || '?').split(' ')[0]))}
+    ${kpi('CONTEXT PACK', `tip ${esc(cp.tip)} · leaves ${cp.leaves == null ? '?' : cp.leaves}`)}
+  </div>
+  <div class="src">sources: ${g.path} · watch/inbox/wave_20260916/WAVE_STATE_20260916.md · watch/inbox/INDEX.json · memory/context_pack_latest.md · git log -5</div>
+  <ul style="margin-top:10px">${D.git.map(l => `<li class="wrap">${esc(l)}</li>`).join('')}</ul></section>`;
+}
+
+function programs() {
+  const hc = h => h === 'green' ? 'ok' : h === 'red' ? 'bad' : 'gate';
+  return `<section id="programs"><h2>PROGRAMS <span class="n">// ${D.programs.length} · ${esc(D.programs_source || '')}</span></h2><div class="grid cards">` +
+    D.programs.map(p => `<div class="card"><h3>${esc(p.title)}${chip(p.gate, 'gate')}${p.health ? chip(p.health.toUpperCase(), hc(p.health)) : ''}</h3>
+      <div class="st">${esc(p.status)}</div>` +
+      (p.detail ? `<p>${esc(p.detail)}</p>` : '') +
+      `<ul>${(p.facts || []).map(f => `<li>${esc(f)}</li>`).join('')}</ul>` +
+      (p.id === 'world' ? '<p id="mud-relay" class="src">relay: probing :8766/mud/state …</p>' : '') +
+      `<div class="src">${p.ledger_updated ? 'updated ' + esc(p.ledger_updated) + ' · ' : ''}sources: ${(p.sources || []).map(s => esc(s)).join(' · ')}</div></div>`).join('') +
+    '</div></section>';
+}
+
+/* N11 live relay lens: WORLD card probes GET /mud/state at page load.
+   Fire-and-forget — never blocks render; any failure (refused, timeout,
+   ok:false from a squatter service) degrades to an OFFLINE line. */
+async function mudRelay() {
+  const el = document.getElementById('mud-relay');
+  if (!el) return;
+  const url = 'http://127.0.0.1:8766/mud/state';
+  try {
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), 1500);
+    const r = await fetch(url, { signal: ctl.signal });
+    clearTimeout(t);
+    if (!r.ok) throw new Error('http ' + r.status);
+    const s = await r.json();
+    if (!s || s.ok !== true) throw new Error('not the mud relay (ok:false)');
+    const ps = s.players || [];
+    const n = ps.length;
+    const age = n ? Math.min.apply(null, ps.map(p => (typeof p.age === 'number' ? p.age : 0))) : null;
+    el.innerHTML = 'relay <span class="good">LIVE</span> · players ' + n +
+      (n ? ' · last lantern ' + age.toFixed(1) + 's old' : ' · room dark (0 lanterns)') +
+      ' · seen_total ' + (s.seen_total == null ? '?' : s.seen_total) +
+      ' · <a href="' + url + '" target="_blank">/mud/state</a>';
+  } catch (e) {
+    const msg = (e && e.name === 'AbortError') ? 'timeout 1.5s' : String((e && e.message) ? e.message : e);
+    el.innerHTML = 'relay <span class="bad">OFFLINE</span> (' + esc(msg) + ')' +
+      ' · start: <code>.venv/Scripts/python.exe dashboard/mud_relay.py</code>';
+  }
+}
+
+function lanes() {
+  const order = {LIVE: 0, STALE: 1, 'NO-RUNNER': 2, DORMANT: 3};
+  const rows = D.lanes.slice().sort((a, b) => (order[a.state] - order[b.state]) || a.name.localeCompare(b.name));
+  const live = rows.filter(l => l.state === 'LIVE').length;
+  return `<section id="lanes"><h2>LIVE LANES <span class="n">// ${live}/${rows.length} live</span></h2>
+  <table><tr><th>LANE</th><th>STATE</th><th>LAST RUN</th><th>RESULT</th><th>TRAIL</th><th>LAST EVENT</th></tr>` +
+    rows.map(l => `<tr><td class="lane"><span class="dot" style="background:${l.color}"></span>${esc(l.name)}</td>
+      <td>${chip(l.state, l.state === 'LIVE' ? 'ok' : l.state === 'STALE' ? 'gate' : 'bad')}</td>
+      <td>${esc(l.last_run) + (l.age_days == null ? '' : ` <span class="src">(+${l.age_days}d)</span>`)}</td>
+      <td class="wrap">${esc(l.last_result)}</td>
+      <td>${l.trail_rows} rows</td><td class="wrap">${esc(l.last_event)}</td></tr>`).join('') +
+    '</table><div class="src">sources: queue/lanes/*/runner_state.json + trail.jsonl · LIVE = ran within 24h, STALE ≤ 3d, DORMANT older</div></section>';
+}
+
+function receipts() {
+  return `<section id="receipts"><h2>RECEIPTS <span class="n">// latest ${D.receipts.length} by mtime</span></h2>
+  <table><tr><th>WHEN</th><th>RECEIPT</th><th>STATUS</th></tr>` +
+    D.receipts.map(r => `<tr><td>${esc(r.date)}</td><td><a class="wrap" href="../../${esc(r.path)}">${esc(r.name)}</a><div class="src wrap">${esc(r.title)}</div></td>
+      <td class="wrap">${esc(r.status) || '<span class="src">—</span>'}</td></tr>`).join('') +
+    '</table><div class="src">links resolve from file:// (repo-relative ../../watch/…); when served from /static the paths are still the canonical locations</div></section>';
+}
+
+function ledgers() {
+  const L = D.ledgers, l5 = L.links.last5.map(r => `<li class="wrap">${esc(r.ts || '')} <a href="${esc(r.url)}">${esc(r.url)}</a></li>`).join('');
+  return `<section id="ledgers"><h2>LEDGERS <span class="n">// counts + claim statuses</span></h2><div class="grid cards">
+    <div class="card"><h3>LINKS LEDGER</h3><p><span class="v" style="font-size:20px;color:var(--hi)">${L.links.rows}</span> link rows + ${L.links.events ?? 0} event rows (B2-28 split; legacy rows cohabit per append-only law)</p>
+      <ul>${l5}</ul><div class="src">${esc(L.links.path)}</div></div>
+    <div class="card"><h3>GROUNDING WAVE</h3><p><span class="v" style="font-size:20px;color:var(--hi)">${L.grounding.rows}</span> rows · verify: <span class="${L.grounding.verify_ok ? 'good' : 'bad'}">${esc(L.grounding.verify_line)}</span></p>
+      <ul><li>chain broken at row 122 (prev-hash mismatch) — repair lane owed</li></ul><div class="src">${esc(L.grounding.path)}</div></div>
+    <div class="card"><h3>SHARED SURFACE INDEX</h3><ul>
+      <li>ok: <span class="${L.index.ok ? 'good' : 'bad'}">${L.index.ok == null ? 'unknown' : L.index.ok}</span></li>
+      <li>files ${L.index.files == null ? '?' : L.index.files} · indexed ${L.index.indexed == null ? '?' : L.index.indexed} · unindexed ${L.index.unindexed == null ? '?' : L.index.unindexed}</li>
+      <li>errors <span class="bad">${L.index.errors == null ? '?' : L.index.errors}</span> · warnings ${L.index.warnings == null ? '?' : L.index.warnings}</li>
+    </ul><div class="src">${esc(L.index.path)}</div></div>
+    <div class="card"><h3>SAMPLER CLAIM</h3><p>${chip('CONDITIONAL-REFUTED', 'gate')}</p>
+      <ul><li>probe: ρ +0.167, n=8, p=0.70 — wrong-signed</li>
+      <li>replicate: ρ +0.327, n=36, p=0.052 — past the +0.3 line, but a graze</li>
+      <li>U5 witness: refutation CONDITIONAL on formal closure receipt (threshold provenance + variable definitions filed together)</li>
+      <li>salon_50 = 39/50 answered, NOT 50/50 (fossil, 55 occurrences in the wild)</li></ul>
+      <div class="src">watch/inbox/physical_computing/PHYSICAL_COMPUTING_PACK_20260916.md §6 · WAVE_STATE §3</div></div>
+  </div></section>`;
+}
+
+function surfaces() {
+  return `<section id="surfaces"><h2>SURFACES <span class="n">// ${D.surfaces.length + D.games.length} linked · existence-checked at build</span></h2>
+  <div class="grid cards">` +
+    D.games.map(g => `<div class="card"><h3>${esc(g.name)}</h3><p>${esc(g.desc)}</p>
+      <div class="src"><a href="${esc(g.href)}">open ${esc(g.href)}</a>${g.exists ? '' : ' <span class="bad">MISSING</span>'}</div></div>`).join('') +
+    D.surfaces.map(s => `<div class="card"><h3>${esc(s.name)}</h3><p>${esc(s.desc)}</p>
+      <div class="src"><a href="${esc(s.href)}">open ${esc(s.href)}</a>${s.exists ? '' : ' <span class="bad">MISSING</span>'}</div></div>`).join('') +
+    '</div><div class="src">relative links work from file:// and from /static/deck.html</div></section>';
+}
+
+function nextStones() {
+  const cls = k => k === 'OPERATOR-GATE' ? 'bad' : k === 'GEN-2' ? 'gate' : k === 'CLOSURE' ? 'gate' : 'ok';
+  return `<section id="next-stones"><h2>NEXT STONES <span class="n">// gen-2 requeue + operator gates</span></h2>
+  <table><tr><th>KIND</th><th>ITEM</th><th>ASK</th></tr>` +
+    D.next_stones.map(s => `<tr><td>${chip(s.kind, cls(s.kind))}</td><td class="wrap">${esc(s.item)}</td><td class="wrap">${esc(s.ask)}</td></tr>`).join('') +
+    '</table><div class="src">sources: WAVE_STATE_20260916.md §4 + program receipts</div></section>';
+}
+
+const SECTIONS = [
+  ['standing-wave', 'STANDING WAVE', standingWave],
+  ['programs', 'PROGRAMS', programs],
+  ['lanes', 'LIVE LANES', lanes],
+  ['receipts', 'RECEIPTS', receipts],
+  ['ledgers', 'LEDGERS', ledgers],
+  ['surfaces', 'SURFACES', surfaces],
+  ['next-stones', 'NEXT STONES', nextStones],
+];
+document.getElementById('main').innerHTML = SECTIONS.map(s => s[2]()).join('');
+document.getElementById('nav').innerHTML = SECTIONS.map(s => `<a href="#${s[0]}">${s[1]}</a>`).join('');
+mudRelay();
+</script>
+</body>
+</html>

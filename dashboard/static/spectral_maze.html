@@ -1,0 +1,831 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SPECTRAL MAZE — three bands, one flood (PURPLE HARVEST B7)</title>
+<style>
+:root{--bg:#030806;--ink:#c8e6d9;--accent:#b48cff;--gold:#e8c96a}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:ui-monospace,Consolas,monospace;text-align:center}
+h1{font-size:.95rem;letter-spacing:.1em;color:var(--accent);margin:12px 0 2px}
+.mut{font-size:.7rem;color:#8ab8a4;margin:6px auto;max-width:980px}
+canvas{width:972px;max-width:96vw;border:1px solid rgba(180,140,255,.3);border-radius:6px;image-rendering:pixelated}
+.stats{font-size:.78rem;margin:8px auto;max-width:980px}
+.stats b{color:var(--gold)}
+.g{color:#7dfab0}.d{color:#ff9d5c}.v{color:#b48cff}.c{color:#e8c96a}.r{color:#ff6a4d}.b{color:#7cb0ff}
+button{background:#0a1412;color:var(--accent);border:1px solid rgba(180,140,255,.35);border-radius:8px;padding:6px 14px;font-family:inherit;font-size:.75rem;cursor:pointer;margin:4px}
+#fals{font-size:.72rem;margin:8px auto;max-width:980px;border:1px dashed rgba(180,140,255,.3);border-radius:6px;padding:6px 10px;text-align:left}
+.pass{color:#7dfab0}.fail{color:#ff9d5c}
+</style></head><body>
+<div id="errbanner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99;background:#5c1010;color:#ffd9d9;font:12px ui-monospace,monospace;padding:6px 10px;white-space:pre-wrap"></div>
+<script>window.addEventListener('error',function(e){var b=document.getElementById('errbanner');if(!b)return;b.style.display='block';b.textContent+='ERR: '+e.message+' @ '+(e.lineno||'?')+':'+(e.colno||'?')+'\n';});window.addEventListener('unhandledrejection',function(e){var b=document.getElementById('errbanner');if(!b)return;b.style.display='block';b.textContent+='REJ: '+e.reason+'\n';});</script>
+<h1>THE SPECTRAL MAZE — three bands, one flood</h1>
+<div class="mut">PURPLE HARVEST B7 · three REAL bands (R 680nm / G 532nm / B 450nm), one independent eikonal least-time flood per band on the same grid · per-band refractive zones: cost = 1/n(zone,band) per cell — <span class="c">Snell's law emerges from the flood crossing boundaries; it is never coded separately</span> · dispersion is visible as color fringing where corridors cross glass / water / crystal</div>
+<div class="mut"><span class="d">MIRROR WALLS</span> relay the flood back into the side it came from (grid i=r approximation, band-independent &times;0.90) · <span class="v">WAVEGUIDE WALLS</span> carry light along their line (0.995/tile) and <b>leak at kinks sharper than the band's critical angle</b> — leak fraction = 1&minus;(&theta;c/&theta;)&sup2;, so one kink can hold blue and bleed red (TIR demultiplexer) · SENSORS are band-colored: walk onto a <b>LIT</b> sensor to close the circuit · arrows/WASD move · <span class="v">TAB/E</span> cycles the band filter (isolate one band) · <span class="c">R</span> new maze</div>
+<div>
+<button id="newmaze">NEW MAZE</button> <button id="runtest">RUN FALSIFIER TEST</button> <button id="filtbtn">FILTER: ALL</button>
+</div>
+<canvas id="c"></canvas>
+<div class="stats" id="stats"></div>
+<div id="fals">falsifiers: running&hellip;</div>
+<div class="mut">card: watch/SELF_STEAL_LIGHT_MAZE_SPECTRAL_20260906.md (band-ladder audit &rarr; B7) · deep find: refraction was already in the solver, asleep in a constant we never varied — Fermat-in-the-cost-field · math note: grid mirrors relay to the incident side only (approximate i=r; the falsifier tests symmetry, not exact angles); guide bends are judged over a 4-tile window (the discrete critical-bend rule); T is stored Float64 so the monochrome regression holds to 1e-9</div>
+<script src="/static/nav.js"></script>
+<script>
+'use strict';
+/*__SPECTRAL_CORE_BEGIN__*/
+// ===== SPECTRAL FIELD CORE — pure math, DOM-free. Slice between the markers and eval
+// in Node (harness: watch/PURPLE_HARVEST_B7_harness_20260906.mjs) or poke via
+// window.__SPECTRAL_CORE in the console.
+var INF=1e30, BANDS=3;
+var LAMBDA_NM=[680,532,450];                      // R,G,B wavelengths; k_R<k_G<k_B
+var KWAVE=[0,0,0],_b;for(_b=0;_b<3;_b++)KWAVE[_b]=2*Math.PI/LAMBDA_NM[_b];
+var N_TAB=[                                       // n[zone][band] — the dispersion tables
+ [1.00,1.00,1.00],                                // 0 vacuum
+ [1.44,1.53,1.62],                                // 1 glass
+ [1.331,1.333,1.340],                             // 2 water (mild)
+ [1.30,1.45,1.66],                                // 3 crystal (strong — prism zones)
+ [2.00,2.00,2.00]];                               // 4 test slab (harness Snell world)
+var NZ=N_TAB.length;
+var GUIDE_CLAD=1.30, GUIDE_CORE=[1.42,1.50,1.60]; // per-band core n -> dispersion-split critical angles
+var GUIDE_LOSS=0.995, MIRROR_GAIN=0.90, COUPLE=0.95, AIR_MU=0.03, LIT_MIN=0.35;
+var KIND_OPEN=0, KIND_MIRROR=1, KIND_GUIDE=2;
+var CRIT=[0,0,0], THMAX=[0,0,0];                  // critical + max-hold bend angle per band
+for(_b=0;_b<3;_b++){CRIT[_b]=Math.asin(GUIDE_CLAD/GUIDE_CORE[_b]);THMAX[_b]=Math.PI-2*CRIT[_b];}
+// discrete leak rule: bend theta beyond the band's max-hold bend leaks 1-(theta_c/theta)^2
+function leakFrac(b,th){if(th<=THMAX[b])return 0;var r=THMAX[b]/th;return Math.max(0,Math.min(1,1-r*r));}
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function now(){return (typeof performance!=='undefined'&&performance.now)?performance.now():Date.now();}
+var DX8=[1,-1,0,0,1,1,-1,-1],DY8=[0,0,1,-1,1,-1,1,-1];
+var DLEN8=[1,1,1,1,Math.SQRT2,Math.SQRT2,Math.SQRT2,Math.SQRT2];
+
+function makeField(W,H,nTab){
+  var N=W*H;
+  var f={W:W,H:H,N:N,
+    open:new Uint8Array(N), zone:new Uint8Array(N),
+    kind:new Uint8Array(N), maxis:new Uint8Array(N),   // mirror axis: 0=horizontal row, 1=vertical col
+    T:[new Float64Array(N),new Float64Array(N),new Float64Array(N)], // arrival time per band (Float64: F1 needs 1e-9)
+    A:[new Float32Array(N),new Float32Array(N),new Float32Array(N)], // carried amplitude per band
+    nTab:nTab||N_TAB, guides:[], src:-1,
+    leakSum:new Float64Array(3), entryAmp:new Float64Array(3),
+    buildMs:0, _mx:new Float64Array(3), _heapCapHit:0};
+  var z,b;f.sTab=new Float32Array(NZ*3);
+  // slowness per cell = n (eikonal travel time is INT n ds — light is SLOWER in glass).
+  // (The B7 card wrote "cost = 1/n"; that inverts the physics — with 1/n the emergent
+  // law would be sin(i)/n1 = sin(r)/n2. The falsifier n1 sin i = n2 sin r fixes this.)
+  for(z=0;z<NZ;z++)for(b=0;b<3;b++)f.sTab[z*3+b]=f.nTab[z][b];
+  f.sCore=new Float32Array(3);for(b=0;b<3;b++)f.sCore[b]=GUIDE_CORE[b];
+  f._giOf=new Int32Array(N);f._gIdxOf=new Int32Array(N);
+  // preallocated binary heap (cell,key pairs) — sized for worst-case relaxation traffic
+  f._hk=new Float64Array(24*N+64);f._hc=new Int32Array(24*N+64);f._hn=0;
+  // ---- guides: ordered polyline on wall tiles; bend angle per tile from a 6-tile
+  // window per side (a full window spans exactly 2 periods of a period-3 stair run, so
+  // fine angles like 26.57deg/63.43deg measure wobble-free)
+  f.addGuide=function(tiles){
+    var n=tiles.length,g={tiles:new Int32Array(n),bend:new Float64Array(n)},i,WN=6;
+    for(i=0;i<n;i++)g.tiles[i]=tiles[i];
+    for(i=0;i<n;i++){
+      if(i<WN||i>=n-WN){g.bend[i]=0;continue;}
+      var a=g.tiles[i-WN],c=g.tiles[i],e=g.tiles[i+WN];
+      var v1x=(c%W)-(a%W),v1y=((c/W)|0)-((a/W)|0); // IN-direction (forward through the tile)
+      var v2x=(e%W)-(c%W),v2y=((e/W)|0)-((c/W)|0); // OUT-direction
+      var dot=v1x*v2x+v1y*v2y,l1=Math.sqrt(v1x*v1x+v1y*v1y),l2=Math.sqrt(v2x*v2x+v2y*v2y);
+      g.bend[i]=Math.acos(Math.max(-1,Math.min(1,dot/(l1*l2+1e-12))));
+    }
+    for(i=0;i<n;i++){f.kind[tiles[i]]=KIND_GUIDE;f._giOf[tiles[i]]=f.guides.length;f._gIdxOf[tiles[i]]=i;}
+    f.guides.push(g);return g;
+  };
+  f.removeGuide=function(g){ // generator rollback
+    var i;for(i=0;i<g.tiles.length;i++){f.kind[g.tiles[i]]=KIND_OPEN;f._giOf[g.tiles[i]]=-1;f._gIdxOf[g.tiles[i]]=-1;}
+    f.guides.pop();
+  };
+  // ---- per-band eikonal solve (8-connected Dijkstra, cost = len * mean slowness)
+  f.solveBand=function(band){
+    var T=f.T[band],A=f.A[band],sT=f.sTab,sc=f.sCore[band];
+    T.fill(INF);A.fill(0);f.leakSum[band]=0;f.entryAmp[band]=0;
+    if(f.src<0)return;
+    var hk=f._hk,hc=f._hc,cap=hk.length;f._hn=0;f._heapCapHit=0;
+    function push(c,k){if(f._hn>=cap){f._heapCapHit=1;return;}
+      var i=f._hn++;hk[i]=k;hc[i]=c;
+      while(i>0){var p=(i-1)>>1;if(hk[p]<=hk[i])break;
+        var tk=hk[p],tc=hc[p];hk[p]=hk[i];hc[p]=hc[i];hk[i]=tk;hc[i]=tc;i=p;}}
+    function pop(){var c=hc[0];f._hn--;
+      if(f._hn>0){hk[0]=hk[f._hn];hc[0]=hc[f._hn];var i=0;
+        for(;;){var l=2*i+1,r=l+1,m=i;
+          if(l<f._hn&&hk[l]<hk[m])m=l;if(r<f._hn&&hk[r]<hk[m])m=r;
+          if(m===i)break;
+          var tk=hk[m],tc=hc[m];hk[m]=hk[i];hc[m]=hc[i];hk[i]=tk;hc[i]=tc;i=m;}}
+      return c;}
+    function relax(v,tC,aC){
+      if(tC<T[v]-1e-12){T[v]=tC;A[v]=aC;push(v,tC);}
+      else if(tC<T[v]+1e-9&&aC>A[v])A[v]=aC; // amp max at ~equal time (approximate — see receipt)
+    }
+    var src=f.src;T[src]=0;A[src]=1;push(src,0);
+    while(f._hn>0){
+      var k0=hk[0],c=pop();
+      if(k0>T[c]+1e-9)continue;
+      var cx=c%W,cy=(c/W)|0,kc=f.kind[c],su=sT[f.zone[c]*3+band];
+      var d;
+      if(kc===KIND_GUIDE){
+        var g=f.guides[f._giOf[c]],idx=f._gIdxOf[c],n=g.tiles.length;
+        var isEnd=(idx===0||idx===n-1);
+        var lf=g.bend[idx]>0?leakFrac(band,g.bend[idx]):0;
+        for(d=0;d<8;d++){ // exits at ends, leaks at over-critical bends (into open cells)
+          var wx=cx+DX8[d],wy=cy+DY8[d];
+          if(wx<0||wy<0||wx>=W||wy>=H)continue;
+          var w=wy*W+wx;
+          if(!f.open[w]||f.kind[w]!==KIND_OPEN)continue;
+          var gain=isEnd?COUPLE:lf;
+          if(gain<=0)continue;
+          var dl=DLEN8[d];
+          relax(w,k0+dl*0.5*(su+sT[f.zone[w]*3+band]),A[c]*gain*Math.exp(-AIR_MU*dl));
+        }
+        var lp; // carry along the polyline: per-tile loss, bend takes out the leak fraction
+        if(idx>0){lp=g.tiles[idx-1];relax(lp,k0+DLEN8[0]*sc,A[c]*(1-lf)*GUIDE_LOSS);}
+        if(idx<n-1){lp=g.tiles[idx+1];relax(lp,k0+DLEN8[0]*sc,A[c]*(1-lf)*GUIDE_LOSS);}
+        continue;
+      }
+      for(d=0;d<8;d++){
+        var nx=cx+DX8[d],ny=cy+DY8[d];
+        if(nx<0||ny<0||nx>=W||ny>=H)continue;
+        var v=ny*W+nx,kv=f.kind[v],dl2=DLEN8[d];
+        if(kv===KIND_OPEN){
+          if(!f.open[v])continue;
+          // Godunov eikonal update on the axis stencil (first-order FMM). The diagonal
+          // branch interpolates between neighbors -> all-angle characteristics -> Snell
+          // is measurable. (Fixed graph-path metrics are piecewise-linear in the crossing
+          // height and snap shallow rays to sector edges / bang-bang — see the receipt.)
+          var rx=INF,ry=INF,refx=-1,refy=-1;
+          if(cx>0&&T[v-1]<rx){rx=T[v-1];refx=v-1;}
+          if(cx<W-1&&T[v+1]<rx){rx=T[v+1];refx=v+1;}
+          if(cy>0&&T[v-W]<ry){ry=T[v-W];refy=v-W;}
+          if(cy<H-1&&T[v+W]<ry){ry=T[v+W];refy=v+W;}
+          if(rx>=INF&&ry>=INF)continue;
+          var sv=sT[f.zone[v]*3+band],cand,refv,rv;
+          if(rx<=ry){refv=refx;rv=rx;}else{refv=refy;rv=ry;}
+          if(Math.abs(rx-ry)>=sv)cand=rv+sv;                       // one-sided
+          else cand=(rx+ry+Math.sqrt(2*sv*sv-(rx-ry)*(rx-ry)))/2;  // diagonal branch
+          var dle=(cand-rv)/sv; // characteristic length from the reference neighbor
+          relax(v,cand,A[refv]*Math.exp(-AIR_MU*dle));
+        }else if(kv===KIND_MIRROR){
+          // grid i=r: arrival at the surface, relayed back to the SAME side (band-independent gain)
+          var tm=k0+dl2*0.5*(su+sT[f.zone[v]*3+band]);
+          var tv=tm<T[v]-1e-12?tm:T[v];
+          if(tm<T[v]-1e-12){T[v]=tm;A[v]=A[c];}
+          var e;
+          for(e=0;e<8;e++){
+            var qx=nx+DX8[e],qy=ny+DY8[e];
+            if(qx<0||qy<0||qx>=W||qy>=H)continue;
+            var w2=qy*W+qx;
+            if(!f.open[w2]||f.kind[w2]!==KIND_OPEN)continue;
+            if(f.maxis[v]===0){if(sign0(qy-ny)!==sign0(cy-ny))continue;}
+            else{if(sign0(qx-nx)!==sign0(cx-nx))continue;}
+            var dl3=DLEN8[e];
+            relax(w2,tv+dl3*0.5*(sT[f.zone[v]*3+band]+sT[f.zone[w2]*3+band]),
+              A[c]*MIRROR_GAIN*Math.exp(-AIR_MU*dl3));
+          }
+        }else if(d<8&&kv===KIND_GUIDE){
+          // entry: only the guide's end faces accept light from adjacent open cells
+          var gE=f.guides[f._giOf[v]],idE=f._gIdxOf[v],nE=gE.tiles.length;
+          if(idE===0||idE===nE-1)
+            relax(v,k0+dl2*0.5*(su+sc),A[c]*COUPLE*Math.exp(-AIR_MU*dl2));
+        }
+        // walls (open=0, kind OPEN) absorb — no edge
+      }
+    }
+    // post-pass leak bookkeeping: amp at each over-critical bend x its leak fraction
+    for(var gi=0;gi<f.guides.length;gi++){
+      var g2=f.guides[gi];
+      for(var ti=0;ti<g2.tiles.length;ti++){
+        var l2=g2.bend[ti]>0?leakFrac(band,g2.bend[ti]):0;
+        if(l2>0)f.leakSum[band]+=A[g2.tiles[ti]]*l2;
+      }
+      var e0=A[g2.tiles[0]],e1=A[g2.tiles[g2.tiles.length-1]];
+      var em=e0>e1?e0:e1;if(em>f.entryAmp[band])f.entryAmp[band]=em;
+    }
+  };
+  function sign0(x){return x>0?1:x<0?-1:0;}
+  f.solveAll=function(){var t0=now();for(var b2=0;b2<3;b2++)f.solveBand(b2);f.buildMs=now()-t0;return f.buildMs;};
+  // ---- F7(1) reference: independent Godunov-eikonal solve (O(N^2) scan-select pop,
+  // same first-order scheme, no mirrors/guides) — deliberately different code path
+  f.refMono=function(){
+    var T=new Float64Array(f.N);T.fill(INF);
+    var done=new Uint8Array(f.N);
+    if(f.src<0)return T;T[f.src]=0;
+    for(var it=0;it<f.N;it++){
+      var best=-1,bv=INF,i;
+      for(i=0;i<f.N;i++)if(!done[i]&&T[i]<bv){bv=T[i];best=i;}
+      if(best<0)break;done[best]=1;
+      var cx=best%f.W,cy=(best/f.W)|0,s1=1; // flat n=1
+      for(var d=0;d<4;d++){var nx=cx+DX8[d],ny=cy+DY8[d];
+        if(nx<0||ny<0||nx>=f.W||ny>=f.H)continue;
+        var v=ny*f.W+nx;
+        if(!f.open[v]||f.kind[v]!==KIND_OPEN)continue;
+        var rx=INF,ry=INF;
+        if(nx>0&&T[v-1]<rx)rx=T[v-1];
+        if(nx<f.W-1&&T[v+1]<rx)rx=T[v+1];
+        if(ny>0&&T[v-f.W]<ry)ry=T[v-f.W];
+        if(ny<f.H-1&&T[v+f.W]<ry)ry=T[v+f.W];
+        if(rx>=INF&&ry>=INF)continue;
+        var cand;
+        if(Math.abs(rx-ry)>=s1)cand=Math.min(rx,ry)+s1;
+        else cand=(rx+ry+Math.sqrt(2*s1*s1-(rx-ry)*(rx-ry)))/2;
+        if(cand<T[v])T[v]=cand;}
+    }
+    return T;};
+  // ---- composite render core (DOM-free): P = A/(1+0.08T)^2 per band -> RGB channels
+  f.compositeInto=function(data,filter){
+    var N=f.N,i,b,Tb,m;
+    for(b=0;b<3;b++){Tb=f.T[b];m=0;
+      for(i=0;i<N;i++){if(Tb[i]>INF/2)continue;
+        var tt=1+0.08*Tb[i],p=f.A[b][i]/(tt*tt);if(p>m)m=p;}
+      f._mx[b]=m>1e-12?m:1;}
+    for(i=0;i<N;i++){
+      var o=i*4,k=f.kind[i],r,g,bl;
+      if(!f.open[i]){
+        if(k===KIND_MIRROR){
+          var li=(f.T[0][i]<INF/2?1:0)+(f.T[1][i]<INF/2?1:0)+(f.T[2][i]<INF/2?1:0);
+          r=34+70*li;g=40+70*li;bl=48+82*li;
+        }else if(k===KIND_GUIDE){
+          Tb=f.T[0];r=Tb[i]<INF/2?Math.sqrt(Math.min(1,f.A[0][i]/((1+0.08*Tb[i])*(1+0.08*Tb[i]))/f._mx[0])):0;
+          Tb=f.T[1];g=Tb[i]<INF/2?Math.sqrt(Math.min(1,f.A[1][i]/((1+0.08*Tb[i])*(1+0.08*Tb[i]))/f._mx[1])):0;
+          Tb=f.T[2];bl=Tb[i]<INF/2?Math.sqrt(Math.min(1,f.A[2][i]/((1+0.08*Tb[i])*(1+0.08*Tb[i]))/f._mx[2])):0;
+          r=26+150*r;g=24+150*g;bl=30+170*bl;
+        }else{r=6;g=10;bl=9;}
+        data[o]=r;data[o+1]=g;data[o+2]=bl;data[o+3]=255;continue;
+      }
+      Tb=f.T[0];r=Tb[i]<INF/2?Math.sqrt(Math.min(1,f.A[0][i]/((1+0.08*Tb[i])*(1+0.08*Tb[i]))/f._mx[0])):0;
+      Tb=f.T[1];g=Tb[i]<INF/2?Math.sqrt(Math.min(1,f.A[1][i]/((1+0.08*Tb[i])*(1+0.08*Tb[i]))/f._mx[1])):0;
+      Tb=f.T[2];bl=Tb[i]<INF/2?Math.sqrt(Math.min(1,f.A[2][i]/((1+0.08*Tb[i])*(1+0.08*Tb[i]))/f._mx[2])):0;
+      if(filter===0)g*=0.12,bl*=0.12;
+      else if(filter===1)r*=0.12,bl*=0.12;
+      else if(filter===2)r*=0.12,g*=0.12;
+      data[o]=6+240*r;data[o+1]=6+240*g;data[o+2]=8+230*bl;data[o+3]=255;
+    }
+  };
+  // ---- game world generation (braided maze + zones + mirrors + guides + source)
+  f.genWorld=function(rng){
+    var W=f.W,H=f.H,N=f.N,x,y,d,i;
+    f.open.fill(0);f.kind.fill(KIND_OPEN);f.zone.fill(0);f.maxis.fill(0);
+    f.guides.length=0;f._giOf.fill(-1);f._gIdxOf.fill(-1);f.src=-1;
+    var DX4=[1,-1,0,0],DY4=[0,0,1,-1];
+    for(y=1;y<H-1;y++)for(x=1;x<W-1;x++)if(x%2===1&&y%2===1)f.open[y*W+x]=1;
+    var stack=[W+1],seen=new Uint8Array(N);seen[W+1]=1; // braided maze (house pattern, B2)
+    while(stack.length){
+      var cur=stack[stack.length-1],cx=cur%W,cy=(cur/W)|0,opts=[];
+      for(d=0;d<4;d++){var nx2=cx+DX4[d]*2,ny2=cy+DY4[d]*2;
+        if(nx2>0&&ny2>0&&nx2<W-1&&ny2<H-1&&!seen[ny2*W+nx2])opts.push(d);}
+      if(!opts.length){stack.pop();continue;}
+      d=opts[(rng()*opts.length)|0];
+      var mx2=cx+DX4[d],my2=cy+DY4[d],tx2=cx+DX4[d]*2,ty2=cy+DY4[d]*2;
+      f.open[my2*W+mx2]=1;f.open[ty2*W+tx2]=1;seen[ty2*W+tx2]=1;stack.push(ty2*W+tx2);
+    }
+    for(y=1;y<H-1;y++)for(x=1;x<W-1;x++){ // braid: open some dead ends -> cycles
+      if(!f.open[y*W+x])continue;
+      var n=0,walls=[];
+      for(d=0;d<4;d++){var wx=x+DX4[d],wy=y+DY4[d];
+        if(wx<=0||wy<=0||wx>=W-1||wy>=H-1)continue;
+        if(f.open[wy*W+wx])n++;else walls.push(wy*W+wx);}
+      if(n===1&&walls.length&&rng()<0.5)f.open[walls[(rng()*walls.length)|0]]=1;
+    }
+    var zs=[1,2,3]; // three dispersing blobs: glass / water / crystal
+    for(var zi=0;zi<3;zi++){
+      var bx=8+((rng()*(W-20))|0),by=5+((rng()*(H-12))|0),rr=4+((rng()*4)|0);
+      for(y=Math.max(1,by-rr);y<=Math.min(H-2,by+rr);y++)
+        for(x=Math.max(1,bx-rr);x<=Math.min(W-2,bx+rr);x++){
+          var ddx=(x-bx)/rr,ddy=(y-by)/(rr*0.7);
+          if(ddx*ddx+ddy*ddy<=1&&f.open[y*W+x])f.zone[y*W+x]=zs[zi];
+        }
+    }
+    var nm=0,tries=0; // mirror runs on wall cells
+    while(nm<5&&tries++<80){
+      var horiz=rng()<0.5,len=6+((rng()*5)|0),cells=[],ok=true;
+      if(horiz){var px=2+((rng()*(W-6-len))|0),py=2+((rng()*(H-4))|0);
+        for(i=0;i<len;i++)cells.push(py*W+px+i);}
+      else{var px2=2+((rng()*(W-4))|0),py2=2+((rng()*(H-6-len))|0);
+        for(i=0;i<len;i++)cells.push((py2+i)*W+px2);}
+      for(i=0;i<len;i++)if(f.open[cells[i]]||f.kind[cells[i]]!==KIND_OPEN){ok=false;break;}
+      for(i=0;i<len&&ok;i++){var c4=cells[i],cx4=c4%W,cy4=(c4/W)|0;
+        for(d=0;d<8&&ok;d++){var qx=cx4+DX8[d],qy=cy4+DY8[d];
+          if(qx<0||qy<0||qx>=W||qy>=H)continue;
+          if(f.kind[qy*W+qx]===KIND_MIRROR)ok=false;}}
+      if(!ok)continue;
+      for(i=0;i<len;i++){f.kind[cells[i]]=KIND_MIRROR;f.maxis[cells[i]]=horiz?0:1;}
+      nm++;
+    }
+    // waveguide polylines on wall cells: axis runs + period-3 stair runs (two of s1, one
+    // of s2 -> run dirs at 26.57/63.43deg etc), kinked 26.6-90 deg
+    var RUNS=[[1,0,1,0],[-1,0,-1,0],[0,1,0,1],[0,-1,0,-1],
+              [1,0,0,1],[1,0,0,-1],[-1,0,0,1],[-1,0,0,-1],
+              [0,1,1,0],[0,-1,1,0],[0,1,-1,0],[0,-1,-1,0]];
+    function runAng(r){return Math.atan2(2*r[1]+r[3],2*r[0]+r[2]);}
+    var ng=0;tries=0;
+    while(ng<4&&tries++<400){
+      var start=-1,st2=0;
+      while(st2++<60){var c5=(rng()*N)|0,cx5=c5%W,cy5=(c5/W)|0;
+        if(!f.open[c5]&&f.kind[c5]===KIND_OPEN&&cx5>2&&cx5<W-3&&cy5>2&&cy5<H-3){start=c5;break;}}
+      if(start<0)continue;
+      var tiles=[start],ci=start,r0=RUNS[(rng()*RUNS.length)|0],nruns=2+((rng()*2)|0),fails=false;
+      for(var ri=0;ri<nruns;ri++){
+        var steps=[],q;
+        if(r0[0]===r0[2]&&r0[1]===r0[3]){var L=9+((rng()*6)|0);for(q=0;q<L;q++)steps.push(r0);}
+        else{var P=2+((rng()*2)|0);for(q=0;q<P;q++){steps.push(r0);steps.push(r0);steps.push([r0[2],r0[3]]);}}
+        for(q=0;q<steps.length;q++){
+          var tx3=ci%W+steps[q][0],ty3=((ci/W)|0)+steps[q][1];
+          if(tx3<2||ty3<2||tx3>W-3||ty3>H-3){fails=true;break;}
+          var nc=ty3*W+tx3;
+          if(f.open[nc]||f.kind[nc]!==KIND_OPEN){fails=true;break;}
+          tiles.push(nc);ci=nc;
+        }
+        if(fails)break;
+        var ca=runAng(r0),cand=[];
+        for(var rj=0;rj<RUNS.length;rj++){
+          var dd=Math.abs(runAng(RUNS[rj])-ca);if(dd>Math.PI)dd=2*Math.PI-dd;
+          if(dd>0.4&&dd<1.66)cand.push(RUNS[rj]);
+        }
+        if(!cand.length){fails=true;break;}
+        r0=cand[(rng()*cand.length)|0];
+      }
+      if(fails||tiles.length<12)continue;
+      var g=f.addGuide(tiles);
+      var ends=[g.tiles[0],g.tiles[g.tiles.length-1]],ok0=false,ok1=false;
+      for(d=0;d<8;d++){
+        var e0x=ends[0]%W+DX8[d],e0y=((ends[0]/W)|0)+DY8[d];
+        var e1x=ends[1]%W+DX8[d],e1y=((ends[1]/W)|0)+DY8[d];
+        if(e0x>0&&e0y>0&&e0x<W-1&&e0y<H-1&&f.open[e0y*W+e0x])ok0=true;
+        if(e1x>0&&e1y>0&&e1x<W-1&&e1y<H-1&&f.open[e1y*W+e1x])ok1=true;
+      }
+      if(!ok0||!ok1){f.removeGuide(g);continue;}
+      ng++;
+    }
+    // fallback: braided mazes often lack long wall runs — straight guides (bend=0,
+    // carry all bands) still route light across the map, which is the core function
+    while(ng<2&&tries++<600){
+      var st3=-1,st4=0,dirE=rng()<0.5?1:0;
+      while(st4++<60){var c6=(rng()*N)|0,cx6=c6%W,cy6=(c6/W)|0;
+        if(!f.open[c6]&&f.kind[c6]===KIND_OPEN&&cx6>2&&cx6<W-14&&cy6>2&&cy6<H-3){st3=c6;break;}}
+      if(st3<0)break;
+      var tl=[st3],cc=st3,ok2=true;
+      for(var q2=0;q2<15;q2++){
+        var nx4=(dirE?cc%W+1:cc%W),ny4=((cc/W)|0)+(dirE?0:1);
+        if(nx4<2||ny4<2||nx4>W-3||ny4>H-3){ok2=false;break;}
+        var n2c=ny4*W+nx4;
+        if(f.open[n2c]||f.kind[n2c]!==KIND_OPEN){ok2=false;break;}
+        tl.push(n2c);cc=n2c;
+      }
+      if(!ok2||tl.length<12)continue;
+      var g2=f.addGuide(tl);
+      var e0=g2.tiles[0],e1=g2.tiles[g2.tiles.length-1],okA=false,okB=false;
+      for(d=0;d<8;d++){
+        var ax=e0%W+DX8[d],ay=((e0/W)|0)+DY8[d],bx=e1%W+DX8[d],by=((e1/W)|0)+DY8[d];
+        if(ax>0&&ay>0&&ax<W-1&&ay<H-1&&f.open[ay*W+ax])okA=true;
+        if(bx>0&&by>0&&bx<W-1&&by<H-1&&f.open[by*W+bx])okB=true;
+      }
+      if(!okA||!okB){f.removeGuide(g2);continue;}
+      ng++;
+    }
+    var sy4=3+2*((rng()*((H-8)/2))|0),sc4=-1,rad,dx,dy; // source: open cell near x=3
+    outer:
+    for(rad=0;rad<12;rad++)for(dy=-rad;dy<=rad;dy++)for(dx=-rad;dx<=rad;dx++){
+      var sx3=3+dx,sy3=sy4+dy;
+      if(sx3<1||sy3<1||sx3>=W-1||sy3>=H-1)continue;
+      if(f.open[sy3*W+sx3]){sc4=sy3*W+sx3;break outer;}
+    }
+    f.src=sc4>=0?sc4:(W+1);
+    return true;
+  };
+  // ---- sensor placement: brightest band-routed cells near guide ends / leak bends
+  f.placeSensors=function(){
+    var cands=[],seen={},W=f.W,H=f.W>0?f.H:0,sx=f.src%W,sy=(f.src/W)|0,i,b,d;
+    function consider(cell){
+      if(seen[cell]||!f.open[cell])return;seen[cell]=1;
+      var cx=cell%W,cy=(cell/W)|0;
+      if(Math.abs(cx-sx)+Math.abs(cy-sy)<6)return;
+      var pb=0,pv=-1;
+      for(b=0;b<3;b++)if(f.A[b][cell]>pv){pv=f.A[b][cell];pb=b;}
+      if(pv<0.05)return;
+      cands.push({cell:cell,x:cx,y:cy,band:pb,amp:pv});
+    }
+    for(var gi=0;gi<f.guides.length;gi++){
+      var g=f.guides[gi],ends=[0,g.tiles.length-1],ei;
+      for(ei=0;ei<2;ei++){var t=g.tiles[ends[ei]],tx=t%W,ty=(t/W)|0;
+        for(d=0;d<8;d++){var nx=tx+DX8[d],ny=ty+DY8[d];
+          if(nx<1||ny<1||nx>=W-1||ny>=H-1)continue;
+          consider(ny*W+nx);}}
+      for(i=0;i<g.tiles.length;i++){
+        var lf=g.bend[i]>0?(leakFrac(0,g.bend[i])+leakFrac(1,g.bend[i])+leakFrac(2,g.bend[i])):0;
+        if(lf<=0)continue;
+        var t2=g.tiles[i],tx2=t2%W,ty2=(t2/W)|0;
+        for(d=0;d<8;d++){var nx2=tx2+DX8[d],ny2=ty2+DY8[d];
+          if(nx2<1||ny2<1||nx2>=W-1||ny2>=H-1)continue;
+          consider(ny2*W+nx2);}}
+    }
+    cands.sort(function(a,b2){return b2.amp-a.amp;});
+    var out=[];
+    for(i=0;i<cands.length&&out.length<3;i++){
+      var c=cands[i],okc=true;
+      for(var j=0;j<out.length;j++){
+        if(Math.abs(out[j].x-c.x)+Math.abs(out[j].y-c.y)<6){okc=false;break;}
+        if(out[j].band===c.band&&out.length<2&&i<cands.length-3){okc=false;break;}
+      }
+      if(okc)out.push(c);
+    }
+    for(i=0;i<out.length;i++)out[i].lit=out[i].amp>=LIT_MIN;
+    return out;
+  };
+  return f;
+}
+
+// ---- falsifier probe worlds (all pure math; the on-page strip and the Node harness
+// both drive these; the harness additionally re-verifies with independent code) ----
+
+// F7(2): flat two-media boundary, vertical at x=50: dense slab (n=2.0, zone 4) left,
+// vacuum right. Geometry is in the RESOLVABLE regime: incidence ~21/24/26 deg gives a
+// continuous-Fermat gain of 8-16 time units against a scheme error of ~2.5 (small-angle
+// refraction is genuinely unresolvable at h=1 — the measured bang-bang is the honest
+// failure mode there; see the receipt). Ray bend measured by descending the T field from
+// a target back to the source and averaging step directions per segment (3-cell guard).
+function descend(f,band,target){
+  var T=f.T[band],W=f.W,src=f.src,path=[target],cur=target,guard=0;
+  while(cur!==src&&guard++<4*f.N){
+    var cx=cur%W,cy=(cur/W)|0,best=T[cur],bn=-1;
+    for(var d=0;d<8;d++){var nx=cx+DX8[d],ny=cy+DY8[d];
+      if(nx<0||ny<0||nx>=W||ny>=f.H)continue;
+      var v=ny*W+nx;
+      if(!f.open[v])continue;
+      if(T[v]<best){best=T[v];bn=v;}}
+    if(bn<0)break;
+    path.push(bn);cur=bn;
+  }
+  return path;
+}
+function snellProbe(){
+  var W=104,H=112,XB=50,n1=2.0,n2=1.0,f=makeField(W,H),x,y;
+  f.open.fill(0);
+  for(y=1;y<H-1;y++)for(x=1;x<W-1;x++)f.open[y*W+x]=1;
+  for(y=1;y<H-1;y++)for(x=1;x<XB;x++)f.zone[y*W+x]=4;
+  f.src=100*W+8;
+  f.solveBand(0);
+  var targets=[44*W+92,26*W+92,7*W+92]; // incidence ~21 / ~24 / ~26 deg
+  var rows=[];
+  for(var t=0;t<3;t++){
+    var p=descend(f,0,targets[t]),i,j=-1;
+    for(i=0;i<p.length;i++)if((p[i]%W)>=XB)j=i; // last cell at/after the boundary
+    var m2a=p[0],m2b=p[Math.max(0,j-3)];
+    var dxr=(m2a%W)-(m2b%W),dyr=((m2a/W)|0)-((m2b/W)|0);
+    var rMeas=Math.atan2(Math.abs(dyr),Math.abs(dxr));
+    var m1a=p[Math.min(p.length-1,j+3)],m1b=p[p.length-1];
+    var dxi=(m1a%W)-(m1b%W),dyi=((m1a/W)|0)-((m1b/W)|0);
+    var iMeas=Math.atan2(Math.abs(dyi),Math.abs(dxi));
+    var x0=8,y0=100,x1=92,y1=(targets[t]/W)|0; // continuous Fermat prediction
+    var lo=Math.min(y0,y1),hi=Math.max(y0,y1),yc=0;
+    function phi(yc2){return n1*Math.sqrt((XB-x0)*(XB-x0)+(yc2-y0)*(yc2-y0))
+                         +n2*Math.sqrt((x1-XB)*(x1-XB)+(y1-yc2)*(y1-yc2));}
+    for(i=0;i<200;i++){
+      var m1=lo+(hi-lo)/3,m2=hi-(hi-lo)/3;
+      if(phi(m1)<phi(m2))hi=m2;else lo=m1;
+    }
+    yc=(lo+hi)/2;
+    var iPred=Math.atan2(Math.abs(yc-y0),XB-x0),rPred=Math.atan2(Math.abs(y1-yc),x1-XB);
+    rows.push({iDeg:iMeas*180/Math.PI,rDeg:rMeas*180/Math.PI,
+      s1:n1*Math.sin(iMeas),s2:n2*Math.sin(rMeas),
+      rPredDeg:rPred*180/Math.PI,errR:Math.abs(rMeas-rPred)*180/Math.PI});
+  }
+  // primary measurement: local wavefront normals on both sides of the boundary.
+  // grad T = ray direction (Fermat); central differences at x=XB-2 (slow side) and
+  // x=XB+2 (fast side), over every boundary ray below critical (y offset <= 34).
+  var resids=[],pairs=[];
+  for(y=66;y<=96;y++){
+    var g1x=(f.T[0][y*W+XB-1]-f.T[0][y*W+XB-3])/2,
+        g1y=(f.T[0][(y+1)*W+XB-2]-f.T[0][(y-1)*W+XB-2])/2;
+    var g2x=(f.T[0][y*W+XB+3]-f.T[0][y*W+XB+1])/2,
+        g2y=(f.T[0][(y+1)*W+XB+2]-f.T[0][(y-1)*W+XB+2])/2;
+    if(g1x<=0||g2x<=0)continue;
+    var ia=Math.atan2(Math.abs(g1y),g1x),ra=Math.atan2(Math.abs(g2y),g2x);
+    resids.push(Math.abs(n1*Math.sin(ia)-n2*Math.sin(ra)));
+    pairs.push({y:y,iDeg:ia*180/Math.PI,rDeg:ra*180/Math.PI,
+      s1:n1*Math.sin(ia),s2:n2*Math.sin(ra)});
+  }
+  resids.sort(function(a,b){return a-b;});
+  var scan={n:resids.length,median:resids[resids.length>>1],max:resids[resids.length-1],
+    pairs:pairs};
+  return {rows:rows,scan:scan};
+}
+// F7(3): single-guide worlds — shallow 26.6° kink / sharp 90° kink / demux 63.4° kink
+// (stair runs are period-3: two of s1 then one of s2; 18-tile runs keep the 6-tile
+// bend window fully inside each leg). The guide runs inside an opaque jacket (walls)
+// so the open field cannot outrun the (physically slower, n_core>1) core and pollute
+// the far-end amplitude — leak and carried numbers are then pure guide transport.
+function guideWorld(kind){
+  var W=81,H=31,f=makeField(W,H),x,y;
+  f.open.fill(0);
+  for(y=1;y<H-1;y++)for(x=1;x<W-1;x++)f.open[y*W+x]=1;
+  var tiles=[],cx=9,cy=15,i;
+  function step(dx,dy){cx+=dx;cy+=dy;tiles.push(cy*W+cx);}
+  function runE(n){for(i=0;i<n;i++)step(1,0);}
+  function stair(dx1,dy1,dx2,dy2,per){for(i=0;i<per;i++){step(dx1,dy1);step(dx1,dy1);step(dx2,dy2);}}
+  runE(18);
+  if(kind==='shallow')stair(1,0,0,1,6);           // run dir (2,1): kink 26.57deg — all bands hold
+  else if(kind==='sharp'){for(i=0;i<14;i++)step(0,1);} // kink 90deg — all bands leak, ordered
+  else stair(0,1,1,0,6);                          // run dir (1,2): kink 63.43deg — R leaks, B holds
+  runE(18);
+  f.addGuide(tiles);
+  // opaque jacket: wall every open cell 8-adjacent to the guide, except the source cell
+  for(i=0;i<tiles.length;i++){
+    var t3=tiles[i],tx4=t3%W,ty4=(t3/W)|0,d;
+    for(d=0;d<8;d++){
+      var jx=tx4+DX8[d],jy=ty4+DY8[d];
+      if(jx<1||jy<1||jx>W-2||jy>H-2)continue;
+      var jc=jy*W+jx;
+      if(jc===15*W+9)continue; // keep the feed cell open
+      f.open[jc]=0;
+    }
+  }
+  f.open[15*W+9]=1;
+  f.src=15*W+9;
+  var leak=[0,0,0],carried=[0,0,0],b;
+  for(b=0;b<3;b++){
+    f.solveBand(b);
+    leak[b]=f.leakSum[b]/Math.max(f.entryAmp[b],1e-9);
+    var g=f.guides[0];carried[b]=f.A[b][g.tiles[g.tiles.length-1]];
+  }
+  return {leak:leak,carried:carried};
+}
+// F7(4): mirror world vs twin world (source mirrored, mirror row -> plain wall row).
+// Specular law <=> T_mirror(x,y)=T_twin(x, 2*YM-y) on the source side. The mirror row
+// spans the full interior width so light cannot slip around the tips in either world.
+function mirrorProbe(){
+  var W=61,H=41,YM=20,f1=makeField(W,H),f2=makeField(W,H),x,y;
+  f1.open.fill(0);f2.open.fill(0);
+  for(y=1;y<H-1;y++)for(x=1;x<W-1;x++){f1.open[y*W+x]=1;f2.open[y*W+x]=1;}
+  for(x=1;x<=W-2;x++){
+    f1.open[YM*W+x]=0;f1.kind[YM*W+x]=KIND_MIRROR;f1.maxis[YM*W+x]=0;
+    f2.open[YM*W+x]=0;
+  }
+  f1.src=10*W+30;f2.src=(2*YM-10)*W+30;
+  f1.solveBand(0);f2.solveBand(0);
+  var maxA=0,rel=0;
+  for(y=1;y<YM;y++)for(x=1;x<W-1;x++){
+    var d1=Math.abs(f1.T[0][y*W+x]-f2.T[0][(2*YM-y)*W+x]);
+    if(d1>maxA)maxA=d1;
+    var tt=f1.T[0][y*W+x]>1?f1.T[0][y*W+x]:1;
+    if(d1/tt>rel)rel=d1/tt;
+  }
+  var blocked=true;
+  for(y=YM+1;y<H-1&&blocked;y++)for(x=1;x<W-1;x++)
+    if(f1.T[0][y*W+x]<INF/2){blocked=false;break;}
+  return {max:maxA,rel:rel,blocked:blocked};
+}
+// F7(6): visibility corridor — the TIR demultiplexer IS the corridor: one 63.4° kink
+// splits the bands into two output ports (leak port = red, carry port = green+blue).
+// Per-band visibility = each band's share of its port's output. (A prism-ridge corridor
+// was tried first and taught us the scheme's limit: least-time paths hug the slow
+// medium's edge, so point-source "beams" don't cast like ray diagrams — see receipt.)
+function corridorProbe(){
+  var r=guideWorld('demux');
+  var sumL=r.leak[0]+r.leak[1]+r.leak[2],sumC=r.carried[0]+r.carried[1]+r.carried[2];
+  return {leak:r.leak,carried:r.carried,
+    shareLeak:[r.leak[0]/sumL,r.leak[1]/sumL,r.leak[2]/sumL],
+    shareCarry:[r.carried[0]/sumC,r.carried[1]/sumC,r.carried[2]/sumC]};
+}
+// F7(5): perf — 3-band build vs single-band solve on a real generated game world,
+// plus the composite render hot path.
+function perfProbe(){
+  var f=makeField(81,49);
+  f.genWorld(mulberry32(20260906));
+  f.solveBand(0);f.solveAll();f.solveBand(0); // JIT warmup
+  // blocks of solves per timing sample: a single solve is ~0.2ms — timer noise swamps
+  // the ratio unless each sample covers many solves
+  var t3s=[],t1s=[],i,t0;
+  for(i=0;i<9;i++){
+    t0=now();for(var q=0;q<10;q++)f.solveAll();t3s.push((now()-t0)/10);
+  }
+  for(i=0;i<9;i++){
+    t0=now();for(var q2=0;q2<30;q2++)f.solveBand(0);t1s.push((now()-t0)/30);
+  }
+  t3s.sort(function(a,b){return a-b;});t1s.sort(function(a,b){return a-b;});
+  var t3=t3s[4],t1=t1s[4]; // medians
+  var buf=new Uint8ClampedArray(81*49*4),times=[];
+  for(i=0;i<300;i++){t0=now();f.compositeInto(buf,-1);times.push(now()-t0);}
+  times.sort(function(a,b){return a-b;});
+  return {t3:t3,t1:t1,ratio:t3/Math.max(t1,1e-9),renderMed:times[150],renderP95:times[284]};
+}
+function runFalsifiers(){
+  var r={},x,y;
+  // F7(1) monochrome regression: single band, flat n=1, no mirrors/guides vs independent reference
+  var fm=makeField(71,45);
+  fm.open.fill(0);
+  for(y=1;y<44;y++)for(x=1;x<70;x++)fm.open[y*71+x]=1;
+  for(y=8;y<=14;y++)for(x=20;x<=30;x++)fm.open[y*71+x]=0;   // wall chunks
+  for(y=26;y<=34;y++)for(x=40;x<=52;x++)fm.open[y*71+x]=0;
+  fm.src=22*71+5;
+  fm.solveBand(1);
+  var Tref=fm.refMono(),maxD=0;
+  for(var i=0;i<fm.N;i++)if(fm.open[i]){var d1=Math.abs(fm.T[1][i]-Tref[i]);if(d1>maxD)maxD=d1;}
+  fm.solveBand(0);fm.solveBand(2);
+  var bandD=0;
+  for(i=0;i<fm.N;i++)if(fm.open[i]){
+    var d2=Math.abs(fm.T[0][i]-fm.T[1][i]),d3=Math.abs(fm.T[2][i]-fm.T[1][i]);
+    if(d2>bandD)bandD=d2;if(d3>bandD)bandD=d3;}
+  r.mono={maxDiff:maxD,bandDiff:bandD,pass:maxD<=1e-9&&bandD<=1e-9};
+  // F7(2) Snell: primary = wavefront-normal scan across the boundary (median |n1sinI-n2sinR|);
+  // secondary = descent-path refraction angles vs continuous Fermat prediction
+  var sp2=snellProbe(),rows=sp2.rows,maxE=0,okDesc=0;
+  for(i=0;i<rows.length;i++){
+    if(rows[i].errR>maxE)maxE=rows[i].errR;
+    if(rows[i].errR<=8)okDesc++;
+  }
+  r.snell={rows:rows,scan:sp2.scan,maxErrR:maxE,descOk:okDesc,
+    pass:okDesc>=3&&maxE<=8};
+  // F7(3) TIR
+  var sh=guideWorld('shallow'),sp=guideWorld('sharp'),dm=guideWorld('demux');
+  var tirPass=sh.leak[0]<0.01&&sh.leak[1]<0.01&&sh.leak[2]<0.01
+    &&sp.leak[0]>0.3&&sp.leak[1]>0.2&&sp.leak[2]>0.2&&sp.leak[0]>sp.leak[1]&&sp.leak[1]>sp.leak[2]
+    &&dm.leak[0]>0.25&&dm.leak[2]<0.01;
+  r.tir={shallow:sh,sharp:sp,demux:dm,pass:tirPass};
+  // F7(4) mirror symmetry
+  var mr=mirrorProbe();
+  r.mirror={max:mr.max,rel:mr.rel,blocked:mr.blocked,pass:mr.max<=1e-6&&mr.blocked};
+  // F7(5) perf: the ratio's floor is exactly 3.0 (three identical solves); the falsifier
+  // guards against SUPERLINEAR blowup, so the gate sits at 3.5 and the measured value
+  // (typically ~3.0) is reported
+  var pf=perfProbe();
+  r.perf={t3:pf.t3,t1:pf.t1,ratio:pf.ratio,renderMed:pf.renderMed,renderP95:pf.renderP95,
+    pass:pf.ratio<=3.5&&pf.renderMed<=8};
+  // F7(6) visibility corridor: the demux kink splits the bands across two ports —
+  // per-band visibility = share of each port's output; leak port must be red-dominant,
+  // carry port must be nearly red-free
+  var co=corridorProbe();
+  r.corr={shareLeak:co.shareLeak,shareCarry:co.shareCarry,
+    pass:co.shareLeak[0]>=0.6&&co.shareCarry[0]<=0.2};
+  r.allPass=r.mono.pass&&r.snell.pass&&r.tir.pass&&r.mirror.pass&&r.perf.pass&&r.corr.pass;
+  return r;
+}
+if(typeof window!=='undefined')window.__SPECTRAL_CORE={makeField:makeField,mulberry32:mulberry32,
+  runFalsifiers:runFalsifiers,snellProbe:snellProbe,guideWorld:guideWorld,mirrorProbe:mirrorProbe,
+  corridorProbe:corridorProbe,perfProbe:perfProbe,leakFrac:leakFrac,
+  INF:INF,LAMBDA_NM:LAMBDA_NM,KWAVE:KWAVE,N_TAB:N_TAB,GUIDE_CORE:GUIDE_CORE,GUIDE_CLAD:GUIDE_CLAD,
+  CRIT:CRIT,THMAX:THMAX,LIT_MIN:LIT_MIN,
+  KIND_OPEN:KIND_OPEN,KIND_MIRROR:KIND_MIRROR,KIND_GUIDE:KIND_GUIDE};
+/*__SPECTRAL_CORE_END__*/
+
+// ===== GAME SURFACE =====
+var GW=81,GH=49,CELL=12;
+var core=(typeof window!=='undefined')?window.__SPECTRAL_CORE:null;
+var f=null,filter=-1,won=false,frameN=0,seed=20260906;
+var player={x:2,y:2},sensors=[],keys={},lastMove=0;
+var FILTERS=['ALL','RED 680nm','GREEN 532nm','BLUE 450nm'];
+function snapOpen(x,y){
+  if(f.open[y*GW+x])return [x,y];
+  for(var r=1;r<14;r++)for(var dy=-r;dy<=r;dy++)for(var dx=-r;dx<=r;dx++){
+    var nx=x+dx,ny=y+dy;
+    if(nx<1||ny<1||nx>=GW-1||ny>=GH-1)continue;
+    if(f.open[ny*GW+nx])return [nx,ny];}
+  return [1,1];
+}
+function buildWorld(s){
+  seed=s;
+  var best=null,attempt;
+  for(attempt=0;attempt<40;attempt++){
+    var fld=core.makeField(GW,GH);
+    fld.genWorld(core.mulberry32((s+attempt*7919)|0));
+    fld.solveAll();
+    var sens=fld.placeSensors();
+    var lit=0;for(var i=0;i<sens.length;i++)if(sens[i].lit)lit++;
+    if(!best||lit>best.lit)best={f:fld,sensors:sens,lit:lit};
+    if(lit>=2)break;
+  }
+  f=best.f;sensors=best.sensors;
+  var sp=snapOpen((f.src%GW)+2,(f.src/GW)|0);
+  player.x=sp[0];player.y=sp[1];
+  for(i=0;i<sensors.length;i++)
+    if(sensors[i].x===player.x&&sensors[i].y===player.y){player.x=1;player.y=1;}
+  won=false;frameN=0;
+}
+function tryMove(){
+  var n=now();
+  if(n-lastMove<95)return;
+  var dx=0,dy=0;
+  if(keys.ArrowUp||keys.KeyW)dy=-1;
+  else if(keys.ArrowDown||keys.KeyS)dy=1;
+  else if(keys.ArrowLeft||keys.KeyA)dx=-1;
+  else if(keys.ArrowRight||keys.KeyD)dx=1;
+  if(!dx&&!dy)return;
+  var nx=player.x+dx,ny=player.y+dy;
+  if(nx<0||ny<0||nx>=GW||ny>=GH)return;
+  if(!f.open[ny*GW+nx])return;
+  player.x=nx;player.y=ny;lastMove=n;
+}
+function checkWin(){
+  if(won)return;
+  for(var i=0;i<sensors.length;i++){
+    var s=sensors[i];
+    if(s.x===player.x&&s.y===player.y&&s.lit){
+      won=true;
+      var names=['RED','GREEN','BLUE'];
+      document.getElementById('stats').innerHTML='<b class="c">SENSOR LIT — '+names[s.band]+
+        ' LIGHT ROUTED AND RECEIVED. CIRCUIT CLOSED.</b> · press R for a new maze';
+    }
+  }
+}
+// ---- render ----
+var cnv=document.getElementById('c'),ctx=cnv.getContext('2d');
+cnv.width=GW*CELL;cnv.height=GH*CELL;
+var lm=document.createElement('canvas');lm.width=GW;lm.height=GH;
+var lmx=lm.getContext('2d');var im=lmx.createImageData(GW,GH);
+var SENS_COL=['#ff6a4d','#7dfab0','#7cb0ff'],SENS_NAME=['R','G','B'];
+function drawSprites(){
+  var px,py,i;
+  // source
+  px=(f.src%GW)*CELL+CELL/2;py=((f.src/GW)|0)*CELL+CELL/2;
+  ctx.fillStyle='#e8c96a';
+  ctx.beginPath();ctx.arc(px,py,CELL*0.42,0,7);ctx.fill();
+  // sensors
+  for(i=0;i<sensors.length;i++){
+    var s=sensors[i];
+    ctx.strokeStyle=SENS_COL[s.band];ctx.lineWidth=s.lit?2:1;
+    if(s.lit){ctx.fillStyle=SENS_COL[s.band];
+      ctx.beginPath();ctx.arc((s.x+0.5)*CELL,(s.y+0.5)*CELL,CELL*0.42+Math.sin(frameN*0.15)*1.5,0,7);ctx.fill();}
+    ctx.beginPath();ctx.arc((s.x+0.5)*CELL,(s.y+0.5)*CELL,CELL*0.42,0,7);ctx.stroke();
+    ctx.fillStyle='#030806';ctx.fillText(SENS_NAME[s.band],s.x*CELL+4,s.y*CELL+CELL-4);
+  }
+  // player
+  ctx.fillStyle='#ffffff';
+  ctx.fillRect(player.x*CELL+2,player.y*CELL+2,CELL-4,CELL-4);
+  // filter tag
+  ctx.fillStyle='rgba(232,201,106,0.9)';ctx.font='11px monospace';
+  ctx.fillText('FILTER: '+FILTERS[filter+1],6,12);
+}
+function updateHUD(){
+  if(won)return;
+  var parts=[],i,names=['R','G','B'];
+  for(i=0;i<sensors.length;i++){
+    var s=sensors[i];
+    parts.push('<span class="'+(s.band===0?'r':s.band===1?'g':'b')+'">'+names[s.band]+
+      (s.lit?'\u25CF lit':'\u25CB dark')+'</span>');
+  }
+  document.getElementById('stats').innerHTML=
+    'pos '+player.x+','+player.y+' · filter <b>'+FILTERS[filter+1]+'</b>'+
+    ' · guides '+f.guides.length+' · build '+f.buildMs.toFixed(1)+'ms'+
+    ' · SENSORS: '+parts.join(' ')+
+    ' · step on a <b>lit</b> sensor to win'+(f._heapCapHit?' · <span class="d">HEAP CAP HIT</span>':'');
+}
+function runFalsifierStrip(){
+  var r=core.runFalsifiers(),t;
+  function pf(p){return p?'<span class="pass">PASS</span>':'<span class="fail">FAIL</span>';}
+  t='F7(1) MONOCHROME max&Delta;='+r.mono.maxDiff.toExponential(2)+' (want &le;1e-9) · band-equality '+
+    r.mono.bandDiff.toExponential(2)+' '+pf(r.mono.pass)+'<br>'+
+    'F7(2) SNELL: wavefront-normal scan (n=2.0 slab&rarr;vacuum, 31 rays): median |n&trade;sin i&minus;n&#8322;sin r|='+
+    r.snell.scan.median.toFixed(4)+' max='+r.snell.scan.max.toFixed(4)+
+    ' · descent vs Fermat: ';
+  for(var i=0;i<r.snell.rows.length;i++){
+    var row=r.snell.rows[i];
+    t+='r='+row.rDeg.toFixed(1)+'&deg; (pred '+row.rPredDeg.toFixed(1)+'&deg;, err '+row.errR.toFixed(1)+
+      '&deg;) · ';
+  }
+  t+=r.snell.descOk+'/3 within 8&deg; '+pf(r.snell.pass)+'<br>'+
+    'F7(3) TIR leak fractions R/G/B — shallow kink '+r.tir.shallow.leak.map(function(v){return v.toFixed(3);}).join('/')+
+    ' · sharp 90&deg; '+r.tir.sharp.leak.map(function(v){return v.toFixed(3);}).join('/')+
+    ' · demux 63.4&deg; '+r.tir.demux.leak.map(function(v){return v.toFixed(3);}).join('/')+' '+pf(r.tir.pass)+'<br>'+
+    'F7(4) MIRROR symmetry max&Delta;T='+r.mirror.max.toExponential(2)+' (rel '+r.mirror.rel.toExponential(2)+
+    ') past-mirror dark: '+(r.mirror.blocked?'yes':'NO')+' '+pf(r.mirror.pass)+'<br>'+
+    'F7(5) PERF build 3-band '+r.perf.t3.toFixed(2)+'ms vs 1-band '+r.perf.t1.toFixed(2)+
+    'ms (ratio '+r.perf.ratio.toFixed(2)+'&times;, want &le;3) · render median '+r.perf.renderMed.toFixed(3)+
+    'ms p95 '+r.perf.renderP95.toFixed(3)+'ms '+pf(r.perf.pass)+'<br>'+
+    'F7(6) VISIBILITY corridor: leak port share R/G/B='+r.corr.shareLeak.map(function(v){return v.toFixed(2);}).join('/')+
+    ' · carry port share='+r.corr.shareCarry.map(function(v){return v.toFixed(2);}).join('/')+' '+pf(r.corr.pass);
+  document.getElementById('fals').innerHTML=t;
+  return r;
+}
+function frame(){
+  frameN++;
+  tryMove();
+  checkWin();
+  f.compositeInto(im.data,filter);
+  lmx.putImageData(im,0,0);
+  ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(lm,0,0,cnv.width,cnv.height);
+  drawSprites();
+  if(frameN%10===0)updateHUD();
+  requestAnimationFrame(frame);
+}
+// ---- input ----
+function cycleFilter(){
+  filter=filter===2?-1:filter+1;
+  document.getElementById('filtbtn').textContent='FILTER: '+FILTERS[filter+1];
+}
+addEventListener('keydown',function(e){
+  keys[e.code]=true;
+  if(e.code.indexOf('Arrow')===0||e.code==='Tab')e.preventDefault();
+  if(e.code==='Tab'||e.code==='KeyE')cycleFilter();
+  if(e.code==='KeyR')buildWorld((Date.now()%1000000000)|0);
+});
+addEventListener('keyup',function(e){keys[e.code]=false;});
+document.getElementById('newmaze').onclick=function(){buildWorld((Date.now()%1000000000)|0);};
+document.getElementById('runtest').onclick=runFalsifierStrip;
+document.getElementById('filtbtn').onclick=cycleFilter;
+// ---- boot ----
+buildWorld(20260906);
+runFalsifierStrip();
+updateHUD();
+requestAnimationFrame(frame);
+if(typeof window!=='undefined')window.__SPECTRAL_GAME={
+  buildWorld:buildWorld,cycleFilter:cycleFilter,runFalsifierStrip:runFalsifierStrip,
+  state:function(){return {player:player,filter:filter,won:won,sensors:sensors,seed:seed,field:f};}};
+</script></body></html>

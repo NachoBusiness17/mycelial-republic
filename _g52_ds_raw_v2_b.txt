@@ -1,0 +1,53 @@
+model=deepseek-chat tier=T2 max_tokens=6000 temp=0.3 latency=7.0s
+usage={"prompt_tokens": 836, "completion_tokens": 1306, "total_tokens": 2142, "prompt_tokens_details": {"cached_tokens": 0}, "prompt_cache_hit_tokens": 0, "prompt_cache_miss_tokens": 836}
+finish=stop
+----
+### Claim 11
+- FOR: The verdicts are recorded artifacts, so their existence and content can be checked directly against the run log; if the log shows "constellation CONFIRMED at 60.7%" and "REFEED_HEAVY," the claim is simply a report of what was recorded.
+- AGAINST: The claim treats the recorded verdicts as settled, but the 60.7% confirmation threshold and the REFEED_HEAVY label may be disputed by other corpus lines that reject the denominator, the scoring rule, or the classification of the run as CONFIRMED rather than REFEED.
+- RESOLVING EVIDENCE: The raw `memory/runs/astra_convo_20260911/` run log and the classifier output that produced "CONFIRMED at 60.7%" and "REFEED_HEAVY," plus any contemporaneous note disputing the threshold or label.
+
+### Claim 12
+- FOR: I2–I4 are named reconciliation/reconstruction/falsifier steps, so the claim is that these steps were performed and are part of the run's methodology; agreement lines likely repeat the same step list.
+- AGAINST: The refutation line probably denies that one or more of these steps was actually completed or that the labels are accurate — e.g., the "falsifier" step may have been skipped, or the chain-state reconstruction may be incomplete.
+- RESOLVING EVIDENCE: The actual I2/I3/I4 artifacts in the run directory: theme-lexicon reconciliation output, chain-state reconstruction file, and falsifier log with timestamps.
+
+### Claim 13
+- FOR: Ollama local is described as an exploratory tip that is cheap and always on; that is a practical recommendation consistent with local-model use.
+- AGAINST: The refutation likely argues Ollama local is not actually always on, not cheap at scale, or not suitable for the fleet's production path — only for exploration.
+- RESOLVING EVIDENCE: Fleet configuration showing whether Ollama is enabled by default, plus cost/latency measurements from actual runs.
+
+### Claim 14
+- FOR: The design constraints are marked SUPPORTED and cited, meaning they are inherited from Astra with explicit source references; agreement lines repeat the same constraint set.
+- AGAINST: The refutation may claim the constraints are not actually inherited from Astra, or that the citation is to a superseded Astra document, or that "SUPPORTED" is an overclaim.
+- RESOLVING EVIDENCE: The cited Astra source document and a diff showing whether the constraints in this run match that source.
+
+### Claim 15
+- FOR: The falsifier verdict exists, and the denominator is contested — one seat holds a different count — so the claim is accurately reporting a live dispute over the denominator.
+- AGAINST: The refutation may argue the denominator is not actually contested, or that the "one seat" is not authoritative, or that the verdict should be read with a fixed denominator.
+- RESOLVING EVIDENCE: The falsifier scoring sheet showing the numerator and denominator, plus the seat's dissent note specifying the alternative denominator.
+
+### Claim 16
+- FOR: These are concrete metrics — 94% PASS, rotation 0.950, tesuji ~310 cells vs a 200 bar, MAX_DISTILL epoch-1 — so the claim is a factual report of measured values.
+- AGAINST: The refutation likely disputes one of the numbers, e.g., the 200 bar is the wrong threshold, the 310 cells count is inflated, or the 94% PASS is from a different run.
+- RESOLVING EVIDENCE: The metrics file from the run with the raw PASS count, rotation value, tesuji cell count, and the defined 200 bar threshold.
+
+### Claim 17
+- FOR: F-H0 is a named falsifier that binds the document: 3 consecutive desk rejections of the seed would trigger it; this is a clear, checkable condition.
+- AGAINST: The refutation may argue the 3 rejections did not occur consecutively, or that F-H0 does not bind this document, or that the rejections were of a different seed.
+- RESOLVING EVIDENCE: The desk rejection log with dates and seed IDs, showing whether three consecutive rejections of the same seed occurred.
+
+### Claim 18
+- FOR: Metering limits are explicit — ≤8,000 tokens in, ≤1,536 tokens out per episode, thinking=low — so the claim is a configuration statement that can be verified.
+- AGAINST: The refutation may claim the actual run exceeded these limits, or that thinking=low was not honored, or that the limits apply to a different episode type.
+- RESOLVING EVIDENCE: The metering log for the episode showing actual token counts and the thinking setting used.
+
+### Claim 19
+- FOR: This is a quoted grounding-wave row labeled SUPPORTED, with a timestamp and a specific claim: registry auto-heal landed, 18/18 falsifier checks PASS, live file byte-identical through the fix.
+- AGAINST: The refutation may argue the row is mislabeled, the 18/18 checks were not all run, or the live file was not byte-identical after the fix.
+- RESOLVING EVIDENCE: The grounding-wave record at 2026-09-06T17:54:59Z, the 18 falsifier check results, and a byte-level diff of the live file before and after the fix.
+
+### Claim 20
+- FOR: This is a salon fold excerpt that repeats the same grounding-wave claim — registry auto-heal landed, 18/18 falsifier checks PASS, timestamped 2026-09-06T17:54:59Z — so it corroborates Claim 19.
+- AGAINST: The refutation may argue the salon fold is a secondary summary, not independent evidence, and that it inherits any error in the grounding wave; or that the fold misquotes the timestamp/checks.
+- RESOLVING EVIDENCE: The original salon fold notes and the grounding-wave record they cite, compared line-by-line for timestamp, check count, and byte-identity claim.

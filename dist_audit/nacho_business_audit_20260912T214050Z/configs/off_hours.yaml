@@ -1,0 +1,74 @@
+# Heavy compute scheduling policy. This is a gate, not a promise of savings:
+# the queue records deferred/started work so actual timing can be audited.
+schema: off_hours.v1
+timezone: America/New_York
+default_policy: defer_heavy
+
+# A window starts on the listed day and may cross midnight.
+windows:
+  - id: overnight
+    days: [mon, tue, wed, thu, fri, sat, sun]
+    start: "22:00"
+    end: "07:00"
+
+# Explicit queue metadata wins. These keywords only classify obvious heavy work;
+# ordinary code tasks stay anytime unless the caller marks heavy=true.
+heavy_keywords:
+  - full audit
+  - deep research
+  - fine-tune
+  - finetune
+  - training
+  - train model
+  - benchmark
+  - render
+  - compile
+  - vast.ai
+  - gpu
+  - 180b
+  - long context
+  - full codebase
+  - swarm burn
+
+# Operational recovery and fleet health outrank the overnight cost gate.
+# These are intentionally explicit words: a vague claim of "important" does
+# not bypass scheduling.
+immediate_keywords:
+  - fleet
+  - fleet operation
+  - gateway
+  - openclaw
+  - repair
+  - fix
+  - broken
+  - outage
+  - incident
+  - recover
+  - recovery
+  - liveness
+  - health check
+  - queue
+  - drain
+  - reconcile
+  - rightsiz
+  - right-size
+  - scheduler
+
+# Coding/game work is deliberately explicit so an ordinary short code edit
+# is not silently moved to a premium lane unless the caller says coding/game.
+overnight_keywords:
+  - coding
+  - codegen
+  - game
+  - gaming
+  - gameplay
+  - shader
+  - level design
+
+# This lane is a routing hint, not a cost claim. Change it if "5.3 max" means
+# a different provider/model in the operator's account.
+overnight_lane:
+  id: overnight-5.3-max
+  provider: z_ai
+  model: glm-5.3
+  reason: coding-and-gaming-work-waits-for-the-overnight-premium-lane

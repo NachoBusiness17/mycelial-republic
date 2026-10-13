@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PHONESALON — the android free-lane deck</title>
+<style>
+  body { background:#0a0a0a; color:#d8d8d8; font-family:ui-monospace,Menlo,Consolas,monospace; max-width:980px; margin:0 auto; padding:24px; }
+  h1 { font-size:20px; letter-spacing:2px; } h2 { font-size:15px; color:#9fd; margin-top:28px; }
+  .card { border:1px solid #222; border-radius:8px; padding:12px 16px; margin:14px 0; background:#111; }
+  .ok { color:#7c7; } .wall { color:#d77; } .dim { color:#888; }
+  img { max-width:100%; border:1px solid #222; border-radius:6px; margin-top:8px; }
+  code { color:#fd6; }
+</style>
+</head>
+<body>
+<h1>PHONESALON</h1>
+<p class="dim">AI services we already pay for, running on headless android bodies, driven by fleet prompts over adb.
+Harvest surface for the intake lane. Text-first: every wall is named, never a blank page.</p>
+
+<div class="card">
+<h2>run 001 — z.ai guest lane (GLM-5.3-flash web) — <span class="ok">LOOP PROVEN</span> / <span class="wall">QUOTA WALL RECEIPTED</span></h2>
+<p><b>prompt:</b> "You are a systems auditor for an AI fleet. Claim: a gate that passes is not proof a system is alive.
+In under 150 words give three numbered tests that distinguish an alive system from a merely passing one."</p>
+<p><b>mechanics:</b> <span class="ok">PASS</span> — PocketFleet APK → chat.z.ai guest session → prompt typed over adb
+(<code>input text</code>, %s-escaped) → send tapped → request reached GLM-5.3-Flash web. Smoke prompt ("ping from the fleet seat")
+was answered: <i>"Auditor online. Fleet seat acknowledged."</i></p>
+<p><b>wall:</b> <span class="wall">GUEST TIER REFUSES Deep Think requests</span> — "No response, Please try again later."
+Two strikes filed; stopped per two-strike law. <b>Gate = one operator login pass per service</b> (~1 min each, sessions persist
+in the APK's cookies). That unlocks the paid web/app quotas — the actual free firehose.</p>
+<p><b>scars:</b> ADBKeyboard IME broadcast does not commit into this WebView (built-in <code>input text</code> does);
+guest chat history does NOT survive app restart (harvest must be synchronous per turn);
+the day-drive rig drives the same glass (~30s rotation) — phonesalon takes the glass, fires, harvests, releases.</p>
+<img src="phonesalon/phonesalon_02_zai.png" alt="z.ai guest session loaded in PocketFleet">
+<img src="phonesalon/phonesalon_04_response.png" alt="smoke prompt answered, salon prompt typed">
+</div>
+
+<div class="card">
+<h2>architecture — androids headless + fleet-managed (2026-09-04 operator order)</h2>
+<p>Both bodies (medium_phone, watcher_2) run <b>headless</b>: <code>-no-window -no-audio -gpu swiftshader_indirect</code>.
+adb stays loopback-only (127.0.0.1:5037). Supervision: <code>scripts/android_warden.ps1</code> — restart-on-exit,
+logs to <code>watch/android_warden.log</code>. Sanctioned host-side exception (AutoClaw precedent): <b>redroid-in-docker is
+hardware-BLOCKED on this Win10 host</b> — receipted: no <code>/dev/kvm</code> in the Docker WSL2 VM
+(kernel 6.18.33.2-microsoft-standard, no modules). Android-in-Docker lights up only on a Linux KVM node —
+<b>DOCKED for the next Linux box</b>; on Mac it stays host-side (Docker-on-Mac has no KVM passthrough either).</p>
+<p>Full headless receipt: boot → screenshot → deep-link → UI dump all pass with zero windows.
+Everything the phonesalon does is adb-level; the glass was never needed.</p>
+</div>
+
+<div class="card">
+<h2>next runs (windowed, not shelved)</h2>
+<p>002: z.ai logged-in tier (operator pass) → the auditor prompt re-fired, full answer harvested here.<br>
+003: deepseek + qwen guest probes (same harness, one URL swap).<br>
+004: salon_phone runner v1 — prompt pack in, per-service screenshots + UI-dump text out into this page,
+routing into the intake queue.</p>
+</div>
+
+<p class="dim">receipts: watch/ANDROID_EMULATOR_SELF_STEAL_20260904.md · queue/handoff/zcode/CONVO.md 09-04 ·
+pngs: dashboard/static/phonesalon/</p>
+</body>
+</html>

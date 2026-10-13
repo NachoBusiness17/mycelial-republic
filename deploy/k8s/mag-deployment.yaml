@@ -1,0 +1,63 @@
+# The Mag supervisor pod. It runs the process_supervisor (which owns the autorun
+# loop + ghost cadence) AND the dashboard (:8765) in one process — the P1 pattern.
+# replicas: 1 is DELIBERATE — two pods = two autorun loops = double-drain (the
+# exact bug we fixed). Scale horizontally only for read-side services, never this.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mag
+  namespace: mag
+  labels:
+    app: mag
+  # SOLVED PROBLEMS surfaced from our internals (pro_library + RIB + verkle history).
+  # K8s should surface what the system already solved, not just run the pod.
+  annotations:
+    mag.solved/single-controller: "replicas:1 DELIBERATE — anti-double-drain (the window-storm fix); ONE controller owns the autorun loop, never two"
+    mag.solved/reconcile: "guard_registry desired-state reconcile = the operator loop (probe/reapply/backoff, K8s controller pattern)"
+    mag.solved/surfaces-as-spec: "the seat/surfaces ARE the spec of intent; port/adapter discipline (hexagonal) — never let data shrink the castle"
+    mag.solved/steering: "memlang chord = plant-not-command; deniable seed steering (origin: 'Test chord 44 28 K13 e4 Fool #NachoOvermindSeed')"
+    mag.solved/standard-pattern: "ugliness = missing standard pattern; escalate + history-search (crashLoopBackOff) — never hand-roll an ugly patch"
+    mag.solved/frontier-coordinator: "frontier compacts vision into specs; the cheap swarm EXECUTES (RenderMan tesuji)"
+    mag.solved/verkle-substrate: "memory is a chain of content-addressed knots (filename=address); surface is a viewer, the artifact is truth"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mag
+  template:
+    metadata:
+      labels:
+        app: mag
+    spec:
+      containers:
+        - name: mag
+          image: mag-sovereign:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - { containerPort: 8765, name: dash }
+            - { containerPort: 8000, name: api }
+          envFrom:
+            - configMapRef: { name: mag-config }
+            - secretRef: { name: mag-secrets }
+          # Compose owns the shared autonomous loop. K8s is a standby/read-side
+          # runtime unless deliberately promoted by changing this value.
+          env:
+            - name: MAG_RUNTIME_ROLE
+              value: "standby"
+          volumeMounts:
+            - { name: state, mountPath: /app/memory, subPath: memory }
+            - { name: state, mountPath: /app/logs, subPath: logs }
+            - { name: state, mountPath: /app/state, subPath: state }
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: dash
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          resources:
+            requests: { cpu: "500m", memory: "512Mi" }
+            limits: { cpu: "2", memory: "2Gi" }
+      volumes:
+        - name: state
+          persistentVolumeClaim:
+            claimName: mag-state

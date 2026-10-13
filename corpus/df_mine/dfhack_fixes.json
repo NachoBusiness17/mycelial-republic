@@ -1,0 +1,462 @@
+{
+  "meta": {
+    "source": "local clone corpus/dfhack_full (main repo @ develop, scripts submodule pinned ccead2ef)",
+    "mined_date": "2026-09-25",
+    "counts": {
+      "fix_scripts": 29,
+      "quickfix_automatic": 2,
+      "cpp_plugins": 2,
+      "tweak_entries": 11,
+      "preserve_plugins": 2,
+      "bugfix_tagged_extras": 2,
+      "total": 47,
+      "note": "fix-occupancy C++ plugin is cataloged inside the fix/occupancy entry (backend)",
+      "retired_upstream_fixed": 6
+    },
+    "family_legend": {
+      "dangling-refs": "references to deleted/missing objects, one-sided links",
+      "stuck-flags": "occupancy/job/position flags desynced from reality, freezing tiles+items",
+      "arrival-deadlock": "units, caravans, squads, wildlife wedged off-map or mid-transition",
+      "faction-state-poisoning": "entity diplomacy/enemy status corrupted into permanent war",
+      "unit-ai-deadlock": "per-unit AI, need, or physiology wedged in an uninterruptible loop",
+      "missing-init": "engine never initializes a field; downstream consumers read garbage",
+      "generation-defect": "wrong data written at creation time or wrong rule applied",
+      "lost-updates": "engine fails to propagate or persist a value it did write",
+      "resource-degeneration": "runaway updates or unbounded lists degrade the simulation",
+      "display-defect": "cosmetic/UI defects, wrong or missing rendering"
+    }
+  },
+  "fixes": [
+    {
+      "name": "fix/archery-practice",
+      "family": "generation-defect",
+      "defect": "DF prevented archery practice from starting based on quiver inventory position and mono-stack training ammo (fixed upstream in DF 53.01)",
+      "manifestation": "Ranged squad members never initiate archery practice",
+      "mechanism": "Moves quivers to the end of each training unit's inventory and splits training ammo stacks inside quivers (>=25) so each unit can hold multiple stacks",
+      "mode": "manual",
+      "source": "corpus/dfhack_full/scripts/fix/archery-practice.lua"
+    },
+    {
+      "name": "fix/blood-del",
+      "family": "generation-defect",
+      "defect": "Entity trade manifests include blood, ichor, and goo as extract resources",
+      "manifestation": "Future caravans bring barrels full of blood/ichor/goo that are unusable",
+      "mechanism": "Erases BLOOD/ICHOR/GOO (and nil-mat) entries from every entity's resources.misc_mat.extracts vectors",
+      "mode": "manual (one-shot, affects future caravans)",
+      "source": "corpus/dfhack_full/scripts/fix/blood-del.lua"
+    },
+    {
+      "name": "fix/civil-war",
+      "family": "faction-state-poisoning",
+      "defect": "Parent-civ diplomacy relation stuck negative against your own government",
+      "manifestation": "Civil war: no caravans, no migrants, dwarf-on-dwarf hostility",
+      "mechanism": "Sets any diplomacy state entry where group_id == own civ with relation > 0 back to 0",
+      "mode": "manual",
+      "source": "corpus/dfhack_full/scripts/fix/civil-war.lua"
+    },
+    {
+      "name": "fix/codex-pages",
+      "family": "missing-init",
+      "defect": "DF bug 9268: written content created without start/end page fields initialized",
+      "manifestation": "Codices, quires, scrolls exist with zero/undefined page counts; unreadable or blank books",
+      "mechanism": "Detects written content with missing page data and generates weighted-random page-count information (cannot recover lost real data)",
+      "mode": "manual (this|site|all scopes)",
+      "source": "corpus/dfhack_full/scripts/fix/codex-pages.lua"
+    },
+    {
+      "name": "fix/corrupt-equipment",
+      "family": "dangling-refs",
+      "defect": "DF bug 11014: deleted items left in military equipment lists; wrong-type items stored in equipment lists (crash sources)",
+      "manifestation": "Crashes during raids/large military operations, sometimes within a short window after load",
+      "mechanism": "Scans squad equipment lists, removes entries whose items are deleted or of the wrong type (does not yet fix wrong items assigned to squad members)",
+      "mode": "manual, recommended on repeat every 100 ticks during military ops",
+      "source": "corpus/dfhack_full/scripts/fix/corrupt-equipment.lua"
+    },
+    {
+      "name": "fix/corrupt-jobs",
+      "family": "dangling-refs",
+      "defect": "Units can carry a current_job whose id is -1 (deleted/corrupt job object)",
+      "manifestation": "Crashes tied to corrupt jobs on affected units",
+      "mechanism": "Nulls out unit.job.current_job where job.id == -1; hooks SC_MAP_LOADED so every fort load self-heals",
+      "mode": "automatic on map load + manual",
+      "source": "corpus/dfhack_full/scripts/fix/corrupt-jobs.lua"
+    },
+    {
+      "name": "fix/dead-units",
+      "family": "resource-degeneration",
+      "defect": "Dead units are never culled; the dead list grows unbounded (~3000+) and vanilla offers no removal UI",
+      "manifestation": "Migrant waves stop arriving; burrow UI reports inflated occupancy from long-dead units",
+      "mechanism": "Scrubs uninteresting dead units (slaughtered animals, nameless enemies, dead foreigners) from the active vector and burrow assignments, keeping recent deaths (1 month) for context",
+      "mode": "manual (--active default, --burrow)",
+      "source": "corpus/dfhack_full/scripts/fix/dead-units.lua"
+    },
+    {
+      "name": "fix/drop-webs",
+      "family": "stuck-flags",
+      "defect": "DF bug 595: webs left floating mid-air (e.g. webbed tree chopped down) never fall",
+      "manifestation": "Webs hover in open space, unreachable and uncollectable",
+      "mechanism": "Converts floating web items into projectiles with fall flags so they land on a valid surface; -all variant drops webs stuck in branches too",
+      "mode": "manual",
+      "source": "corpus/dfhack_full/scripts/fix/drop-webs.lua"
+    },
+    {
+      "name": "fix/dry-buckets",
+      "family": "stuck-flags",
+      "defect": "Interrupted water-hauling jobs leave buckets full of water flagged as used; buckets can also end up over-full blocking wells",
+      "manifestation": "Discarded full buckets unavailable for lye-making etc.; well operations blocked",
+      "mechanism": "Deletes contained water from idle buckets not in a job and not inside an active well",
+      "mode": "automatic (periodic, default-enabled via gui/control-panel) + manual",
+      "source": "corpus/dfhack_full/scripts/fix/dry-buckets.lua"
+    },
+    {
+      "name": "fix/empty-wheelbarrows",
+      "family": "stuck-flags",
+      "defect": "DF bug 6074 family: rocks become stuck inside wheelbarrows with no active hauling job",
+      "manifestation": "Wheelbarrows lie around permanently loaded with rocks; unusable for new hauling",
+      "mechanism": "Moves contained items to the ground (removing their job refs first) from any wheelbarrow not in use",
+      "mode": "automatic (periodic, default-enabled via gui/control-panel) + manual (has --dry-run)",
+      "source": "corpus/dfhack_full/scripts/fix/empty-wheelbarrows.lua"
+    },
+    {
+      "name": "fix/engravings",
+      "family": "stuck-flags",
+      "defect": "Constructing a wall/floor over an engraved tile corrupts the tile/engraving state (tile no longer SMOOTH, engraving record orphaned)",
+      "manifestation": "Tiles permanently unengravable",
+      "mechanism": "Validates every engraving against its tile attributes (special==SMOOTH, floor/wall flag consistency) and deletes mismatched engraving records",
+      "mode": "manual",
+      "source": "corpus/dfhack_full/scripts/fix/engravings.lua"
+    },
+    {
+      "name": "fix/general-strike",
+      "family": "stuck-flags",
+      "defect": "Planted seeds lose their in_building flag; replant jobs can never find them",
+      "manifestation": "Mass job-cancellation spam; dwarves stop accepting work entirely (the 'general strike bug')",
+      "mechanism": "Re-flags seeds sitting on farm plots as in_building and forces their building_item use_mode to PERM",
+      "mode": "automatic (periodic, default-enabled via gui/control-panel) + manual",
+      "source": "corpus/dfhack_full/scripts/fix/general-strike.lua"
+    },
+    {
+      "name": "fix/loyaltycascade",
+      "family": "faction-state-poisoning",
+      "defect": "A citizen death can flip a unit's histfig entity links (FORMER_MEMBER + ENEMY vs own civ), making dwarves enemies of their own civilization",
+      "manifestation": "Loyalty cascade: intra-fort civil war, dwarves fighting dwarves map-wide",
+      "mechanism": "Detects renegade units (former-member/enemy links to own entity), re-converts them to the fort entity, and halts citizen-involved fights",
+      "mode": "manual",
+      "source": "corpus/dfhack_full/scripts/fix/loyaltycascade.lua"
+    },
+    {
+      "name": "fix/noexert-exhaustion",
+      "family": "unit-ai-deadlock",
+      "defect": "DF bug 8389: Individual Combat Drill ignores the NOEXERT caste tag and NOEXERT units have no recovery path (exhaustion only accumulates, ~50 per 9 ticks)",
+      "manifestation": "Vampires, necromancers, intelligent undead get permanently stuck 'Tired', debuffed out of military training",
+      "mechanism": "Zeroes the exhaustion counter (counters2.exhaustion) of all NOEXERT units; not permanent, must re-run (every ~350 ticks) via control-panel",
+      "mode": "opt-in automatic + manual",
+      "source": "corpus/dfhack_full/scripts/fix/noexert-exhaustion.lua"
+    },
+    {
+      "name": "fix/occupancy (backend: fix-occupancy plugin)",
+      "family": "stuck-flags",
+      "defect": "DF bug 3499: map occupancy/building flags desync from actual entities (phantom occupancy)",
+      "manifestation": "Undeserved 'unit blocking tile', 'building present', 'items occupying site' failures",
+      "mechanism": "C++ plugin (plugins/fix-occupancy.cpp) recomputes and clears stale unit/item/building occupancy flags map-wide or per-tile; Lua wrapper adds dry-run",
+      "mode": "manual (-n for report-only)",
+      "source": "corpus/dfhack_full/scripts/fix/occupancy.lua + corpus/dfhack_full/plugins/fix-occupancy.cpp"
+    },
+    {
+      "name": "fix/ownership",
+      "family": "dangling-refs",
+      "defect": "DF bug 6578 family: one-sided ownership links (unit.owned_items lists an item lacking the owner ref; zone remembers owner the unit forgot)",
+      "manifestation": "Units stuck in endless 'Store owned item' jobs; bedrooms/offices/dining rooms/tombs unused and unclaimable; noble room requirements never satisfied",
+      "mechanism": "Erases invalid item claims from unit owned_items and relinks zone<->unit room ownership refs",
+      "mode": "opt-in automatic (daily when enabled in control-panel) + manual",
+      "source": "corpus/dfhack_full/scripts/fix/ownership.lua"
+    },
+    {
+      "name": "fix/population-cap",
+      "family": "missing-init",
+      "defect": "Engine only updates the civ's recorded population when a dwarven caravan successfully leaves the map; arrays can also be undersized vs tasks",
+      "manifestation": "Endless migrant waves long after the population cap is exceeded (esp. if no caravan ever leaves)",
+      "mechanism": "Resizes civ activity_stats/knowledge vectors to match tasks, and sets activity_stats.population to max(current, tasks)",
+      "mode": "manual",
+      "source": "corpus/dfhack_full/scripts/fix/population-cap.lua"
+    },
+    {
+      "name": "fix/protect-nicks",
+      "family": "lost-updates",
+      "defect": "v50.x DF sets unit nicknames without propagating them to the historical figure, so they are not persisted everywhere",
+      "manifestation": "Nicknames lost on save/reload or after kills/retirement; missing from legends and engravings",
+      "mechanism": "Daily event loop re-applies each unit's nickname via dfhack.units.setNickname (writes to the histfig as pre-Steam DF did); persists enable state per-site",
+      "mode": "opt-in automatic (daily) + manual 'now'",
+      "source": "corpus/dfhack_full/scripts/fix/protect-nicks.lua"
+    },
+    {
+      "name": "fix/retrieve-units",
+      "family": "arrival-deadlock",
+      "defect": "DF bug 10075 family: units flagged pending-entry (incoming / merchant / invades but inactive) never actually enter the map",
+      "manifestation": "Stuck [SIEGE] tags from invisible armies; forgotten beasts, wildlife packs, and caravans that never appear",
+      "mechanism": "Clears inactive/incoming flags, sets move_state/can_swap, and inserts missing units into the active vector",
+      "mode": "manual",
+      "source": "corpus/dfhack_full/scripts/fix/retrieve-units.lua"
+    },
+    {
+      "name": "fix/sleepers",
+      "family": "unit-ai-deadlock",
+      "defect": "DF bug 6798: camp army_controller spawns lack the ALARM_INTRUDER flag, so camp sleepers have no wake condition",
+      "manifestation": "Adventure-mode sleeping units never wake no matter what you do to them",
+      "mechanism": "Sets ALARM_INTRUDER on CAMP-goal army controllers of active units",
+      "mode": "manual",
+      "source": "corpus/dfhack_full/scripts/fix/sleepers.lua"
+    },
+    {
+      "name": "fix/stable-temp",
+      "family": "resource-degeneration",
+      "defect": "Free items sitting at temperatures off-environment keep triggering temperature update passes every tick",
+      "manifestation": "Severe FPS drain from temperature churn (esp. with magma/persistent hot items)",
+      "mechanism": "Sets every free item's temperature (and contaminants, recursively including contents) into equilibrium with the environment, halting updates; pair with tweak fast-heat to maintain",
+      "mode": "manual ('apply'; report-only without arg)",
+      "source": "corpus/dfhack_full/scripts/fix/stable-temp.lua"
+    },
+    {
+      "name": "fix/stuck-instruments",
+      "family": "dangling-refs",
+      "defect": "DF bug 9485: instruments picked up for a performance reference activity entries that were simulated away/deleted; some have in_job with zero refs",
+      "manifestation": "Instruments stuck permanently in a job that no longer exists, unusable on the ground",
+      "mechanism": "Deletes dead ACTIVITY_EVENT refs, clears in_job when no refs remain; dry-run support",
+      "mode": "manual (-n dry-run)",
+      "source": "corpus/dfhack_full/scripts/fix/stuck-instruments.lua"
+    },
+    {
+      "name": "fix/stuck-merchants",
+      "family": "arrival-deadlock",
+      "defect": "DF bug 9593: caravan merchants flagged merchant but stuck inactive off the map edge, never entering",
+      "manifestation": "Caravan arrival announcement fires but no merchants ever enter the map",
+      "mechanism": "Sets flags1.left on inactive merchant units so the game finalizes their departure (must not run while merchants are on-map; not repeat-safe)",
+      "mode": "manual (-n dry-run)",
+      "source": "corpus/dfhack_full/scripts/fix/stuck-merchants.lua"
+    },
+    {
+      "name": "fix/stuck-squad",
+      "family": "arrival-deadlock",
+      "defect": "Mission squads' world-map armies lose their controller (controller_id != 0 with no controller object), losing navigation",
+      "manifestation": "Squads sent on missions get stuck on the world map, unable to return home",
+      "mechanism": "Event-driven: when a returning messenger/squad passes the stuck army, re-links controllers up the controller chain so the lost squad is rescued and brought home; notifies via gui/notify",
+      "mode": "automatic (default-enabled via control-panel) + manual",
+      "source": "corpus/dfhack_full/scripts/fix/stuck-squad.lua"
+    },
+    {
+      "name": "fix/stuck-worship",
+      "family": "unit-ai-deadlock",
+      "defect": "DF bug 10918: prayer-need satisfaction credit sticks to one deity; unmet prayer needs for others trigger an uninterruptible activity",
+      "manifestation": "Dwarves locked in a permanent purple 'Worship!' state, effectively useless",
+      "mechanism": "Shuffles/transfers need focus_level credit between met and unmet prayer targets so the next prayer rotates deities",
+      "mode": "opt-in automatic (control-panel Bugfixes) + manual",
+      "source": "corpus/dfhack_full/scripts/fix/stuck-worship.lua"
+    },
+    {
+      "name": "fix/stuck-written-materials",
+      "family": "dangling-refs",
+      "defect": "DF bug 9485 family: books/quires/scrolls retain specific_refs to deleted jobs (visitor joining fort, squads returning with written materials)",
+      "manifestation": "Written materials permanently stuck in dead jobs; cannot be hauled or interacted with",
+      "mechanism": "Removes dead job refs, clears in_job for items with no live job (checking container chains); module + dry-run",
+      "mode": "manual (-n dry-run)",
+      "source": "corpus/dfhack_full/scripts/fix/stuck-written-materials.lua"
+    },
+    {
+      "name": "fix/stuckdoors",
+      "family": "stuck-flags",
+      "defect": "Incorrect map occupancy flags (e.g. from improper teleporting of units/items) hold doors open",
+      "manifestation": "Door frozen in 'open' state, never closes, no visible cause",
+      "mechanism": "For each door with close_timer != 0, checks for units/stray items on the door tile and clears the bogus occupancy so the door can shut",
+      "mode": "manual",
+      "source": "corpus/dfhack_full/scripts/fix/stuckdoors.lua"
+    },
+    {
+      "name": "fix/symbol-unstick",
+      "family": "dangling-refs",
+      "defect": "Artifact symbol claims (entity artifact_claims + artifact entity_claims) survive the noble position being vacated",
+      "manifestation": "Noble symbol artifact cannot be re-designated to a new position holder",
+      "mechanism": "For the selected artifact claimed by the civ with claim_type Symbol whose position assignment has histfig == -1, erases both claim records",
+      "mode": "manual (selected item)",
+      "source": "corpus/dfhack_full/scripts/fix/symbol-unstick.lua"
+    },
+    {
+      "name": "fix/wildlife",
+      "family": "arrival-deadlock",
+      "defect": "DF bug 12921: wildlife wave members get stuck trying to leave the map and are never counted back into the regional population",
+      "manifestation": "New wildlife waves cannot spawn until the old group leaves/dies; wildlife activity halts entirely",
+      "mechanism": "Detects stuck leavers and moves them off-map while correctly incrementing regional population counters; background monitor removes after 7 days stuck",
+      "mode": "manual or opt-in automatic (NOT default: some players keep wildlife captive)",
+      "source": "corpus/dfhack_full/scripts/fix/wildlife.lua"
+    },
+    {
+      "name": "quickfix.set_entity_race_references",
+      "family": "missing-init",
+      "defect": "World entities can exist with race == -1 (never set)",
+      "manifestation": "DF crashes when such an entity tries to send a caravan",
+      "mechanism": "On DFHack load, finds the dwarf race (first OCCURS_AS_ENTITY_RACE raw) and assigns it to every entity with race -1; ships in default onLoad init",
+      "mode": "automatic on load (always)",
+      "source": "corpus/dfhack_full/library/lua/quickfix.lua"
+    },
+    {
+      "name": "quickfix.repair_site_id",
+      "family": "missing-init",
+      "defect": "Reclaimed fortresses never get plotinfo.site_id assigned until the first save",
+      "manifestation": "Anything needing the site id breaks after reclaiming a fort",
+      "mechanism": "On map load, if site_id == -1 but fortress_site is set, restores site_id from fortress_site.id; ships in default onMapLoad init",
+      "mode": "automatic on map load (always)",
+      "source": "corpus/dfhack_full/library/lua/quickfix.lua"
+    },
+    {
+      "name": "fixveins (plugin)",
+      "family": "generation-defect",
+      "defect": "Building/removing constructions on mineral floors (and periodic farm plot/road passes) destroys the mineral, reverting tiles to layer stone; tiletypes misuse can leave invalid mineral-inclusion refs",
+      "manifestation": "Ores and gems silently disappear under buildings; broken embark tiles with phantom inclusion refs",
+      "mechanism": "C++ plugin restores affected tile material to its original mineral via block mineral events and removes invalid inclusion references",
+      "mode": "manual (tagged unavailable for current DF versions)",
+      "source": "corpus/dfhack_full/plugins/fixveins.cpp"
+    },
+    {
+      "name": "tweak adamantine-cloth-wear",
+      "family": "generation-defect",
+      "defect": "DF bug 6481: adamantine clothing wears out while worn (should not)",
+      "manifestation": "Legendary cloth-armor decays like rags",
+      "mechanism": "Vmethod hook prevents wear accumulation on adamantine items while worn",
+      "mode": "manual enable (persistent until disabled)",
+      "source": "corpus/dfhack_full/plugins/tweak.cpp (docs/plugins/tweak.rst)"
+    },
+    {
+      "name": "tweak animaltrap-reuse",
+      "family": "lost-updates",
+      "defect": "Built animal traps never unload caught vermin, so they cannot be re-baited",
+      "manifestation": "Traps with vermin sit dead in builds; trapping pipeline stalls",
+      "mechanism": "Moves caught vermin from built traps into stockpiled traps so they can be automatically re-baited and reused",
+      "mode": "manual enable (persistent)",
+      "source": "corpus/dfhack_full/plugins/tweak.cpp (docs/plugins/tweak.rst)"
+    },
+    {
+      "name": "tweak craft-age-wear",
+      "family": "lost-updates",
+      "defect": "DF bug 6003: crafted items never gain wear over time",
+      "manifestation": "Cloth/leather crafts persist forever, breaking item-age realism/economy",
+      "mechanism": "Adds one wear level to cloth/leather crafts every 20 in-game years",
+      "mode": "manual enable (persistent)",
+      "source": "corpus/dfhack_full/plugins/tweak.cpp (docs/plugins/tweak.rst)"
+    },
+    {
+      "name": "tweak drawbridge-tiles",
+      "family": "display-defect",
+      "defect": "Raised bridges render with the same tiles as lowered ones in ASCII mode",
+      "manifestation": "Cannot visually distinguish raised bridges in ASCII",
+      "mechanism": "Renders raised bridges with distinct tiles",
+      "mode": "manual enable (persistent)",
+      "source": "corpus/dfhack_full/plugins/tweak.cpp (docs/plugins/tweak.rst)"
+    },
+    {
+      "name": "tweak eggs-fertile",
+      "family": "display-defect",
+      "defect": "No indication whether eggs are fertile",
+      "manifestation": "Players cannot tell which egg clutchs will hatch before deciding to forbid/cook them",
+      "mechanism": "Displays an indicator on fertile eggs",
+      "mode": "manual enable (persistent)",
+      "source": "corpus/dfhack_full/plugins/tweak.cpp (docs/plugins/tweak.rst)"
+    },
+    {
+      "name": "tweak fast-heat",
+      "family": "resource-degeneration",
+      "defect": "Temperature updates can take arbitrarily long per item, cascading FPS loss with many items (companion to fix/stable-temp)",
+      "manifestation": "FPS drain while items equilibrate with environment temperature",
+      "mechanism": "Caps temperature-change granularity so 1 degree is crossed in <=100 ticks when updating from environment temperature",
+      "mode": "manual enable (persistent)",
+      "source": "corpus/dfhack_full/plugins/tweak.cpp (docs/plugins/tweak.rst)"
+    },
+    {
+      "name": "tweak flask-contents",
+      "family": "display-defect",
+      "defect": "DF bug 4914: filled waterskins/flasks/vials are not named by contents, unlike barrels/bins/cages",
+      "manifestation": "All flasks look identical in lists; cannot see what they hold",
+      "mechanism": "Names filled containers according to their contents",
+      "mode": "manual enable (persistent)",
+      "source": "corpus/dfhack_full/plugins/tweak.cpp (docs/plugins/tweak.rst)"
+    },
+    {
+      "name": "tweak named-codices",
+      "family": "display-defect",
+      "defect": "Books render with the default material description instead of their titles",
+      "manifestation": "Every book reads as 'chestnut-bound quire' style text; libraries unnavigable",
+      "mechanism": "Displays written-work titles in place of material descriptions",
+      "mode": "manual enable (persistent)",
+      "source": "corpus/dfhack_full/plugins/tweak.cpp (docs/plugins/tweak.rst)"
+    },
+    {
+      "name": "tweak partial-items",
+      "family": "display-defect",
+      "defect": "Partially-consumed items (e.g. hospital cloth) show no fraction indicator",
+      "manifestation": "Cannot see how much of a partially-used item remains",
+      "mechanism": "Displays percentages on partially-consumed items",
+      "mode": "manual enable (persistent)",
+      "source": "corpus/dfhack_full/plugins/tweak.cpp (docs/plugins/tweak.rst)"
+    },
+    {
+      "name": "tweak realistic-melting",
+      "family": "generation-defect",
+      "defect": "DF bug 6027: melting returns metal at wrong/unfair amortized amounts with fixed 0.3-bar granularity",
+      "manifestation": "Melting yields nonsensical metal quantities, exploitable or lossy",
+      "mechanism": "Normalizes melt return to 95% of production cost minus 10% per wear level, with randomized per-item returns inside the 0.3 granularity",
+      "mode": "manual enable (persistent)",
+      "source": "corpus/dfhack_full/plugins/tweak.cpp (docs/plugins/tweak.rst)"
+    },
+    {
+      "name": "tweak reaction-gloves",
+      "family": "generation-defect",
+      "defect": "DF bug 6273: custom reactions produce gloves with wrong handedness (all left or all right)",
+      "manifestation": "Reaction-made gloves unwearable; military uniform fits fail",
+      "mechanism": "Makes reaction products emit gloves in correct left/right sets",
+      "mode": "manual enable (persistent)",
+      "source": "corpus/dfhack_full/plugins/tweak.cpp (docs/plugins/tweak.rst)"
+    },
+    {
+      "name": "preserve-rooms (plugin)",
+      "family": "lost-updates",
+      "defect": "Citizens leaving the map (raids etc.) lose all zone assignments; bedrooms/offices/dining rooms/tombs go unassigned and claimable by others",
+      "manifestation": "Rooms silently reassigned while owner is away on missions",
+      "mechanism": "Remembers assignments of off-map units and restores them (incl. noble-role rooms) on return",
+      "mode": "manual enable (persistent monitor)",
+      "source": "corpus/dfhack_full/plugins/preserve-rooms.cpp (docs/plugins/preserve-rooms.rst)"
+    },
+    {
+      "name": "preserve-tombs (plugin)",
+      "family": "lost-updates",
+      "defect": "Tomb assignments are dropped when the assigned unit dies",
+      "manifestation": "Noble tombs detach from the corpse and get reassigned",
+      "mechanism": "Persists tomb assignments across the unit's death",
+      "mode": "manual enable (persistent monitor)",
+      "source": "corpus/dfhack_full/plugins/preserve-tombs.cpp (docs/plugins/preserve-tombs.rst)"
+    },
+    {
+      "name": "uniform-unstick",
+      "family": "stuck-flags",
+      "defect": "Multiple units claim the same equipment item; uniform claims conflict and never reevaluate",
+      "manifestation": "Soldiers stuck unable to equip; items held by ghost claims",
+      "mechanism": "Prompts affected military units to reevaluate uniforms, dropping conflicting worn-item claims (unassigns items from units not wearing them)",
+      "mode": "manual",
+      "source": "corpus/dfhack_full/scripts/uniform-unstick.lua"
+    },
+    {
+      "name": "caravan unload",
+      "family": "dangling-refs",
+      "defect": "Merchant pack animals become disconnected from their owners",
+      "manifestation": "Endless unloading loop at the depot; caravan never finishes",
+      "mechanism": "Reconnects merchant pack animals to their owners so the unload state machine can complete (also offers extend/happy/leave adjustments)",
+      "mode": "manual",
+      "source": "corpus/dfhack_full/scripts/caravan.lua"
+    }
+  ],
+  "retired_fixes_upstream_fixed": [
+    { "name": "fix/build-location", "reason": "DF bug 5991 fixed upstream in DF 0.40.05" },
+    { "name": "fix/diplomats", "reason": "DF bug 3295 fixed upstream in DF 0.40.05" },
+    { "name": "fix/fat-dwarves", "reason": "DF bug 5971 fixed upstream in DF 0.40.05" },
+    { "name": "fix/feeding-timers", "reason": "DF bug 2606 fixed upstream in DF 0.40.12" },
+    { "name": "fix/merchants", "reason": "human trade-agreement bug fixed upstream" },
+    { "name": "fix/item-occupancy + fix/tile-occupancy + fix/unit-occupancy", "reason": "consolidated (merged) into fix/occupancy" }
+  ]
+}

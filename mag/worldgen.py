@@ -643,16 +643,21 @@ class Worldgen:
     boss-kill state; the port is an instance (fresh state per campaign) with
     the generated tables injectable for tests, defaulting to the mirrors."""
 
+    INITIAL_POWERS = 30
+
     def __init__(self, spheres: Sequence[str] = SPHERES,
                  alignment: Dict[str, str] = ALIGNMENT,
                  allies: Dict[str, List[str]] = ALLIES,
                  opposed: Dict[str, List[str]] = OPPOSED,
-                 artifact_lore: Optional[ArtifactLore] = None) -> None:
+                 artifact_lore: Optional[ArtifactLore] = None,
+                 initial_powers: Optional[int] = None) -> None:
         self.spheres = list(spheres)
         self.alignment = alignment
         self.allies = allies
         self.opposed = opposed
         self.artifact_lore = artifact_lore or ArtifactLore()
+        self.initial_powers = initial_powers
+        self._supernatural_powers = 1
         self.boss_kills = 0
         self.kill_log: List[str] = []
 
@@ -661,7 +666,37 @@ class Worldgen:
         self.boss_kills += 1
         self.kill_log.append(name)
 
+    def set_supernatural_powers(self, count: int) -> None:
+        self._supernatural_powers = max(0, int(count))
+
+    def supernatural_powers(self) -> int:
+        return self._supernatural_powers
+
+    def remaining_powers(self) -> int:
+        cap = self.INITIAL_POWERS if self.initial_powers is None else self.initial_powers
+        return max(0, cap - self.boss_kills)
+
+    def reset_boss_kills(self) -> None:
+        self.boss_kills = 0
+        self.kill_log.clear()
+
+    def age_of_powers_text(self) -> Optional[str]:
+        rem = self.remaining_powers()
+        if rem > 3:
+            return None
+        if rem == 3:
+            return "The Age of Three Powers"
+        if rem == 2:
+            return "The Age of Two Powers"
+        if rem == 1:
+            return "The Age of Powers"
+        return "The Age of Ghost and Shadows" if self._supernatural_powers > 0 else "The Age of Civilization"
+
     def age_text(self) -> str:
+        if self.initial_powers is not None:
+            powers_age = self.age_of_powers_text()
+            if powers_age is not None:
+                return powers_age
         stage = self.boss_kills // KILLS_PER_AGE          # 0-based into AGES
         cycle = stage // len(AGES)
         age = AGES[stage % len(AGES)]

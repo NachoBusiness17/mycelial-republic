@@ -536,12 +536,29 @@ def check_proof_doc(doc: dict, root: bytes, v1_row: Optional[dict] = None,
             "content_bound": row is not None, "body_bound": body is not None}
 
 
+def verify_checkpoint_chain(path: str) -> tuple[bool, str, int]:
+    """Verify an append-only checkpoints_v2.jsonl file via verify_extends across consecutive rows."""
+    rows = []
+    with open(path, encoding="utf-8") as fh:
+        for line in fh:
+            if line.strip():
+                rows.append(json.loads(line))
+    if not rows:
+        raise ProofError("empty checkpoint file")
+    for idx in range(1, len(rows)):
+        verify_extends(rows[idx - 1], rows[idx])
+    first_n, last_n = rows[0]["n"], rows[-1]["n"]
+    last_root = rows[-1]["root"][:16]
+    return True, f"{len(rows)} checkpoints verified (n={first_n}..{last_n}, tip={last_root}..)", len(rows)
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("proof", nargs="?")
     ap.add_argument("--root", help="trusted root (hex), obtained out of band")
     ap.add_argument("--checkpoint", help="signed checkpoint JSON (else the proof's embedded one)")
     ap.add_argument("--prev-checkpoint", help="earlier signed checkpoint: also verify the extends-proof")
+    ap.add_argument("--verify-extends", help="path to checkpoints_v2.jsonl: verify all consecutive extends-proofs")
     ap.add_argument("--key-id", default=PINNED_KEY_ID)
     ap.add_argument("--v1-row", help="v1 row JSON to bind to the committed leaf")
     ap.add_argument("--knot", help="knot body file to bind to the committed body hash")
@@ -552,6 +569,14 @@ def main(argv=None) -> int:
         ok = selftest()
         print("SELFTEST " + ("OK (RFC 8032 vectors 1-3)" if ok else "FAIL"))
         return 0 if ok else 1
+    if a.verify_extends:
+        try:
+            ok, msg, _ = verify_checkpoint_chain(a.verify_extends)
+            print(f"EXTENDS-CHAIN OK: {msg}")
+            return 0
+        except (ProofError, KeyError, ValueError, TypeError, OSError) as e:
+            print(f"FAIL {type(e).__name__}: {e}")
+            return 1
     if not a.proof:
         ap.error("PROOF.json required")
     try:

@@ -43,6 +43,7 @@ ORGANS = [
     "verify_tails",   # 5-rule Tails Ledger verifier (separation of powers + anti-collusion)
     "verify_knot_v2", # stateless v2 binary-tree knot proof + RFC 8032 Ed25519 verifier
     "ratchet",        # DFHack-inspired enablement dials + delete-when-X retirement receipts
+    "worldgen",       # DF world-history laws (130 spheres, kinship graph, Ages of Powers, ZoneGate)
 ]
 
 results = []
@@ -76,9 +77,14 @@ if tails_path.exists():
     t_ok, t_msg, _ = verify_ledger(str(tails_path))
     print(f"  tails ledger: {'Supported' if t_ok else 'Disputed'} ({t_msg})")
 
-from mag.verify_knot_v2 import selftest as v2_selftest
+from mag.verify_knot_v2 import selftest as v2_selftest, verify_checkpoint_chain
 v2_ok = v2_selftest()
-print(f"  bintree v2 verifier: {'Supported (RFC 8032 + EIP-7864 ready)' if v2_ok else 'Disputed'}")
+cp_path = SEED / "docs" / "checkpoints_v2.jsonl"
+cp_note = ""
+if cp_path.exists():
+    _, cp_msg, _ = verify_checkpoint_chain(str(cp_path))
+    cp_note = f"; {cp_msg}"
+print(f"  bintree v2 verifier: {'Supported (RFC 8032 + EIP-7864 ready' + cp_note + ')' if v2_ok else 'Disputed'}")
 
 constitution = SEED / "boot" / "CONSTITUTION.md"
 if constitution.exists():

@@ -1,0 +1,6 @@
+{
+  "situation": "Handling document OCR in a VLM-centric pipeline.",
+  "decision": "Run GLM-OCR (0.9B) separately as an edge service for documents rather than repeatedly sending every document through a large VLM.",
+  "reasoning_physics": "A 0.9B specialized OCR model is far cheaper per-request and better suited to high concurrency + K3s edge than a 20GB+ VLM. Routing the high-frequency, low-difficulty task to the small model spares the large model for tasks it alone can do.",
+  "source_path": "/mag/docs/ref/GLM_K8S_MCP_DEEP_RESEARCH_20260826.md"
+}

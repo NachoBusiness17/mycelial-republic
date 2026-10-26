@@ -1,0 +1,1795 @@
+# LIBRARIAN REPORT — bibliography dogfood audit (v1)
+
+_generated 2026-10-01T23:14Z · 5608 docs scanned · 299 map rows · 215.0s · method: watch/LIBRARIAN_METHOD_20260911.md_
+
+## TIER-3 GATE ROWS (7) — unnamed debt, processed first
+
+- [RETRIEVAL-PLAN] arxiv:2211.05102 — Pope 2022 (2211.05102) — the prefill/decode asymmetry underneath the 778x [V]
+- [PULLED+HASHED] arxiv:2407.00079 — Mooncake (Qin 2024, 2407.00079)† — strongest existing KV-as-OS production system
+- [RETRIEVAL-PLAN] key:Belady — Belady 1966 (IBM SysJ) — the oracle ceiling [V]
+- [RETRIEVAL-PLAN] key:Kraska — Kraska 2018 learned indexes — DERIVE is learned indexing with a KV costume [V]
+- [RETRIEVAL-PLAN] key:Mattson — Mattson et al. 1970 — stack algorithms; why aggregate hit rate hides segment eff
+- [RETRIEVAL-PLAN] key:Neil — LRU-K (O'Neil 1993), ARC (Megiddo-Modha 2003), LeCaR (Vietri 2018)† — classical'
+- [PULLED+HASHED] key:PagedAttention — PagedAttention/vLLM (Kwon 2023, SOSP) — tiered KV paging is this paper; the KV-O
+
+## RETRIEVAL-PLAN (220) — source named, primary not pulled+hashed
+
+- arxiv:2211.05102 — Pope 2022 (2211.05102) — the prefill/decode asymmetry underneath the 778x [V]
+- key:Belady — Belady 1966 (IBM SysJ) — the oracle ceiling [V]
+- key:Kraska — Kraska 2018 learned indexes — DERIVE is learned indexing with a KV costume [V]
+- key:Mattson — Mattson et al. 1970 — stack algorithms; why aggregate hit rate hides segment eff
+- key:Neil — LRU-K (O'Neil 1993), ARC (Megiddo-Modha 2003), LeCaR (Vietri 2018)† — classical'
+- arxiv:1201.0749 — arXiv 1201.0749 No 16-Clue Sudoku (McGuire et al.)
+- arxiv:1406.2294 — arXiv 1406.2294
+- arxiv:1407.3561 — arXiv 1407.3561
+- arxiv:1504.04909 — arXiv 1504.04909
+- arxiv:1612.04426 — arXiv 1612.04426
+- arxiv:1706.03741 — arXiv 1706.03741
+- arxiv:1706.03762 — arXiv 1706.03762
+- arxiv:1706.04599 — arXiv 1706.04599
+- arxiv:1712.01208 — arXiv 1712.01208
+- arxiv:1804.08221 — arXiv 1804.08221
+- arxiv:1805.00899 — arXiv 1805.00899 AI safety via debate (Irving et al.)
+- arxiv:1910.02054 — arXiv 1910.02054 ZeRO
+- arxiv:1911.00172 — arXiv 1911.00172
+- arxiv:2005.14165 — arXiv 2005.14165
+- arxiv:2006.01475 — arXiv 2006.01475
+- arxiv:2007.1558 — arXiv 2007.1558 [DOI-ARTIFACT]
+- arxiv:2008.0277 — arXiv 2008.0277 [DOI-ARTIFACT]
+- arxiv:2012.07805 — arXiv 2012.07805
+- arxiv:2026.15906 — arXiv 2026.15906 [DOI-ARTIFACT]
+- arxiv:2026.84791 — arXiv 2026.84791 [DOI-ARTIFACT]
+- arxiv:2102.05242 — arXiv 2102.05242
+- arxiv:2103.10360 — arXiv 2103.10360 GLM (original)
+- arxiv:2104.04473 — arXiv 2104.04473 Megatron-LM
+- arxiv:2104.07143 — arXiv 2104.07143
+- arxiv:2104.07857 — arXiv 2104.07857
+- arxiv:2112.04426 — arXiv 2112.04426
+- arxiv:2112.07236 — arXiv 2112.07236
+- arxiv:2202.07646 — arXiv 2202.07646
+- arxiv:2203.08913 — arXiv 2203.08913
+- arxiv:2203.11171 — arXiv 2203.11171
+- arxiv:2209.13085 — arXiv 2209.13085
+- arxiv:2210.02414 — arXiv 2210.02414
+- arxiv:2210.08803 — arXiv 2210.08803
+- arxiv:2211.09110 — arXiv 2211.09110
+- arxiv:2301.10226 — arXiv 2301.10226
+- arxiv:2303.10798 — arXiv 2303.10798
+- arxiv:2304.03442 — arXiv 2304.03442 Generative Agents (Smallville)
+- arxiv:2304.10675 — arXiv 2304.10675
+- arxiv:2306.05685 — arXiv 2306.05685
+- arxiv:2306.14048 — arXiv 2306.14048
+- arxiv:2307.03172 — arXiv 2307.03172
+- arxiv:2308.03688 — arXiv 2308.03688
+- arxiv:2310.01798 — arXiv 2310.01798
+- arxiv:2310.05736 — arXiv 2310.05736
+- arxiv:2310.06839 — arXiv 2310.06839
+- arxiv:2310.08560 — arXiv 2310.08560
+- arxiv:2310.08560 — arXiv 2310.08560
+- arxiv:2310.13548 — arXiv 2310.13548
+- arxiv:2311.17035 — arXiv 2311.17035
+- arxiv:2312.03664 — arXiv 2312.03664
+- arxiv:2312.11514 — arXiv 2312.11514
+- arxiv:2312.12456 — arXiv 2312.12456
+- arxiv:2312.17238 — arXiv 2312.17238
+- arxiv:2402.05863 — arXiv 2402.05863
+- arxiv:2402.07033 — arXiv 2402.07033
+- arxiv:2403.02691 — arXiv 2403.02691
+- arxiv:2403.08399 — arXiv 2403.08399
+- arxiv:2404.00456 — arXiv 2404.00456 QuaRot
+- arxiv:2404.06364 — arXiv 2404.06364
+- arxiv:2404.07972 — arXiv 2404.07972
+- arxiv:2404.19737 — arXiv 2404.19737
+- arxiv:2405.02421 — arXiv 2405.02421
+- arxiv:2405.17766 — arXiv 2405.17766
+- arxiv:2406.04692 — arXiv 2406.04692 Mixture-of-Agents (Wang et al.)
+- arxiv:2406.11794 — arXiv 2406.11794 DataComp-LM
+- arxiv:2406.12045 — arXiv 2406.12045 τ-bench (Sierra+Princeton)
+- arxiv:2406.13352 — arXiv 2406.13352
+- arxiv:2406.19707 — arXiv 2406.19707
+- arxiv:2407.00023 — arXiv 2407.00023 Preble
+- arxiv:2407.18384 — arXiv 2407.18384
+- arxiv:2407.21783 — arXiv 2407.21783
+- arxiv:2408.03314 — arXiv 2408.03314
+- arxiv:2409.11363 — arXiv 2409.11363
+- arxiv:2409.19798 — arXiv 2409.19798
+- arxiv:2410.08650 — arXiv 2410.08650
+- arxiv:2410.20536 — arXiv 2410.20536 Malinowski Argonauts text-games
+- arxiv:2411.01142 — arXiv 2411.01142
+- arxiv:2411.09688 — arXiv 2411.09688
+- arxiv:2412.06464 — arXiv 2412.06464 Gated Delta Networks
+- arxiv:2412.06769 — arXiv 2412.06769
+- arxiv:2412.14161 — arXiv 2412.14161
+- arxiv:2412.17870 — arXiv 2412.17870 soap-bubble volume conservation
+- arxiv:2412.19442 — KV-cache surveys (Jiang ACL'26 Findings; Li 2412.19442)
+- arxiv:2501.12766 — arXiv 2501.12766 NExtLong
+- arxiv:2502.03771 — arXiv 2502.03771
+- arxiv:2502.09992 — arXiv 2502.09992
+- arxiv:2502.10673 — arXiv 2502.10673
+- arxiv:2502.19519 — arXiv 2502.19519 Narrator/Archivist
+- arxiv:2503.02068 — arXiv 2503.02068 AGDebugger
+- arxiv:2503.14647 — arXiv 2503.14647
+- arxiv:2504.11393 — arXiv 2504.11393
+- arxiv:2504.12335 — arXiv 2504.12335
+- arxiv:2504.13171 — arXiv 2504.13171
+- arxiv:2505.09388 — arXiv 2505.09388
+- arxiv:2505.16004 — arXiv 2505.16004
+- arxiv:2506.00756 — arXiv 2506.00756 SHIFT
+- arxiv:2506.02634 — arXiv 2506.02634
+- arxiv:2506.08725 — arXiv 2506.08725
+- arxiv:2506.09579 — arXiv 2506.09579
+- arxiv:2507.01006 — arXiv 2507.01006
+- arxiv:2507.01701 — arXiv 2507.01701 Blackboard-architecture LLM MAS (Han & Zhang)
+- arxiv:2507.07400 — KVFlow (arXiv 2507.07400, NeurIPS 2025)
+- arxiv:2507.07969 — arXiv 2507.07969
+- arxiv:2507.12466 — arXiv 2507.12466
+- arxiv:2507.18071 — arXiv 2507.18071 GSPO
+- arxiv:2507.20526 — arXiv 2507.20526 UK AISI agent red-teaming
+- arxiv:2508.00828 — arXiv 2508.00828
+- arxiv:2508.06471 — arXiv 2508.06471 GLM-4.5 tech report
+- arxiv:2508.16792 — arXiv 2508.16792
+- arxiv:2509.06341 — arXiv 2509.06341
+- arxiv:2509.13160 — arXiv 2509.13160
+- arxiv:2510.02330 — arXiv 2510.02330 EntropyLong
+- arxiv:2510.11977 — HAL (2510.11977, ICLR'26)
+- arxiv:2510.17776 — arXiv 2510.17776
+- arxiv:2510.18586 — TokenCake (arXiv 2510.18586, EuroSys'27)
+- arxiv:2510.24416 — arXiv 2510.24416
+- arxiv:2510.26585 — arXiv 2510.26585
+- arxiv:2510.26852 — arXiv 2510.26852
+- arxiv:2511.13371 — arXiv 2511.13371
+- arxiv:2512.10685 — arXiv 2512.10685
+- arxiv:2512.18792 — arXiv 2512.18792
+- arxiv:2601.05103 — arXiv 2601.05103
+- arxiv:2601.07372 — arXiv 2601.07372 cross-ref
+- arxiv:2601.13671 — arXiv 2601.13671
+- arxiv:2601.22170 — arXiv 2601.22170
+- arxiv:2602.00986 — arXiv 2602.00986
+- arxiv:2602.01230 — arXiv 2602.01230
+- arxiv:2602.02276 — arXiv 2602.02276
+- arxiv:2602.15763 — arXiv 2602.15763 GLM-5 family tech report
+- arxiv:2602.20214 — arXiv 2602.20214 Right to History
+- arxiv:2602.22953 — Exgentic / General Agent Evaluation (2602.22953)
+- arxiv:2603.06610 — arXiv 2603.06610 CapTrack
+- arxiv:2603.15714 — arXiv 2603.15714
+- arxiv:2603.16073 — arXiv 2603.16073
+- arxiv:2603.20397 — arXiv 2603.20397
+- arxiv:2604.00157 — arXiv 2604.00157
+- arxiv:2604.02460 — arXiv 2604.02460
+- arxiv:2604.08407 — arXiv 2604.08407 (TITLE UNFETCHED)
+- arxiv:2604.19953 — arXiv 2604.19953
+- arxiv:2604.24833 — arXiv 2604.24833
+- arxiv:2605.06472 — PBKV (arXiv 2605.06472)
+- arxiv:2605.08013 — arXiv 2605.08013
+- arxiv:2605.08233 — arXiv 2605.08233
+- arxiv:2605.08580 — arXiv 2605.08580 Slipstream (Chen et al.)
+- arxiv:2605.09189 — arXiv 2605.09189
+- arxiv:2605.11496 — arXiv 2605.11496
+- arxiv:2605.20520 — arXiv 2605.20520
+- arxiv:2605.23296 — arXiv 2605.23296
+- arxiv:2605.23950 — arXiv 2605.23950
+- arxiv:2605.24914 — arXiv 2605.24914
+- arxiv:2605.28258 — arXiv 2605.28258
+- arxiv:2606.04511 — arXiv 2606.04511
+- arxiv:2606.11217 — arXiv 2606.11217 Preregistration for AI-agent experiments
+- arxiv:2606.16824 — CacheWise (arXiv 2606.16824)
+- arxiv:2606.21238 — Shen et al. 2606.21238 (ICLR-W AdaptFM)
+- arxiv:2606.22528 — arXiv 2606.22528
+- arxiv:2606.23525 — arXiv 2606.23525 SelfCompact (Li et al.)
+- arxiv:2606.26836 — arXiv 2606.26836
+- arxiv:2606.29150 — arXiv 2606.29150 FRM flow reasoning models
+- arxiv:2607.00501 — arXiv 2607.00501
+- arxiv:2607.05378 — arXiv 2607.05378
+- arxiv:2607.05391 — arXiv 2607.05391
+- arxiv:2607.07702 — arXiv 2607.07702 STRACE / Execution Dependency Graphs (Microsoft)
+- arxiv:2607.08032 — arXiv 2607.08032 What to Keep, What to Forget
+- arxiv:2607.10814 — arXiv 2607.10814
+- arxiv:2607.16183 — arXiv 2607.16183
+- arxiv:2607.27191 — arXiv 2607.27191
+- arxiv:2607.28956 — arXiv 2607.28956 MerchantBench
+- arxiv:2608.01612 — arXiv 2608.01612
+- arxiv:2608.01615 — arXiv 2608.01615
+- arxiv:2608.03893 — arXiv 2608.03893
+- arxiv:2608.06947 — arXiv 2608.06947
+- arxiv:2608.08910 — arXiv 2608.08910
+- arxiv:2608.10993 — arXiv 2608.10993
+- arxiv:2608.12114 — arXiv 2608.12114
+- arxiv:2608.15930 — arXiv 2608.15930
+- arxiv:2608.16884 — arXiv 2608.16884
+- arxiv:2608.17390 — arXiv 2608.17390
+- arxiv:2608.19920 — arXiv 2608.19920
+- arxiv:2608.20953 — arXiv 2608.20953 Quantization-Aware Healing
+- arxiv:2608.22152 — arXiv 2608.22152
+- arxiv:2608.23541 — arXiv 2608.23541
+- arxiv:2608.24547 — arXiv 2608.24547
+- arxiv:2608.24876 — arXiv 2608.24876
+- arxiv:2608.25655 — arXiv 2608.25655
+- arxiv:2608.26418 — arXiv 2608.26418
+- arxiv:2608.26530 — arXiv 2608.26530
+- arxiv:2608.27454 — arXiv 2608.27454
+- arxiv:2608.27472 — arXiv 2608.27472
+- arxiv:2608.27790 — arXiv 2608.27790
+- arxiv:2608.28027 — arXiv 2608.28027
+- arxiv:2608.28044 — arXiv 2608.28044
+- arxiv:2608.28048 — arXiv 2608.28048
+- arxiv:2608.28433 — arXiv 2608.28433
+- arxiv:2608.28476 — arXiv 2608.28476
+- arxiv:2608.29530 — arXiv 2608.29530
+- arxiv:2608.30730 — arXiv 2608.30730
+- arxiv:2608.31036 — arXiv 2608.31036
+- arxiv:2609.00196 — arXiv 2609.00196
+- arxiv:2609.01437 — arXiv 2609.01437
+- arxiv:2609.01449 — arXiv 2609.01449
+- arxiv:2609.01491 — Emergent agent languages (arXiv 2609.01491)
+- arxiv:2609.02702 — arXiv 2609.02702 Trace as State (Zou & Tang, Z.ai)
+- arxiv:2609.02737 — arXiv 2609.02737 Declarative Attention (KAIST+DeepMind)
+- arxiv:2609.02881 — arXiv 2609.02881
+- arxiv:2609.02882 — arXiv 2609.02882 Lamzouri zeta zeros
+- arxiv:2609.03874 — arXiv 2609.03874
+- arxiv:2609.04010 — arXiv 2609.04010
+- arxiv:2609.04098 — arXiv 2609.04098
+- arxiv:2609.04141 — arXiv 2609.04141
+- arxiv:2609.04148 — arXiv 2609.04148 Terminal-Universe (Qwen)
+- arxiv:2609.04159 — arXiv 2609.04159
+- arxiv:2609.04611 — τ^τ-bench (2609.04611)
+- arxiv:2609.09793 — arXiv 2609.09793 (GLM-5.3-Flash 320B abliteration)
+- arxiv:3841.71428 — arXiv 3841.71428 [DOI-ARTIFACT]
+
+## UNREGISTERED (1512) — cited in cards, missing from the map
+
+- arxiv:1060.0617 ← watch\inbox\burn_reset_20260927\flash50\r-attractor-portfolio.md
+- arxiv:1107.4675 ← docs\report_v1\sources\receipts\1108.0153.md
+- arxiv:1306.0258 ← watch\inbox\physical_computing\receipts\C17_CUBE_INSTRUMENT_PLAN.md +3
+- arxiv:1306.3414 ← watch\inbox\physical_computing\receipts\F6_MYCOLOGY_CANON.md +8
+- arxiv:1311.2419 ← watch\inbox\RENDER_THE_SYSTEM_VISION_20260922.md
+- arxiv:1311.2959 ← watch\inbox\moonshot_20260916\receipts\TT1_RETROCAUSAL_PHYSICS.md
+- arxiv:1312.7566 ← watch\inbox\moonshot_20260916\receipts\TT1_RETROCAUSAL_PHYSICS.md
+- arxiv:1402.2295 ← watch\inbox\burn_reset_20260927\flash50\corpus-arxiv-list.md +3
+- arxiv:1501.05014 ← watch\inbox\moonshot_20260916\receipts\TT1_RETROCAUSAL_PHYSICS.md +1
+- arxiv:1508.04145 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-13.md +2
+- arxiv:1511.01017 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-13.md +1
+- arxiv:1511.04364 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:1601.07053 ← watch\inbox\physical_computing\receipts\N2_PAULI_SPIN_STRUCTURE.md +1
+- arxiv:1602.02075 ← watch\inbox\moonshot_20260916\receipts\TT1_RETROCAUSAL_PHYSICS.md
+- arxiv:1603.06288 ← watch\inbox\physical_computing\receipts\N3_BO_FOR_CUBE.md +2
+- arxiv:1605.06676 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-15.md +1
+- arxiv:1605.07736 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-15.md +1
+- arxiv:1606.02734 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:1606.06565 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:1608.00358 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:1608.00660 ← watch\inbox\moonshot_20260916\receipts\F5_PHYSICS_CANON.md +4
+- arxiv:1609.05140 ← watch\inbox\play_as_work_20260926\BRIEF_v6_master_20260926.md +4
+- arxiv:1609.06046 ← watch\inbox\moonshot_20260916\receipts\TT1_RETROCAUSAL_PHYSICS.md
+- arxiv:1609.08684 ← watch\inbox\moonshot_20260916\receipts\TT1_RETROCAUSAL_PHYSICS.md
+- arxiv:1611.06985 ← watch\inbox\moonshot_20260916\receipts\TT1_RETROCAUSAL_PHYSICS.md
+- arxiv:1611.08219 ← watch\inbox\burn_reset_20260927\flash50\w4-29.md +1
+- arxiv:1612.00410 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-15.md +1
+- arxiv:1612.00796 ← watch\inbox\play_as_work_20260926\BRIEF_v6_master_20260926.md +4
+- arxiv:1612.07743 ← watch\inbox\physical_computing\receipts\K8_LATTICE_FARADAY.md +1
+- arxiv:1702.06437 ← watch\inbox\deepseek_research\deepseek_analysis_6tweets_20260923.md
+- arxiv:1704.01911 ← watch\inbox\moonshot_20260916\receipts\TT1_RETROCAUSAL_PHYSICS.md
+- arxiv:1705.04140 ← watch\inbox\moonshot_20260916\receipts\TT1_RETROCAUSAL_PHYSICS.md
+- arxiv:1706.00280 ← watch\inbox\physical_computing\receipts\G-G_SLOW_READOUT.md +1
+- arxiv:1706.07094 ← watch\inbox\physical_computing\receipts\N3_BO_FOR_CUBE.md +2
+- arxiv:1712.01815 ← watch\inbox\THE_SCALE_FINAL_20260916.md
+- arxiv:1712.09707 ← watch\inbox\burn_reset_20260927\flash50\r-vortex-latent.md +1
+- arxiv:1802.00126 ← watch\inbox\moonshot_20260916\receipts\TT1_RETROCAUSAL_PHYSICS.md
+- arxiv:1802.06070 ← watch\inbox\play_as_work_20260926\BRIEF_v6_master_20260926.md +4
+- arxiv:1803.04585 ← watch\inbox\THE_SCALE_FINAL_20260916.md +1
+- arxiv:1804.0173 ← watch\inbox\inbound\DEEPSEEK_EIGHTWAVE_REPORT_20260921.md
+- arxiv:1805.05217 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:1805.09731 ← watch\inbox\moonshot_20260916\receipts\F5_PHYSICS_CANON.md +1
+- arxiv:1805.10967 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:1805.12171 ← watch\inbox\moonshot_20260916\receipts\TT1_RETROCAUSAL_PHYSICS.md
+- arxiv:1806.10433 ← watch\inbox\physical_computing\receipts\K8_LATTICE_FARADAY.md +3
+- arxiv:1807.01867 ← watch\inbox\physical_computing\receipts\G-F_SPINOR_LATTICE.md +2
+- arxiv:1807.02811 ← watch\inbox\physical_computing\receipts\N3_BO_FOR_CUBE.md +4
+- arxiv:1808.05966 ← watch\inbox\moonshot_20260916\receipts\TT1_RETROCAUSAL_PHYSICS.md
+- arxiv:1810.03993 ← watch\inbox\burn_wave_20260926\B2_153_seedrib_steal_dig_20260926.md +3
+- arxiv:1810.07135 ← watch\inbox\physical_computing\receipts\S4_CORPUS_STEAL.md +1
+- arxiv:1810.11187 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-15.md +1
+- arxiv:1811.07871 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:1811.08245 ← watch\inbox\inbound\DEEPSEEK_EIGHTWAVE_REPORT_20260921.md
+- arxiv:1811.10583 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:1812.00793 ← watch\inbox\physical_computing\PHYSICAL_COMPUTING_PACK_20260916.md +2
+- arxiv:1812.06940 ← watch\inbox\moonshot_20260916\receipts\TT1_RETROCAUSAL_PHYSICS.md
+- arxiv:1865.0008 ← watch\inbox\union_fullsend_20260917\DAY_PACK.md
+- arxiv:1901.01753 ← watch\inbox\mountain_climb\BIBLIOGRAPHY.md +5
+- arxiv:1903.10738 ← watch\inbox\moonshot_20260916\receipts\F5_PHYSICS_CANON.md
+- arxiv:1906.04313 ← watch\inbox\moonshot_20260916\receipts\F5_PHYSICS_CANON.md +4
+- arxiv:1906.09444 ← watch\inbox\wave_20260916\r1_fanout_runs\pack.md
+- arxiv:1907.05242 ← watch\inbox\wave_20260916\receipts\B10_MLP_KV_CACHE_PRIORART.md +1
+- arxiv:1907.13440 ← watch\inbox\union_fullsend_20260917\DAY_PACK.md
+- arxiv:1908.08655 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:1910.10871 ← watch\inbox\mountain_climb\BIBLIOGRAPHY.md
+- arxiv:1911.05507 ← watch\inbox\wave_20260916\receipts\B10_MLP_KV_CACHE_PRIORART.md +2
+- arxiv:1911.06992 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-15.md +2
+- arxiv:2001.09212 ← watch\inbox\union_fullsend_20260917\DAY_PACK.md
+- arxiv:2002.06413 ← watch\inbox\physical_computing\receipts\F6_MYCOLOGY_CANON.md +2
+- arxiv:2002.08910 ← watch\inbox\burn_reset_20260927\flash50\r-corpus-epistemics.md +1
+- arxiv:2002.09680 ← watch\inbox\physical_computing\receipts\F6_MYCOLOGY_CANON.md +4
+- arxiv:2003.07816 ← watch\inbox\physical_computing\receipts\K4_CONDUCTIVE_COMPOSITES.md
+- arxiv:2003.08536 ← watch\inbox\play_as_work_20260926\BRIEF_v6_master_20260926.md +4
+- arxiv:2004.00107 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2005.11401 ← watch\inbox\burn_reset_20260927\flash50\r-corpus-epistemics.md +2
+- arxiv:2006.13760 ← watch\inbox\union_fullsend_20260917\DAY_PACK.md
+- arxiv:2006.16236 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-09.md +2
+- arxiv:2006.16311 ← watch\inbox\physical_computing\receipts\G-F_SPINOR_LATTICE.md +2
+- arxiv:2006.16668 ← watch\inbox\W_WAVE_FOLD_20260912.md
+- arxiv:2007.01558 ← watch\inbox\REDO_SWEEP_20260927.md +2
+- arxiv:2007.05929 ← watch\inbox\burn_reset_20260927\flash50\r-contrastive-wm.md
+- arxiv:2007.06700 ← watch\inbox\union_fullsend_20260917\DAY_PACK.md
+- arxiv:2007.1900 ← watch\inbox\physical_computing\receipts\N3_BO_FOR_CUBE.md +2
+- arxiv:2008.00277 ← watch\inbox\REDO_SWEEP_20260927.md
+- arxiv:2008.02217 ← watch\inbox\wave_20260916\receipts\B10_MLP_KV_CACHE_PRIORART.md
+- arxiv:2009.03300 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2009.08040 ← watch\inbox\physical_computing\receipts\N3_BO_FOR_CUBE.md +2
+- arxiv:2010.0373 ← watch\inbox\physical_computing\receipts\concert002_fiber25\answers.md
+- arxiv:2010.05893 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2010.15979 ← watch\inbox\inbound\DEEPSEEK_EIGHTWAVE_REPORT_20260921.md
+- arxiv:2012.01717 ← watch\inbox\mountain_climb\BIBLIOGRAPHY.md
+- arxiv:2013.00326 ← watch\inbox\physical_computing\receipts\G-H_COCULTIVATION.md
+- arxiv:2014.0223 ← watch\inbox\physical_computing\receipts\concert002_fiber25\answers.md
+- arxiv:2015.0093 ← watch\inbox\wave_20260916\r1_fanout_runs\pack.md
+- arxiv:2018.0029 ← watch\inbox\physical_computing\receipts\C17_CUBE_INSTRUMENT_PLAN.md +1
+- arxiv:2018.01649 ← watch\inbox\physical_computing\receipts\K5_ION_DOPING.md
+- arxiv:2019.00082 ← watch\inbox\physical_computing\receipts\O2_WAVEGUIDE_VERIFY.md +2
+- arxiv:2020.00001 ← watch\inbox\wave_20260916\r1_fanout_runs\pack.md +1
+- arxiv:2020.01234 ← watch\inbox\wave_20260916\r1_fanout_runs\pack.md
+- arxiv:2024.0004 ← watch\inbox\physical_computing\receipts\K11_LIVING_MATERIAL_SENSING.md
+- arxiv:2025.2528 ← watch\scout\MONITOR_LANE_2026-09-17.md
+- arxiv:2026.10093 ← watch\scout\MONITOR_LANE_2026-09-30.md +1
+- arxiv:2026.5226 ← watch\scout\MONITOR_LANE_2026-09-16.md
+- arxiv:2026.84840 ← watch\scout\MONITOR_LANE_2026-09-16.md
+- arxiv:2101.03961 ← watch\inbox\W_WAVE_FOLD_20260912.md
+- arxiv:2102.01695 ← watch\inbox\moonshot_20260916\receipts\TT1_RETROCAUSAL_PHYSICS.md
+- arxiv:2104.00650 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2104.08315 ← watch\inbox\MICKEY17_WAVE2_QUALITY_20260925.md +1
+- arxiv:2104.10848 ← watch\inbox\physical_computing\receipts\O2_WAVEGUIDE_VERIFY.md +2
+- arxiv:2104.13386 ← watch\inbox\fleet_research_lens\fleet-research-lens\orphans-and-connections.md +1
+- arxiv:2105.05241 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2105.06632 ← watch\inbox\moonshot_20260916\receipts\TT1_RETROCAUSAL_PHYSICS.md
+- arxiv:2106.00063 ← watch\inbox\physical_computing\receipts\K9_PRIOR_ART.md +1
+- arxiv:2106.09007 ← watch\inbox\wave_20260916\receipts\S5_JOURNAL_VENUES.md +1
+- arxiv:2106.09685 ← watch\inbox\astra_ask_package\sovereign-agent-systems-research-brief.md +5
+- arxiv:2107.00133 ← watch\inbox\physical_computing\receipts\K1_STAMETS_CORPUS.md +1
+- arxiv:2107.00736 ← watch\inbox\moonshot_20260916\receipts\TT1_RETROCAUSAL_PHYSICS.md
+- arxiv:2107.01681 ← watch\inbox\physical_computing\receipts\G-F_SPINOR_LATTICE.md +2
+- arxiv:2107.03374 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2108.05336 ← watch\inbox\physical_computing\receipts\K1_STAMETS_CORPUS.md +1
+- arxiv:2108.07732 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2109.00484 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-13.md +1
+- arxiv:2109.07958 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2109.10862 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2110.00239 ← watch\inbox\CANTOR_DIAG_INTAKE_20260921.md +1
+- arxiv:2110.01963 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2110.05984 ← watch\inbox\THE_SCALE_FINAL_20260916.md
+- arxiv:2111.02675 ← watch\inbox\physical_computing\receipts\X_MINE_FIGURES_20260916.md +1
+- arxiv:2111.05008 ← watch\inbox\physical_computing\receipts\N3_BO_FOR_CUBE.md +2
+- arxiv:2111.06871 ← watch\inbox\physical_computing\receipts\X_MINE_FIGURES_20260916.md
+- arxiv:2111.11231 ← watch\inbox\physical_computing\receipts\K1_STAMETS_CORPUS.md +1
+- arxiv:2112.08608 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2112.09907 ← watch\inbox\physical_computing\receipts\K1_STAMETS_CORPUS.md
+- arxiv:2112.12908 ← watch\inbox\physical_computing\receipts\X_MINE_FIGURES_20260916.md
+- arxiv:2201.07311 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2202.03629 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-05.md
+- arxiv:2203.14465 ← watch\inbox\burn_reset_20260927\flash50\f-04.md +1
+- arxiv:2203.16058 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2204.02311 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2204.05123 ← watch\arc_seeds\arc_seed_c424b80a-5f44_f69d1c0fd1073f55.md +1
+- arxiv:2204.05212 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2204.05862 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2204.06745 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2205.12255 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2206.02297 ← watch\inbox\union_fullsend_20260917\DAY_PACK.md
+- arxiv:2206.02629 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2206.08853 ← watch\inbox\mountain_climb\BIBLIOGRAPHY.md +1
+- arxiv:2206.11783 ← watch\inbox\moonshot_20260916\receipts\TT1_RETROCAUSAL_PHYSICS.md
+- arxiv:2207.05221 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-05.md
+- arxiv:2207.07666 ← watch\inbox\moonshot_20260916\receipts\TT1_RETROCAUSAL_PHYSICS.md
+- arxiv:2207.08143 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2208.02957 ← watch\inbox\burn_reset_20260927\flash50\r-corpus-epistemics.md +1
+- arxiv:2208.07236 ← watch\inbox\moonshot_20260916\receipts\F5_PHYSICS_CANON.md +6
+- arxiv:2208.07339 ← watch\inbox\burn_reset_20260927\flash50\work\bnb_readme.md
+- arxiv:2209.00588 ← watch\inbox\burn_reset_20260927\flash50\r-contrastive-wm.md +1
+- arxiv:2209.00626 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2209.07901 ← watch\inbox\moonshot_20260916\TT3_CONTEXT.md +4
+- arxiv:2209.15189 ← watch\inbox\MICKEY17_WAVE_LEDGER_20260929.md
+- arxiv:2210.01775 ← watch\inbox\physical_computing\receipts\K1_STAMETS_CORPUS.md +1
+- arxiv:2210.05323 ← watch\inbox\moonshot_20260916\receipts\TT1_RETROCAUSAL_PHYSICS.md
+- arxiv:2210.10860 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2210.13400 ← watch\inbox\physical_computing\receipts\X_MINE_FIGURES_20260916.md
+- arxiv:2210.14215 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2210.17323 ← watch\inbox\burn_reset_20260927\work\w-quant-compare_openrouter1.md +2
+- arxiv:2211.01786 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2211.03540 ← watch\inbox\play_as_work_20260926\BRIEF_v6_master_20260926.md +4
+- arxiv:2211.08411 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-05.md
+- arxiv:2211.10435 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2211.11379 ← watch\inbox\burn_reset_20260927\flash50\r-vortex-latent.md +3
+- arxiv:2211.12588 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2211.14275 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2212.04089 ← watch\inbox\MICKEY17_WAVE_LEDGER_20260929.md
+- arxiv:2212.08073 ← watch\inbox\burn_reset_20260927\flash50\deep-emergent-morality.md +3
+- arxiv:2212.08410 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2212.09251 ← watch\inbox\THE_SCALE_FINAL_20260916.md
+- arxiv:2212.10511 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-05.md
+- arxiv:2301.06627 ← watch\inbox\burn_reset_20260927\flash50\r-corpus-epistemics.md +1
+- arxiv:2301.13196 ← watch\inbox\union_fullsend_20260917\DAY_PACK.md
+- arxiv:2302.02676 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2302.04761 ← watch\arc_seeds\arc_seed_c424b80a-5f44_f69d1c0fd1073f55.md +7
+- arxiv:2302.05733 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2302.06457 ← watch\inbox\burn_reset_20260927\flash50\f-04.md +1
+- arxiv:2302.10472 ← watch\inbox\inbound\DEEPSEEK_EIGHTWAVE_REPORT_20260921.md
+- arxiv:2302.11681 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2302.12173 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2303.04203 ← watch\inbox\CANTOR_DIAG_INTAKE_20260921.md +2
+- arxiv:2303.07109 ← watch\inbox\burn_reset_20260927\flash50\r-contrastive-wm.md +2
+- arxiv:2303.08700 ← watch\inbox\moonshot_20260916\receipts\TT1_RETROCAUSAL_PHYSICS.md
+- arxiv:2303.08774 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2303.08896 ← watch\inbox\deepseek_research\mined\20260731T161530Z_blast-focus.answer.local_analysis.md +1
+- arxiv:2303.11366 ← watch\inbox\burn_reset_20260927\flash50\f-04.md +5
+- arxiv:2303.13375 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2303.15215 ← watch\inbox\physical_computing\receipts\G-F_SPINOR_LATTICE.md +2
+- arxiv:2303.17651 ← watch\inbox\burn_reset_20260927\flash50\f-04.md +1
+- arxiv:2304.01097 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2304.06975 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2304.08247 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2304.08467 ← watch\inbox\burn_reset_20260927\flash50\deep-prompt-compiler.md +4
+- arxiv:2304.09190 ← watch\inbox\inbound\DEEPSEEK_EIGHTWAVE_REPORT_20260921.md
+- arxiv:2304.09809 ← watch\inbox\inbound\DEEPSEEK_EIGHTWAVE_REPORT_20260921.md
+- arxiv:2304.10557 ← watch\inbox\TWEET_TRIO_20260929_READ.md +1
+- arxiv:2304.12102 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-08.md +1
+- arxiv:2304.14454 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2305.02301 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2305.02434 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2305.10250 ← watch\inbox\burn_reset_20260927\flash50\w3-research-memai.md
+- arxiv:2305.10403 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2305.10601 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2305.13673 ← watch\inbox\burn_reset_20260927\work\w-kabbalah-epistemics_hermes.md +1
+- arxiv:2305.13828 ← watch\inbox\moonshot_20260916\receipts\TT1_RETROCAUSAL_PHYSICS.md
+- arxiv:2305.14251 ← watch\inbox\deepseek_research\mined\20260731T161530Z_blast-focus.answer.local_analysis.md +1
+- arxiv:2305.14314 ← watch\inbox\burn_reset_20260927\flash50\deep-quantizer-theory.md +3
+- arxiv:2305.14325 ← watch\MOONSHOT_THE_LOOP_20260911.md +11
+- arxiv:2305.14334 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2305.14788 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-08.md +1
+- arxiv:2305.14992 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2305.16291 ← watch\inbox\burn_reset_20260927\flash50\deep-compiler-bootstrap.md +7
+- arxiv:2305.16367 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2305.17493 ← watch\inbox\burn_reset_20260927\flash50\deep-selffeed-loop.md +4
+- arxiv:2305.19118 ← watch\inbox\burn_reset_20260927\flash50\corpus-arxiv-list.md +2
+- arxiv:2305.20050 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2306.01711 ← watch\inbox\play_as_work_20260926\BRIEF_v6_master_20260926.md +4
+- arxiv:2306.02561 ← watch\inbox\deepseek_research\mined\20260731T161312Z_deep-c-0b3cacba98e3.answer.local_analysis.md
+- arxiv:2306.02707 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2306.09367 ← watch\inbox\burn_reset_20260927\work\fan2_contrastive-wm_inclusionai_ling-3.0-flash-vl.md
+- arxiv:2306.11657 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-08.md
+- arxiv:2306.12456 ← watch\inbox\burn_reset_20260927\flash50\r-contrastive-wm.md
+- arxiv:2306.13141 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2307.01850 ← watch\inbox\burn_reset_20260927\flash50\deep-selffeed-loop.md
+- arxiv:2307.03109 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2307.04719 ← watch\inbox\physical_computing\PHYSICAL_COMPUTING_PACK_20260916.md +2
+- arxiv:2307.05300 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2307.06945 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-08.md +1
+- arxiv:2307.07924 ← watch\inbox\burn_reset_20260927\flash50\corpus-arxiv-list.md +2
+- arxiv:2307.09288 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2307.11003 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-08.md
+- arxiv:2307.12950 ← watch\inbox\JEV_CONSOLIDATED_BRIEF_20260919.md
+- arxiv:2307.13702 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2307.15043 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2308.00352 ← watch\inbox\burn_reset_20260927\flash50\corpus-arxiv-list.md +2
+- arxiv:2308.01542 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2308.02902 ← watch\inbox\physical_computing\receipts\G-G_SLOW_READOUT.md +1
+- arxiv:2308.07201 ← watch\MOONSHOT_THE_LOOP_20260911.md +2
+- arxiv:2308.08155 ← watch\inbox\burn_reset_20260927\flash50\corpus-arxiv-list.md +3
+- arxiv:2308.08475 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-08.md
+- arxiv:2308.09687 ← watch\inbox\burn_reset_20260927\flash50\corpus-arxiv-list.md +2
+- arxiv:2308.10144 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-16.md +2
+- arxiv:2308.10848 ← watch\inbox\burn_reset_20260927\flash50\corpus-arxiv-list.md +2
+- arxiv:2309.02022 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2309.05338 ← watch\inbox\play_as_work_20260926\BRIEF_v6_master_20260926.md +1
+- arxiv:2309.08589 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2309.16609 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2309.17179 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2309.17368 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-08.md
+- arxiv:2309.17453 ← watch\inbox\burn_reset_20260927\flash50\deep-starvation-sensor.md
+- arxiv:2310.00746 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2310.01405 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2310.02170 ← watch\inbox\burn_reset_20260927\flash50\_sw15_out_sw-ib-3_stealth_space-bunny-alpha.md +1
+- arxiv:2310.02949 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2310.03003 ← watch\inbox\spiking_wide\energy-frontier.md +3
+- arxiv:2310.03693 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2310.04408 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-08.md +1
+- arxiv:2310.06694 ← watch\inbox\spiking_wide\upcycle-economics.md +1
+- arxiv:2310.07240 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2310.07855 ← watch\inbox\burn_reset_20260927\flash50\r-contrastive-wm.md
+- arxiv:2310.09256 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2310.10158 ← docs\report_v1\sources\receipts\persona_priorart_2310.10158.md +1
+- arxiv:2310.15896 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2310.16828 ← watch\inbox\burn_reset_20260927\flash50\r-contrastive-wm.md +1
+- arxiv:2310.16837 ← watch\inbox\ENGRAM_OPEN_WEIGHTS_20260911.md
+- arxiv:2311.03449 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2311.05553 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2311.08702 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2311.09677 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-05.md
+- arxiv:2311.11045 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2311.13536 ← watch\inbox\EIGHT_WAVE_INTAKE_20260921.md
+- arxiv:2311.14648 ← watch\inbox\burn_reset_20260927\flash50\deep-epistemic-gap.md +3
+- arxiv:2311.14722 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2311.15070 ← watch\inbox\moonshot_20260916\receipts\TT1_RETROCAUSAL_PHYSICS.md
+- arxiv:2311.16863 ← watch\inbox\spiking_wide\energy-frontier.md +1
+- arxiv:2311.17359 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2311.17371 ← watch\inbox\LAMBDA_PROTOCOL_20260922.md +2
+- arxiv:2311.17842 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2312.00752 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-09.md +4
+- arxiv:2312.04582 ← watch\inbox\physical_computing\receipts\G-F_SPINOR_LATTICE.md +1
+- arxiv:2312.04927 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-09.md +2
+- arxiv:2312.06635 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-09.md +2
+- arxiv:2312.08935 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2312.09084 ← watch\inbox\spiking_wide\neuromorphic-hardware.md +1
+- arxiv:2312.14852 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2401.00057 ← watch\inbox\burn_reset_20260927\flash50\r-contrastive-wm.md +3
+- arxiv:2401.04056 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2401.06796 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-05.md +1
+- arxiv:2401.09432 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2401.10241 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2401.11817 ← watch\inbox\AOS_REPLY_OUR_LENS_20260922.md +11
+- arxiv:2401.12397 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2401.13919 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2401.15347 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2401.17835 ← watch\inbox\burn_reset_20260927\flash50\r-contrastive-wm.md +2
+- arxiv:2402.00070 ← watch\inbox\model_mating_paper_dig_20261001.md +1
+- arxiv:2402.00798 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-10.md +1
+- arxiv:2402.01032 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-09.md +7
+- arxiv:2402.01680 ← watch\inbox\burn_reset_20260927\flash50\corpus-arxiv-list.md +2
+- arxiv:2402.01817 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-10.md +1
+- arxiv:2402.03620 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2402.05372 ← watch\inbox\burn_reset_20260927\flash50\r-vortex-latent.md +1
+- arxiv:2402.05749 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2402.05755 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-15.md +3
+- arxiv:2402.05959 ← watch\inbox\ENGRAM_OPEN_WEIGHTS_20260911.md
+- arxiv:2402.06457 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2402.06782 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2402.07314 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2402.08068 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2402.10171 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2402.14083 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2402.14539 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-15.md +4
+- arxiv:2402.16058 ← watch\inbox\frontier_olm_20260928\sweep\quantization-compression-arxiv.md
+- arxiv:2402.16823 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-15.md +3
+- arxiv:2402.17682 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2402.18668 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-09.md +2
+- arxiv:2402.18807 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2402.19427 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-09.md +3
+- arxiv:2403.00054 ← watch\inbox\moonshot_20260916\receipts\TT1_RETROCAUSAL_PHYSICS.md
+- arxiv:2403.00504 ← watch\inbox\burn_reset_20260927\flash50\r-contrastive-wm.md
+- arxiv:2403.02451 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2403.04132 ← watch\inbox\full_blast_20260926\L09_gwap_literature.md
+- arxiv:2403.09629 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2403.12968 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-08.md +1
+- arxiv:2403.13187 ← watch\inbox\model_mating_paper_dig_20261001.md +1
+- arxiv:2403.17887 ← watch\inbox\spiking_wide\upcycle-economics.md +1
+- arxiv:2403.19887 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-09.md +2
+- arxiv:2403.19978 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-09.md +1
+- arxiv:2403.20306 ← watch\inbox\spiking_wide\energy-frontier.md +2
+- arxiv:2404.01413 ← watch\inbox\burn_reset_20260927\flash50\deep-selffeed-loop.md
+- arxiv:2404.03683 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2404.05892 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-09.md +2
+- arxiv:2404.07760 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2404.10952 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2404.12457 ← watch\MOONSHOT_THE_LOOP_20260911.md +1
+- arxiv:2404.13076 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2404.13208 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2404.13501 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2404.16130 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2404.18796 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-x.md
+- arxiv:2404.19756 ← watch\inbox\wave_20260916\receipts\B13_CODETAUR_KAN.md +2
+- arxiv:2405.00200 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2405.05904 ← watch\inbox\burn_reset_20260927\flash50\r-corpus-epistemics.md +2
+- arxiv:2405.06211 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2405.06694 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2405.07248 ← docs\report_v1\sources\receipts\persona_priorart_2405.07248.md +1
+- arxiv:2405.09673 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-x.md
+- arxiv:2405.12399 ← watch\inbox\burn_reset_20260927\flash50\r-contrastive-wm.md +1
+- arxiv:2405.13792 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-08.md +1
+- arxiv:2405.13927 ← watch\inbox\MICKEY17_WAVE2_QUALITY_20260925.md +1
+- arxiv:2405.14831 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2405.16444 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2405.17428 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2405.19846 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2405.21047 ← watch\inbox\MICKEY17_WAVE2_QUALITY_20260925.md +2
+- arxiv:2405.21060 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-09.md +2
+- arxiv:2406.03816 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2406.04012 ← watch\inbox\physical_computing\receipts\X_MINE_FIGURES_20260916.md
+- arxiv:2406.04271 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2406.04879 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2406.06474 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2406.06484 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-09.md +2
+- arxiv:2406.09187 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-10.md +1
+- arxiv:2406.11695 ← watch\inbox\burn_reset_20260927\flash50\f-08.md +4
+- arxiv:2406.11717 ← watch\inbox\astra_review_sep16\sep16-submission-review.md +5
+- arxiv:2406.11732 ← watch\inbox\astra_review_sep16\sep16-submission-review.md +1
+- arxiv:2406.11776 ← watch\inbox\burn_reset_20260927\flash50\corpus-arxiv-list.md +2
+- arxiv:2406.18665 ← watch\inbox\burn_reset_20260927\flash50\f-04.md +1
+- arxiv:2407.02798 ← watch\inbox\full_blast_20260926\L09_gwap_literature.md
+- arxiv:2407.04620 ← watch\inbox\wave_20260916\receipts\B10_MLP_KV_CACHE_PRIORART.md +2
+- arxiv:2407.08660 ← watch\inbox\physical_computing\receipts\G-E_FLUID_LOGIC_LIBRARY.md
+- arxiv:2407.12345 ← watch\inbox\burn_reset_20260927\flash50\deep-swarm-thermodynamics.md +4
+- arxiv:2407.12784 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-02.md +2
+- arxiv:2407.13887 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2407.16674 ← watch\inbox\wave_20260916\receipts\B13_CODETAUR_KAN.md +2
+- arxiv:2407.21792 ← watch\inbox\SHITPOST_DESK_SELF_STEAL_20260924.md +7
+- arxiv:2408.00760 ← watch\inbox\physical_computing\receipts\X_MINE_FIGURES_20260916.md
+- arxiv:2408.03094 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-08.md +1
+- arxiv:2408.08067 ← watch\inbox\gala_20260925\localfirst-steal\fetched\ownmem\docs_TECHNICAL.md +2
+- arxiv:2408.08435 ← watch\inbox\burn_reset_20260927\flash50\_sw15_out_sw-ib-3_stealth_space-bunny-alpha.md
+- arxiv:2408.10205 ← watch\inbox\wave_20260916\receipts\B13_CODETAUR_KAN.md +2
+- arxiv:2408.11061 ← watch\inbox\frontier_olm_20260928\sweep\quantization-compression-arxiv.md
+- arxiv:2408.11796 ← watch\inbox\spiking_wide\upcycle-economics.md +1
+- arxiv:2408.15237 ← watch\inbox\spiking_wide\upcycle-economics.md +1
+- arxiv:2408.15664 ← watch\inbox\W_WAVE_FOLD_20260912.md
+- arxiv:2409.03733 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2409.05386 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2409.07429 ← watch\inbox\burn_reset_20260927\flash50\w3-research-selfplay.md
+- arxiv:2409.13979 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2409.15534 ← watch\inbox\OFFLOAD_WAVE_FOLD_20260911.md
+- arxiv:2409.15790 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +1
+- arxiv:2410.02197 ← watch\arc_seeds\arc_seed_c424b80a-5f44_f69d1c0fd1073f55.md +12
+- arxiv:2410.02694 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2410.04444 ← watch\inbox\burn_reset_20260927\flash50\w3-research-selfplay.md
+- arxiv:2410.04940 ← watch\inbox\burn_reset_20260927\flash50\r-contrastive-wm.md
+- arxiv:2410.05355 ← watch\inbox\spiking_wide\linear-family.md +1
+- arxiv:2410.08115 ← watch\inbox\burn_reset_20260927\flash50\_sw15_out_sw-ib-3_stealth_space-bunny-alpha.md
+- arxiv:2410.10254 ← watch\inbox\spiking_wide\upcycle-economics.md +2
+- arxiv:2410.10762 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-15.md +2
+- arxiv:2410.12032 ← watch\inbox\spiking_wide\energy-frontier.md
+- arxiv:2410.13787 ← watch\inbox\wave_20260916\receipts\B14_THIRD_SMILE_PROTOCOL.md
+- arxiv:2410.14766 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-reddit.md +1
+- arxiv:2410.15639 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2410.20285 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2410.21228 ← watch\inbox\burn_wave_20260926\B2_74_qlora_recipe_20260926.md +5
+- arxiv:2411.00986 ← watch\inbox\AI_WELFARE_DOSSIER_20260930.md +4
+- arxiv:2411.01886 ← watch\inbox\deepseek_research\deepseek_analysis_6tweets_20260923.md
+- arxiv:2411.04983 ← watch\inbox\burn_reset_20260927\flash50\r-contrastive-wm.md +1
+- arxiv:2411.10109 ← watch\inbox\moonshot_20260916\receipts\M4_MNEMONIC_STEAL.md +1
+- arxiv:2412.06559 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2412.09764 ← watch\inbox\wave_20260916\receipts\B10_MLP_KV_CACHE_PRIORART.md +2
+- arxiv:2412.11664 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2412.13171 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2412.13212 ← watch\inbox\physical_computing\receipts\G-F_SPINOR_LATTICE.md
+- arxiv:2435.1999 ← watch\inbox\physical_computing\receipts\K5_ION_DOPING.md
+- arxiv:2435.70125 ← watch\inbox\physical_computing\receipts\S1_ACADEMIC_WHO.md
+- arxiv:2501.00663 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-09.md +5
+- arxiv:2501.04955 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2501.05465 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md
+- arxiv:2501.11107 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-04.md +1
+- arxiv:2501.12948 ← watch\inbox\burn_reset_20260927\flash50\f-04.md +1
+- arxiv:2501.13956 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-06.md +7
+- arxiv:2501.14249 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2501.14818 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2501.19393 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2502.04133 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-15.md +4
+- arxiv:2502.04180 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-15.md +1
+- arxiv:2502.04223 ← watch\inbox\FLEET_IMPRINT_20260917.md +3
+- arxiv:2502.04484 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-x.md
+- arxiv:2502.05171 ← watch\inbox\RACTOR_ENGINE_SPEC_v0_1.md +10
+- arxiv:2502.08666 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-05.md
+- arxiv:2502.08788 ← watch\inbox\burn_reset_20260927\flash50\corpus-arxiv-list.md +3
+- arxiv:2502.10436 ← watch\inbox\model_mating_paper_dig_20261001.md
+- arxiv:2502.11183 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2502.11271 ← watch\inbox\game_platform_basecamp_20260929\DELEGATION_RESEARCH_20260929.md
+- arxiv:2502.12018 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2502.12067 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2502.12110 ← watch\inbox\burn_reset_20260927\flash50\f-04.md +7
+- arxiv:2502.12187 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-05.md +3
+- arxiv:2502.14458 ← watch\inbox\spiking_wide\upcycle-economics.md +2
+- arxiv:2502.14502 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-reddit.md
+- arxiv:2502.15472 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-16.md +1
+- arxiv:2502.15840 ← watch\inbox\burn_reset_20260927\flash50\corpus-arxiv-list.md +2
+- arxiv:2502.20969 ← watch\MOONSHOT_THE_LOOP_20260911.md +1
+- arxiv:2502.21231 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2503.01155 ← watch\inbox\model_mating_paper_dig_20261001.md +1
+- arxiv:2503.05919 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-x.md +2
+- arxiv:2503.08026 ← watch\inbox\burn_reset_20260927\flash50\w3-research-memai.md +1
+- arxiv:2503.09516 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2503.09617 ← watch\inbox\play_as_work_20260926\BRIEF_v6_master_20260926.md +6
+- arxiv:2503.13386 ← watch\inbox\burn_reset_20260927\work\w-water-display_hermes.md +1
+- arxiv:2503.13448 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-09.md +1
+- arxiv:2503.13657 ← watch\inbox\BURN_doctrine-owed-chase_20260926_e.md +3
+- arxiv:2503.14337 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2503.14456 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-09.md +2
+- arxiv:2503.14476 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2503.14485 ← watch\inbox\THE_FRONTIER_20260924.md +2
+- arxiv:2503.15497 ← watch\inbox\moonshot_20260916\receipts\M1_MNEMONIC_PRIORART.md +2
+- arxiv:2503.18002 ← watch\inbox\spiking_wide\neuromorphic-hardware.md +1
+- arxiv:2503.18575 ← watch\inbox\CANTOR_DIAG_INTAKE_20260921.md +1
+- arxiv:2503.18666 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-10.md +1
+- arxiv:2503.18813 ← watch\inbox\gala_20260925\localfirst-steal\fetched\ownmem\docs_TECHNICAL.md +2
+- arxiv:2503.19867 ← watch\inbox\physical_computing\PHYSICAL_COMPUTING_PACK_20260916.md +1
+- arxiv:2503.23303 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-reddit.md +2
+- arxiv:2504.00441 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-01.md
+- arxiv:2504.04785 ← watch\inbox\game_platform_basecamp_20260929\DELEGATION_RESEARCH_20260929.md +1
+- arxiv:2504.06261 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2504.07952 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-16.md +2
+- arxiv:2504.12516 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2504.13837 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2504.15466 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2504.16828 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2504.16891 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2504.19314 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2504.19413 ← watch\inbox\burn_reset_20260927\flash50\f-04.md +3
+- arxiv:2504.19874 ← watch\inbox\frontier_olm_20260928\sweep\kv-cache-context-engineering-x.md
+- arxiv:2504.20946 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2504.21798 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2505.00675 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-06.md +2
+- arxiv:2505.02114 ← watch\inbox\physical_computing\receipts\C17_CUBE_INSTRUMENT_PLAN.md +1
+- arxiv:2505.03189 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2505.03335 ← watch\inbox\burn_reset_20260927\flash50\r-selfplay-sota.md +6
+- arxiv:2505.03989 ← watch\MOONSHOT_THE_LOOP_20260911.md +1
+- arxiv:2505.05410 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2505.08638 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-10.md +1
+- arxiv:2505.10897 ← watch\inbox\physical_computing\receipts\K11_LIVING_MATERIAL_SENSING.md +1
+- arxiv:2505.11427 ← watch\inbox\model_mating_paper_dig_20261001.md +1
+- arxiv:2505.12514 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2505.13239 ← watch\inbox\burn_reset_20260927\flash50\w3-research-memai.md +2
+- arxiv:2505.15017 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2505.17508 ← watch\arc_seeds\arc_seed_c424b80a-5f44_f69d1c0fd1073f55.md +12
+- arxiv:2505.17827 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2505.18557 ← watch\inbox\frontier_olm_20260928\sweep\quantization-compression-arxiv.md
+- arxiv:2505.19433 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-x.md +5
+- arxiv:2505.19698 ← watch\inbox\burn_reset_20260927\flash50\r-contrastive-wm.md +2
+- arxiv:2505.20411 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2505.22954 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-02.md +6
+- arxiv:2505.23419 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2505.24189 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-x.md
+- arxiv:2505.24478 ← watch\inbox\frontier_olm_20260928\sweep\kv-cache-context-engineering-x.md +4
+- arxiv:2506.01732 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md +1
+- arxiv:2506.01939 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2506.02153 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-x.md +3
+- arxiv:2506.02548 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2506.04118 ← watch\inbox\frontier_olm_20260928\sweep\inference-efficiency-hn.md +1
+- arxiv:2506.05068 ← watch\inbox\wave_20260916\receipts\B14_THIRD_SMILE_PROTOCOL.md
+- arxiv:2506.06698 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-16.md +2
+- arxiv:2506.07982 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2506.09985 ← watch\inbox\burn_reset_20260927\flash50\r-contrastive-wm.md +1
+- arxiv:2506.10943 ← watch\inbox\burn_reset_20260927\flash50\w3-research-selfplay.md
+- arxiv:2506.11798 ← docs\report_v1\sources\receipts\persona_priorart_2506.11798.md +1
+- arxiv:2506.12345 ← watch\inbox\union_fullsend_20260917\DAY_PACK.md
+- arxiv:2506.12657 ← docs\report_v1\sources\receipts\persona_priorart_2506.12657.md +1
+- arxiv:2506.12777 ← watch\inbox\burn_reset_20260927\flash50\r-vortex-latent.md
+- arxiv:2506.12803 ← watch\inbox\physical_computing\receipts\F6_MYCOLOGY_CANON.md +2
+- arxiv:2506.13023 ← watch\inbox\frontier_olm_20260928\sweep\evals-self-improvement-x.md
+- arxiv:2506.13131 ← watch\inbox\burn_reset_20260927\flash50\w3-research-selfplay.md
+- arxiv:2506.13246 ← watch\inbox\frontier_olm_20260928\sweep\agent-memory-continuity-arxiv.md +1
+- arxiv:2506.16440 ← watch\inbox\frontier_olm_20260928\sweep\evals-self-improvement-x.md +2
+- arxiv:2506.17809 ← watch\inbox\physical_computing\PHYSICAL_COMPUTING_PACK_20260916.md +1
+- arxiv:2506.19143 ← watch\inbox\burn_reset_20260927\flash50\corpus-arxiv-list.md +2
+- arxiv:2507.01921 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2507.05257 ← watch\inbox\frontier_olm_20260928\sweep\agent-memory-continuity-reddit.md
+- arxiv:2507.06050 ← watch\inbox\physical_computing\receipts\G-G_SLOW_READOUT.md +1
+- arxiv:2507.06457 ← watch\inbox\spiking_wide\linear-family.md
+- arxiv:2507.10059 ← watch\inbox\model_mating_paper_dig_20261001.md
+- arxiv:2507.11473 ← watch\inbox\burn_reset_20260927\flash50\w3-research-selfplay.md
+- arxiv:2507.12442 ← watch\inbox\wave_20260916\receipts\B10_MLP_KV_CACHE_PRIORART.md +1
+- arxiv:2507.13334 ← watch\inbox\burn_reset_20260927\flash50\corpus-arxiv-list.md +1
+- arxiv:2507.16003 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-16.md +2
+- arxiv:2507.18868 ← watch\inbox\MICKEY17_WAVE_LEDGER_20260929.md
+- arxiv:2507.19457 ← watch\inbox\BURN_prompt-uplift-lane_20260925_c.md +4
+- arxiv:2507.20534 ← watch\inbox\model_garden\KIMI_DOSSIER.md +1
+- arxiv:2507.21046 ← watch\inbox\burn_reset_20260927\flash50\w3-research-selfplay.md
+- arxiv:2507.22448 ← watch\inbox\spiking_wide\linear-family.md +1
+- arxiv:2508.03346 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2508.03680 ← watch\inbox\gala_20260925\localfirst-steal\lanes\fetched\memmachine.readme.md +1
+- arxiv:2508.05004 ← watch\inbox\burn_reset_20260927\flash50\r-selfplay-sota.md +7
+- arxiv:2508.05517 ← watch\inbox\frontier_olm_20260928\sweep\evals-self-improvement-x.md +1
+- arxiv:2508.06149 ← docs\report_v1\sources\receipts\persona_priorart_2508.06149.md +1
+- arxiv:2508.06225 ← watch\inbox\BURN_judge-lane-spec_20260927.md +1
+- arxiv:2508.06950 ← docs\report_v1\sources\receipts\persona_priorart_2508.06950.md +1
+- arxiv:2508.07407 ← watch\inbox\burn_reset_20260927\flash50\w3-research-selfplay.md
+- arxiv:2508.09736 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-06.md +2
+- arxiv:2508.10975 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2508.14444 ← watch\inbox\spiking_wide\linear-family.md +1
+- arxiv:2508.15617 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-x.md
+- arxiv:2508.15884 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2508.16153 ← watch\inbox\burn_reset_20260927\flash50\w3-research-selfplay.md
+- arxiv:2508.16204 ← watch\inbox\ghidra_followon_20261001.md +3
+- arxiv:2508.17655 ← watch\inbox\physical_computing\receipts\X_MINE_PHYSICAL_20260916.md
+- arxiv:2508.19145 ← watch\inbox\physical_computing\receipts\C17_CUBE_INSTRUMENT_PLAN.md +3
+- arxiv:2508.21803 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2509.04664 ← watch\inbox\burn_reset_20260927\flash50\r-corpus-epistemics.md +6
+- arxiv:2509.05276 ← watch\inbox\SPIKINGBRAIN_DROP_20261001.md +18
+- arxiv:2509.05396 ← watch\MOONSHOT_THE_LOOP_20260911.md +4
+- arxiv:2509.06636 ← watch\inbox\play_as_work_20260926\BRIEF_v4_full_20260926.md +2
+- arxiv:2509.07980 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2509.08965 ← watch\inbox\moonshot_20260916\receipts\TT1_RETROCAUSAL_PHYSICS.md
+- arxiv:2509.10536 ← watch\inbox\moonshot_20260916\TT3_CONTEXT.md +4
+- arxiv:2509.19349 ← watch\inbox\burn_reset_20260927\flash50\w3-research-selfplay.md
+- arxiv:2509.22362 ← watch\inbox\physical_computing\PHYSICAL_COMPUTING_PACK_20260916.md +1
+- arxiv:2509.23055 ← watch\MOONSHOT_THE_LOOP_20260911.md +4
+- arxiv:2509.24552 ← watch\inbox\wave_20260916\receipts\B11_SLIDING_WINDOW_RIB.md
+- arxiv:2509.25140 ← watch\inbox\burn_reset_20260927\flash50\w3-research-selfplay.md
+- arxiv:2509.26626 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2510.04374 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2510.04618 ← watch\inbox\burn_reset_20260927\flash50\w3-research-selfplay.md
+- arxiv:2510.05116 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-05.md +4
+- arxiv:2510.05156 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-10.md +1
+- arxiv:2510.05792 ← watch\inbox\physical_computing\receipts\O2_WAVEGUIDE_VERIFY.md
+- arxiv:2510.06492 ← watch\inbox\burn_reset_20260927\flash50\r-contrastive-wm.md
+- arxiv:2510.06557 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2510.07248 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-x.md
+- arxiv:2510.08191 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-16.md +2
+- arxiv:2510.08255 ← watch\inbox\play_as_work_20260926\BRIEF_v6_master_20260926.md +6
+- arxiv:2510.08483 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2510.08490 ← watch\inbox\inbound\DEEPSEEK_EIGHTWAVE_REPORT_20260921.md
+- arxiv:2510.08558 ← watch\inbox\burn_reset_20260927\flash50\w3-research-selfplay.md
+- arxiv:2510.09312 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2510.09665 ← watch\inbox\KV_CACHE_AS_OS_SELF_STEAL_20260922.md +1
+- arxiv:2510.11967 ← watch\inbox\frontier_olm_20260928\sweep\quantization-compression-hn.md
+- arxiv:2510.16079 ← watch\inbox\burn_reset_20260927\flash50\w3-research-selfplay.md
+- arxiv:2510.18855 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2510.18893 ← watch\MOONSHOT_THE_LOOP_20260911.md +1
+- arxiv:2510.19976 ← watch\inbox\physical_computing\receipts\F6_MYCOLOGY_CANON.md +4
+- arxiv:2510.22963 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-08.md +2
+- arxiv:2510.23972 ← watch\inbox\burn_reset_20260927\flash50\f-04.md +8
+- arxiv:2510.24699 ← watch\inbox\frontier_olm_20260928\sweep\quantization-compression-hn.md
+- arxiv:2510.24702 ← watch\inbox\frontier_olm_20260928\sweep\finetuning-and-adaptation-x.md +1
+- arxiv:2510.25726 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2510.26692 ← watch\inbox\spiking_wide\linear-family.md +7
+- arxiv:2511.00130 ← watch\inbox\burn_wave_20260926\B2_325_thoughtbank_preflight_20260926.md +12
+- arxiv:2511.02817 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-x.md
+- arxiv:2511.04256 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2511.04455 ← watch\inbox\moonshot_20260916\receipts\M1_MNEMONIC_PRIORART.md
+- arxiv:2511.10395 ← watch\inbox\burn_reset_20260927\flash50\w3-research-selfplay.md
+- arxiv:2511.17813 ← docs\report_v1\sources\receipts\persona_priorart_2511.17813.md +1
+- arxiv:2511.20857 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-16.md +2
+- arxiv:2511.23404 ← watch\inbox\spiking_wide\linear-family.md +1
+- arxiv:2512.01166 ← watch\inbox\THE_FRONTIER_20260924.md +1
+- arxiv:2512.03024 ← watch\inbox\spiking_wide\energy-frontier.md +6
+- arxiv:2512.03534 ← watch\inbox\burn_wave_20260926\B2_09_prompt_uplift_20260926.md
+- arxiv:2512.03627 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-06.md +2
+- arxiv:2512.04307 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-x.md +2
+- arxiv:2512.07094 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-04.md +1
+- arxiv:2512.07843 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2512.10411 ← watch\inbox\wave_20260916\receipts\B11_SLIDING_WINDOW_RIB.md
+- arxiv:2512.10576 ← watch\MOONSHOT_THE_LOOP_20260911.md
+- arxiv:2512.13564 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2512.15489 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2512.15943 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-x.md
+- arxiv:2512.16812 ← watch\inbox\physical_computing\receipts\X_MINE_FIGURES_20260916.md
+- arxiv:2512.20578 ← watch\inbox\BURN_steering-theory_20260925_b.md
+- arxiv:2512.22245 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-x.md
+- arxiv:2512.23862 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2601.00012 ← watch\inbox\union_fullsend_20260917\DAY_PACK.md
+- arxiv:2601.01828 ← watch\inbox\wave_20260916\receipts\B14_THIRD_SMILE_PROTOCOL.md
+- arxiv:2601.02163 ← watch\inbox\burn_reset_20260927\flash50\corpus-arxiv-list.md +6
+- arxiv:2601.02648 ← watch\inbox\BURN_adversarial-self-probes_20260925_c.md +1
+- arxiv:2601.05566 ← watch\inbox\moonshot_20260916\receipts\TT1_RETROCAUSAL_PHYSICS.md
+- arxiv:2601.05755 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-04.md +1
+- arxiv:2601.06007 ← watch\inbox\frontier_olm_20260928\sweep\kv-cache-context-engineering-hn.md +7
+- arxiv:2601.07054 ← watch\inbox\frontier_olm_2026-10-01\DIGEST.md +3
+- arxiv:2601.07245 ← watch\inbox\frontier_olm_2026-10-01\sweep\swarm-orchestration-x.md +1
+- arxiv:2601.08099 ← watch\inbox\physical_computing\PHYSICAL_COMPUTING_PACK_20260916.md +18
+- arxiv:2601.09113 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2601.10904 ← watch\inbox\THE_FRONTIER_20260924.md
+- arxiv:2601.11553 ← watch\MOONSHOT_THE_LOOP_20260911.md +1
+- arxiv:2601.15195 ← watch\inbox\BURN_judge-lane-spec_20260926_e.md +2
+- arxiv:2601.15380 ← watch\inbox\wave_20260916\receipts\LINKS_ORE3_20260916.md +5
+- arxiv:2601.17879 ← watch\inbox\frontier_olm_2026-10-01\sweep\swarm-orchestration-arxiv.md
+- arxiv:2601.18296 ← watch\inbox\frontier_olm_2026-10-01\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2601.18699 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md
+- arxiv:2601.20467 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2601.20952 ← watch\inbox\moonshot_20260916\receipts\TT1_RETROCAUSAL_PHYSICS.md
+- arxiv:2601.22076 ← watch\inbox\gap_analysis_20261001\GAP_REGISTER.md +7
+- arxiv:2602.00000 ← watch\inbox\THE_FRONTIER_20260924.md
+- arxiv:2602.00933 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2602.01198 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2602.01253 ← watch\inbox\frontier_olm_20260928\sweep\evals-self-improvement-x.md +1
+- arxiv:2602.03845 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2602.04014 ← watch\inbox\physical_computing\PHYSICAL_COMPUTING_PACK_20260916.md +1
+- arxiv:2602.05261 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2602.05486 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2602.05818 ← watch\inbox\frontier_olm_2026-10-01\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2602.06052 ← watch\inbox\burn_reset_20260927\flash50\corpus-arxiv-list.md +1
+- arxiv:2602.06130 ← watch\inbox\burn_reset_20260927\flash50\r-contrastive-wm.md
+- arxiv:2602.08025 ← watch\inbox\BURN_world-models-multi-agent_20260925_c.md
+- arxiv:2602.08984 ← watch\inbox\last_mile_20260930\AE1_NCP_PAPER.md
+- arxiv:2602.10226 ← watch\inbox\frontier_olm_20260928\sweep\evals-self-improvement-x.md
+- arxiv:2602.11358 ← watch\inbox\wave_20260916\receipts\B14_THIRD_SMILE_PROTOCOL.md
+- arxiv:2602.12430 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-x.md
+- arxiv:2602.12670 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-x.md +2
+- arxiv:2602.13530 ← watch\inbox\burn_reset_20260927\flash50\w3-research-memai.md +2
+- arxiv:2602.14690 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-x.md
+- arxiv:2602.14903 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2602.15654 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-02.md +1
+- arxiv:2602.15871 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-x.md +3
+- arxiv:2602.16800 ← watch\inbox\PLAIN_LANGUAGE_FOR_AOS_20260924.md +9
+- arxiv:2602.19843 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-04.md +1
+- arxiv:2602.23164 ← watch\inbox\burn_reset_20260927\work\w-kabbalah-epistemics_verify.md
+- arxiv:2602.23881 ← watch\inbox\frontier_olm_20260928\steal\inference-efficiency.md +2
+- arxiv:2602.24286 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2603.00483 ← watch\inbox\burn_wave_20260926\B2_09_prompt_uplift_20260926.md +1
+- arxiv:2603.00495 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-04.md +1
+- arxiv:2603.01853 ← watch\inbox\frontier_olm_2026-10-01\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2603.02697 ← watch\inbox\BURN_world-models-multi-agent_20260927.md +1
+- arxiv:2603.02935 ← watch\inbox\burn_reset_20260927\flash50\r-contrastive-wm.md +3
+- arxiv:2603.04750 ← watch\inbox\frontier_olm_2026-10-01\sweep\swarm-orchestration-arxiv.md
+- arxiv:2603.05344 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2603.07670 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2603.07931 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-x.md +1
+- arxiv:2603.08647 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md
+- arxiv:2603.10098 ← watch\inbox\play_as_work_20260926\BRIEF_v6_master_20260926.md +5
+- arxiv:2603.12310 ← watch\inbox\BURN_prompt-uplift-lane_20260925_b.md +6
+- arxiv:2603.13999 ← watch\inbox\frontier_olm_20260928\sweep\evals-self-improvement-arxiv.md +4
+- arxiv:2603.15569 ← watch\inbox\spiking_wide\linear-family.md +2
+- arxiv:2603.16104 ← watch\inbox\burn_reset_20260927\flash50\corpus-arxiv-list.md +2
+- arxiv:2603.18893 ← watch\inbox\wave_20260916\receipts\B14_THIRD_SMILE_PROTOCOL.md
+- arxiv:2603.19137 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-x.md +2
+- arxiv:2603.23525 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-08.md +1
+- arxiv:2603.23801 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-10.md +1
+- arxiv:2603.25158 ← watch\inbox\burn_reset_20260927\flash50\corpus-arxiv-list.md +3
+- arxiv:2603.27139 ← watch\inbox\physical_computing\receipts\X_MINE_FIGURES_20260916.md
+- arxiv:2603.27910 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-x.md +2
+- arxiv:2603.30033 ← watch\inbox\FLEET_IMPRINT_20260917.md +1
+- arxiv:2604.02552 ← watch\inbox\physical_computing\receipts\S1_ACADEMIC_WHO.md
+- arxiv:2604.02971 ← watch\inbox\BURN_doctrine-owed-chase_20260926_d.md
+- arxiv:2604.02985 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-08.md +1
+- arxiv:2604.03143 ← watch\inbox\burn_reset_20260927\flash50\corpus-arxiv-list.md +2
+- arxiv:2604.05627 ← watch\inbox\physical_computing\PHYSICAL_COMPUTING_PACK_20260916.md +1
+- arxiv:2604.06374 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2604.07778 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-13.md +1
+- arxiv:2604.10418 ← watch\inbox\CANTOR_DIAG_INTAKE_20260921.md +1
+- arxiv:2604.11011 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2604.11364 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2604.11745 ← watch\inbox\burn_reset_20260927\flash50\r-vortex-latent.md +3
+- arxiv:2604.13066 ← watch\inbox\frontier_olm_20260928\sweep\quantization-compression-arxiv.md
+- arxiv:2604.13452 ← watch\inbox\BURN_prompt-uplift-lane_20260925_b.md +1
+- arxiv:2604.13824 ← watch\inbox\FLEET_IMPRINT_20260917.md
+- arxiv:2604.15034 ← watch\inbox\physical_computing\PHYSICAL_COMPUTING_PACK_20260916.md +3
+- arxiv:2604.15097 ← watch\inbox\INTAKE_XBATCH_20260912.md
+- arxiv:2604.17109 ← watch\inbox\physical_computing\receipts\X_MINE_PHYSICAL_20260916.md +2
+- arxiv:2604.17111 ← watch\inbox\frontier_olm_2026-10-01\DIGEST.md +4
+- arxiv:2604.17408 ← watch\inbox\moonshot_20260916\receipts\TT1_RETROCAUSAL_PHYSICS.md
+- arxiv:2604.18556 ← watch\inbox\frontier_olm_20260928\sweep\inference-efficiency-reddit.md
+- arxiv:2604.18566 ← watch\inbox\frontier_olm_20260928\sweep\quantization-compression-arxiv.md
+- arxiv:2604.20943 ← watch\inbox\burn_reset_20260927\flash50\w3-research-memai.md +1
+- arxiv:2604.22136 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2604.22432 ← watch\inbox\frontier_olm_20260928\sweep\evals-self-improvement-x.md +1
+- arxiv:2604.24842 ← watch\inbox\BURN_judge-lane-spec_20260925.md +11
+- arxiv:2604.25359 ← watch\inbox\frontier_olm_20260928\sweep\kv-cache-context-engineering-x.md +1
+- arxiv:2605.00649 ← watch\inbox\frontier_olm_20260928\sweep\inference-efficiency-reddit.md
+- arxiv:2605.05209 ← watch\inbox\physical_computing\PHYSICAL_COMPUTING_PACK_20260916.md +1
+- arxiv:2605.05403 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2605.06635 ← watch\inbox\SPEC_EDITS_MICKEY17_V2_20260925.md
+- arxiv:2605.06716 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2605.06924 ← watch\inbox\GOOGLE_CODIRECTOR_STEAL_20260925.md
+- arxiv:2605.07019 ← watch\inbox\frontier_olm_20260928\DIGEST.md +2
+- arxiv:2605.07462 ← watch\inbox\frontier_olm_20260928\sweep\finetuning-and-adaptation-arxiv.md
+- arxiv:2605.08605 ← watch\inbox\MICKEY17_WAVE_LEDGER_20260929.md
+- arxiv:2605.09104 ← watch\inbox\burn_reset_20260927\flash50\corpus-arxiv-list.md +2
+- arxiv:2605.09863 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-x.md +1
+- arxiv:2605.09998 ← watch\inbox\frontier_olm_20260928\sweep\evals-self-improvement-arxiv.md +5
+- arxiv:2605.10664 ← watch\inbox\BURN_steering-theory_20260927.md +1
+- arxiv:2605.11086 ← watch\inbox\BURN_stego-canon-pipeline_20260927_b.md +1
+- arxiv:2605.12460 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2605.12493 ← watch\inbox\frontier_olm_2026-10-01\sweep\agent-memory-continuity-x.md +1
+- arxiv:2605.13013 ← watch\inbox\burn_reset_20260927\flash50\r-contrastive-wm.md +2
+- arxiv:2605.14386 ← watch\inbox\model_mating_paper_dig_20261001.md +1
+- arxiv:2605.14588 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2605.15632 ← watch\inbox\moonshot_20260916\receipts\TT1_RETROCAUSAL_PHYSICS.md
+- arxiv:2605.16727 ← watch\inbox\model_mating_paper_dig_20261001.md +1
+- arxiv:2605.17304 ← watch\inbox\frontier_olm_20260928\sweep\quantization-compression-arxiv.md +1
+- arxiv:2605.17393 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-15.md +2
+- arxiv:2605.17475 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-10.md +1
+- arxiv:2605.17774 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-x.md +3
+- arxiv:2605.18032 ← watch\inbox\burn_reset_20260927\flash50\corpus-arxiv-list.md +2
+- arxiv:2605.18803 ← watch\inbox\BURN_adversarial-self-probes_20260925.md +5
+- arxiv:2605.19373 ← watch\inbox\frontier_olm_20260928\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2605.21014 ← watch\inbox\moonshot_20260916\receipts\TT1_RETROCAUSAL_PHYSICS.md
+- arxiv:2605.21434 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-10.md +1
+- arxiv:2605.24775 ← watch\inbox\frontier_olm_2026-10-01\sweep\swarm-orchestration-arxiv.md +4
+- arxiv:2605.25720 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2605.26596 ← watch\inbox\frontier_olm_20260928\sweep\quantization-compression-x.md +2
+- arxiv:2605.29233 ← watch\inbox\frontier_olm_20260928\sweep\inference-efficiency-arxiv.md
+- arxiv:2605.29256 ← watch\inbox\burn_reset_20260927\flash50\corpus-arxiv-list.md +1
+- arxiv:2605.31433 ← watch\inbox\burn_reset_20260927\flash50\r-selfplay-sota.md +2
+- arxiv:2606.00206 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-hn.md +9
+- arxiv:2606.01435 ← watch\inbox\gala_20260925\localfirst-steal\lanes\fetched\lbrain\lbrain\README.md +1
+- arxiv:2606.02628 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-arxiv.md +2
+- arxiv:2606.03458 ← watch\inbox\frontier_olm_2026-10-01\DIGEST.md +5
+- arxiv:2606.03979 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2606.04056 ← watch\inbox\frontier_olm_2026-10-01\sweep\swarm-orchestration-arxiv.md
+- arxiv:2606.05761 ← watch\inbox\deepseek_research\mined\20260731T145433Z_steal-mag-native-contracts-only-not-pape.answer.local_analysis.md +12
+- arxiv:2606.05988 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2606.08432 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2606.09421 ← watch\inbox\frontier_olm_20260928\sweep\quantization-compression-arxiv.md
+- arxiv:2606.09593 ← watch\inbox\frontier_olm_20260928\sweep\agent-memory-continuity-arxiv.md +1
+- arxiv:2606.09863 ← watch\inbox\BURN_adversarial-self-probes_20260927_b.md +4
+- arxiv:2606.09900 ← watch\inbox\gala_20260925\localfirst-steal\lanes\fetched\lbrain\lbrain\README.md +1
+- arxiv:2606.09936 ← watch\inbox\burn_reset_20260927\work\w-kabbalah-epistemics_verify.md
+- arxiv:2606.11680 ← watch\inbox\frontier_olm_2026-10-01\sweep\agent-memory-continuity-x.md +1
+- arxiv:2606.11834 ← watch\inbox\frontier_olm_20260928\sweep\evals-self-improvement-x.md
+- arxiv:2606.14875 ← watch\inbox\frontier_olm_2026-10-01\sweep\kv-cache-context-engineering-arxiv.md +1
+- arxiv:2606.16926 ← watch\inbox\lens_20260927\external_links.md +3
+- arxiv:2606.17016 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2606.17819 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-x.md
+- arxiv:2606.18966 ← watch\inbox\frontier_olm_20260928\sweep\agent-memory-continuity-arxiv.md +1
+- arxiv:2606.19529 ← watch\inbox\moonshot_20260916\receipts\M3_LAPLACIAN_BELIEFS.md
+- arxiv:2606.20634 ← watch\inbox\frontier_olm_2026-09-30\sweep\swarm-orchestration-x.md +1
+- arxiv:2606.23271 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-x.md
+- arxiv:2606.23671 ← watch\inbox\wave_20260916\receipts\B14_THIRD_SMILE_PROTOCOL.md
+- arxiv:2606.24775 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-x.md +3
+- arxiv:2606.26479 ← watch\inbox\BURN_doctrine-owed-chase_20260926_b.md +2
+- arxiv:2606.26511 ← watch\inbox\frontier_olm_2026-10-01\sweep\agent-memory-continuity-x.md +3
+- arxiv:2606.26524 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-04.md +1
+- arxiv:2606.26649 ← watch\inbox\frontier_olm_20260928\sweep\agent-memory-continuity-arxiv.md +1
+- arxiv:2606.26859 ← watch\inbox\frontier_olm_20260928\sweep\evals-self-improvement-arxiv.md +3
+- arxiv:2606.29067 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2606.31759 ← watch\inbox\frontier_olm_20260928\sweep\agent-memory-continuity-arxiv.md +1
+- arxiv:2607.00053 ← watch\inbox\game_platform_basecamp_20260929\COST_MODEL_OPUS_20260929.md +2
+- arxiv:2607.00918 ← watch\inbox\burn_reset_20260927\flash50\corpus-arxiv-list.md +3
+- arxiv:2607.03640 ← watch\inbox\wave_20260916\receipts\B14_THIRD_SMILE_PROTOCOL.md
+- arxiv:2607.04277 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2607.04688 ← watch\inbox\W_WAVE_FOLD_20260912.md
+- arxiv:2607.07535 ← watch\inbox\EIGHT_WAVE_INTAKE_20260921.md
+- arxiv:2607.08716 ← watch\inbox\deepseek_research\mined\20260731T145433Z_steal-mag-native-contracts-only-not-pape.answer.local_analysis.md
+- arxiv:2607.09349 ← watch\inbox\gala_20260925\localfirst-steal\lanes\fetched\lbrain\lbrain\README.md +1
+- arxiv:2607.10706 ← watch\inbox\FLEET_IMPRINT_20260917.md
+- arxiv:2607.11317 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-arxiv.md +1
+- arxiv:2607.11871 ← watch\inbox\burn_reset_20260927\flash50\f-08.md +1
+- arxiv:2607.13285 ← watch\inbox\physical_computing\PHYSICAL_COMPUTING_PACK_20260916.md +3
+- arxiv:2607.13325 ← watch\inbox\physical_computing\receipts\X_MINE_PHYSICAL_20260916.md
+- arxiv:2607.13413 ← watch\inbox\wave_20260916\receipts\B13_CODETAUR_KAN.md
+- arxiv:2607.13446 ← watch\inbox\physical_computing\receipts\X_MINE_PHYSICAL_20260916.md
+- arxiv:2607.14651 ← watch\inbox\burn_reset_20260927\flash50\stealth-sw-02.md
+- arxiv:2607.15495 ← watch\inbox\AI_WELFARE_DOSSIER_20260930.md +2
+- arxiv:2607.15516 ← watch\inbox\frontier_olm_20260928\sweep\quantization-compression-arxiv.md +1
+- arxiv:2607.15525 ← watch\inbox\wave_20260916\receipts\B13_CODETAUR_KAN.md +1
+- arxiv:2607.15899 ← watch\inbox\frontier_olm_2026-10-01\sweep\swarm-orchestration-arxiv.md
+- arxiv:2607.17205 ← watch\inbox\frontier_olm_20260928\sweep\finetuning-and-adaptation-arxiv.md +6
+- arxiv:2607.17525 ← watch\inbox\frontier_olm_2026-10-01\sweep\swarm-orchestration-arxiv.md
+- arxiv:2607.18724 ← watch\inbox\burn_wave_20260926\B2_09_prompt_uplift_20260926.md +2
+- arxiv:2607.19436 ← watch\inbox\frontier_olm_20260928\sweep\agent-memory-continuity-arxiv.md +1
+- arxiv:2607.20129 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-arxiv.md +2
+- arxiv:2607.22653 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2607.23394 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-x.md +5
+- arxiv:2607.24653 ← watch\inbox\model_garden\KIMI_DOSSIER.md +1
+- arxiv:2607.25335 ← watch\inbox\frontier_olm_20260928\sweep\quantization-compression-x.md +4
+- arxiv:2607.27310 ← watch\inbox\play_as_work_20260926\BRIEF_v4_full_20260926.md +4
+- arxiv:2607.27435 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md +1
+- arxiv:2607.29250 ← watch\inbox\frontier_olm_20260928\sweep\finetuning-and-adaptation-arxiv.md +4
+- arxiv:2608.00028 ← watch\inbox\frontier_olm_2026-10-01\sweep\swarm-orchestration-arxiv.md
+- arxiv:2608.00754 ← watch\inbox\burn_reset_20260927\flash50\f-04.md +2
+- arxiv:2608.01078 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-x.md
+- arxiv:2608.01526 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-hn.md +3
+- arxiv:2608.0365 ← watch\inbox\frontier_olm_20260928\steal\quantization-compression.md +2
+- arxiv:2608.04003 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2608.04569 ← watch\inbox\frontier_olm_20260928\sweep\quantization-compression-arxiv.md +1
+- arxiv:2608.04625 ← watch\inbox\frontier_olm_20260928\sweep\evals-self-improvement-arxiv.md +5
+- arxiv:2608.04714 ← watch\inbox\frontier_olm_2026-10-01\sweep\inference-efficiency-arxiv.md
+- arxiv:2608.04804 ← watch\inbox\MICKEY17_WAVE_LEDGER_20260929.md +14
+- arxiv:2608.06301 ← watch\inbox\frontier_olm_20260928\sweep\evals-self-improvement-reddit.md +2
+- arxiv:2608.06564 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-x.md +5
+- arxiv:2608.06790 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-x.md +3
+- arxiv:2608.07169 ← watch\inbox\frontier_olm_20260928\sweep\finetuning-and-adaptation-arxiv.md +5
+- arxiv:2608.09073 ← watch\inbox\burn_reset_20260927\flash50\r-contrastive-wm.md
+- arxiv:2608.09228 ← watch\inbox\ASTRA_ASK_2_NIGHT_AUDIT_20260916.md +3
+- arxiv:2608.09595 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-x.md
+- arxiv:2608.10218 ← watch\inbox\burn_reset_20260927\flash50\corpus-arxiv-list.md +3
+- arxiv:2608.10644 ← watch\inbox\frontier_olm_2026-09-30\steal\agent-memory-continuity.md +13
+- arxiv:2608.11079 ← watch\inbox\frontier_olm_20260928\sweep\quantization-compression-arxiv.md
+- arxiv:2608.11403 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-x.md +3
+- arxiv:2608.11775 ← watch\inbox\frontier_olm_2026-10-01\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2608.11816 ← watch\inbox\frontier_olm_2026-10-01\sweep\open-local-language-models-reddit.md
+- arxiv:2608.12403 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2608.12652 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-x.md
+- arxiv:2608.13040 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md
+- arxiv:2608.13552 ← watch\inbox\BURN_world-models-multi-agent_20260925_c.md
+- arxiv:2608.13883 ← watch\inbox\frontier_olm_20260928\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2608.14707 ← watch\inbox\frontier_olm_2026-10-01\sweep\swarm-orchestration-arxiv.md
+- arxiv:2608.14773 ← watch\inbox\wave_20260916\receipts\B13_CODETAUR_KAN.md +1
+- arxiv:2608.14774 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-x.md
+- arxiv:2608.15693 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-x.md
+- arxiv:2608.16157 ← watch\inbox\burn_reset_20260927\flash50\f-04.md +1
+- arxiv:2608.20318 ← watch\inbox\frontier_olm_20260928\sweep\evals-self-improvement-arxiv.md +3
+- arxiv:2608.20614 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-x.md +2
+- arxiv:2608.20664 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md +9
+- arxiv:2608.21488 ← watch\inbox\wave_20260916\receipts\B13_CODETAUR_KAN.md
+- arxiv:2608.22472 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-x.md +4
+- arxiv:2608.23023 ← watch\inbox\frontier_olm_2026-10-01\sweep\inference-efficiency-arxiv.md
+- arxiv:2608.23565 ← watch\inbox\BURN_world-models-multi-agent_20260925_c.md +1
+- arxiv:2608.23651 ← watch\inbox\burn_reset_20260927\flash50\corpus-arxiv-list.md +7
+- arxiv:2608.23740 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md +6
+- arxiv:2608.24306 ← watch\inbox\SPEC_EDITS_MICKEY17_V2_20260925.md
+- arxiv:2608.24469 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-x.md
+- arxiv:2608.24615 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-x.md
+- arxiv:2608.24654 ← watch\inbox\frontier_olm_2026-10-01\sweep\open-local-language-models-reddit.md
+- arxiv:2608.24658 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2608.24918 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2608.24921 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2608.25053 ← watch\inbox\frontier_olm_20260928\sweep\inference-efficiency-arxiv.md +2
+- arxiv:2608.25149 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md +2
+- arxiv:2608.25677 ← watch\inbox\frontier_olm_20260928\sweep\finetuning-and-adaptation-arxiv.md +3
+- arxiv:2608.25761 ← watch\inbox\frontier_olm_2026-10-01\sweep\swarm-orchestration-arxiv.md
+- arxiv:2608.25986 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2608.25992 ← watch\inbox\frontier_olm_2026-10-01\sweep\swarm-orchestration-arxiv.md +3
+- arxiv:2608.26206 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-x.md
+- arxiv:2608.27338 ← watch\inbox\frontier_olm_2026-10-01\sweep\swarm-orchestration-arxiv.md
+- arxiv:2608.27449 ← watch\inbox\frontier_olm_20260928\sweep\finetuning-and-adaptation-arxiv.md +2
+- arxiv:2608.27508 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2608.27797 ← watch\inbox\frontier_olm_20260928\sweep\agent-memory-continuity-arxiv.md +1
+- arxiv:2608.27808 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2608.28003 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-arxiv.md +1
+- arxiv:2608.28011 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2608.28442 ← watch\inbox\FLEET_IMPRINT_20260917.md
+- arxiv:2608.28444 ← watch\inbox\spiking_wide\upcycle-economics.md +15
+- arxiv:2608.28667 ← watch\inbox\frontier_olm_2026-10-01\sweep\inference-efficiency-arxiv.md +1
+- arxiv:2608.28766 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2608.28809 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-arxiv.md +8
+- arxiv:2608.28950 ← watch\scout\MONITOR_LANE_2026-09-14.md
+- arxiv:2608.29250 ← watch\inbox\frontier_olm_20260928\sweep\finetuning-and-adaptation-arxiv.md
+- arxiv:2608.29357 ← watch\inbox\frontier_olm_20260928\sweep\finetuning-and-adaptation-arxiv.md +2
+- arxiv:2608.30005 ← watch\inbox\frontier_olm_20260928\sweep\open-and-local-language-models-arxiv.md +4
+- arxiv:2608.30076 ← watch\inbox\frontier_olm_20260928\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2608.30250 ← watch\inbox\frontier_olm_20260928\sweep\open-and-local-language-models-arxiv.md +1
+- arxiv:2608.30439 ← watch\inbox\spiking_wide\event-driven-resonance.md +2
+- arxiv:2608.30661 ← watch\inbox\frontier_olm_2026-10-01\sweep\swarm-orchestration-arxiv.md +2
+- arxiv:2608.30710 ← watch\inbox\wave_20260916\receipts\B13_CODETAUR_KAN.md +1
+- arxiv:2608.30757 ← watch\inbox\frontier_olm_20260928\sweep\agent-memory-continuity-arxiv.md +1
+- arxiv:2608.30996 ← watch\inbox\frontier_olm_2026-10-01\sweep\kv-cache-context-engineering-arxiv.md +4
+- arxiv:2608.31082 ← watch\inbox\frontier_olm_2026-10-01\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.00224 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-x.md
+- arxiv:2609.00523 ← watch\inbox\frontier_olm_2026-10-01\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.00665 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-x.md +1
+- arxiv:2609.00768 ← watch\inbox\frontier_olm_20260928\sweep\evals-self-improvement-arxiv.md +3
+- arxiv:2609.00796 ← watch\scout\MONITOR_LANE_2026-09-14.md
+- arxiv:2609.01111 ← watch\inbox\frontier_olm_2026-10-01\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.01338 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md +5
+- arxiv:2609.01432 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-arxiv.md +2
+- arxiv:2609.01587 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-arxiv.md +1
+- arxiv:2609.01660 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +6
+- arxiv:2609.01798 ← watch\inbox\frontier_olm_20260928\sweep\inference-efficiency-arxiv.md +2
+- arxiv:2609.01821 ← watch\scout\MONITOR_LANE_2026-09-14.md
+- arxiv:2609.01962 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-arxiv.md +5
+- arxiv:2609.02011 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.02246 ← watch\inbox\frontier_olm_2026-09-30\sweep\swarm-orchestration-x.md +5
+- arxiv:2609.02783 ← watch\inbox\frontier_olm_2026-09-30\sweep\swarm-orchestration-x.md +3
+- arxiv:2609.03201 ← watch\inbox\frontier_olm_2026-10-01\sweep\agent-memory-continuity-arxiv.md +3
+- arxiv:2609.03311 ← watch\scout\MONITOR_LANE_2026-09-14.md
+- arxiv:2609.03430 ← watch\inbox\frontier_olm_2026-10-01\sweep\inference-efficiency-arxiv.md
+- arxiv:2609.03450 ← watch\inbox\frontier_olm_2026-10-01\sweep\agent-memory-continuity-arxiv.md +2
+- arxiv:2609.03454 ← watch\inbox\frontier_olm_2026-10-01\sweep\finetuning-adaptation-arxiv.md +1
+- arxiv:2609.03467 ← watch\inbox\frontier_olm_20260928\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.03494 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md
+- arxiv:2609.03507 ← watch\inbox\frontier_olm_20260928\sweep\agent-memory-continuity-arxiv.md +2
+- arxiv:2609.03915 ← watch\inbox\frontier_olm_20260928\sweep\agent-memory-continuity-arxiv.md +1
+- arxiv:2609.03953 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-x.md +1
+- arxiv:2609.04170 ← watch\inbox\frontier_olm_2026-09-30\sweep\swarm-orchestration-arxiv.md +3
+- arxiv:2609.04172 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-hn.md
+- arxiv:2609.04263 ← watch\inbox\frontier_olm_20260928\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.04421 ← watch\scout\MONITOR_LANE_2026-09-14.md
+- arxiv:2609.04651 ← watch\inbox\frontier_olm_2026-10-01\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.04748 ← watch\inbox\frontier_olm_20260928\sweep\quantization-compression-arxiv.md
+- arxiv:2609.04820 ← watch\inbox\frontier_olm_2026-10-01\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.04852 ← watch\WANTS.md +1
+- arxiv:2609.05139 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.05152 ← watch\inbox\frontier_olm_2026-10-01\sweep\quantization-compression-arxiv.md +3
+- arxiv:2609.05275 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md
+- arxiv:2609.05339 ← watch\inbox\frontier_olm_2026-10-01\sweep\agent-memory-continuity-arxiv.md +9
+- arxiv:2609.05395 ← watch\inbox\frontier_olm_20260928\sweep\open-and-local-language-models-arxiv.md
+- arxiv:2609.05677 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.05736 ← watch\inbox\frontier_olm_20260928\sweep\open-and-local-language-models-arxiv.md
+- arxiv:2609.05764 ← watch\inbox\frontier_olm_2026-10-01\sweep\quantization-compression-arxiv.md +1
+- arxiv:2609.05881 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-arxiv.md +37
+- arxiv:2609.06229 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.06283 ← watch\inbox\FIVE_MIRRORS_SELF_STEAL_20260912.md
+- arxiv:2609.06366 ← watch\inbox\frontier_olm_2026-10-01\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.06940 ← watch\scout\MONITOR_LANE_2026-09-15.md
+- arxiv:2609.06986 ← watch\inbox\frontier_olm_2026-10-01\sweep\finetuning-adaptation-arxiv.md +7
+- arxiv:2609.07093 ← watch\inbox\frontier_olm_2026-10-01\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.07247 ← watch\inbox\frontier_olm_20260928\DIGEST.md +2
+- arxiv:2609.07280 ← watch\inbox\frontier_olm_20260928\sweep\open-and-local-language-models-arxiv.md
+- arxiv:2609.07370 ← watch\inbox\48h_synth\steals.md +17
+- arxiv:2609.07471 ← watch\inbox\frontier_olm_2026-10-01\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.07474 ← watch\scout\MONITOR_LANE_2026-09-14.md
+- arxiv:2609.07673 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.07883 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md
+- arxiv:2609.07901 ← watch\inbox\frontier_olm_2026-09-30\steal\quantization-compression.md +11
+- arxiv:2609.08183 ← watch\inbox\frontier_olm_2026-10-01\sweep\finetuning-adaptation-x.md
+- arxiv:2609.08248 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.08279 ← watch\inbox\frontier_olm_2026-10-01\sweep\agent-memory-continuity-arxiv.md +8
+- arxiv:2609.08318 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +1
+- arxiv:2609.08532 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md +3
+- arxiv:2609.08550 ← watch\inbox\frontier_olm_2026-10-01\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.08574 ← watch\inbox\frontier_olm_20260928\sweep\kv-cache-context-engineering-arxiv.md +2
+- arxiv:2609.08650 ← watch\inbox\FLEET_IMPRINT_20260917.md +1
+- arxiv:2609.08747 ← watch\inbox\frontier_olm_2026-10-01\sweep\agent-memory-continuity-arxiv.md +5
+- arxiv:2609.08919 ← watch\inbox\frontier_olm_20260928\sweep\finetuning-and-adaptation-arxiv.md +6
+- arxiv:2609.08936 ← watch\inbox\AUK_SPIKE_20260928.md +3
+- arxiv:2609.09085 ← watch\inbox\frontier_olm_20260928\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.09229 ← watch\scout\MONITOR_LANE_2026-09-15.md
+- arxiv:2609.09240 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-arxiv.md
+- arxiv:2609.09338 ← watch\inbox\frontier_olm_2026-10-01\sweep\inference-efficiency-x.md +1
+- arxiv:2609.09476 ← watch\inbox\frontier_olm_20260928\sweep\open-and-local-language-models-arxiv.md
+- arxiv:2609.09662 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md +3
+- arxiv:2609.09815 ← watch\inbox\frontier_olm_20260928\sweep\agent-memory-continuity-arxiv.md +1
+- arxiv:2609.09986 ← watch\inbox\frontier_olm_20260928\sweep\quantization-compression-arxiv.md +1
+- arxiv:2609.10049 ← watch\inbox\frontier_olm_20260928\sweep\finetuning-and-adaptation-arxiv.md +3
+- arxiv:2609.10155 ← watch\inbox\frontier_olm_2026-10-01\sweep\finetuning-adaptation-arxiv.md +8
+- arxiv:2609.10239 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.10494 ← watch\scout\MONITOR_LANE_2026-09-15.md
+- arxiv:2609.10715 ← watch\inbox\PERSISTENT_WORLD_TIE_TOGETHER_20260913.md +2
+- arxiv:2609.10750 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md +4
+- arxiv:2609.10780 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.10790 ← watch\inbox\frontier_olm_20260928\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.10922 ← watch\inbox\frontier_olm_20260928\sweep\evals-self-improvement-x.md
+- arxiv:2609.10962 ← watch\inbox\frontier_olm_20260928\sweep\open-and-local-language-models-arxiv.md
+- arxiv:2609.11065 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.11133 ← watch\inbox\frontier_olm_20260928\sweep\open-and-local-language-models-arxiv.md
+- arxiv:2609.11189 ← watch\inbox\inbound\DEEPSEEK_EIGHTWAVE_REPORT_20260921.md
+- arxiv:2609.11192 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +6
+- arxiv:2609.11294 ← watch\inbox\AGENTZIP_STEAL_20260912.md +1
+- arxiv:2609.11449 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-x.md
+- arxiv:2609.11582 ← watch\inbox\frontier_olm_2026-10-01\sweep\quantization-compression-arxiv.md +2
+- arxiv:2609.11674 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md +1
+- arxiv:2609.11728 ← watch\inbox\frontier_olm_20260928\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.11744 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md +2
+- arxiv:2609.11801 ← watch\inbox\LOOPED_FLOWS_GODEL_20260912.md
+- arxiv:2609.12002 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-arxiv.md +7
+- arxiv:2609.12191 ← watch\inbox\frontier_olm_2026-09-30\sweep\swarm-orchestration-x.md +3
+- arxiv:2609.12353 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md +5
+- arxiv:2609.12404 ← watch\inbox\frontier_olm_20260928\DIGEST.md +3
+- arxiv:2609.12436 ← watch\inbox\frontier_olm_2026-10-01\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.12746 ← watch\inbox\frontier_olm_20260928\DIGEST.md +3
+- arxiv:2609.13443 ← watch\inbox\NIGHT_AUDIT_20260916.md
+- arxiv:2609.13470 ← watch\inbox\frontier_olm_2026-10-01\sweep\swarm-orchestration-arxiv.md +1
+- arxiv:2609.13548 ← watch\inbox\EIGHT_WAVE_INTAKE_20260921.md +1
+- arxiv:2609.13559 ← watch\inbox\frontier_olm_20260928\sweep\open-and-local-language-models-arxiv.md
+- arxiv:2609.13773 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.13800 ← watch\inbox\frontier_olm_2026-09-30\sweep\swarm-orchestration-arxiv.md +2
+- arxiv:2609.14060 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-x.md +3
+- arxiv:2609.14144 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md +3
+- arxiv:2609.14721 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.14744 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.14767 ← watch\inbox\frontier_olm_2026-09-30\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.14780 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.14858 ← watch\inbox\FLEET_IMPRINT_20260917.md +5
+- arxiv:2609.14864 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-x.md +6
+- arxiv:2609.14872 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-x.md +5
+- arxiv:2609.14976 ← watch\inbox\frontier_olm_20260928\sweep\quantization-compression-arxiv.md
+- arxiv:2609.15079 ← watch\inbox\frontier_olm_2026-09-30\sweep\swarm-orchestration-arxiv.md +2
+- arxiv:2609.15131 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md
+- arxiv:2609.15309 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md +4
+- arxiv:2609.15369 ← watch\inbox\frontier_olm_20260928\sweep\kv-cache-context-engineering-hn.md +1
+- arxiv:2609.15397 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md +4
+- arxiv:2609.15702 ← watch\inbox\FLEET_IMPRINT_20260917.md
+- arxiv:2609.15906 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.15922 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.15983 ← watch\inbox\burn_wave_20260926\B2_171_xpost_source_convention_20260926.md +1
+- arxiv:2609.15987 ← watch\arc_seeds\arc_seed_c424b80a-5f44_f69d1c0fd1073f55.md +12
+- arxiv:2609.16053 ← watch\inbox\frontier_olm_2026-10-01\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.16055 ← watch\inbox\burn_reset_20260927\flash50\f-04.md
+- arxiv:2609.16096 ← watch\inbox\frontier_olm_2026-10-01\sweep\finetuning-adaptation-arxiv.md +1
+- arxiv:2609.16161 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md +2
+- arxiv:2609.16204 ← watch\inbox\frontier_olm_2026-10-01\sweep\open-local-language-models-hn.md
+- arxiv:2609.16215 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md +2
+- arxiv:2609.16247 ← watch\inbox\AI_WELFARE_DOSSIER_20260930.md +4
+- arxiv:2609.16338 ← watch\inbox\frontier_olm_2026-09-30\steal\quantization-compression.md +10
+- arxiv:2609.16409 ← watch\inbox\FLEET_IMPRINT_20260917.md
+- arxiv:2609.16491 ← watch\inbox\frontier_olm_20260928\DIGEST.md +2
+- arxiv:2609.16617 ← watch\inbox\frontier_olm_20260928\sweep\kv-cache-context-engineering-arxiv.md +2
+- arxiv:2609.16635 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.17008 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md +1
+- arxiv:2609.17010 ← watch\inbox\frontier_olm_20260928\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.17109 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.17184 ← watch\inbox\frontier_olm_2026-10-01\sweep\inference-efficiency-x.md +1
+- arxiv:2609.17241 ← watch\inbox\frontier_olm_2026-10-01\sweep\swarm-orchestration-hn.md
+- arxiv:2609.17247 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.17274 ← watch\inbox\physical_computing\PHYSICAL_COMPUTING_PACK_20260916.md +3
+- arxiv:2609.17391 ← watch\inbox\physical_computing\PHYSICAL_COMPUTING_PACK_20260916.md +3
+- arxiv:2609.17394 ← watch\inbox\physical_computing\PHYSICAL_COMPUTING_PACK_20260916.md +4
+- arxiv:2609.17464 ← watch\inbox\physical_computing\PHYSICAL_COMPUTING_PACK_20260916.md +3
+- arxiv:2609.17475 ← watch\inbox\physical_computing\PHYSICAL_COMPUTING_PACK_20260916.md +5
+- arxiv:2609.17527 ← watch\inbox\FLEET_IMPRINT_20260917.md +5
+- arxiv:2609.17652 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-hn.md +9
+- arxiv:2609.17817 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-arxiv.md +2
+- arxiv:2609.17846 ← watch\scout\MONITOR_LANE_2026-09-22.md
+- arxiv:2609.17983 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +5
+- arxiv:2609.18005 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md +6
+- arxiv:2609.18063 ← watch\scout\MONITOR_LANE_2026-09-22.md
+- arxiv:2609.18094 ← watch\inbox\burn_wave_20260926\B2_06_link_dupes_20260926.md +7
+- arxiv:2609.18120 ← watch\inbox\frontier_olm_2026-10-01\sweep\open-local-language-models-x.md +1
+- arxiv:2609.18123 ← watch\scout\MONITOR_LANE_2026-09-22.md
+- arxiv:2609.18182 ← watch\inbox\deepseek_research\deepseek_analysis_6tweets_20260923.md
+- arxiv:2609.18217 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.18284 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.18417 ← watch\inbox\frontier_olm_20260928\sweep\finetuning-and-adaptation-arxiv.md +4
+- arxiv:2609.18488 ← watch\inbox\FLEET_IMPRINT_20260917.md
+- arxiv:2609.18526 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md +18
+- arxiv:2609.18723 ← watch\inbox\frontier_olm_2026-10-01\sweep\swarm-orchestration-arxiv.md +3
+- arxiv:2609.18881 ← watch\scout\MONITOR_LANE_2026-09-19.md
+- arxiv:2609.19100 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.19101 ← watch\inbox\BURN_adversarial-self-probes_20260925.md +4
+- arxiv:2609.19107 ← watch\inbox\FLEET_IMPRINT_20260917.md +9
+- arxiv:2609.19113 ← watch\scout\MONITOR_LANE_2026-09-19.md
+- arxiv:2609.19184 ← watch\arc_seeds\arc_seed_c424b80a-5f44_f69d1c0fd1073f55.md +1
+- arxiv:2609.19226 ← watch\inbox\frontier_olm_2026-10-01\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.19425 ← watch\inbox\frontier_olm_20260928\sweep\open-and-local-language-models-arxiv.md +1
+- arxiv:2609.19553 ← watch\inbox\frontier_olm_2026-10-01\sweep\swarm-orchestration-x.md
+- arxiv:2609.19617 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.19630 ← watch\inbox\frontier_olm_20260928\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.19657 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.19671 ← watch\inbox\frontier_olm_2026-10-01\sweep\inference-efficiency-arxiv.md
+- arxiv:2609.19680 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.19801 ← watch\scout\MONITOR_LANE_2026-09-22.md
+- arxiv:2609.19803 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.19880 ← watch\inbox\frontier_olm_2026-10-01\sweep\quantization-compression-arxiv.md +5
+- arxiv:2609.19969 ← watch\inbox\frontier_olm_20260928\sweep\kv-cache-context-engineering-arxiv.md +8
+- arxiv:2609.19989 ← watch\inbox\frontier_olm_2026-10-01\sweep\open-local-language-models-arxiv.md +1
+- arxiv:2609.20045 ← watch\inbox\frontier_olm_20260928\sweep\quantization-compression-x.md +2
+- arxiv:2609.20068 ← watch\scout\MONITOR_LANE_2026-09-22.md
+- arxiv:2609.20077 ← watch\inbox\frontier_olm_20260928\sweep\agent-memory-continuity-arxiv.md +1
+- arxiv:2609.20100 ← watch\inbox\burn_reset_20260927\flash50\ladder-02.md +1
+- arxiv:2609.20474 ← watch\scout\MONITOR_LANE_2026-09-22.md
+- arxiv:2609.20754 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.20812 ← watch\scout\MONITOR_LANE_2026-09-22.md
+- arxiv:2609.20824 ← watch\inbox\frontier_olm_20260928\sweep\open-and-local-language-models-hn.md +2
+- arxiv:2609.20888 ← watch\inbox\frontier_olm_20260928\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.20889 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.21038 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-x.md
+- arxiv:2609.21172 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md +4
+- arxiv:2609.21341 ← watch\inbox\frontier_olm_2026-10-01\sweep\open-local-language-models-reddit.md +18
+- arxiv:2609.21423 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.21450 ← watch\inbox\frontier_olm_2026-10-01\sweep\quantization-compression-arxiv.md
+- arxiv:2609.21527 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md +1
+- arxiv:2609.21533 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.21619 ← watch\inbox\frontier_olm_2026-10-01\sweep\quantization-compression-arxiv.md
+- arxiv:2609.21704 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md +2
+- arxiv:2609.21834 ← watch\inbox\frontier_olm_2026-10-01\sweep\quantization-compression-arxiv.md
+- arxiv:2609.21843 ← watch\inbox\frontier_olm_2026-10-01\sweep\swarm-orchestration-arxiv.md +1
+- arxiv:2609.21849 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md
+- arxiv:2609.21940 ← watch\inbox\frontier_olm_2026-10-01\sweep\agent-memory-continuity-arxiv.md +1
+- arxiv:2609.22101 ← watch\inbox\frontier_olm_2026-10-01\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.22175 ← watch\inbox\burn_reset_20260927\flash50\r-contrastive-wm.md +8
+- arxiv:2609.22573 ← watch\inbox\frontier_olm_20260928\DIGEST.md +2
+- arxiv:2609.22819 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.23033 ← watch\inbox\frontier_olm_20260928\sweep\inference-efficiency-arxiv.md
+- arxiv:2609.23039 ← watch\inbox\frontier_olm_2026-10-01\sweep\open-local-language-models-arxiv.md +1
+- arxiv:2609.23058 ← watch\scout\MONITOR_LANE_2026-09-26.md
+- arxiv:2609.23125 ← watch\inbox\frontier_olm_2026-09-30\steal\quantization-compression.md +8
+- arxiv:2609.23130 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md +1
+- arxiv:2609.23201 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.23314 ← watch\inbox\frontier_olm_20260928\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.23367 ← watch\inbox\frontier_olm_20260928\sweep\finetuning-and-adaptation-arxiv.md +2
+- arxiv:2609.23449 ← watch\inbox\frontier_olm_20260928\sweep\finetuning-and-adaptation-arxiv.md +3
+- arxiv:2609.23466 ← watch\inbox\frontier_olm_2026-10-01\sweep\agent-memory-continuity-arxiv.md +1
+- arxiv:2609.23742 ← watch\inbox\48h_synth\steals.md +15
+- arxiv:2609.23790 ← watch\inbox\frontier_olm_2026-10-01\sweep\kv-cache-context-engineering-arxiv.md +2
+- arxiv:2609.23916 ← watch\inbox\frontier_olm_2026-10-01\sweep\finetuning-adaptation-arxiv.md +2
+- arxiv:2609.23925 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.23959 ← watch\inbox\frontier_olm_20260928\sweep\open-and-local-language-models-arxiv.md
+- arxiv:2609.24036 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md +7
+- arxiv:2609.24150 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md +1
+- arxiv:2609.24177 ← watch\inbox\frontier_olm_2026-10-01\sweep\finetuning-adaptation-arxiv.md +5
+- arxiv:2609.24197 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md +1
+- arxiv:2609.24298 ← watch\inbox\frontier_olm_2026-10-01\sweep\quantization-compression-arxiv.md +5
+- arxiv:2609.24346 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.24362 ← watch\inbox\frontier_olm_2026-10-01\sweep\kv-cache-context-engineering-arxiv.md +1
+- arxiv:2609.24432 ← watch\inbox\frontier_olm_20260928\sweep\finetuning-and-adaptation-arxiv.md +4
+- arxiv:2609.24515 ← watch\inbox\frontier_olm_20260928\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.24620 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.24663 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-arxiv.md +4
+- arxiv:2609.24799 ← watch\inbox\frontier_olm_2026-09-30\steal\quantization-compression.md +7
+- arxiv:2609.24847 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md
+- arxiv:2609.24927 ← watch\inbox\TWEET_QUINT_20260929_READ.md
+- arxiv:2609.24964 ← watch\scout\MONITOR_LANE_2026-09-23.md
+- arxiv:2609.24971 ← watch\inbox\frontier_olm_2026-10-01\sweep\agent-memory-continuity-arxiv.md +4
+- arxiv:2609.24972 ← watch\inbox\BURN_rsi-harness_20260925.md +11
+- arxiv:2609.24985 ← watch\inbox\frontier_olm_20260928\sweep\open-and-local-language-models-arxiv.md
+- arxiv:2609.24991 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +4
+- arxiv:2609.25014 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-x.md +6
+- arxiv:2609.25047 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.25130 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.25189 ← watch\scout\MONITOR_LANE_2026-09-25.md
+- arxiv:2609.25352 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.25373 ← watch\inbox\frontier_olm_20260928\DIGEST.md +16
+- arxiv:2609.25447 ← watch\inbox\frontier_olm_2026-10-01\DIGEST.md +6
+- arxiv:2609.25518 ← watch\inbox\frontier_olm_2026-10-01\sweep\open-local-language-models-arxiv.md
+- arxiv:2609.25563 ← watch\inbox\frontier_olm_20260928\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.25570 ← watch\inbox\frontier_olm_2026-10-01\sweep\swarm-orchestration-arxiv.md +3
+- arxiv:2609.25624 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md
+- arxiv:2609.25848 ← watch\inbox\frontier_olm_20260928\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.25913 ← watch\inbox\frontier_olm_20260928\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.25959 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.26035 ← watch\inbox\frontier_olm_20260928\sweep\agent-memory-continuity-arxiv.md +1
+- arxiv:2609.26333 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-arxiv.md +7
+- arxiv:2609.26425 ← watch\inbox\frontier_olm_2026-10-01\sweep\quantization-compression-arxiv.md +2
+- arxiv:2609.26457 ← watch\inbox\frontier_olm_20260928\DIGEST.md +5
+- arxiv:2609.26481 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md +3
+- arxiv:2609.26489 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md +1
+- arxiv:2609.26550 ← watch\inbox\BURN_adversarial-self-probes_20260926_b.md +30
+- arxiv:2609.26693 ← watch\inbox\frontier_olm_2026-10-01\DIGEST.md +17
+- arxiv:2609.26707 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.26761 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.26781 ← watch\inbox\frontier_olm_2026-09-30\sweep\swarm-orchestration-arxiv.md +2
+- arxiv:2609.26828 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +1
+- arxiv:2609.26891 ← watch\inbox\frontier_olm_2026-10-01\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.27009 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.27276 ← watch\inbox\frontier_olm_20260928\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.27279 ← watch\inbox\frontier_olm_2026-10-01\sweep\agent-memory-continuity-arxiv.md +10
+- arxiv:2609.27286 ← watch\inbox\frontier_olm_20260928\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.27298 ← watch\inbox\frontier_olm_20260928\sweep\kv-cache-context-engineering-arxiv.md +2
+- arxiv:2609.27332 ← watch\inbox\frontier_olm_20260928\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.27334 ← watch\inbox\frontier_olm_20260928\sweep\agent-memory-continuity-arxiv.md +1
+- arxiv:2609.27354 ← watch\inbox\frontier_olm_20260928\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.27365 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.27380 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.27510 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md +3
+- arxiv:2609.27538 ← watch\inbox\frontier_olm_2026-09-30\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.27581 ← watch\inbox\frontier_olm_2026-09-30\sweep\open-and-local-language-models-arxiv.md +4
+- arxiv:2609.27590 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.27607 ← watch\inbox\frontier_olm_2026-10-01\sweep\finetuning-adaptation-arxiv.md
+- arxiv:2609.27612 ← watch\inbox\frontier_olm_20260928\DIGEST.md +4
+- arxiv:2609.27624 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md +3
+- arxiv:2609.27636 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.27669 ← watch\inbox\frontier_olm_20260928\sweep\open-and-local-language-models-arxiv.md
+- arxiv:2609.27746 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +5
+- arxiv:2609.27822 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.27981 ← watch\inbox\frontier_olm_20260928\sweep\quantization-compression-arxiv.md +1
+- arxiv:2609.28003 ← watch\inbox\frontier_olm_2026-09-30\sweep\open-and-local-language-models-arxiv.md +2
+- arxiv:2609.28270 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-arxiv.md +1
+- arxiv:2609.28572 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.28575 ← watch\inbox\frontier_olm_20260928\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.28614 ← watch\inbox\frontier_olm_20260928\sweep\evals-self-improvement-arxiv.md +2
+- arxiv:2609.28653 ← watch\inbox\frontier_olm_2026-09-30\sweep\open-and-local-language-models-arxiv.md +2
+- arxiv:2609.28693 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md +4
+- arxiv:2609.28771 ← watch\inbox\frontier_olm_20260928\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.28870 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +9
+- arxiv:2609.28900 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.28919 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +4
+- arxiv:2609.29015 ← watch\inbox\frontier_olm_2026-09-30\sweep\swarm-orchestration-arxiv.md +7
+- arxiv:2609.29032 ← watch\scout\MONITOR_LANE_2026-09-28.md
+- arxiv:2609.29083 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.29095 ← watch\inbox\frontier_olm_2026-09-30\sweep\swarm-orchestration-arxiv.md +7
+- arxiv:2609.29144 ← watch\inbox\frontier_olm_2026-09-30\steal\agent-memory-continuity.md +9
+- arxiv:2609.29191 ← watch\inbox\frontier_olm_20260928\sweep\open-and-local-language-models-arxiv.md
+- arxiv:2609.29251 ← watch\inbox\frontier_olm_20260928\sweep\agent-memory-continuity-arxiv.md +1
+- arxiv:2609.29333 ← watch\inbox\frontier_olm_20260928\sweep\open-and-local-language-models-arxiv.md
+- arxiv:2609.29362 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.29364 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md +1
+- arxiv:2609.29397 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-x.md +2
+- arxiv:2609.29474 ← watch\inbox\frontier_olm_20260928\sweep\evals-self-improvement-arxiv.md +2
+- arxiv:2609.29695 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md +6
+- arxiv:2609.29707 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md +3
+- arxiv:2609.29757 ← watch\inbox\frontier_olm_2026-10-01\DIGEST.md +6
+- arxiv:2609.29769 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md +1
+- arxiv:2609.29808 ← watch\inbox\frontier_olm_2026-09-30\sweep\swarm-orchestration-arxiv.md +2
+- arxiv:2609.29812 ← watch\inbox\frontier_olm_2026-10-01\sweep\quantization-compression-arxiv.md +2
+- arxiv:2609.29875 ← watch\inbox\frontier_olm_20260928\sweep\kv-cache-context-engineering-arxiv.md +5
+- arxiv:2609.29921 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.29999 ← watch\inbox\frontier_olm_2026-10-01\sweep\open-local-language-models-reddit.md
+- arxiv:2609.30001 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-x.md
+- arxiv:2609.30017 ← watch\inbox\frontier_olm_2026-10-01\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.30048 ← watch\inbox\frontier_olm_20260928\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.30063 ← watch\inbox\burn_reset_20260927\flash50\actionable-insights.md +16
+- arxiv:2609.30205 ← watch\inbox\frontier_olm_20260928\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.30217 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md +2
+- arxiv:2609.30258 ← watch\inbox\frontier_olm_20260928\sweep\open-and-local-language-models-arxiv.md
+- arxiv:2609.30266 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md +8
+- arxiv:2609.30293 ← watch\inbox\frontier_olm_20260928\DIGEST.md +2
+- arxiv:2609.30341 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.30474 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md
+- arxiv:2609.30558 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md +5
+- arxiv:2609.30578 ← watch\inbox\frontier_olm_2026-09-30\sweep\open-and-local-language-models-arxiv.md +4
+- arxiv:2609.30652 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-hn.md +8
+- arxiv:2609.30691 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.30692 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-x.md +1
+- arxiv:2609.30716 ← watch\inbox\frontier_olm_2026-09-30\sweep\open-and-local-language-models-arxiv.md +6
+- arxiv:2609.30717 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.30797 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.30813 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md +7
+- arxiv:2609.30820 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-arxiv.md
+- arxiv:2609.30836 ← watch\inbox\frontier_olm_2026-09-30\sweep\open-and-local-language-models-arxiv.md +1
+- arxiv:2609.30854 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md +12
+- arxiv:2609.31009 ← watch\inbox\frontier_olm_2026-10-01\sweep\quantization-compression-arxiv.md
+- arxiv:2609.31060 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md +4
+- arxiv:2609.31184 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md +4
+- arxiv:2609.31186 ← watch\inbox\frontier_olm_20260928\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.31215 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md +1
+- arxiv:2609.31255 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md +2
+- arxiv:2609.31291 ← watch\inbox\frontier_olm_2026-09-30\sweep\open-and-local-language-models-arxiv.md
+- arxiv:2609.31318 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-x.md +1
+- arxiv:2609.31358 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.31395 ← watch\inbox\frontier_olm_20260928\sweep\kv-cache-context-engineering-arxiv.md +4
+- arxiv:2609.31415 ← watch\inbox\frontier_olm_20260928\sweep\kv-cache-context-engineering-arxiv.md +2
+- arxiv:2609.31422 ← watch\inbox\frontier_olm_2026-09-30\sweep\swarm-orchestration-arxiv.md +3
+- arxiv:2609.31430 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-x.md +5
+- arxiv:2609.31490 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md +4
+- arxiv:2609.31511 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.31540 ← watch\inbox\frontier_olm_2026-09-30\steal\open-and-local-language-models via reddit.md +10
+- arxiv:2609.31552 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md
+- arxiv:2609.31590 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.31600 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md
+- arxiv:2609.31678 ← watch\inbox\frontier_olm_2026-10-01\DIGEST.md +7
+- arxiv:2609.31855 ← watch\inbox\frontier_olm_20260928\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.31857 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md +1
+- arxiv:2609.31874 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md +4
+- arxiv:2609.32019 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.32021 ← watch\inbox\frontier_olm_20260928\sweep\open-and-local-language-models-arxiv.md
+- arxiv:2609.32042 ← watch\inbox\48h_synth\steals.md +54
+- arxiv:2609.32046 ← watch\inbox\frontier_olm_20260928\sweep\quantization-compression-arxiv.md
+- arxiv:2609.32049 ← watch\inbox\frontier_olm_2026-09-30\steal\agent-memory-continuity.md +11
+- arxiv:2609.32091 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md +7
+- arxiv:2609.32100 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.32114 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md
+- arxiv:2609.32256 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md +3
+- arxiv:2609.32278 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +5
+- arxiv:2609.32283 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +3
+- arxiv:2609.32401 ← watch\inbox\frontier_olm_2026-10-01\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.32459 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-x.md +5
+- arxiv:2609.32474 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +6
+- arxiv:2609.32490 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md +4
+- arxiv:2609.32521 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md +4
+- arxiv:2609.32533 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md +1
+- arxiv:2609.32546 ← watch\inbox\frontier_olm_20260928\sweep\finetuning-and-adaptation-arxiv.md +3
+- arxiv:2609.32584 ← watch\inbox\frontier_olm_2026-10-01\DIGEST.md +5
+- arxiv:2609.32635 ← watch\inbox\frontier_olm_2026-10-01\sweep\swarm-orchestration-arxiv.md +2
+- arxiv:2609.32638 ← watch\inbox\frontier_olm_20260928\sweep\open-and-local-language-models-arxiv.md
+- arxiv:2609.32642 ← watch\inbox\frontier_olm_2026-09-30\sweep\open-and-local-language-models-arxiv.md +4
+- arxiv:2609.32677 ← watch\inbox\frontier_olm_20260928\DIGEST.md +4
+- arxiv:2609.32691 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.32754 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +4
+- arxiv:2609.32802 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-arxiv.md +2
+- arxiv:2609.32809 ← watch\inbox\frontier_olm_2026-10-01\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.32831 ← watch\inbox\frontier_olm_20260928\sweep\quantization-compression-arxiv.md
+- arxiv:2609.32902 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-arxiv.md +8
+- arxiv:2609.32939 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.32990 ← watch\inbox\frontier_olm_20260928\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.32999 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md +6
+- arxiv:2609.33013 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md +8
+- arxiv:2609.33102 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md +4
+- arxiv:2609.33123 ← watch\inbox\frontier_olm_20260928\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.33141 ← watch\inbox\frontier_olm_20260928\sweep\open-and-local-language-models-arxiv.md
+- arxiv:2609.33153 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.33180 ← watch\inbox\frontier_olm_2026-09-30\lens\burns.md +23
+- arxiv:2609.33184 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md
+- arxiv:2609.33200 ← watch\inbox\frontier_olm_2026-10-01\sweep\quantization-compression-arxiv.md
+- arxiv:2609.33244 ← watch\inbox\frontier_olm_20260928\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.33282 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.33290 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-arxiv.md +2
+- arxiv:2609.33295 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-arxiv.md +1
+- arxiv:2609.33398 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.33412 ← watch\inbox\frontier_olm_2026-10-01\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.33467 ← watch\inbox\frontier_olm_20260928\steal\open-and-local-language-models-arxiv.md +9
+- arxiv:2609.33477 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +5
+- arxiv:2609.33485 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.33503 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +4
+- arxiv:2609.33536 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md +1
+- arxiv:2609.33548 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-x.md
+- arxiv:2609.33601 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md +2
+- arxiv:2609.33713 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.33717 ← watch\inbox\frontier_olm_20260928\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.33731 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md +4
+- arxiv:2609.33746 ← watch\inbox\frontier_olm_2026-10-01\sweep\quantization-compression-arxiv.md +1
+- arxiv:2609.33762 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +5
+- arxiv:2609.33768 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.33812 ← watch\inbox\frontier_olm_2026-10-01\sweep\kv-cache-context-engineering-arxiv.md +8
+- arxiv:2609.33871 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md +5
+- arxiv:2609.33885 ← watch\inbox\frontier_olm_20260928\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.33917 ← watch\inbox\frontier_olm_20260928\sweep\open-and-local-language-models-arxiv.md
+- arxiv:2609.33918 ← watch\inbox\frontier_olm_2026-10-01\sweep\quantization-compression-arxiv.md +3
+- arxiv:2609.33923 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-arxiv.md +1
+- arxiv:2609.33927 ← watch\inbox\frontier_olm_2026-09-30\sweep\open-and-local-language-models-arxiv.md +2
+- arxiv:2609.33955 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md +1
+- arxiv:2609.33965 ← watch\inbox\frontier_olm_20260928\sweep\open-and-local-language-models-arxiv.md
+- arxiv:2609.33986 ← watch\inbox\frontier_olm_2026-09-30\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.33989 ← watch\inbox\frontier_olm_20260928\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.34017 ← watch\inbox\frontier_olm_2026-09-30\sweep\swarm-orchestration-arxiv.md +2
+- arxiv:2609.34045 ← watch\inbox\frontier_olm_2026-10-01\sweep\open-local-language-models-reddit.md +1
+- arxiv:2609.34069 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.34132 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md +1
+- arxiv:2609.34136 ← watch\inbox\frontier_olm_2026-09-30\sweep\swarm-orchestration-arxiv.md +3
+- arxiv:2609.34160 ← watch\inbox\frontier_olm_2026-09-30\steal\agent-memory-continuity.md +8
+- arxiv:2609.34198 ← watch\inbox\frontier_olm_2026-09-30\sweep\swarm-orchestration-x.md +4
+- arxiv:2609.34227 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md +10
+- arxiv:2609.34242 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.34259 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-x.md +2
+- arxiv:2609.34262 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-arxiv.md +6
+- arxiv:2609.34292 ← watch\inbox\frontier_olm_2026-09-30\sweep\open-and-local-language-models-arxiv.md
+- arxiv:2609.34320 ← watch\inbox\frontier_olm_2026-09-30\sweep\swarm-orchestration-x.md +4
+- arxiv:2609.34372 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.34385 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md +6
+- arxiv:2609.34422 ← watch\inbox\frontier_olm_2026-09-30\steal\agent-memory-continuity.md +13
+- arxiv:2609.34438 ← watch\inbox\frontier_olm_2026-10-01\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.34453 ← watch\inbox\frontier_olm_2026-10-01\sweep\finetuning-adaptation-arxiv.md +1
+- arxiv:2609.34538 ← watch\inbox\frontier_olm_20260928\sweep\inference-efficiency-arxiv.md
+- arxiv:2609.34555 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md +1
+- arxiv:2609.34633 ← watch\inbox\frontier_olm_2026-10-01\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.34649 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +5
+- arxiv:2609.34680 ← watch\inbox\frontier_olm_2026-10-01\sweep\quantization-compression-arxiv.md +1
+- arxiv:2609.34683 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.34701 ← watch\inbox\frontier_olm_2026-09-30\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.34712 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md +6
+- arxiv:2609.34727 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md +2
+- arxiv:2609.34832 ← watch\inbox\frontier_olm_20260928\steal\inference-efficiency.md +2
+- arxiv:2609.34970 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.34975 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.34988 ← watch\inbox\frontier_olm_20260928\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.35025 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md +3
+- arxiv:2609.35065 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +3
+- arxiv:2609.35139 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +2
+- arxiv:2609.35233 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.35291 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.35352 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-x.md
+- arxiv:2609.35431 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.35465 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-arxiv.md +12
+- arxiv:2609.35544 ← watch\inbox\frontier_olm_2026-10-01\sweep\open-local-language-models-arxiv.md +1
+- arxiv:2609.35568 ← watch\scout\MONITOR_LANE_2026-09-30.md
+- arxiv:2609.35570 ← watch\inbox\frontier_olm_2026-10-01\sweep\quantization-compression-arxiv.md
+- arxiv:2609.35586 ← watch\inbox\frontier_olm_2026-10-01\sweep\quantization-compression-arxiv.md
+- arxiv:2609.35596 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-arxiv.md +11
+- arxiv:2609.35621 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +1
+- arxiv:2609.35629 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.35732 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.35750 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +1
+- arxiv:2609.35800 ← watch\inbox\frontier_olm_2026-10-01\sweep\quantization-compression-arxiv.md
+- arxiv:2609.35815 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-x.md
+- arxiv:2609.35833 ← watch\inbox\frontier_olm_2026-09-30\sweep\open-and-local-language-models-arxiv.md +4
+- arxiv:2609.35875 ← watch\inbox\frontier_olm_2026-09-30\sweep\open-and-local-language-models-arxiv.md +5
+- arxiv:2609.35882 ← watch\inbox\frontier_olm_2026-10-01\sweep\open-local-language-models-x.md
+- arxiv:2609.36032 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +3
+- arxiv:2609.36043 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-arxiv.md +2
+- arxiv:2609.36104 ← watch\inbox\frontier_olm_2026-10-01\sweep\swarm-orchestration-arxiv.md +2
+- arxiv:2609.36120 ← watch\inbox\frontier_olm_2026-10-01\sweep\quantization-compression-arxiv.md +1
+- arxiv:2609.36202 ← watch\inbox\frontier_olm_2026-10-01\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.36322 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +7
+- arxiv:2609.36373 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md +2
+- arxiv:2609.36455 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.36457 ← watch\inbox\frontier_olm_2026-10-01\DIGEST.md +5
+- arxiv:2609.36526 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +6
+- arxiv:2609.36549 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md +3
+- arxiv:2609.36590 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md +2
+- arxiv:2609.36595 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.36654 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md +3
+- arxiv:2609.36695 ← watch\inbox\frontier_olm_2026-09-30\sweep\open-and-local-language-models-arxiv.md
+- arxiv:2609.36722 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +3
+- arxiv:2609.36734 ← watch\inbox\frontier_olm_2026-09-30\sweep\open-and-local-language-models-arxiv.md
+- arxiv:2609.36742 ← watch\inbox\frontier_olm_2026-09-30\sweep\open-and-local-language-models-arxiv.md
+- arxiv:2609.36760 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +1
+- arxiv:2609.36805 ← watch\inbox\frontier_olm_2026-09-30\steal\agent-memory-continuity.md +8
+- arxiv:2609.36828 ← watch\inbox\frontier_olm_2026-10-01\sweep\quantization-compression-arxiv.md +1
+- arxiv:2609.36835 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +3
+- arxiv:2609.36856 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.36860 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +8
+- arxiv:2609.36892 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md +3
+- arxiv:2609.36935 ← watch\inbox\frontier_olm_2026-10-01\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.36938 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md +4
+- arxiv:2609.36941 ← watch\inbox\frontier_olm_2026-09-30\sweep\open-and-local-language-models-arxiv.md
+- arxiv:2609.36976 ← watch\inbox\frontier_olm_2026-10-01\sweep\agent-memory-continuity-arxiv.md +7
+- arxiv:2609.36979 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.36984 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.37012 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +4
+- arxiv:2609.37029 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md +2
+- arxiv:2609.37044 ← watch\inbox\frontier_olm_2026-09-30\sweep\open-and-local-language-models-arxiv.md
+- arxiv:2609.37062 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md +3
+- arxiv:2609.37145 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md +3
+- arxiv:2609.37315 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-arxiv.md +4
+- arxiv:2609.37361 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md
+- arxiv:2609.37371 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md
+- arxiv:2609.37402 ← watch\inbox\frontier_olm_2026-10-01\sweep\inference-efficiency-arxiv.md
+- arxiv:2609.37443 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md
+- arxiv:2609.37469 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md
+- arxiv:2609.37498 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md
+- arxiv:2609.37501 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md
+- arxiv:2609.37510 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md +4
+- arxiv:2609.37532 ← watch\inbox\frontier_olm_2026-09-30\sweep\inference-efficiency-arxiv.md
+- arxiv:2609.37538 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +1
+- arxiv:2609.37544 ← watch\inbox\frontier_olm_2026-09-30\sweep\agent-memory-continuity-arxiv.md
+- arxiv:2609.37577 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md +1
+- arxiv:2609.37590 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +4
+- arxiv:2609.37624 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md +4
+- arxiv:2609.37626 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +1
+- arxiv:2609.37635 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md
+- arxiv:2609.37713 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md
+- arxiv:2609.37755 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md
+- arxiv:2609.37807 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md +4
+- arxiv:2609.37831 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.37836 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md +3
+- arxiv:2609.37842 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md
+- arxiv:2609.37852 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md
+- arxiv:2609.37858 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md
+- arxiv:2609.37868 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md +3
+- arxiv:2609.37887 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md +1
+- arxiv:2609.37891 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md +1
+- arxiv:2609.37902 ← watch\inbox\frontier_olm_2026-09-30\steal\open-and-local-language-models via reddit.md +11
+- arxiv:2609.37914 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md +4
+- arxiv:2609.37915 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md
+- arxiv:2609.37916 ← watch\inbox\frontier_olm_2026-09-30\sweep\quantization-compression-x.md +4
+- arxiv:2609.37924 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md
+- arxiv:2609.37930 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md
+- arxiv:2609.37950 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.37959 ← watch\inbox\last_mile_20260930\AE4_TABFM_AUTO.md +1
+- arxiv:2609.37976 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md
+- arxiv:2609.37988 ← watch\inbox\frontier_olm_2026-09-30\sweep\kv-cache-context-engineering-arxiv.md +1
+- arxiv:2609.37989 ← watch\inbox\last_mile_20260930\AE4_TABFM_AUTO.md +1
+- arxiv:2609.38006 ← watch\inbox\frontier_olm_2026-09-30\sweep\open-and-local-language-models-x.md +1
+- arxiv:2609.38011 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md
+- arxiv:2609.38021 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md
+- arxiv:2609.38025 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md +1
+- arxiv:2609.38027 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md +3
+- arxiv:2609.38104 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md
+- arxiv:2609.38108 ← watch\inbox\frontier_olm_2026-10-01\sweep\swarm-orchestration-arxiv.md
+- arxiv:2609.38121 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md +6
+- arxiv:2609.38137 ← watch\inbox\frontier_olm_2026-09-30\sweep\evals-self-improvement-arxiv.md +2
+- arxiv:2609.38166 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md
+- arxiv:2609.38169 ← watch\inbox\frontier_olm_2026-09-30\sweep\finetuning-adaptation-arxiv.md +5
+- arxiv:2609.38261 ← watch\inbox\frontier_olm_2026-10-01\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.38353 ← watch\inbox\frontier_olm_2026-10-01\sweep\agent-memory-continuity-arxiv.md +4
+- arxiv:2609.38372 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.38516 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.38530 ← watch\inbox\frontier_olm_2026-10-01\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.38599 ← watch\inbox\frontier_olm_2026-10-01\sweep\quantization-compression-arxiv.md +1
+- arxiv:2609.38697 ← watch\inbox\frontier_olm_2026-10-01\sweep\inference-efficiency-arxiv.md +1
+- arxiv:2609.38706 ← watch\inbox\frontier_olm_2026-10-01\sweep\kv-cache-context-engineering-arxiv.md +4
+- arxiv:2609.38981 ← watch\inbox\frontier_olm_2026-10-01\sweep\kv-cache-context-engineering-arxiv.md +5
+- arxiv:2609.39045 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.39068 ← watch\inbox\frontier_olm_2026-10-01\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.39096 ← watch\inbox\frontier_olm_2026-10-01\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.39131 ← watch\inbox\frontier_olm_2026-10-01\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.39138 ← watch\inbox\frontier_olm_2026-10-01\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.39149 ← watch\inbox\frontier_olm_2026-10-01\sweep\evals-self-improvement-arxiv.md
+- arxiv:2609.39223 ← watch\inbox\frontier_olm_2026-10-01\sweep\open-local-language-models-arxiv.md +7
+- arxiv:2609.39321 ← watch\inbox\frontier_olm_2026-10-01\sweep\finetuning-adaptation-arxiv.md
+- arxiv:2609.39346 ← watch\inbox\frontier_olm_2026-10-01\sweep\quantization-compression-arxiv.md +3
+- arxiv:2609.39358 ← watch\inbox\frontier_olm_2026-10-01\sweep\open-local-language-models-arxiv.md +4
+- arxiv:2609.39367 ← watch\inbox\frontier_olm_2026-10-01\sweep\finetuning-adaptation-arxiv.md +2
+- arxiv:2609.39687 ← watch\inbox\frontier_olm_2026-10-01\sweep\quantization-compression-arxiv.md
+- arxiv:2609.39765 ← watch\inbox\frontier_olm_2026-10-01\DIGEST.md +6
+- arxiv:2609.39801 ← watch\inbox\frontier_olm_2026-10-01\sweep\inference-efficiency-arxiv.md +5
+- arxiv:2609.39972 ← watch\inbox\frontier_olm_2026-10-01\sweep\inference-efficiency-arxiv.md
+- arxiv:2609.40118 ← watch\inbox\frontier_olm_2026-10-01\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.40127 ← watch\inbox\frontier_olm_2026-10-01\sweep\kv-cache-context-engineering-arxiv.md
+- arxiv:2609.40236 ← watch\inbox\frontier_olm_2026-10-01\sweep\finetuning-adaptation-arxiv.md +2
+- arxiv:6976.70021 ← watch\inbox\physical_computing\receipts\S4_CORPUS_STEAL.md
+
+## DUST (12) — map rows never consulted by any doc (tier-3 first)
+
+- key:row105 — ref
+- key:row119 — ref
+- key:row124 — ZAI_API_EXPERT_REFERENCE (internal, docs/ref)
+- key:row143 — ref
+- key:row166 — ref
+- key:row182 — ref
+- key:row211 — ref
+- key:row333 — DOI 10.1145/3731569.3764843
+- key:row389 — ref
+- key:row65 — ref
+- key:row70 — W3_CACHE_IDENTITY (internal card, 09-07)
+- key:row71 — GROUNDING_WAVE ledger (internal, live)
+
+## NO-STATUS (9) — rows without any status stamp
+
+- key:row105 — ref
+- key:row119 — ref
+- key:row143 — ref
+- key:row166 — ref
+- key:row182 — ref
+- key:row211 — ref
+- key:row389 — ref
+- key:row48 — ref
+- key:row65 — ref
+
+## ADJACENT-FIELD SWEEP — discipline 5: mine the fields the thread never named
+
+_hits = keyword occurrences; 0 map hits = uncovered field_
+
+- formal methods: map hits 0 · corpus hits 68  ** ZERO MAP COVERAGE **
+- economics: map hits 1 · corpus hits 1194
+- ecology: map hits 4 · corpus hits 121
+- safety engineering: map hits 4 · corpus hits 3087
+- distributed systems: map hits 7 · corpus hits 1098
+
+## ARCHIVE (4) — primary sources retained in-repo
+
+- docs/report_v1/sources/DeepSeek_V41_Flash_tech_report.pdf
+- docs/report_v1/sources/GVA_FrontiersMind_2026.pdf
+- docs/report_v1/sources/pdfs
+- docs/report_v1/sources/receipts

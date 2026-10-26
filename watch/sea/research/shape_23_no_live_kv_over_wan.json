@@ -1,0 +1,6 @@
+{
+  "situation": "Cross-cluster cache sharing caches over a WAN in a K8s+K3s estate.",
+  "decision": "Use central object storage across clusters; do NOT try to share live KV caches over a WAN. Route edge misses to the central cluster.",
+  "reasoning_physics": "KV caches are latency-native — shipping them over a WAN costs more round-trips than the cache saves, and it violates the engine-specific-artifact rule. Object store is the durable cross-cluster carrier; live caches stay local, misses get routed centrally.",
+  "source_path": "/mag/docs/ref/GLM_K8S_MCP_DEEP_RESEARCH_20260826.md"
+}

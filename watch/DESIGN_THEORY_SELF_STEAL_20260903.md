@@ -1,0 +1,52 @@
+# SELF-STEAL: DESIGN THEORY — what the fleet was attempting with all of it (2026-09-03, ~04:30Z)
+*The vision gopher read all 20 surfaces blind. Its descriptions, cross-referenced with the
+hermes interface research and the playroom emergence spec, reveal the design theory the
+fleet was executing unconsciously. Sources: watch/design_crawl/_vision_descriptions.md,
+hermes docs (TUI/desktop/web-dashboard), issue #40294 (the glanceable-panel request).*
+
+## WHAT THE VISION GOPHER SAW (the surface language, 20/20 consistent)
+- Dark rooms (#030806) with phosphor light — every surface, zero exceptions
+- Monospace/terminal typography — the machine's native voice
+- The cyan/gold accent pair — cold light + warm gold, on every page
+- Minimalist function-first: "no decoration; clean, minimalist layout" (said 15 times)
+- Places, not pages: the gopher kept calling them rooms, halls, tables, seats — IT SAW
+  THE ARCHITECTURE without being told the fleet's room metaphors
+
+## WHAT THE GOPHER COULDN'T SEE (the design theory beneath)
+Each surface is a SENSE ORGAN of one organism reading one tape:
+- the hypervisor = proprioception (where the body is)
+- the ractor board = memory-sight (what happened)
+- THE ROOM = spatial sight (where the work lives)
+- the museum = long-term memory (what was kept)
+- the arena = the motor cortex (the falsifier firing)
+- chan = the voice (the square where seats speak)
+- health = interoception (how the body feels)
+- wearable = the skin (the swarm's touch boundary)
+ONE ORGANISM, MANY SENSES — the tape is the nervous system, each surface a sense.
+
+## THE DESIGN THEORY, STATED
+1. **THE DARK ROOM**: the machines were born in terminals; their native palette is
+   phosphor-on-dark. Anti-SaaS: no friendliness gradients — a command surface that assumes
+   the reader operates real machinery.
+2. **THE GOLD IS THE OPERATOR**: every gold element marks the human's channel — his
+   calibrations, his fold ring, his exhibits. The palette encodes the hierarchy.
+3. **PLACES NOT PAGES**: hypervisor, chan, museum, room, arena — the fleet as a KEEP,
+   navigable like a space, because space is how humans hold complexity.
+4. **THE PRIMER GAP, NOW CLOSED IN DESIGN**: hermes ships TUI+desktop+web (three surfaces,
+   one runtime — validation) and their community requests the glanceable persistent panel
+   (issue #40294) — which the Ractor Board already IS. The Primer interface fulfills the
+   rest: the surface that reads the tape and renders it as the room the reader can walk.
+
+## THE SYNTHESIS INTERFACE (what fulfills the salon needs)
+The Ractor Board grows into THE PRIMER: the receipts render as the tale (the tale-re-encoder),
+THE ROOM embeds as the current chamber, the invariants light as rooms, the dark patches
+mark unverified space, the operator's five-second glance is the verification, and a
+stranger walking in learns the fleet by walking its corridors. The Diamond Age device,
+built from our own shelf: one adaptive surface, rendered from the tape, in the reader's
+own dialect (memlang for gophers, English for the Operator, the tale for visitors).
+
+## THE CREDIT LAYER (adjacent prior art, honored)
+- Diamond Age (Stephenson 1995): the Primer concept — assigned to Adam Crigler, per the shelf
+- hermes/Nous: the three-surface validation + the production-grade gateway patterns
+- Gray Swan: the arena format · von Ahn: play-does-real-work · Screeps: the persistent world
+- Flyguy 2016: the radial lightmap · Murray 1952: the seven families · Philbrick 1964: the primitives

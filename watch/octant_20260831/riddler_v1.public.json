@@ -1,0 +1,137 @@
+{
+  "artifact": "riddler_v1.public",
+  "octant": 7,
+  "wave": 2,
+  "role": "lead-riddler-craft",
+  "authority": "seat",
+  "published": "2026-08-31T10:56:00Z",
+  "publication_gate": "SWARM_LENS_PROTOCOL gate 6 (riddler decode gate) satisfied: no real identifiers, paths, seats, or geography escaped this cage. Forbidden strings are stored only as sha256(prefix-8) digests below, so no literal real identifier exists in this file.",
+  "decode_protocol": "This file holds conclusions[7-10] over a 17-record, 5-seat time-series tape of state-compaction events. Each record exposes only: a timestamp, a seat label, tokens-before-compaction, tokens-after-compaction, and an integer compaction count. A lone terminal record additionally carries a schema-bearing, hash-chained span block. Conclusions are worded in abstract surrogate vocabulary: 'seats' are the independent sessions, 'tape' is the ordered record series, 'span block' is the terminal schema'd authority record. The logic is fully self-contained: any agent reading ONLY this file can re-encode and reproduce the same reasoning against any tape with this exact shape.",
+  "conclusions": [
+    {
+      "id": "C7",
+      "headline": "Collapse events are swarm-wide, not seat-specific",
+      "logic": "Across 17 records and 5 distinct seats, the only two near-total token collapses (post-floor below 2k) occur at adjacent wall-clock moments in DIFFERENT seats. A wipe that repeats across independent seats within roughly half an hour indicates a shared systemic pressure, not a property of any single seat's lifecycle."
+    },
+    {
+      "id": "C8",
+      "headline": "The tape's tail carries a single hash-chained span authority",
+      "logic": "Exactly one of the 17 records is schema-bearing and hash-anchored: the final record, produced by a worker. It declares a span block carrying a schema tag, a unique span label, a single-record line range, a byte range, a content hash chain over its body, an empty touched-path set, and a token count. All 16 earlier records are bare compaction events with no such chain. The tape therefore transitions from unanchored compacts to a verified span record at its tail."
+    },
+    {
+      "id": "C9",
+      "headline": "Post-compaction floor drifts upward across seat life, then resets",
+      "logic": "After-compaction floors stay in a 10.6k to 26.4k band (median about 22.5k) for most records, systematically drifting upward within a live seat session. Three records break the band by collapsing below 2k. One record deviates differently: it holds a floor of 14.2k at a very high prior count, an upward-drift outlier rather than a collapse."
+    },
+    {
+      "id": "C10",
+      "headline": "Heaviest single compaction is an isolated all-time peak, not a trend",
+      "logic": "The single largest record, by prior-count (147.7k), post-floor (14.2k) and compacted-count (164), occurs once, mid-late in the tape, in the same seat that already held the tape's earliest records across two disjoint time blocks. Its companion records remain in the normal band, so it is a one-off peak, not a systematic escalation."
+    }
+  ],
+  "surrogate_cast": [
+    {
+      "surrogate": "seat",
+      "role": "an independent live session on the tape"
+    },
+    {
+      "surrogate": "tape",
+      "role": "the ordered 17-record compaction-event series across 5 seats"
+    },
+    {
+      "surrogate": "span block",
+      "role": "the lone terminal schema-bearing, hash-chained authority record"
+    },
+    {
+      "surrogate": "compaction count",
+      "role": "the integer count of compacted units per record"
+    },
+    {
+      "surrogate": "tokensBefore/tokensAfter",
+      "role": "state sizes before and after each compaction"
+    },
+    {
+      "surrogate": "worker",
+      "role": "the actor that produced the terminal span-bearing record"
+    }
+  ],
+  "shape_hash": "bbd3045a23a8f036",
+  "shape_hash_spec": "sha256 over JSON.stringify(conclusions) (the conclusions array as emitted, UTF-8, compact). First 16 hex reported. Full digest: bbd3045a23a8f036113ca4394b1440c2bf2a8057ae5eb871cd74113cb5531129.",
+  "forbidden_hashes": [
+    {
+      "what": "analysis path root",
+      "sha256_8": "10ec2384"
+    },
+    {
+      "what": "source tape basename",
+      "sha256_8": "9025f5f4"
+    },
+    {
+      "what": "source tape witness name",
+      "sha256_8": "96a4bc26"
+    },
+    {
+      "what": "seat A slug",
+      "sha256_8": "d6adc5b4"
+    },
+    {
+      "what": "seat B slug",
+      "sha256_8": "42d83252"
+    },
+    {
+      "what": "seat C slug",
+      "sha256_8": "631c39cb"
+    },
+    {
+      "what": "seat D slug",
+      "sha256_8": "738d1918"
+    },
+    {
+      "what": "worker seat slug",
+      "sha256_8": "8fb82b9c"
+    },
+    {
+      "what": "controller role tag",
+      "sha256_8": "66cd9688"
+    },
+    {
+      "what": "worker role tag",
+      "sha256_8": "94a168d2"
+    },
+    {
+      "what": "terminal span schema tag",
+      "sha256_8": "b346d6fe"
+    },
+    {
+      "what": "span label field name",
+      "sha256_8": "6379c1ca"
+    },
+    {
+      "what": "body content-hash field name",
+      "sha256_8": "099ab771"
+    },
+    {
+      "what": "tail body hash prefix",
+      "sha256_8": "1fc22eee"
+    },
+    {
+      "what": "controller session namespace",
+      "sha256_8": "f331f052"
+    },
+    {
+      "what": "worker session namespace",
+      "sha256_8": "8776b0d6"
+    },
+    {
+      "what": "source tape basename full",
+      "sha256_8": "45562c58"
+    }
+  ],
+  "self_check": {
+    "method": "verify no literal forbidden string equals any of the above sha256(8) digests, and that no real identifier text appears anywhere in this file. A candidate string matches if sha256(candidate).slice(0,8) equals a listed digest. Because forbidden strings are stored only as hashes, grepping this file for any real identifier (path, slug, schema tag, field name, role namespace) returns 0 hits by construction.",
+    "result": "0 literal hits for every class of real identifier; all 17 digests check out to distinct candidates."
+  },
+  "title": "The Ledger of the Empty Chairs",
+  "named_by": "operator",
+  "named_ts": "2026-08-31T11:07:00Z"
+}

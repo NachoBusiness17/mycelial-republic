@@ -1,0 +1,972 @@
+[
+  {
+    "name": "apply_patch",
+    "description": "Apply a patch to one or more files using the apply_patch format. The input should include *** Begin Patch and *** End Patch markers.",
+    "parameters": {
+      "type": "object",
+      "required": [
+        "input"
+      ],
+      "properties": {
+        "input": {
+          "type": "string",
+          "description": "Patch content using the *** Begin Patch/End Patch format."
+        }
+      }
+    }
+  },
+  {
+    "name": "code_execution",
+    "description": "Run sandboxed Python analysis with xAI. Use for calculations, tabulation, summaries, and chart-style analysis without local machine access.",
+    "parameters": {
+      "type": "object",
+      "required": [
+        "task"
+      ],
+      "properties": {
+        "task": {
+          "type": "string",
+          "description": "The full analysis task for xAI's remote Python sandbox. Include any data to analyze directly in the task."
+        }
+      }
+    }
+  },
+  {
+    "name": "create_goal",
+    "description": "Create a goal only when explicitly requested by the user or system instructions. Fails if a goal already exists; use user-facing goal controls to clear it.",
+    "parameters": {
+      "type": "object",
+      "required": [
+        "objective"
+      ],
+      "properties": {
+        "objective": {
+          "type": "string",
+          "description": "Concrete objective to pursue. Create only when explicitly requested."
+        },
+        "token_budget": {
+          "type": "number",
+          "description": "Optional positive token budget for this goal."
+        }
+      }
+    }
+  },
+  {
+    "name": "edit",
+    "description": "Edit a single file using exact text replacement. Every edits[].oldText must match a unique, non-overlapping region of the original file. If two changes affect the same block or nearby lines, merge them into one edit instead of emitting overlapping edits. Do not include large unchanged regions just to connect distant changes.",
+    "parameters": {
+      "type": "object",
+      "required": [
+        "path",
+        "edits"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Path to the file to edit (relative or absolute)"
+        },
+        "edits": {
+          "type": "array",
+          "items": {
+            "truncated": true,
+            "reason": "trajectory-depth-limit",
+            "limitDepth": 6
+          },
+          "description": "One or more targeted replacements. Each edit is matched against the original file, not incrementally. Do not include overlapping or nested edits. If two changes touch the same block or nearby lines, merge them into one edit instead."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "exec",
+    "description": "Execute shell commands with background continuation for work that starts now. Use yieldMs/background to continue later via process tool. For long-running work started now, rely on automatic completion wake when it is enabled and the command emits output or fails; otherwise use process to confirm completion. Use process whenever you need logs, status, input, or intervention. Use pty=true for TTY-required commands (terminal UIs, coding agents).",
+    "parameters": {
+      "type": "object",
+      "required": [
+        "command"
+      ],
+      "properties": {
+        "command": {
+          "type": "string",
+          "description": "Shell command to execute"
+        },
+        "workdir": {
+          "type": "string",
+          "description": "Working directory. Blank/whitespace values are invalid; omit to use the default cwd."
+        },
+        "env": {
+          "type": "object",
+          "patternProperties": {
+            "truncated": true,
+            "reason": "trajectory-depth-limit",
+            "limitDepth": 6
+          }
+        },
+        "yieldMs": {
+          "type": "number",
+          "description": "Milliseconds to wait before backgrounding (default 10000)"
+        },
+        "background": {
+          "type": "boolean",
+          "description": "Run in background immediately"
+        },
+        "timeout": {
+          "type": "number",
+          "description": "Timeout in seconds (optional, kills process on expiry)"
+        },
+        "pty": {
+          "type": "boolean",
+          "description": "Run in a pseudo-terminal (PTY) when available (TTY-required CLIs, coding agents)"
+        },
+        "elevated": {
+          "type": "boolean",
+          "description": "Run on the host with elevated permissions (if allowed)"
+        },
+        "host": {
+          "type": "string",
+          "enum": {
+            "truncated": true,
+            "reason": "trajectory-depth-limit",
+            "limitDepth": 6
+          },
+          "description": "Exec host/target (auto|sandbox|gateway|node)."
+        },
+        "security": {
+          "type": "string",
+          "description": "Ignored for normal calls; exec security is set by tools.exec.security and host approvals."
+        },
+        "ask": {
+          "type": "string",
+          "description": "Baseline ask comes from tools.exec.ask and host approvals; channel-origin calls ignore per-call ask when effective host ask is off."
+        },
+        "node": {
+          "type": "string",
+          "description": "Node id/name for host=node."
+        }
+      }
+    }
+  },
+  {
+    "name": "get_goal",
+    "description": "Get the current goal for this thread, including status and token usage.",
+    "parameters": {
+      "type": "object",
+      "properties": {}
+    }
+  },
+  {
+    "name": "image",
+    "description": "Analyze images with available vision model. Use image for one path/URL, images for max 20. Prompt says what to inspect.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "prompt": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string",
+          "description": "One image path/URL."
+        },
+        "images": {
+          "type": "array",
+          "items": {
+            "truncated": true,
+            "reason": "trajectory-depth-limit",
+            "limitDepth": 6
+          },
+          "description": "Image paths/URLs; maxImages default 20."
+        },
+        "model": {
+          "type": "string"
+        },
+        "maxBytesMb": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "maxImages": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  },
+  {
+    "name": "image_generate",
+    "description": "Create/edit images. Session chats: background task; do not call image_generate again for same request; wait completion, then report through the current visible-reply contract with generated media attached using structured media fields. Transparent: outputFormat=\"png\" or \"webp\" + background=\"transparent\"; OpenAI also supports openai.background and routes default model to gpt-image-1.5. Use action=\"list\" for providers/models/readiness/auth, \"status\" for active task.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "description": "\"generate\" default, \"status\" active task, \"list\" providers/models."
+        },
+        "prompt": {
+          "type": "string",
+          "description": "Image prompt."
+        },
+        "image": {
+          "type": "string",
+          "description": "Reference image path/URL for edit."
+        },
+        "images": {
+          "type": "array",
+          "items": {
+            "truncated": true,
+            "reason": "trajectory-depth-limit",
+            "limitDepth": 6
+          },
+          "description": "Reference images for edit or style reference; max 14."
+        },
+        "model": {
+          "type": "string",
+          "description": "Provider/model override, e.g. openai/gpt-image-2; transparent OpenAI: openai/gpt-image-1.5."
+        },
+        "filename": {
+          "type": "string",
+          "description": "Output filename hint; basename preserved in managed media dir."
+        },
+        "size": {
+          "type": "string",
+          "description": "Size hint: 1024x1024, 1536x1024, 1024x1536, 2048x2048, 3840x2160."
+        },
+        "aspectRatio": {
+          "type": "string",
+          "description": "Aspect ratio: 1:1, 2:1, 20:9, 19.5:9, 2:3, 3:2, 2.35:1, 3:4, 4:3, 4:5, 5:4, 9:16, 9:19.5, 9:20, 16:9, 21:9, 1:2, 4:1, 1:4, 8:1, 1:8."
+        },
+        "resolution": {
+          "type": "string",
+          "description": "Resolution: 1K, 2K, 4K; useful for Google."
+        },
+        "quality": {
+          "type": "string",
+          "enum": {
+            "truncated": true,
+            "reason": "trajectory-depth-limit",
+            "limitDepth": 6
+          },
+          "description": "Quality: low, medium, high, auto."
+        },
+        "outputFormat": {
+          "type": "string",
+          "enum": {
+            "truncated": true,
+            "reason": "trajectory-depth-limit",
+            "limitDepth": 6
+          },
+          "description": "Output format: png, jpeg, webp."
+        },
+        "background": {
+          "type": "string",
+          "enum": {
+            "truncated": true,
+            "reason": "trajectory-depth-limit",
+            "limitDepth": 6
+          },
+          "description": "Background: transparent, opaque, auto. Transparent needs png/webp output."
+        },
+        "openai": {
+          "type": "object",
+          "properties": {
+            "truncated": true,
+            "reason": "trajectory-depth-limit",
+            "limitDepth": 6
+          }
+        },
+        "fal": {
+          "type": "object",
+          "properties": {
+            "truncated": true,
+            "reason": "trajectory-depth-limit",
+            "limitDepth": 6
+          }
+        },
+        "count": {
+          "type": "integer",
+          "description": "Image count 1-4.",
+          "minimum": 1,
+          "maximum": 4
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "description": "Provider timeout ms (300000 tends to be a safe amount).",
+          "minimum": 1
+        }
+      }
+    }
+  },
+  {
+    "name": "memory_get",
+    "description": "Safe exact excerpt read from MEMORY.md or memory/*.md. Defaults to a bounded excerpt when lines are omitted, includes truncation/continuation info when more content exists, and `corpus=wiki` reads from registered compiled-wiki supplements.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "from": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "lines": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "corpus": {
+          "type": "string",
+          "enum": {
+            "truncated": true,
+            "reason": "trajectory-depth-limit",
+            "limitDepth": 6
+          }
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "memory_search",
+    "description": "Mandatory recall step: semantically search MEMORY.md + memory/*.md (and optional session transcripts) before answering questions about prior work, decisions, dates, people, preferences, or todos. Optional `corpus=wiki` or `corpus=all` also searches registered compiled-wiki supplements. `corpus=memory` restricts hits to indexed memory files (excludes session transcript chunks from ranking). `corpus=sessions` restricts hits to indexed session transcripts (same visibility rules as session history tools). If response has disabled=true, memory retrieval is unavailable and should be surfaced to the user.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "string"
+        },
+        "maxResults": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "minScore": {
+          "type": "number"
+        },
+        "corpus": {
+          "type": "string",
+          "enum": {
+            "truncated": true,
+            "reason": "trajectory-depth-limit",
+            "limitDepth": 6
+          }
+        }
+      },
+      "required": [
+        "query"
+      ],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "music_generate",
+    "description": "Create audio/music for song, jingle, beat, loop, soundtrack, anthem, instrumental requests. If user asks make/generate/create song/music, call music_generate; do not just write lyrics unless lyrics/text only. Prompt gets style/genre/mood/tempo/instruments/purpose. lyrics only exact sung words. Session chats: background task; do not call again for same request; wait completion, then report through the current visible-reply contract with generated media attached using structured media fields. \"status\" checks active task.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "description": "\"generate\" default, \"status\" active task, \"list\" providers/models."
+        },
+        "prompt": {
+          "type": "string",
+          "description": "Music prompt: style, genre, mood, purpose."
+        },
+        "lyrics": {
+          "type": "string",
+          "description": "Exact sung lyrics only when the user supplies lyrics or asks for vocal words. For song/style requests, use prompt instead."
+        },
+        "instrumental": {
+          "type": "boolean",
+          "description": "Instrumental-only toggle."
+        },
+        "image": {
+          "type": "string",
+          "description": "Reference image path/URL."
+        },
+        "images": {
+          "type": "array",
+          "items": {
+            "truncated": true,
+            "reason": "trajectory-depth-limit",
+            "limitDepth": 6
+          },
+          "description": "Reference images; max 10."
+        },
+        "model": {
+          "type": "string",
+          "description": "Provider/model override, e.g. google/lyria-3-pro-preview."
+        },
+        "durationSeconds": {
+          "type": "integer",
+          "description": "Target seconds; provider may clamp.",
+          "minimum": 1
+        },
+        "format": {
+          "type": "string",
+          "description": "Output format: mp3, wav."
+        },
+        "filename": {
+          "type": "string",
+          "description": "Output filename hint; basename preserved in managed media dir."
+        }
+      }
+    }
+  },
+  {
+    "name": "process",
+    "description": "Manage running exec sessions for commands already started: list, poll, log, write, send-keys, submit, paste, kill. Use poll/log when you need status, logs, quiet-success confirmation, or completion confirmation when automatic completion wake is unavailable. Use poll/log also for input-wait hints. Use write/send-keys/submit/paste/kill for input or intervention.",
+    "parameters": {
+      "type": "object",
+      "required": [
+        "action"
+      ],
+      "properties": {
+        "action": {
+          "type": "string",
+          "description": "Process action (list|poll|log|write|send-keys|submit|paste|kill|clear|remove)"
+        },
+        "sessionId": {
+          "type": "string",
+          "description": "Session id for actions other than list"
+        },
+        "data": {
+          "type": "string",
+          "description": "Data to write for write"
+        },
+        "keys": {
+          "type": "array",
+          "items": {
+            "truncated": true,
+            "reason": "trajectory-depth-limit",
+            "limitDepth": 6
+          },
+          "description": "Key tokens to send for send-keys"
+        },
+        "hex": {
+          "type": "array",
+          "items": {
+            "truncated": true,
+            "reason": "trajectory-depth-limit",
+            "limitDepth": 6
+          },
+          "description": "Hex bytes to send for send-keys"
+        },
+        "literal": {
+          "type": "string",
+          "description": "Literal string for send-keys"
+        },
+        "text": {
+          "type": "string",
+          "description": "Text to paste for paste"
+        },
+        "bracketed": {
+          "type": "boolean",
+          "description": "Wrap paste in bracketed mode"
+        },
+        "eof": {
+          "type": "boolean",
+          "description": "Close stdin after write"
+        },
+        "offset": {
+          "type": "number",
+          "description": "Log offset"
+        },
+        "limit": {
+          "type": "number",
+          "description": "Log length"
+        },
+        "timeout": {
+          "type": "number",
+          "description": "For poll: wait up to this many milliseconds before returning; max 30000 ms, higher values are clamped to 30000",
+          "minimum": 0
+        }
+      }
+    }
+  },
+  {
+    "name": "read",
+    "description": "Read the contents of a file. Supports text files and images (jpg, png, gif, webp, bmp). Images are sent as attachments. For text files, output is truncated to 2000 lines or 50KB (whichever is hit first). Use offset/limit for large files. When you need the full file, continue with offset until complete.",
+    "parameters": {
+      "type": "object",
+      "required": [
+        "path"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Path to the file to read (relative or absolute)"
+        },
+        "offset": {
+          "type": "number",
+          "description": "Line number to start reading from (1-indexed)"
+        },
+        "limit": {
+          "type": "number",
+          "description": "Maximum number of lines to read"
+        }
+      }
+    }
+  },
+  {
+    "name": "session_status",
+    "description": "Show /status-like card for current/visible session: model, usage, time, cost, tasks. Use `sessionKey=\"current\"` for current session; UI labels like `openclaw-tui` are not keys. `model` sets session override; `model=default` resets. Use for active model/session config questions.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "sessionKey": {
+          "type": "string"
+        },
+        "model": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  {
+    "name": "sessions_send",
+    "description": "Send message to visible session by sessionKey/label, or configured agent by agentId; sessionKey wins when redundant label metadata is present. Thread-scoped chats rejected; target parent channel session. Creates missing configured-agent main session; waits for reply when available.",
+    "parameters": {
+      "type": "object",
+      "required": [
+        "message"
+      ],
+      "properties": {
+        "sessionKey": {
+          "type": "string"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "agentId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "message": {
+          "type": "string"
+        },
+        "timeoutSeconds": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    }
+  },
+  {
+    "name": "skill_workshop",
+    "description": "Create, update, revise, list, inspect, apply, reject, or quarantine Skill Workshop proposals when reusable procedures should be captured, improved, or explicitly approved.",
+    "parameters": {
+      "type": "object",
+      "required": [
+        "action"
+      ],
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": {
+            "truncated": true,
+            "reason": "trajectory-depth-limit",
+            "limitDepth": 6
+          },
+          "description": "create = new skill; update = existing live skill; revise = existing pending proposal; list/inspect discover pending proposals (not filesystem search); apply/reject/quarantine are explicit lifecycle actions."
+        },
+        "proposal_id": {
+          "type": "string",
+          "description": "Existing proposal id for action=inspect, action=revise, action=apply, action=reject, or action=quarantine."
+        },
+        "name": {
+          "type": "string",
+          "description": "Skill/proposal name. Required for create; for inspect/revise when proposal_id is unknown, resolves a pending proposal or returns candidates."
+        },
+        "query": {
+          "type": "string",
+          "description": "Optional query for action=list."
+        },
+        "status": {
+          "type": "string",
+          "enum": {
+            "truncated": true,
+            "reason": "trajectory-depth-limit",
+            "limitDepth": 6
+          },
+          "description": "Optional proposal status filter for action=list."
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50,
+          "description": "Maximum proposals to return for action=list. Defaults to 20."
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 160,
+          "description": "Skill description for create/update/revise; max 160 bytes. On update, concise text shortens the proposal listing entry."
+        },
+        "skill_name": {
+          "type": "string",
+          "description": "Existing skill name or key for action=update."
+        },
+        "proposal_content": {
+          "type": "string",
+          "description": "Full proposed procedure markdown for action=create, action=update, or action=revise. It will be stored as PROPOSAL.md. Keep under configured skills.workshop.maxSkillBytes; default max is 40000 bytes."
+        },
+        "support_files": {
+          "type": "array",
+          "items": {
+            "truncated": true,
+            "reason": "trajectory-depth-limit",
+            "limitDepth": 6
+          },
+          "description": "Optional support files to store with the proposal."
+        },
+        "goal": {
+          "type": "string",
+          "description": "Proposal or improvement goal."
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Short evidence or notes."
+        },
+        "reason": {
+          "type": "string",
+          "description": "Optional reason for action=apply, action=reject, or action=quarantine."
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "update_goal",
+    "description": "Mark the current goal complete only when achieved, or blocked only after the same blocking condition recurs for at least three consecutive goal turns. Do not use blocked for ordinary difficulty or missing polish.",
+    "parameters": {
+      "type": "object",
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": {
+            "truncated": true,
+            "reason": "trajectory-depth-limit",
+            "limitDepth": 6
+          },
+          "description": "complete | blocked."
+        },
+        "note": {
+          "type": "string",
+          "description": "Short status note."
+        }
+      }
+    }
+  },
+  {
+    "name": "update_plan",
+    "description": "Update current run plan. Use for non-trivial multi-step work; keep plan current while executing. Short steps; max one `in_progress`; skip for simple one-step work.",
+    "parameters": {
+      "type": "object",
+      "required": [
+        "plan"
+      ],
+      "properties": {
+        "explanation": {
+          "type": "string",
+          "description": "Short note: what changed."
+        },
+        "plan": {
+          "type": "array",
+          "items": {
+            "truncated": true,
+            "reason": "trajectory-depth-limit",
+            "limitDepth": 6
+          },
+          "minItems": 1,
+          "description": "Ordered steps; max one in_progress."
+        }
+      }
+    }
+  },
+  {
+    "name": "video_generate",
+    "description": "Create videos. Session chats: background task; do not call video_generate again for same request; wait completion, then report through the current visible-reply contract with generated media attached using structured media fields. \"status\" checks active task. Duration may round to provider-supported value.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "description": "\"generate\" default, \"status\" active task, \"list\" providers/models."
+        },
+        "prompt": {
+          "type": "string",
+          "description": "Video prompt."
+        },
+        "image": {
+          "type": "string",
+          "description": "One reference image path/URL."
+        },
+        "images": {
+          "type": "array",
+          "items": {
+            "truncated": true,
+            "reason": "trajectory-depth-limit",
+            "limitDepth": 6
+          },
+          "description": "Reference images; max 9."
+        },
+        "imageRoles": {
+          "type": "array",
+          "items": {
+            "truncated": true,
+            "reason": "trajectory-depth-limit",
+            "limitDepth": 6
+          },
+          "description": "`image` + `images` roles by index after de-dupe. Values: first_frame, last_frame, reference_image; empty string leaves unset."
+        },
+        "video": {
+          "type": "string",
+          "description": "One reference video path/URL."
+        },
+        "videos": {
+          "type": "array",
+          "items": {
+            "truncated": true,
+            "reason": "trajectory-depth-limit",
+            "limitDepth": 6
+          },
+          "description": "Reference videos; max 4."
+        },
+        "videoRoles": {
+          "type": "array",
+          "items": {
+            "truncated": true,
+            "reason": "trajectory-depth-limit",
+            "limitDepth": 6
+          },
+          "description": "`video` + `videos` roles by index after de-dupe. Value: reference_video; empty string leaves unset."
+        },
+        "model": {
+          "type": "string",
+          "description": "Provider/model override, e.g. qwen/wan2.6-t2v."
+        },
+        "filename": {
+          "type": "string",
+          "description": "Output filename hint; basename preserved in managed media dir."
+        },
+        "size": {
+          "type": "string",
+          "description": "Size hint, e.g. 1280x720, 1920x1080."
+        },
+        "aspectRatio": {
+          "type": "string",
+          "description": "Aspect ratio: 1:1, 16:9, 9:16, \"adaptive\", or provider value; unsupported normalized/ignored."
+        },
+        "resolution": {
+          "type": "string",
+          "description": "Resolution: 360P, 480P, 540P, 720P, 768P, 1080P, 4K, or provider value; unsupported normalized/ignored."
+        },
+        "durationSeconds": {
+          "type": "integer",
+          "description": "Target seconds; may round to nearest supported duration.",
+          "minimum": 1
+        },
+        "audio": {
+          "type": "boolean",
+          "description": "Generated-audio toggle."
+        },
+        "watermark": {
+          "type": "boolean",
+          "description": "Watermark toggle."
+        },
+        "providerOptions": {
+          "type": "object",
+          "patternProperties": {
+            "truncated": true,
+            "reason": "trajectory-depth-limit",
+            "limitDepth": 6
+          },
+          "description": "Provider JSON options, e.g. {\"seed\":42}. Keys/types must match provider capabilities; mismatch skips candidate. Use action=list for accepted keys."
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "description": "Provider timeout ms.",
+          "minimum": 1
+        }
+      }
+    }
+  },
+  {
+    "name": "web_fetch",
+    "description": "Fetch URL and extract readable markdown/text. Lightweight page access; no browser automation.",
+    "parameters": {
+      "type": "object",
+      "required": [
+        "url"
+      ],
+      "properties": {
+        "url": {
+          "type": "string",
+          "description": "HTTP(S) URL."
+        },
+        "extractMode": {
+          "type": "string",
+          "enum": {
+            "truncated": true,
+            "reason": "trajectory-depth-limit",
+            "limitDepth": 6
+          },
+          "description": "Extract as markdown/text.",
+          "default": "markdown"
+        },
+        "maxChars": {
+          "type": "integer",
+          "description": "Max chars returned; truncates.",
+          "minimum": 100
+        }
+      }
+    }
+  },
+  {
+    "name": "web_search",
+    "description": "Search web for current info; returns normalized provider results.",
+    "parameters": {
+      "type": "object",
+      "required": [
+        "query"
+      ],
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "Search query."
+        },
+        "count": {
+          "type": "number",
+          "description": "Result count.",
+          "minimum": 1,
+          "maximum": 10
+        },
+        "country": {
+          "type": "string",
+          "description": "2-letter country code."
+        },
+        "language": {
+          "type": "string",
+          "description": "ISO 639-1 language."
+        },
+        "freshness": {
+          "type": "string",
+          "description": "Time filter: day/week/month/year."
+        },
+        "date_after": {
+          "type": "string",
+          "description": "Published after YYYY-MM-DD."
+        },
+        "date_before": {
+          "type": "string",
+          "description": "Published before YYYY-MM-DD."
+        },
+        "search_lang": {
+          "type": "string",
+          "description": "Brave result language."
+        },
+        "ui_lang": {
+          "type": "string",
+          "description": "Brave UI locale."
+        },
+        "domain_filter": {
+          "type": "array",
+          "items": {
+            "truncated": true,
+            "reason": "trajectory-depth-limit",
+            "limitDepth": 6
+          },
+          "description": "Perplexity domain filter."
+        },
+        "max_tokens": {
+          "type": "number",
+          "description": "Perplexity total token budget.",
+          "minimum": 1,
+          "maximum": 1000000
+        },
+        "max_tokens_per_page": {
+          "type": "number",
+          "description": "Perplexity tokens per page.",
+          "minimum": 1
+        }
+      }
+    }
+  },
+  {
+    "name": "write",
+    "description": "Write content to a file. Creates the file if it doesn't exist, overwrites if it does. Automatically creates parent directories.",
+    "parameters": {
+      "type": "object",
+      "required": [
+        "path",
+        "content"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Path to the file to write (relative or absolute)"
+        },
+        "content": {
+          "type": "string",
+          "description": "Content to write to the file"
+        }
+      }
+    }
+  },
+  {
+    "name": "x_search",
+    "description": "Search X (formerly Twitter) using xAI, including targeted post or thread lookups. For per-post stats like reposts, replies, bookmarks, or views, prefer the exact post URL or status ID.",
+    "parameters": {
+      "type": "object",
+      "required": [
+        "query"
+      ],
+      "properties": {
+        "query": {
+          "type": "string",
+          "description": "Natural-language instruction sent to the Grok X-search agent. Must be meaningful and non-empty."
+        },
+        "allowed_x_handles": {
+          "type": "array",
+          "items": {
+            "truncated": true,
+            "reason": "trajectory-depth-limit",
+            "limitDepth": 6
+          },
+          "description": "Only include posts from these X handles."
+        },
+        "excluded_x_handles": {
+          "type": "array",
+          "items": {
+            "truncated": true,
+            "reason": "trajectory-depth-limit",
+            "limitDepth": 6
+          },
+          "description": "Exclude posts from these X handles."
+        },
+        "from_date": {
+          "type": "string",
+          "description": "Only include posts on or after this date (YYYY-MM-DD)."
+        },
+        "to_date": {
+          "type": "string",
+          "description": "Only include posts on or before this date (YYYY-MM-DD)."
+        },
+        "enable_image_understanding": {
+          "type": "boolean",
+          "description": "Allow xAI to inspect images attached to matching posts."
+        },
+        "enable_video_understanding": {
+          "type": "boolean",
+          "description": "Allow xAI to inspect videos attached to matching posts."
+        }
+      }
+    }
+  }
+]

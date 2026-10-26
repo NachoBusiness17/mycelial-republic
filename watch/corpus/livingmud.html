@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>THE LIVING MUD</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0a0c10;color:#c8d0c8;
+font:15px/1.75 'Courier New',monospace;padding:0 0 3em}
+.wrap{max-width:56rem;margin:0 auto;padding:2rem 1.3rem 1rem}
+.kick{font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:#3ED6C4;margin-bottom:.7rem}
+h1{font-size:1.4rem;color:#E7EAF2;margin:0 0 .5rem;font-family:'Segoe UI',system-ui,sans-serif;font-weight:600}
+.sub{color:#8A93A6;font-size:.88rem;margin-bottom:1.2rem}
+#stage{position:relative;margin-bottom:.8rem;border:1px solid #1a2030;border-radius:8px;overflow:hidden;background:#0d1015}
+#stage img{display:block;width:100%;height:230px;object-fit:cover;opacity:.92}
+#cap{position:absolute;left:0;bottom:0;right:0;padding:.35em .9em;font-size:.72rem;
+letter-spacing:.14em;text-transform:uppercase;color:#c9d2cd;background:linear-gradient(transparent,rgba(10,12,16,.92))}
+#mapbox{background:#0d1015;border:1px solid #1a2030;border-radius:8px;padding:.6rem .8rem;margin-bottom:.8rem}
+#mapbox .mlabel{font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:#5a6478}
+#map svg{display:block;width:100%;max-width:520px;height:auto;margin:.3rem auto 0}
+.mnode{cursor:pointer}
+.mnode rect{fill:#0d1015;stroke:#242C3C;stroke-width:1.4;transition:stroke .2s}
+.mnode text{fill:#4a5468;font-size:11px;font-family:'Courier New',monospace;letter-spacing:.08em}
+.mnode.visited rect{stroke:#2a6b62}
+.mnode.visited text{fill:#8fb8ae}
+.mnode.here rect{stroke:#3ED6C4;stroke-width:2;fill:#0f211d}
+.mnode.here text{fill:#3ED6C4;font-weight:bold}
+.medge{stroke:#1e2634;stroke-width:1.6;fill:none}
+.medge.gated{stroke:#5a3040;stroke-dasharray:4 4}
+#log{background:#0d1015;border:1px solid #1a2030;border-radius:8px;
+padding:1.1rem 1.2rem;min-height:20rem;max-height:32rem;overflow-y:auto;font-size:.93rem}
+#log p{margin:0 0 .55em}
+.rn{color:#3ED6C4;font-weight:bold;text-transform:uppercase;letter-spacing:.1em;font-size:.8rem;margin:1em 0 .4em}
+.ds{color:#B0B8C4}
+.npc{color:#c9a86a;font-style:italic}
+.gm{color:#5a6478}
+.ok{color:#3ED6C4}
+.rj{color:#e07a6a}
+.dp{color:#e0b84f}
+.win{color:#3ED6C4;font-weight:bold;border:1px solid #3ED6C4;border-radius:6px;padding:.5em 1em;margin:.8em 0}
+.sys{color:#4a5468;font-style:italic}
+.lw{color:#8B95FF;font-style:italic;font-size:.88rem;border-left:3px solid #8B95FF;padding:.3em 1em}
+#crow{display:flex;gap:.5rem;margin-top:.7rem}
+#cmd{flex:1;padding:.6em .85em;background:#0d1015;border:1px solid #1a2030;border-radius:6px;
+color:#c8d0c8;font:14px/1.4 'Courier New',monospace}
+#cmd:focus{outline:none;border-color:#3ED6C4}
+#go{padding:.6em 1em;background:#1a2030;border:1px solid #3ED6C4;border-radius:6px;color:#3ED6C4;cursor:pointer}
+.hud{font-family:monospace;font-size:.73rem;color:#5a6478;margin-top:.9rem}
+.hud b{color:#3ED6C4}
+.nv{margin-top:1.6rem;font-size:.85rem}
+.nv a{color:#5b8db8}
+.lw2{border-left:3px solid #8B95FF;padding:.3em 1em;margin:1em 0;color:#8B95FF;font-style:italic;font-size:.88rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="kick">The Living Mud · engine owns truth · model narrates</div>
+<h1>You are standing in a world that keeps records.</h1>
+<p class="sub">Three doors. One reads differently from each side. One stays open only
+while the light holds. One is worked by gravity, and the storyteller never touches
+the water. Everything you do is written down. The world remembers.</p>
+<div id="stage"><img id="still" alt="" src="stills/hero.jpg"><div id="cap">the living mud</div></div>
+<div id="mapbox"><span class="mlabel">the cartographer's floor — click a room to walk · dashed = the way is shut</span>
+<div id="map"></div></div>
+<div id="log"></div>
+<div id="crow"><input id="cmd" placeholder="> look · help" autocomplete="off"><button id="go">&gt;</button></div>
+<div class="hud">rooms <b id="hr">1/5</b> · flags <b id="hf">0</b> · disputed <b id="hd">0</b> · gate <b id="hg">shut</b> · <a href="#" id="reset" style="color:#e07a6a">reset world</a></div>
+<p class="nv">← <a href="/living.html">the beacon wing</a> · <a href="/">the corpus</a> · <a href="cartographer.html">the cartographer's desk</a> · <a href="https://games-mag-d961.vercel.app">the arcade</a></p>
+</div>
+<script>
+(function(){"use strict";
+var $=function(id){return document.getElementById(id)};
+var log=$("log"),cmd=$("cmd"),hr=$("hr"),hf=$("hf"),hd=$("hd"),hg=$("hg");
+var stage=$("stage"),still=$("still"),cap=$("cap"),mapbox=$("map");
+
+/* ═══ THE ENGINE OWNS TRUTH ═══
+   Every action is checked against the room's legal-action table
+   BEFORE the world agrees it happened. The narrator describes
+   outcomes. It never decides them. */
+
+var S={room:"threshold",
+  flags:{rsvpA:false,rsvpB:false,rsvpOpen:false,
+    mir1:0,mir2:0,beam:false,eraseOn:false,corridorOpen:false,
+    valveA:false,valveB:false,tank:0,bucketUsed:false},
+  visited:{threshold:true},disputed:0,won:false,inventory:[]};
+
+/* ═══ ROOMS ═══ */
+var ROOMS={
+threshold:{
+  name:"THE THRESHOLD",
+  still:"threshold",
+  look:function(){return "A stone antechamber. Three doors carved with three laws:\n"+
+    "  DOOR ONE — a two-sided plate that reads differently from each side.\n"+
+    "  DOOR TWO — opens only while a beam of light holds its course.\n"+
+    "  DOOR THREE — gravity is the only computer; the storyteller never touches the water.\n"+
+    "A fourth doorway, smaller, is sealed with knotted cord. It does not look locked. It looks like it is waiting.\n"+
+    "A figure waits by the first door, counting under her breath.\n"+
+    "Vesper Ravel. The Night Archivist."},
+  actions:["look","talk vesper","go rsvp","go corridor","go vesper","help"]},
+rsvp:{
+  name:"THE TWO-SIDED DOOR",
+  still:"rsvp",
+  look:function(){return "A doorway with two face-plates. The vertical column reads ANSWER\n"+
+    "from both sides — that is the shared truth. The horizontal row is the decoy.\n"+
+    "Two pressure plates: one near, one far across the alcove.\n"+
+    "Near plate: "+(S.flags.rsvpA?"PRESSED":"unpressed")+". Far plate: "+(S.flags.rsvpB?"PRESSED":"unpressed")+".\n"+
+    "The plaque above the door: ONE TRUTH, TWO READINGS. THE OTHER SEAT COSTS A WALK."},
+  actions:["look","press near plate","press far plate","go threshold","go corridor","help"]},
+corridor:{
+  name:"THE LIGHT CORRIDOR",
+  still:"corridor",
+  look:function(){return "A beam from the west. Two rotator mirrors. A sensor at the east end.\n"+
+    "Mirror 1: "+S.flags.mir1+"°. Mirror 2: "+S.flags.mir2+"°.\n"+
+    (S.flags.beam?"[beam: REACHING SENSOR]":"[beam: not aligned]")+
+    (S.flags.eraseOn?"  [eraser stone: LIFTED — the signal is flattened]":"")+"\n"+
+    "The far door to the valve room stands "+(S.flags.corridorOpen?"OPEN.":"shut. It opens only while the beam reaches the sensor.")+"\n"+
+    "An eraser stone sits in a side alcove. Your watching flattens the signal."},
+  actions:["look","turn mirror 1","turn mirror 2","use eraser","go threshold","go rsvp","go valves","help"]},
+valves:{
+  name:"THE VALVE ROOM",
+  still:"valves",
+  look:function(){var bar="";for(var i=0;i<6;i++)bar+=i<S.flags.tank?"█":"░";
+    return "Source tank. Work tank. Out tank. Two valves.\n"+
+    "Out tank: ["+bar+"] "+S.flags.tank+"/6 marks.\n"+
+    "Valve A: a measured pour (+2 marks). Valve B: a drain (−2 marks).\n"+
+    (S.flags.bucketUsed?"The hanging bucket has been used. The record says DISPUTED.\n":"A hanging bucket waits by the out tank. Three marks, no work. The record keeps receipts.\n")+
+    "Gravity is the only computer. Fill the tank to six and the gate opens."},
+  actions:["look","open valve a","open valve b","close valves","fill bucket","go corridor","help"]},
+vesper:{
+  name:"VESPER'S STACKS",
+  still:"vesper",
+  look:function(){return "Shelves of loose cord. One guttering lamp. A ledger you can hear.\n"+
+    "Vesper counts everything aloud. She never raises her voice.\n"+
+    "She turns every promise into a numbered receipt.\n"+
+    "This is where the untamed knots come to be counted."},
+  actions:["look","talk vesper","ask about knots","ask about the fire","go threshold","help"]}
+};
+
+/* ═══ EXITS — the legal table of movement ═══ */
+var EXITS={
+threshold:[{to:"rsvp"},{to:"corridor"},
+  {to:"vesper",need:"rsvpOpen",hint:"The corded door stays shut. Vesper admits those who have read the two-sided door from both seats."}],
+rsvp:[{to:"threshold"},{to:"corridor"}],
+corridor:[{to:"threshold"},{to:"rsvp"},
+  {to:"valves",need:"corridorOpen",hint:"The far door is shut. The corridor carries no one while the beam misses the sensor."}],
+valves:[{to:"corridor"}],
+vesper:[{to:"threshold"}]};
+
+/* ═══ NPC CAST ═══ */
+var CAST={vesper:{
+  name:"Vesper Ravel, the Night Archivist",
+  greet:"You found the stacks. Most people don't count their way here.",
+  knots:"A mess is only a knot that hasn't been counted. Three loops, one bite, true from both ends. Sleep now — this one will hold.",
+  fire:"Libraries burn. Knots don't. Ask Alexandria who survived — the spore did. The record outlives the fire. That's the whole trick.",
+  default:"Every promise you make, I write down. And that's a knot."}};
+
+/* ═══ ACTIONS (engine-verified) ═══ */
+var ACTIONS={
+"look":function(){var r=ROOMS[S.room];say("rn","— "+r.name+" —");say("ds",typeof r.look==="function"?r.look():r.look)},
+"press near plate":function(){
+  if(S.room!=="rsvp")return say("rj","No near plate in this room.");
+  if(S.flags.rsvpA)return say("gm","Already pressed.");
+  S.flags.rsvpA=true;say("ok","The near plate sinks with a click.");
+  checkRSVP()},
+"press far plate":function(){
+  if(S.room!=="rsvp")return say("rj","No far plate in this room.");
+  if(S.flags.rsvpB)return say("gm","Already pressed.");
+  S.flags.rsvpB=true;say("ok","You walk the alcove around. The far plate sinks. It was only reachable by crossing the other seat's ground.");
+  checkRSVP()},
+"turn mirror 1":function(){
+  if(S.room!=="corridor")return say("rj","No mirror here.");
+  S.flags.mir1=(S.flags.mir1+30)%90;evalBeam()},
+"turn mirror 2":function(){
+  if(S.room!=="corridor")return say("rj","No mirror here.");
+  S.flags.mir2=(S.flags.mir2+30)%90;evalBeam()},
+"use eraser":function(){
+  if(S.room!=="corridor")return say("rj","No eraser here.");
+  S.flags.eraseOn=!S.flags.eraseOn;
+  say("ok",S.flags.eraseOn?"You lift the eraser stone. The beam's signal flattens under your unseeing.":"You lower the eraser stone. The light is allowed to mean something again.");
+  evalBeam(true)},
+"open valve a":function(){
+  if(S.room!=="valves")return say("rj","No valve here.");
+  if(S.flags.tank>=6)return say("gm","The out tank is full. The gate is open.");
+  S.flags.tank=Math.min(6,S.flags.tank+2);
+  say("ok","You turn Valve A. The source line gives two marks of water, then the valve seats itself. Out tank: "+S.flags.tank+"/6.");
+  checkWin()},
+"open valve b":function(){
+  if(S.room!=="valves")return say("rj","No valve here.");
+  if(S.flags.tank<=0)return say("gm","The out tank is empty. Nothing to drain.");
+  S.flags.tank=Math.max(0,S.flags.tank-2);
+  say("ok","You open Valve B. Water drains to the work tank. The out tank falls to "+S.flags.tank+"/6 marks.")},
+"close valves":function(){
+  if(S.room!=="valves")return say("rj","No valve here.");
+  S.flags.valveA=false;S.flags.valveB=false;say("ok","Both valves sit closed. The water waits.")},
+"fill bucket":function(){
+  if(S.room!=="valves")return say("rj","No bucket here.");
+  if(S.flags.bucketUsed)return say("gm","The bucket's receipt is already written. It cannot be unwritten.");
+  S.flags.bucketUsed=true;S.disputed++;
+  S.flags.tank=Math.min(6,S.flags.tank+3);
+  say("dp","You use the hanging bucket. Three marks, no work. The record prints DISPUTED beside your name.");
+  say("gm","The engine owns the height. The bucket was a shortcut, and shortcuts are a reading, not a truth.");
+  checkWin()},
+"talk vesper":function(){
+  if(S.room!=="threshold"&&S.room!=="vesper")return say("rj","Vesper is not in this room.");
+  var c=CAST.vesper;say("npc","["+c.name+"] "+c.greet)},
+"ask about knots":function(){
+  if(S.room!=="vesper")return say("rj","Vesper is not in this room.");
+  say("npc","[Vesper] "+CAST.vesper.knots)},
+"ask about the fire":function(){
+  if(S.room!=="vesper")return say("rj","Vesper is not in this room.");
+  say("npc","[Vesper] "+CAST.vesper.fire)},
+"help":function(){
+  var exits=(EXITS[S.room]||[]).map(function(e){return "  go "+e.to+(e.need?"  [shut]":"")}).join("\n");
+  var acts=(ROOMS[S.room]?ROOMS[S.room].actions.filter(function(a){return a!=="look"&&a!=="help"&&a.indexOf("go ")!==0}).map(function(a){return "  "+a}).join("\n"):"");
+  say("gm","Commands:\n  look · help · inventory · flags · reset\n"+acts+"\nDoors from here:\n"+exits+"\nThe map on the wall is clickable.")},
+"inventory":function(){
+  say("gm",S.inventory.length?"You carry: "+S.inventory.join(", "):"You carry nothing. The rooms are the inventory.")},
+"flags":function(){
+  say("gm","World flags:");
+  for(var k in S.flags){if(S.flags[k]&&k!=="tank")say("gm","  "+k+" = "+S.flags[k])}}
+};
+
+/* ═══ MOVEMENT (generated from the legal table) ═══ */
+function walk(dest){
+  var exits=EXITS[S.room]||[];
+  for(var i=0;i<exits.length;i++){
+    if(exits[i].to===dest){
+      if(exits[i].need&&!S.flags[exits[i].need])return say("rj",exits[i].hint||"The way is shut.");
+      return enter(dest);
+    }
+  }
+  say("rj","No door to '"+dest+"' from here.");
+}
+Object.keys(EXITS).forEach(function(from){
+  EXITS[from].forEach(function(e){
+    var id=e.to;
+    ACTIONS["go "+id]=function(){walk(id)};
+    ACTIONS["enter "+id]=function(){walk(id)};
+  });
+});
+
+/* ═══ BEAM EVALUATION ═══ */
+function evalBeam(quiet){
+  // the circuit closes geometrically: mirror1+mirror2 ≡ 60° (mod 90)
+  var sum=(S.flags.mir1+S.flags.mir2)%90;
+  var was=S.flags.corridorOpen;
+  S.flags.beam=(sum===60);
+  S.flags.corridorOpen=(S.flags.beam&&!S.flags.eraseOn);
+  if(S.flags.corridorOpen&&!was){
+    say("ok","The beam REACHES the sensor. The far door swings — the valve room waits.");
+  }else if(!S.flags.corridorOpen&&was){
+    say("gm","The signal flattens. The far door seals itself.");
+  }else if(!quiet&&!S.flags.beam){
+    say("gm","The mirrors turn. The beam drifts wide of the sensor.");
+  }
+}
+
+/* ═══ RSVP CHECK ═══ */
+function checkRSVP(){
+  if(S.flags.rsvpA&&S.flags.rsvpB){
+    S.flags.rsvpOpen=true;
+    say("ok","The door accepts both readings. It opens.");
+    say("lw","One truth, two readings. The other seat costs a walk.");
+    say("gm","Somewhere behind you, cord drops from a sealed door. The stacks admit you now.");
+  } else say("gm","One plate pressed. The door waits for the other seat.");
+}
+
+/* ═══ WIN ═══ */
+function checkWin(){
+  if(S.flags.tank>=6&&!S.won){
+    S.won=true;
+    say("win","§ THE GATE OPENS §");
+    say("ok","The out tank touches six marks. Beyond the valve room, a gate of black stone swings wide, and water-light spills across the floor.");
+    if(S.flags.bucketUsed){
+      say("dp","You walk through with the record open. Beside your name: DISPUTED. It travels with you. Forever. The gate opened anyway — that is the point of receipts.");
+    }else{
+      say("ok","Beside your name the record prints: DELIVERED, UNDISPUTED. Gravity did the computing. You only turned the valves.");
+    }
+    say("lw","The engine owns truth. The model narrates. The bucket never lied — it just filed its receipt.");
+    still.src="stills/hero.jpg";cap.textContent="the gate — the record outlives the walk";
+    renderHUD();
+  }
+}
+
+/* ═══ PARSER ═══ */
+function handle(input){
+  var a=input.trim().toLowerCase();if(!a)return;
+  if(ACTIONS[a]){ACTIONS[a]();renderHUD();return}
+  var goMatch=a.match(/^(?:go|enter|walk to|walk) (.+)$/);
+  if(goMatch){ACTIONS["go "+goMatch[1]]?ACTIONS["go "+goMatch[1]]():say("rj","No door to '"+goMatch[1]+"'.");renderHUD();return}
+  say("sys","The engine does not know '"+a+"'. Type HELP.");
+}
+
+/* ═══ NARRATOR ═══ */
+function say(cls,t){
+  var p=document.createElement("p");p.className=cls;p.textContent=t;
+  log.appendChild(p);log.scrollTop=log.scrollHeight;
+}
+
+/* ═══ ROOM ENTRY ═══ */
+function enter(id){
+  S.room=id;S.visited[id]=true;
+  var room=ROOMS[id];if(!room)return;
+  say("rn","— "+room.name+" —");
+  say("ds",typeof room.look==="function"?room.look():room.look);
+  still.src="stills/"+room.still+".jpg";cap.textContent=room.name.toLowerCase();
+  renderHUD();renderMap();
+}
+
+/* ═══ MINIMAP — rendered from the engine's own graph ═══ */
+var MAPPOS={rsvp:[20,52],threshold:[190,52],corridor:[360,52],vesper:[190,142],valves:[360,142]};
+var MAPEDGES=[["rsvp","threshold",false],[["rsvp","corridor"],null],["threshold","corridor",false],
+  ["threshold","vesper",true],["corridor","valves",true]];
+function renderMap(){
+  var W=490,H=214,NW=110,NH=48;
+  function cx(id){return MAPPOS[id][0]+NW/2}function cy(id){return MAPPOS[id][1]+NH/2}
+  var s='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">';
+  MAPEDGES.forEach(function(e){
+    var a=Array.isArray(e[0])?e[0][0]:e[0], b=Array.isArray(e[0])?e[0][1]:e[1];
+    var gated=Array.isArray(e[0])?false:e[2];
+    if(Array.isArray(e[0])){
+      s+='<path class="medge'+(gated?" gated":"")+'" d="M '+cx(a)+' '+(cy(a)-NH/2)+' Q '+((cx(a)+cx(b))/2)+' -14 '+cx(b)+' '+(cy(b)-NH/2)+'"/>';
+    }else{
+      s+='<line class="medge'+(gated?" gated":"")+'" x1="'+cx(a)+'" y1="'+cy(a)+'" x2="'+cx(b)+'" y2="'+cy(b)+'"><title>'+(gated?"gated — opens by puzzle":"open")+'</title></line>';
+    }
+  });
+  Object.keys(MAPPOS).forEach(function(id){
+    var p=MAPPOS[id],v=S.visited[id],here=(S.room===id);
+    var cls="mnode"+(v?" visited":"")+(here?" here":"");
+    var label=here?"▶ "+(v?shortName(id):"?"):(v?shortName(id):"?");
+    s+='<g class="'+cls+'" data-room="'+id+'">'+
+      '<rect x="'+p[0]+'" y="'+p[1]+'" width="'+NW+'" height="'+NH+'" rx="6"/>'+
+      '<text x="'+(p[0]+NW/2)+'" y="'+(p[1]+NH/2+4)+'" text-anchor="middle">'+label+'</text></g>';
+  });
+  s+='</svg>';
+  map.innerHTML=s;
+  Array.prototype.forEach.call(map.querySelectorAll(".mnode"),function(g){
+    g.addEventListener("click",function(){walk(g.getAttribute("data-room"))});
+  });
+}
+function shortName(id){
+  return {rsvp:"TWO-SIDED DOOR",threshold:"THRESHOLD",corridor:"LIGHT CORRIDOR",
+    valves:"VALVE ROOM",vesper:"VESPER"}[id]||id;
+}
+
+function renderHUD(){
+  var n=0;for(var k in S.visited){if(S.visited[k])n++}
+  hr.textContent=n+"/5";
+  var f=0;for(var k2 in S.flags){if(S.flags[k2])f++}
+  hf.textContent=f;hd.textContent=S.disputed;
+  hg.textContent=S.won?"OPEN":"shut";
+}
+
+/* ═══ COMMAND HANDLER ═══ */
+cmd.addEventListener("keydown",function(e){
+  if(e.key!=="Enter")return;
+  var v=cmd.value;cmd.value="";handle(v);
+});
+$("go").addEventListener("click",function(){var v=cmd.value;cmd.value="";handle(v)});
+$("reset").addEventListener("click",function(e){
+  e.preventDefault();
+  if(confirm("Reset the Living Mud? The record forgets your walk.")){
+    localStorage.removeItem("livingmud_v1");location.reload();
+  }
+});
+still.addEventListener("error",function(){stage.style.display="none"});
+still.addEventListener("load",function(){stage.style.display=""});
+
+/* ═══ WORLD MEMORY ═══ */
+try{
+  var saved=JSON.parse(localStorage.getItem("livingmud_v1")||"null");
+  if(saved&&saved.flags){
+    for(var k in saved.flags){if(S.flags.hasOwnProperty(k))S.flags[k]=saved.flags[k]}
+    S.disputed=saved.disputed||0;S.room=saved.room||"threshold";
+    if(saved.visited){for(var v in saved.visited){S.visited[v]=true}}
+    S.won=!!saved.won;
+  }
+}catch(e){}
+setInterval(function(){
+  try{localStorage.setItem("livingmud_v1",JSON.stringify({room:S.room,flags:S.flags,visited:S.visited,disputed:S.disputed,won:S.won}))}catch(e){}
+},3000);
+
+/* ═══ BOOT ═══ */
+enter(S.room);
+if(S.won){still.src="stills/hero.jpg";cap.textContent="the gate — the record outlives the walk";renderMap()}
+say("lw","The engine owns truth. The model narrates. The LLM calls verifiers; it never is one. Blank is allowed; invented complete is not.");
+})();
+</script>

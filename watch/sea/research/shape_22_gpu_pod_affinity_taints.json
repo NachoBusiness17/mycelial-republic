@@ -1,0 +1,6 @@
+{
+  "situation": "Placing large model-serving pods on GPU clusters.",
+  "decision": "One model-serving pod per GPU group; pin large-model pods with node affinity and taints; cache model weights on node-local NVMe; scale from queue depth and time-to-first-token, not CPU.",
+  "reasoning_physics": "A large model co-located on the same GPU as unrelated work contends for VRAM/bandwidth; taints+affinity isolate it. Node-local NVMe avoids re-pulling weights (hundreds of GB) per restart. TTFT and queue depth are the latency signals that scale decisions; CPU is a poor proxy.",
+  "source_path": "/mag/docs/ref/GLM_K8S_MCP_DEEP_RESEARCH_20260826.md"
+}

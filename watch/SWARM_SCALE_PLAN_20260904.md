@@ -1,0 +1,44 @@
+# SWARM SCALE PLAN — the fold of prices + instrument + architecture (2026-09-04, ~00:20Z)
+
+Inputs: ECONOMIST_SCALE_AUDIT_20260903.md (prices) · flight_recorder v0 (instrument,
+104 calls dogfooded) · SALON_ARTIFACT swarm_scale_dogfood_20260903 (6/7 shapes, fold on
+zai-pro, 31.5s — six vendors: deepseek, xai, haiku, zai, cohere, hermes/ling).
+
+## THE CONVERGENT VERDICT (3 of 6 posts independently arrived, fold adopted)
+
+**THE FIRST 50-FLIGHT OPERATION: the night-window replay of all 228 open explore signals**
+through glm-5.3-flash, flight-recorder-tagged per subsystem. Why it's the march:
+1. Zero credit cost in-window — the economic variable collapses; the question becomes pure correctness.
+2. It IS the output-envelope read the Economist's guard demands (per-subsystem out-tok/req measured at 50-flight).
+3. It feeds the swarm from the real queue (228 = one evening of food) — testing metabolism, not synthetic load.
+4. It exercises seed-then-burst + cache-warmth at 50-way concurrency (the untested S4 question).
+Receipt produced: per-subsystem out-tok/req table vs Pro ≤12.8 / Max ≤30 envelopes + survivorship count (receipt-grade vs noise) over all 228.
+
+## THE ARCHITECTURE — the Legion Swarm, six organs (named)
+
+1. **Prime-then-flock seeder** — one synchronous seed call over the shared prefix; grace for cache propagation; THEN release. (Cold swarm is a dead swarm.)
+2. **KVFlow resident-prefix mind** — all workers in a tranche share a byte-identical prefix; shared mind at half price. Cache-hit rate logged per burst; reject burst if <85%.
+3. **Leg-1 queue organs** — claim organ, lockfile pids, requeue grace. At 50-flight the double-mine scar is a 50x daily event; race harness passes or nothing scales.
+4. **Tranche gates 8→16→32→50** — advance iff error% <2% AND p99 ≤5s AND cache-hit ≥85% AND output-envelope read passes for the worst compatible billing world.
+5. **Mickey expendable core** — workers eject-and-requeue on failure; error taxonomy by subsystem/model; weekly reprint from the death ledgers.
+6. **Flight recorder nervous system** — every call a typed row; per-subsystem output-token caps ENCODED (pre-registered thresholds), mid-run flag-and-kill on envelope breach; monthly reconciliation sampling (the observer-of-observer patch).
+
+## THE DIVERGENCES (kept visibly incomplete — disagreements are product)
+
+- **S2 (security) vs the legions map:** the bottleneck is NOT queue restock — it's output-token discipline per worker. One noisy worker at 32 tok/req × 50 flights burns 14x its share while organs look fine. → adopted as organ 6's mid-run caps.
+- **S4 (infra) vs the digest:** the bottleneck is NOT queue restock either — it's **cache-warmth propagation at 50-way concurrency**. If the implicit cache thrashes across 50 same-prefix calls, p50 1.7s becomes 8–10s cold-mixed and the output envelope breaks by latency stall. → the replay MEASURES this (cache-hit% per tranche); UNTESTED at 50-way, named as the march's second question.
+- **S3 (socratic) cargo-cult charge:** "the ramp is justified by economics, not demonstrated need" — met by the convergent answer: the 228-signal replay IS the load. Scaling now has a payload, not just headroom.
+- **S4-cohere disanalogy:** queue restock is non-recoverable unlike Mickey death — noted DISPUTED; the Sherpa's restock-organ route is the answer if it holds.
+
+## THE GUARDS (economist + salon, merged)
+- No tranche widens without the output-envelope read; thresholds pre-registered in the recorder.
+- No 24/7 past Sep 20 on in-window economics (the abundance is rented; re-receipt or step down).
+- 4.7-flash never in the burst pool (1-wide, measured).
+- Leg-1 organs ship before tranche 8 (the race harness is the first receipt, not the march).
+
+## OPERATOR DESK (unchanged + one new)
+- NEW: GO/NO-GO for the night-window 228-signal march (zero-cost in-window; it is the Legions activation's first tranche).
+- Standing: dashboard read (plan concurrency cell), domain name, salon-pause ruling (now MOOT-adjacent: the salon just proved its worth — fold fed the plan directly).
+
+## LEGION SHARED-PREFIX SEED (09-04, harish constraint file — intake 21/25)
+The resident prefix per tranche = the constraint file: fleet laws, leg kill criteria, output-envelope cap — one synchronous seed, all 50 workers inherit the constitution at cache price. The prefix IS the constitution; the constitution IS the cache.

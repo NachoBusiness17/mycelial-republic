@@ -1,0 +1,6 @@
+{
+  "situation": "Autoscaling MCP pools and model-serving pods.",
+  "decision": "Avoid aggressive scale-to-zero for warm MCP and large-model pools; scale on queue depth, cache-miss latency, and origin load, not CPU alone.",
+  "reasoning_physics": "Scale-to-zero forces a cold reload of warm caches and (for models) hundred-gigabyte weight loads, defeating the cache-mining purpose. Queue depth and miss latency are the load signals that actually predict recompute; CPU is a lagging proxy.",
+  "source_path": "/mag/docs/ref/GLM_K8S_MCP_DEEP_RESEARCH_20260826.md"
+}

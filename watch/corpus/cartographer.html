@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>THE LIVING MUD — the cartographer's desk</title>
+<style>
+html,body{margin:0;height:100%;background:#0a0c10;color:#c8d0c8;
+font:14px/1.6 'Courier New',monospace}
+#desk{position:fixed;inset:0}
+#hood{position:fixed;top:0;left:0;right:0;z-index:300;display:flex;gap:1rem;align-items:baseline;
+padding:.6rem 1rem;background:linear-gradient(rgba(10,12,16,.94),rgba(10,12,16,.78) 70%,transparent);
+pointer-events:none}
+#hood .kick{font-size:.66rem;letter-spacing:.16em;text-transform:uppercase;color:#3ED6C4}
+#hood b{color:#E7EAF2;font-family:'Segoe UI',system-ui,sans-serif}
+#hood a{color:#5b8db8;pointer-events:auto;margin-left:auto;font-size:.8rem}
+#hood .law{color:#5a6478;font-size:.72rem}
+#fail{max-width:40rem;margin:16vh auto;text-align:center;color:#8A93A6;display:none}
+#fail b{color:#e07a6a}
+</style>
+</head>
+<body>
+<div id="hood">
+  <span class="kick">the living mud</span><b>the cartographer's desk</b>
+  <span class="law">the map remembers — draw on it, it stays · dashed lines are doors still shut</span>
+  <a href="livingmud.html">← back to the mud</a>
+</div>
+<div id="desk"></div>
+<div id="fail"><b>The desk could not be built.</b><br>
+The canvas library loads from a public CDN and this browser could not reach it.<br>
+The mud itself needs no such thing — <a href="livingmud.html">walk the rooms instead</a>.</div>
+<script type="module">
+const SEED = {
+  rooms: [
+    {id:"rsvp",      x:60,  y:240, w:270, h:230, label:"THE TWO-SIDED DOOR\none truth, two readings\nthe other seat costs a walk"},
+    {id:"threshold", x:430, y:240, w:270, h:230, label:"THE THRESHOLD\nthree doors, three laws\nvesper counts by the first"},
+    {id:"corridor",  x:830, y:240, w:270, h:290, label:"THE LIGHT CORRIDOR\nthe gate holds while the beam holds\neraser stone = the signal dies"},
+    {id:"vesper",    x:430, y:700, w:270, h:230, label:"VESPER'S STACKS\nshelves of knotted cord\nadmits both-seated readers only"},
+    {id:"valves",    x:830, y:700, w:270, h:360, label:"THE VALVE ROOM\ngravity is the only computer\nA pours +2 · B drains −2\nbucket = DISPUTED\nsix marks opens the gate"}
+  ],
+  edges: [
+    {a:"rsvp", b:"threshold", dash:false},
+    {a:"threshold", b:"corridor", dash:false},
+    {a:"threshold", b:"vesper", dash:true},
+    {a:"corridor", b:"valves", dash:true}
+  ]
+};
+const NOTE = { x: 60, y: 1150, text: "the living mud — floor plan, seeded by the engine's own graph. annotate freely; the desk remembers." };
+function center(r){return {x:r.x+r.w/2, y:r.y+r.h/2}}
+const uid = (() => { let n = 0; return p => p + "-" + (++n) + "-" + Math.random().toString(36).slice(2, 8); })();
+const SID = (p) => "shape:" + uid(p);
+const fail = (msg) => {
+  document.getElementById("fail").style.display = "block";
+  if(msg) document.getElementById("fail").innerHTML += "<br><small>" + String(msg).slice(0,300) + "</small>";
+  document.getElementById("desk").style.display = "none";
+};
+try{
+  const REACT = "react@18.3.1";
+  const [React, reactDomClient, tldrawMod] = await Promise.all([
+    import(`https://esm.sh/${REACT}`),
+    import(`https://esm.sh/react-dom@18.3.1/client?deps=${REACT}`),
+    import(`https://esm.sh/tldraw@3?deps=${REACT},react-dom@18.3.1`),
+  ]);
+  const { Tldraw, toRichText } = tldrawMod;
+  const css = document.createElement("link");
+  css.rel = "stylesheet"; css.href = "https://esm.sh/tldraw@3/tldraw.css";
+  document.head.appendChild(css);
+
+  const seed = (editor) => {
+    // 1) cards first, then clamp — creation auto-grows them to fit text, and
+    //    the arrows must snap to the FINAL borders, not the grown ones
+    const cardShapes = SEED.rooms.map(r => ({ id:"shape:"+r.id, type:"geo", x:r.x, y:r.y, props:{
+      geo:"rectangle", w:r.w, h:r.h, fill:"semi", color:"blue",
+      richText: toRichText(r.label) }}));
+    editor.createShapes(cardShapes);
+    editor.updateShapes(SEED.rooms.map(r => ({ id:"shape:"+r.id, type:"geo", props:{ w:r.w, h:r.h }})));
+
+    // 2) bound arrows: tldraw anchors them to the card borders and follows
+    //    the cards if they ever resize
+    const idOf = {};
+    for(const r of SEED.rooms) idOf[r.id] = "shape:" + r.id;
+    const arrowShapes = [];
+    for(const e of SEED.edges){
+      const ra = SEED.rooms.find(r=>r.id===e.a), rb = SEED.rooms.find(r=>r.id===e.b);
+      const A = center(ra), B = center(rb);
+      // seed the terminals OUTSIDE both cards, on the side the binding should
+      // snap to — tldraw keeps center-to-center geometry that starts inside
+      let S, E;
+      if(e.arc){ S = {x:A.x, y:A.y-300}; E = {x:B.x, y:B.y-300}; }
+      else{
+        const dx=B.x-A.x, dy=B.y-A.y, L=Math.hypot(dx,dy)||1, ux=dx/L, uy=dy/L;
+        S = {x:A.x+ux*300, y:A.y+uy*300};
+        E = {x:B.x-ux*300, y:B.y-uy*300};
+      }
+      const aid = SID("edge");
+      arrowShapes.push({ id: aid, type:"arrow", x:S.x, y:S.y, props:{
+        color: e.dash ? "red" : "green", dash: e.dash ? "dashed" : "solid",
+        arrowheadStart: "none", arrowheadEnd: "none", bend: e.arc ? 0.35 : 0,
+        start: { x: 0, y: 0 }, end: { x: E.x - S.x, y: E.y - S.y } }});
+    }
+    editor.createShapes(arrowShapes);
+    let n = 0;
+    for(const e of SEED.edges){
+      editor.createBinding({ id: "binding:" + uid("b"), type:"arrow", fromId: arrowShapes[n++].id, toId: idOf[e.a], props:{ terminal:"start" }});
+      editor.createBinding({ id: "binding:" + uid("b"), type:"arrow", fromId: arrowShapes[n-1].id, toId: idOf[e.b], props:{ terminal:"end" }});
+    }
+    editor.createShapes([{ type:"text", x:NOTE.x, y:NOTE.y, props:{
+      richText: toRichText(NOTE.text) }}]);
+    editor.zoomToFit();
+  };
+
+  reactDomClient.createRoot(document.getElementById("desk")).render(
+    React.createElement(Tldraw, {
+      persistenceKey: "livingmud-desk",
+      onMount(editor){
+        try{
+          if(editor.getCurrentPageShapes().length > 0){ editor.zoomToFit(); return }
+          seed(editor);
+        }catch(err){ fail("seed: " + err) }
+      }
+    })
+  );
+}catch(err){
+  fail(err);
+}
+</script>
+</body>
+</html>
